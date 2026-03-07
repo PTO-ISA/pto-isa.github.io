@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/getting-started/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Getting Started - PTO Virtual ISA Architectural Manual</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../assets/stylesheets/custom.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Getting Started";
+        var mkdocs_page_input_path = "docs/getting-started.md";
+        var mkdocs_page_url = "/docs/getting-started/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> PTO Virtual ISA Architectural Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Getting Started</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#required-cpu-simulator">Required (CPU simulator)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#optional-faster-builds">Optional (faster builds)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#os-setup">OS Setup</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#macos">macOS</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#linux-ubuntu-2004">Linux (Ubuntu 20.04)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#windows">Windows</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-the-code">Get The Code</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#python-environment">Python Environment</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#run-cpu-simulator">Run CPU Simulator</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#run-npu-tests">Run NPU Tests</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">PTO Virtual ISA Manual</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/">Preface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/01-overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/02-machine-model/">Execution Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/03-state-and-types/">State and Types</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/04-tiles-and-globaltensor/">Tiles and GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/05-synchronization/">Synchronization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/06-assembly/">PTO Assembly (PTO-AS)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/07-instructions/">Instruction Set (overview)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/08-programming/">Programming Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/09-virtual-isa-and-ir/">Virtual ISA and IR</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/10-bytecode-and-toolchain/">Bytecode and Toolchain</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/11-memory-ordering-and-consistency/">Memory Ordering and Consistency</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/12-backend-profiles-and-conformance/">Backend Profiles and Conformance</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/appendix-a-glossary/">Glossary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/appendix-b-instruction-contract-template/">Instruction Contract Template</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/appendix-c-diagnostics-taxonomy/">Diagnostics Taxonomy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../manual/appendix-d-instruction-family-matrix/">Instruction Family Matrix</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Programming Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../coding/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../coding/ProgrammingModel/">Programming Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../coding/Tile/">Tile</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../coding/GlobalTensor/">GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../coding/Scalar/">Scalar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../coding/Event/">Event</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../coding/tutorial/">Tutorial</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tutorials</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../coding/tutorials/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../coding/tutorials/vec-add/">Vec Add</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../coding/tutorials/row-softmax/">Row Softmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../coding/tutorials/gemm/">GEMM</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../coding/opt/">Optimization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../coding/debug/">Debugging</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Machine Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../machine/abstract-machine/">Abstract Machine</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../machine/">Machine Index</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">ISA Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../isa/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../isa/conventions/">ISA Conventions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO AS Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/PTO-AS/">PTO-AS Specification</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/conventions/">Conventions</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/nonisa-ops/">Non-ISA Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/elementwise-ops/">Elementwise Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/tile-scalar-ops/">Tile-Scalar Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/axis-ops/">Axis Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/memory-ops/">Memory Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/matrix-ops/">Matrix Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/data-movement-ops/">Data Movement Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/complex-ops/">Complex Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/manual-binding-ops/">Manual Binding Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/scalar-arith-ops/">Scalar Arithmetic Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../assembly/control-flow-ops/">Control Flow Operations</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../PTOISA/">PTO ISA Table</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Synchronization</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSYNC/">TSYNC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Manual / Resource Binding</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TASSIGN/">TASSIGN</a>
+                </li>
+                <li class="toctree-l2"><a class="" href="../isa/TSETHF32MODE.md">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="" href="../isa/TSETTF32MODE.md">TSETTF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSETFMATRIX/">TSETFMATRIX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSET_IMG2COL_PADDING/">TSET_IMG2COL_PADDING</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Elementwise (Tile-Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TADD/">TADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TABS/">TABS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TAND/">TAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TOR/">TOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSUB/">TSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMUL/">TMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMIN/">TMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMAX/">TMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCMP/">TCMP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TDIV/">TDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSHL/">TSHL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSHR/">TSHR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TXOR/">TXOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TLOG/">TLOG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TRECIP/">TRECIP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TADDC/">TADDC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSUBC/">TSUBC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCVT/">TCVT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSEL/">TSEL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TRSQRT/">TRSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSQRT/">TSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TEXP/">TEXP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TNOT/">TNOT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TRELU/">TRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TNEG/">TNEG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TREM/">TREM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TFMOD/">TFMOD</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tile-Scalar / Tile-Immediate</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TEXPANDS/">TEXPANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCMPS/">TCMPS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSELS/">TSELS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMINS/">TMINS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSUBS/">TSUBS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TDIVS/">TDIVS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMULS/">TMULS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TFMODS/">TFMODS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TREMS/">TREMS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMAXS/">TMAXS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TANDS/">TANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TORS/">TORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSHLS/">TSHLS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSHRS/">TSHRS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TXORS/">TXORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TLRELU/">TLRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TADDSC/">TADDSC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSUBSC/">TSUBSC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Axis Reduce / Expand</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWSUM/">TROWSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWPROD/">TROWPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLSUM/">TCOLSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLPROD/">TCOLPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLMAX/">TCOLMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWMAX/">TROWMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWMIN/">TROWMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLMIN/">TCOLMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWEXPAND/">TROWEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWEXPANDDIV/">TROWEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWEXPANDMUL/">TROWEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWEXPANDSUB/">TROWEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWEXPANDADD/">TROWEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWEXPANDMAX/">TROWEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWEXPANDMIN/">TROWEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TROWEXPANDEXPDIF/">TROWEXPANDEXPDIF</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLEXPAND/">TCOLEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLEXPANDDIV/">TCOLEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLEXPANDMUL/">TCOLEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLEXPANDADD/">TCOLEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLEXPANDMAX/">TCOLEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLEXPANDMIN/">TCOLEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLEXPANDSUB/">TCOLEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCOLEXPANDEXPDIF/">TCOLEXPANDEXPDIF</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Memory (GM <-> Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TLOAD/">TLOAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TPREFETCH/">TPREFETCH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSTORE/">TSTORE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSTORE_FP/">TSTORE_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/MGATHER/">MGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/MSCATTER/">MSCATTER</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Matrix Multiply</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMATMUL/">TMATMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMATMUL_ACC/">TMATMUL_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMATMUL_BIAS/">TMATMUL_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMATMUL_MX/">TMATMUL_MX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TGEMV/">TGEMV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TGEMV_ACC/">TGEMV_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TGEMV_BIAS/">TGEMV_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TGEMV_MX/">TGEMV_MX</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Data Movement / Layout</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMOV/">TMOV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMOV_FP/">TMOV_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TEXTRACT/">TEXTRACT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TEXTRACT_FP/">TEXTRACT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TINSERT/">TINSERT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TINSERT_FP/">TINSERT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TFILLPAD/">TFILLPAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TFILLPAD_INPLACE/">TFILLPAD_INPLACE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TFILLPAD_EXPAND/">TFILLPAD_EXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TRESHAPE/">TRESHAPE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TIMG2COL/">TIMG2COL</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TGATHER/">TGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TGATHERB/">TGATHERB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSCATTER/">TSCATTER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TCI/">TCI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TTRI/">TTRI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TPARTADD/">TPARTADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TPARTMUL/">TPARTMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TPARTMAX/">TPARTMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TPARTMIN/">TPARTMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSORT32/">TSORT32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TMRGSORT/">TMRGSORT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../reference/pto-intrinsics-header/">Intrinsics Header</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../manual/isa-reference/">All Instructions Index</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples & Kernels</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../kernels/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >High-Performance Kernels</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../kernels/manual/a2a3/gemm_performance/">GEMM Performance</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../kernels/manual/common/flash_atten/">Flash Attention</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Baseline Demos</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../demos/baseline/add/">Add Demo</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../demos/baseline/gemm_basic/">GEMM Demo</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tests</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tests/">Tests Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tests/script/">Test Scripts</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../">Docs Index</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../website/">Build Documentation</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../all-pages/">Full Index</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">PTO Virtual ISA Architectural Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Getting Started</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <!-- Generated from `docs/getting-started.md` -->
+
+<p align="center">
+  <img src="figures/pto_logo.svg" alt="PTO Tile Lib" width="220" />
+</p>
+
+<h1 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
+<p>This guide covers prerequisites and setup on <strong>macOS / Linux / Windows</strong>, and shows how to build and run the <strong>CPU simulator</strong> first (recommended). Running on Ascend (NPU / simulator) requires Ascend CANN and is typically <strong>Linux-only</strong>.</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<h3 id="required-cpu-simulator">Required (CPU simulator)<a class="headerlink" href="#required-cpu-simulator" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Git</li>
+<li>Python <code>&gt;= 3.8</code> (3.10+ recommended)</li>
+<li>CMake <code>&gt;= 3.16</code></li>
+<li>A C++ compiler with C++20 support:</li>
+<li>Linux: GCC 13+ or Clang 15+ (bfloat16 support will be enabled only for GCC&gt;=14)</li>
+<li>macOS: Xcode/AppleClang (or Homebrew LLVM)</li>
+<li>Windows: Visual Studio 2022 Build Tools (MSVC)</li>
+<li>Python packages: <code>numpy</code> (the CPU test data generators use it)</li>
+</ul>
+<p><code>run_cpu.py</code> can install <code>numpy</code> automatically (unless you pass <code>--no-install</code>).</p>
+<h3 id="optional-faster-builds">Optional (faster builds)<a class="headerlink" href="#optional-faster-builds" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Ninja (CMake generator)</li>
+<li>A working internet connection (CMake may fetch GoogleTest for CPU ST tests if not installed system-wide)</li>
+</ul>
+<h2 id="os-setup">OS Setup<a class="headerlink" href="#os-setup" title="Permanent link">&para;</a></h2>
+<h3 id="macos">macOS<a class="headerlink" href="#macos" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Install Xcode Command Line Tools:</li>
+</ul>
+<p><code>bash
+  xcode-select --install</code></p>
+<ul>
+<li>Install dependencies (recommended via Homebrew):</li>
+</ul>
+<p><code>bash
+  brew install cmake ninja python</code></p>
+<p>If you do not use Homebrew, make sure <code>python3</code>, <code>cmake</code>, and a modern <code>clang++</code> are on <code>PATH</code>.</p>
+<h3 id="linux-ubuntu-2004">Linux (Ubuntu 20.04)<a class="headerlink" href="#linux-ubuntu-2004" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash">sudo apt-get update
+sudo apt-get install -y build-essential cmake ninja-build python3 python3-pip python3-venv git
+</code></pre>
+<h3 id="windows">Windows<a class="headerlink" href="#windows" title="Permanent link">&para;</a></h3>
+<p>Install the following:</p>
+<ul>
+<li>Git for Windows</li>
+<li>Python 3 (and ensure it’s on <code>PATH</code>)</li>
+<li>CMake</li>
+<li>Visual Studio 2022 Build Tools (Desktop development with C++)</li>
+</ul>
+<p>Using <code>winget</code> (optional):</p>
+<pre><code class="language-powershell">winget install --id Git.Git -e
+winget install --id Python.Python.3.11 -e
+winget install --id Kitware.CMake -e
+winget install --id Microsoft.VisualStudio.2022.BuildTools -e
+</code></pre>
+<p>After installation, open a <strong>Developer Command Prompt for VS 2022</strong> (or ensure <code>cl.exe</code> is on <code>PATH</code>).</p>
+<p>Manually download the compiler (optional):</p>
+<p>Possible options:
+- <a href="https://winlibs.com">WinLibs</a>,
+- <a href="https://www.msys2.org">MSYS2</a></p>
+<p>After installation, add <code>path_to_compiler/bin</code> directory to <code>PATH</code> (ensure that <code>gcc -v</code> is executable in the powershell).</p>
+<h2 id="get-the-code">Get The Code<a class="headerlink" href="#get-the-code" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">git clone &lt;YOUR_REPO_URL&gt;
+cd pto-isa
+</code></pre>
+<h2 id="python-environment">Python Environment<a class="headerlink" href="#python-environment" title="Permanent link">&para;</a></h2>
+<p>Create and activate a virtual environment:</p>
+<ul>
+<li>macOS / Linux:</li>
+</ul>
+<p><code>bash
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python -m pip install -U pip
+  python -m pip install numpy</code></p>
+<ul>
+<li>Windows (PowerShell):</li>
+</ul>
+<p><code>powershell
+  py -3 -m venv .venv
+  .\.venv\Scripts\Activate.ps1
+  python -m pip install -U pip
+  python -m pip install numpy</code></p>
+<h2 id="run-cpu-simulator">Run CPU Simulator<a class="headerlink" href="#run-cpu-simulator" title="Permanent link">&para;</a></h2>
+<p>This builds and runs the CPU ST test binaries under <code>tests/cpu/st</code> and executes all testcases:</p>
+<pre><code class="language-bash">python3 tests/run_cpu.py --clean --verbose
+</code></pre>
+<p>Common options:</p>
+<ul>
+<li>Run a single testcase:</li>
+</ul>
+<p><code>bash
+  python3 tests/run_cpu.py --testcase tadd</code></p>
+<ul>
+<li>Run a single gtest case:</li>
+</ul>
+<p><code>bash
+  python3 tests/run_cpu.py --testcase tadd --gtest_filter 'TADDTest.*'</code></p>
+<ul>
+<li>Build &amp; run the GEMM demo:</li>
+</ul>
+<p><code>bash
+  python3 tests/run_cpu.py --demo gemm --verbose</code></p>
+<ul>
+<li>Build &amp; run the Flash Attention demo:</li>
+</ul>
+<p><code>bash
+  python3 tests/run_cpu.py --demo flash_attn --verbose</code></p>
+<ul>
+<li>Optional:</li>
+</ul>
+<p><code>bash
+  # specify the cxx path
+  python3 tests/run_cpu.py --cxx=/path/to/compiler</code></p>
+<p><code>bash
+  # print detail logs
+  python3 tests/run_cpu.py --verbose</code></p>
+<p><code>bash
+  # Delete build dir and rebuild
+  python3 tests/run_cpu.py --clean</code></p>
+<p><code>bash
+  # on Windows, maybe need specify generator and cmake_perfix_path
+  python3 tests/run_cpu.py --clean --generator "MinGW Makefiles" --cmake_prefix_path D:\gtest\</code></p>
+<ul>
+<li>set environment:
+  <code>bash
+  export LD_LIBRARY_PATH=/path_to_compiler/lib64:$LD_LIBRARY_PATH</code></li>
+</ul>
+<h2 id="run-npu-tests">Run NPU Tests<a class="headerlink" href="#run-npu-tests" title="Permanent link">&para;</a></h2>
+<p>Set environment variables according to <a href="./#environment-variables">Environment_Variables</a> first;</p>
+<ul>
+<li>Running a Single ST Test Case</li>
+</ul>
+<p>Running ST requires a working Ascend CANN environment and is typically Linux-only.</p>
+<p><code>bash
+  python3 tests/script/run_st.py -r [sim|npu] -v [a3|a5] -t [TEST_CASE] -g [GTEST_FILTER_CASE]</code></p>
+<p>Note: the <code>a3</code> backend covers the A2/A3 family (<code>include/pto/npu/a2a3</code>).</p>
+<p>Example:</p>
+<p><code>bash
+  python3 tests/script/run_st.py -r npu -v a3 -t tmatmul -g TMATMULTest.case1
+  python3 tests/script/run_st.py -r sim -v a5 -t tmatmul -g TMATMULTest.case1</code></p>
+<ul>
+<li>Running Recommended Test Suites</li>
+</ul>
+<p><code>bash
+  # Execute the following commands from the project root directory:
+  chmod +x ./tests/run_st.sh
+  ./tests/run_st.sh a5 npu simple
+  ulimit -n 65536;./tests/run_st.sh a3 sim all # use ulimit -n first if run on simulator</code></p>
+<ul>
+<li>Run Full ST Tests:</li>
+</ul>
+<p><code>bash
+  chmod +x build.sh
+  ./build.sh --run_all --a3 --sim</code>
+- Run Simplified ST Tests:</p>
+<p><code>bash
+  chmod +x build.sh
+  ./build.sh --run_simple --a5 --npu</code>
+- Packaging:</p>
+<p><code>bash
+  chmod +x build.sh
+  ./build.sh --pkg</code>
+- Set environment</p>
+<p>Note: if you have not installed toolkit,you should download toolkit package first.
+  <code>bash
+  chmod +x ./scripts/install_pto.sh
+  ./scripts/install_pto.sh &lt;toolkit_install_path&gt; [toolkit_package_path]</code></p>
+<h1 id="environment-setup-ascend-910b910c-linux">Environment Setup (Ascend 910B/910C, Linux)<a class="headerlink" href="#environment-setup-ascend-910b910c-linux" title="Permanent link">&para;</a></h1>
+<h2 id="prerequisites_1">Prerequisites<a class="headerlink" href="#prerequisites_1" title="Permanent link">&para;</a></h2>
+<p>Before using this project, make sure the following basic dependencies and the NPU driver/firmware are installed.</p>
+<ol>
+<li><strong>Install build dependencies</strong></li>
+</ol>
+<p>The project requires the following dependencies for building from source (please pay attention to the version requirements):</p>
+<ul>
+<li>Python &gt;= 3.8.0</li>
+<li>GCC &gt;= 7.3.0</li>
+<li>CMake &gt;= 3.16.0</li>
+<li>
+<p>GoogleTest (only required when running unit tests; recommended version:
+     <a href="https://github.com/google/googletest/releases/tag/v1.14.0">release-1.14.0</a>)</p>
+<pre><code>After downloading the
+[GoogleTest source](https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz),
+install it with:
+
+```bash
+tar -xf googletest-1.14.0.tar.gz
+cd googletest-1.14.0
+mkdir temp &amp;&amp; cd temp                # create a temp build dir under the googletest source tree
+cmake .. -DCMAKE_CXX_FLAGS="-fPIC"
+make
+make install                         # install as root
+# sudo make install                  # install as a non-root user
+```
+</code></pre>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>Python needs to download packages such as os, numpy, ctypes, struct, copy, math, enum, ml_dtypes, en_dtypes, etc.</p>
+<p>If you have already installed googletest by other means, you need to make the corresponding changes to the CMakeLists.txt. For examle, you used <code>cmake .. -DCMAKE_CXX_FLAGS="-fPIC -D_GLIBCXX_USE_CXX11_ABI=0"</code> when installing googletest, you need to add <code>add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)</code> in tests/npu/[a2a3 | a5]/src/st/CMakeLists.txt
+2. <strong>Quick installation</strong></p>
+</blockquote>
+<p>For installation guidance, see:
+https://www.hiascend.com/cann/download</p>
+<p>In this way,you can skip the steps of Install driver and firmware (runtime dependency) and Install Software Packages.</p>
+</li>
+<li>
+<p><strong>Install driver and firmware (runtime dependency)</strong></p>
+</li>
+</ul>
+<p>The driver and firmware are required to run operators. If you only need to build, you can skip this step.
+   For installation guidance, see:
+   <a href="https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/softwareinst/instg/instg_0001.html?Mode=VmIns&amp;OS=Ubuntu&amp;Software=cannToolKit">NPU Driver and Firmware Installation Guide</a>.</p>
+<h2 id="install-software-packages">Install Software Packages<a class="headerlink" href="#install-software-packages" title="Permanent link">&para;</a></h2>
+<p>This project supports building from source. Before building, prepare the environment as follows.</p>
+<ol>
+<li>
+<p><strong>Install the community edition CANN toolkit</strong></p>
+<p>Download the appropriate <code>Ascend-cann-toolkit_${cann_version}_linux-${arch}.run</code> installer for your environment.<a href="https://www.hiascend.com/developer/download/community/result?module=cann">download</a>.</p>
+<p>The version of CANN we required is 8.5.0 or later.</p>
+<p>```bash</p>
+<h1 id="ensure-the-installer-is-executable">Ensure the installer is executable<a class="headerlink" href="#ensure-the-installer-is-executable" title="Permanent link">&para;</a></h1>
+<p>chmod +x Ascend-cann-toolkit_<span class="arithmatex">\({cann_version}_linux-\)</span>{arch}.run</p>
+<h1 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h1>
+<p>./Ascend-cann-toolkit_<span class="arithmatex">\({cann_version}_linux-\)</span>{arch}.run --install --force --install-path=${install_path}
+<code>``
+-</code>${cann_version}<code>: the CANN toolkit version.
+-</code>${arch}<code>: the CPU architecture, such as</code>aarch64<code>or</code>x86_64<code>.
+-</code>${install_path}<code>: the installation path.
+- If</code>--install-path<code>is omitted, the default path is used. If installed as root, the software is placed under</code>/usr/local/Ascend/cann<code>. If installed as a non-root user, it is placed under</code>$HOME/Ascend/cann`.</p>
+</li>
+</ol>
+<h2 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p>Default path (installed as root)</p>
+<p><code>bash
+source /usr/local/Ascend/cann/bin/setenv.bash</code></p>
+</li>
+<li>
+<p>Default path (installed as a non-root user)
+    <code>bash
+    source $HOME/Ascend/cann/bin/setenv.bash</code></p>
+</li>
+<li>
+<p>Custom installation path
+    <code>bash
+    source ${install_path}/cann/bin/setenv.bash</code></p>
+</li>
+</ul>
+<h2 id="source-code-download">Source Code Download<a class="headerlink" href="#source-code-download" title="Permanent link">&para;</a></h2>
+<p>Download the source with:</p>
+<pre><code class="language-bash"># Clone the repository (master branch as an example)
+git clone https://gitcode.com/cann/pto-isa.git
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../.." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../manual/" class="btn btn-neutral float-right" title="Preface">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/PTO-ISA/pto-isa" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../.." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../manual/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../assets/javascripts/mathjax.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../assets/javascripts/nav-collapse.js"></script>
+      <script src="../../assets/javascripts/nav-translator.js"></script>
+      <script src="../../assets/javascripts/language-switcher.js"></script>
+      <script src="../../assets/javascripts/chinese-navigation.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

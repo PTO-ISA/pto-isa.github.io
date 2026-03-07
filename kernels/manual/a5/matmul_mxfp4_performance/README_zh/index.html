@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/kernels/manual/a5/matmul_mxfp4_performance/README_zh/" />
+      <link rel="shortcut icon" href="../../../../../img/favicon.ico" />
+    <title>README zh - PTO Virtual ISA Architectural Manual</title>
+    <link rel="stylesheet" href="../../../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../../../assets/stylesheets/custom.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "README zh";
+        var mkdocs_page_input_path = "kernels/manual/a5/matmul_mxfp4_performance/README_zh.md";
+        var mkdocs_page_url = "/kernels/manual/a5/matmul_mxfp4_performance/README_zh/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../../.." class="icon icon-home"> PTO Virtual ISA Architectural Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/getting-started/">Getting Started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">PTO Virtual ISA Manual</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/">Preface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/01-overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/02-machine-model/">Execution Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/03-state-and-types/">State and Types</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/04-tiles-and-globaltensor/">Tiles and GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/05-synchronization/">Synchronization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/06-assembly/">PTO Assembly (PTO-AS)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/07-instructions/">Instruction Set (overview)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/08-programming/">Programming Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/09-virtual-isa-and-ir/">Virtual ISA and IR</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/10-bytecode-and-toolchain/">Bytecode and Toolchain</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/11-memory-ordering-and-consistency/">Memory Ordering and Consistency</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/12-backend-profiles-and-conformance/">Backend Profiles and Conformance</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/appendix-a-glossary/">Glossary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/appendix-b-instruction-contract-template/">Instruction Contract Template</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/appendix-c-diagnostics-taxonomy/">Diagnostics Taxonomy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../manual/appendix-d-instruction-family-matrix/">Instruction Family Matrix</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Programming Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/coding/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/coding/ProgrammingModel/">Programming Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/coding/Tile/">Tile</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/coding/GlobalTensor/">GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/coding/Scalar/">Scalar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/coding/Event/">Event</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/coding/tutorial/">Tutorial</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tutorials</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/coding/tutorials/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/coding/tutorials/vec-add/">Vec Add</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/coding/tutorials/row-softmax/">Row Softmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/coding/tutorials/gemm/">GEMM</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/coding/opt/">Optimization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/coding/debug/">Debugging</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Machine Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/machine/abstract-machine/">Abstract Machine</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/machine/">Machine Index</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">ISA Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/isa/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/isa/conventions/">ISA Conventions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO AS Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/PTO-AS/">PTO-AS Specification</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/conventions/">Conventions</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/nonisa-ops/">Non-ISA Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/elementwise-ops/">Elementwise Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/tile-scalar-ops/">Tile-Scalar Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/axis-ops/">Axis Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/memory-ops/">Memory Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/matrix-ops/">Matrix Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/data-movement-ops/">Data Movement Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/complex-ops/">Complex Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/manual-binding-ops/">Manual Binding Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/scalar-arith-ops/">Scalar Arithmetic Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/assembly/control-flow-ops/">Control Flow Operations</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/PTOISA/">PTO ISA Table</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Synchronization</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSYNC/">TSYNC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Manual / Resource Binding</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TASSIGN/">TASSIGN</a>
+                </li>
+                <li class="toctree-l2"><a class="" href="../../../../../docs/isa/TSETHF32MODE.md">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="" href="../../../../../docs/isa/TSETTF32MODE.md">TSETTF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSETFMATRIX/">TSETFMATRIX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSET_IMG2COL_PADDING/">TSET_IMG2COL_PADDING</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Elementwise (Tile-Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TADD/">TADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TABS/">TABS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TAND/">TAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TOR/">TOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSUB/">TSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMUL/">TMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMIN/">TMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMAX/">TMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCMP/">TCMP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TDIV/">TDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSHL/">TSHL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSHR/">TSHR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TXOR/">TXOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TLOG/">TLOG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TRECIP/">TRECIP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TADDC/">TADDC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSUBC/">TSUBC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCVT/">TCVT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSEL/">TSEL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TRSQRT/">TRSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSQRT/">TSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TEXP/">TEXP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TNOT/">TNOT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TRELU/">TRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TNEG/">TNEG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TREM/">TREM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TFMOD/">TFMOD</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tile-Scalar / Tile-Immediate</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TEXPANDS/">TEXPANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCMPS/">TCMPS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSELS/">TSELS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMINS/">TMINS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSUBS/">TSUBS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TDIVS/">TDIVS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMULS/">TMULS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TFMODS/">TFMODS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TREMS/">TREMS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMAXS/">TMAXS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TANDS/">TANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TORS/">TORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSHLS/">TSHLS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSHRS/">TSHRS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TXORS/">TXORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TLRELU/">TLRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TADDSC/">TADDSC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSUBSC/">TSUBSC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Axis Reduce / Expand</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWSUM/">TROWSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWPROD/">TROWPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLSUM/">TCOLSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLPROD/">TCOLPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLMAX/">TCOLMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWMAX/">TROWMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWMIN/">TROWMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLMIN/">TCOLMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWEXPAND/">TROWEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWEXPANDDIV/">TROWEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWEXPANDMUL/">TROWEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWEXPANDSUB/">TROWEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWEXPANDADD/">TROWEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWEXPANDMAX/">TROWEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWEXPANDMIN/">TROWEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TROWEXPANDEXPDIF/">TROWEXPANDEXPDIF</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLEXPAND/">TCOLEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLEXPANDDIV/">TCOLEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLEXPANDMUL/">TCOLEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLEXPANDADD/">TCOLEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLEXPANDMAX/">TCOLEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLEXPANDMIN/">TCOLEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLEXPANDSUB/">TCOLEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCOLEXPANDEXPDIF/">TCOLEXPANDEXPDIF</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Memory (GM <-> Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TLOAD/">TLOAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TPREFETCH/">TPREFETCH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSTORE/">TSTORE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSTORE_FP/">TSTORE_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/MGATHER/">MGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/MSCATTER/">MSCATTER</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Matrix Multiply</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMATMUL/">TMATMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMATMUL_ACC/">TMATMUL_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMATMUL_BIAS/">TMATMUL_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMATMUL_MX/">TMATMUL_MX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TGEMV/">TGEMV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TGEMV_ACC/">TGEMV_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TGEMV_BIAS/">TGEMV_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TGEMV_MX/">TGEMV_MX</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Data Movement / Layout</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMOV/">TMOV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMOV_FP/">TMOV_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TEXTRACT/">TEXTRACT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TEXTRACT_FP/">TEXTRACT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TINSERT/">TINSERT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TINSERT_FP/">TINSERT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TFILLPAD/">TFILLPAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TFILLPAD_INPLACE/">TFILLPAD_INPLACE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TFILLPAD_EXPAND/">TFILLPAD_EXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TRESHAPE/">TRESHAPE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TIMG2COL/">TIMG2COL</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TGATHER/">TGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TGATHERB/">TGATHERB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSCATTER/">TSCATTER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TCI/">TCI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TTRI/">TTRI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TPARTADD/">TPARTADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TPARTMUL/">TPARTMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TPARTMAX/">TPARTMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TPARTMIN/">TPARTMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TSORT32/">TSORT32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TMRGSORT/">TMRGSORT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/isa/TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../docs/reference/pto-intrinsics-header/">Intrinsics Header</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../manual/isa-reference/">All Instructions Index</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples & Kernels</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >High-Performance Kernels</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../a2a3/gemm_performance/">GEMM Performance</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../common/flash_atten/">Flash Attention</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Baseline Demos</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../demos/baseline/add/">Add Demo</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../demos/baseline/gemm_basic/">GEMM Demo</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tests</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../tests/">Tests Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../tests/script/">Test Scripts</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/">Docs Index</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../docs/website/">Build Documentation</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../../../all-pages/">Full Index</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../..">PTO Virtual ISA Architectural Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">README zh</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <!-- Generated from `kernels/manual/a5/matmul_mxfp4_performance/README_zh.md` -->
+
+<h1 id="mxfp4">非对齐场景下的高性能 MXFP4 算子示例<a class="headerlink" href="#mxfp4" title="Permanent link">&para;</a></h1>
+<h2 id="_1">概览<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>本样例基于 PTO框架实现高性能MXFP4矩阵乘法，系统性整合多核并行切分、基准计算块（base-block）选型、L1 缓存优化及双缓冲等核心优化手段，在保证计算精度的前提下，最大化硬件算力与存储带宽利用率，适配高性能计算场景下的非对齐矩阵乘法需求。</p>
+<h2 id="ai">支持的 AI 处理器<a class="headerlink" href="#ai" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5</li>
+</ul>
+<h2 id="_2">目录结构<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<pre><code>kernels/manual/a5/matmul_mxfp4_performance/
+├── scripts/
+│   └── gen_data.py                      # 生成输入与 golden 输出
+├── CMakeLists.txt                       # 构建配置
+├── mxmatmul_performance_kernel.cpp      # Kernel 实现
+├── main.cpp                             # Host 侧入口
+└── run.sh                               # 便捷脚本
+</code></pre>
+<h2 id="_3">算子说明<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="_4">计算功能<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>本示例实现的 MxMatmul 核心逻辑为：先将左 / 右量化系数矩阵与对应输入矩阵完成广播乘法，再对两组乘积结果执行矩阵乘法运算，最终输出计算结果。其数学表达式如下</p>
+<div class="arithmatex">\[
+C = (scaleA ⊗ A) * (scaleB ⊗ B)
+\]</div>
+<p>其中<code>⊗</code> 表示广播乘法，<code>*</code> 表示矩阵乘法。输入矩阵格式如下</p>
+<ul>
+<li><code>A</code> 为 <code>m×k</code></li>
+<li><code>scaleA</code> 为 <code>m×scaleK</code></li>
+<li><code>B</code> 为 <code>k×n</code></li>
+<li><code>scaleB</code> 为 <code>scaleK×n</code></li>
+<li><code>C</code> 为 <code>m×n</code></li>
+</ul>
+<p><code>main.cpp</code> 中默认的参考配置为 <code>m=2040, k=8192, n=8100</code>， <code>scaleK=k/32=256</code>（量化系数矩阵的 k 维度为data矩阵 k 维度的 1/32）。</p>
+<h3 id="_5">规格<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpType</td>
+<td><code>MxMatmul</code></td>
+</tr>
+<tr>
+<td>data输入</td>
+<td><code>a</code>: <code>m×k</code>, <code>float4_e2m1_t</code>, <code>ND</code>; <code>b</code>: <code>n×k</code>, <code>float4_e2m1_t</code>, <code>DN</code></td>
+</tr>
+<tr>
+<td>scale输入</td>
+<td><code>scaleA</code>: <code>m×scaleK</code>, <code>float8_e8m0_t</code>, <code>ND</code>; <code>scaleB</code>: <code>n×scaleK</code>, <code>float8_e8m0_t</code>, <code>DN</code></td>
+</tr>
+<tr>
+<td>输出</td>
+<td><code>c</code>: <code>m×n</code>, <code>bfloat16</code>, <code>ND</code></td>
+</tr>
+<tr>
+<td>Kernel 名称</td>
+<td><code>MxMatmulPerformance</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">优化说明<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>本示例以 A5 平台为性能验证基准，针对矩阵乘法的算力与访存瓶颈，实施以下分层优化策略：</p>
+<ul>
+<li><strong>多核切分（core partitioning）</strong>：</li>
+</ul>
+<p>核心目标是充分利用多核并行算力，将整体计算任务均衡拆分至不同Cube核上。
+  - 本示例中 <code>m=2040, k=8192, n=8100</code>，通常不建议在单核内再切 <code>k</code>，而是切分 <code>m</code> 和 <code>n</code> 。
+  - 将全局任务按 4 × 8 分核，单核负责的子矩阵维度为 <code>singleCoreM=512</code>、<code>singleCoreK=8192</code>、<code>singleCoreN=1024</code>，确保各核负载均衡，最大化并行度。
+- <strong>Base block 选择（base block selection）</strong>：
+  - 选一个算力/访存比更高、且更贴合片上容量与对齐约束的 base block。对 FP4，常见选择 <code>[baseM, baseN, baseK] = [256, 256, 256]</code>，该基本块计算访存比最高，同时更容易保持 GM 写回的 512 字节对齐。
+- <strong>L1 缓存（L1 caching）</strong>：
+  - 批量缓存策略：一次从 GM 搬入多个 base block 到 L1，减少频繁的 GM-L1 数据搬运，提高带宽利用率。本示例 <code>stepKa=stepKb=2</code>，每次缓存 2 个 <code>k</code> block。
+  - 独立缓存机制：L1 上scale和data独立缓存，引入mxScalePara参数表示两者缓存的比例关系。在复用已有tiling参数的基础上，保证scale读地址满足128B对齐，提高带宽利用率。
+- <strong>双缓冲（double buffering）</strong>：
+  - 在 L1/L0A/L0B/scaleA/scaleB 开启双缓冲，使 DMA 数据搬运与计算单元的运算过程最大化重叠，消除数据等待耗时，提升整体流水线执行效率。</p>
+<h2 id="tiling">Tiling 参数<a class="headerlink" href="#tiling" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>m</code></td>
+<td>2040</td>
+</tr>
+<tr>
+<td><code>k</code></td>
+<td>8192</td>
+</tr>
+<tr>
+<td><code>n</code></td>
+<td>8100</td>
+</tr>
+<tr>
+<td><code>singleCoreM</code></td>
+<td>512</td>
+</tr>
+<tr>
+<td><code>singleCoreK</code></td>
+<td>8192</td>
+</tr>
+<tr>
+<td><code>singleCoreN</code></td>
+<td>1024</td>
+</tr>
+<tr>
+<td><code>baseM</code></td>
+<td>256</td>
+</tr>
+<tr>
+<td><code>baseK</code></td>
+<td>256</td>
+</tr>
+<tr>
+<td><code>baseN</code></td>
+<td>256</td>
+</tr>
+<tr>
+<td><code>stepM</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>stepKa</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>stepKb</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>stepN</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>mxScalePara</code></td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_7">实测性能（参考）<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p>以下数据在 Ascend A5 上测得，覆盖多个不同的矩阵尺寸（fp4 输入 → bfloat16 输出）。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>TMATMUL（Cube）占比</th>
+<th>TLOAD 占比</th>
+<th>TEXTRACT 占比</th>
+<th>TSTORE 占比</th>
+<th>执行时间（ms）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>m=2048</code> <code>k=2048</code> <code>n=2048</code></td>
+<td>44.7%</td>
+<td>46.6%</td>
+<td>22.1%</td>
+<td>25.6%</td>
+<td>0.0425</td>
+</tr>
+<tr>
+<td><code>m=2048</code> <code>k=4096</code> <code>n=4096</code></td>
+<td>77.4%</td>
+<td>76.7%</td>
+<td>38.5%</td>
+<td>7.7%</td>
+<td>0.1003</td>
+</tr>
+<tr>
+<td><code>m=4096</code> <code>k=1024</code> <code>n=8192</code></td>
+<td>64.9%</td>
+<td>58.4%</td>
+<td>29.3%</td>
+<td>25.7%</td>
+<td>0.1226</td>
+</tr>
+<tr>
+<td><code>m=1024</code> <code>k=12288</code> <code>n=4096</code></td>
+<td>84.9%</td>
+<td>87.4%</td>
+<td>43.4%</td>
+<td>2.8%</td>
+<td>0.1377</td>
+</tr>
+<tr>
+<td><code>m=2048</code> <code>k=8192</code> <code>n=8192</code></td>
+<td>90.7%</td>
+<td>88.1%</td>
+<td>45.8%</td>
+<td>4.6%</td>
+<td>0.3489</td>
+</tr>
+<tr>
+<td><code>m=2040</code> <code>k=8192</code> <code>n=8100</code></td>
+<td>83.0%</td>
+<td>83.0%</td>
+<td>42.1%</td>
+<td>12.3%</td>
+<td>0.3773</td>
+</tr>
+</tbody>
+</table>
+<p>表中参数含义和性能优化方案请参考<a href="../../../a2a3/gemm_performance/README_zh/#实测性能参考">gemm_performance实测性能</a>。</p>
+<h2 id="_8">构建与运行<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ol>
+<li>配置 Ascend CANN 环境：</li>
+</ol>
+<pre><code class="language-bash">source ${ASCEND_INSTALL_PATH}/bin/setenv.bash
+</code></pre>
+<ol>
+<li>生成输入 + golden 输出：</li>
+</ol>
+<pre><code class="language-bash">cd ${git_clone_path}/kernels/manual/a5/matmul_mxfp4_performance
+python3 scripts/gen_data.py
+</code></pre>
+<ol>
+<li>运行示例：</li>
+</ol>
+<pre><code class="language-bash">bash run.sh -r npu -v Ascend910_9599
+</code></pre>
+<p>成功时输出：</p>
+<pre><code class="language-text">test success
+</code></pre>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/PTO-ISA/pto-isa" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../../../..";</script>
+    <script src="../../../../../js/theme_extra.js"></script>
+    <script src="../../../../../js/theme.js"></script>
+      <script src="../../../../../assets/javascripts/mathjax.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../../../../assets/javascripts/nav-collapse.js"></script>
+      <script src="../../../../../assets/javascripts/nav-translator.js"></script>
+      <script src="../../../../../assets/javascripts/language-switcher.js"></script>
+      <script src="../../../../../assets/javascripts/chinese-navigation.js"></script>
+      <script src="../../../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

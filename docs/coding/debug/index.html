@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/coding/debug/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Debugging - PTO Virtual ISA Architectural Manual</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/stylesheets/custom.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Debugging";
+        var mkdocs_page_input_path = "docs/coding/debug.md";
+        var mkdocs_page_url = "/docs/coding/debug/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PTO Virtual ISA Architectural Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">PTO Virtual ISA Manual</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/">Preface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/01-overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/02-machine-model/">Execution Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/03-state-and-types/">State and Types</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/04-tiles-and-globaltensor/">Tiles and GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/05-synchronization/">Synchronization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/06-assembly/">PTO Assembly (PTO-AS)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/07-instructions/">Instruction Set (overview)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/08-programming/">Programming Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/09-virtual-isa-and-ir/">Virtual ISA and IR</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/10-bytecode-and-toolchain/">Bytecode and Toolchain</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/11-memory-ordering-and-consistency/">Memory Ordering and Consistency</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/12-backend-profiles-and-conformance/">Backend Profiles and Conformance</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-a-glossary/">Glossary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-b-instruction-contract-template/">Instruction Contract Template</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-c-diagnostics-taxonomy/">Diagnostics Taxonomy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-d-instruction-family-matrix/">Instruction Family Matrix</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Programming Model</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ProgrammingModel/">Programming Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../Tile/">Tile</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../GlobalTensor/">GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../Scalar/">Scalar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../Event/">Event</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorial/">Tutorial</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tutorials</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../tutorials/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../tutorials/vec-add/">Vec Add</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../tutorials/row-softmax/">Row Softmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../tutorials/gemm/">GEMM</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../opt/">Optimization</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Debugging</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#how-to-use-this-document">How to use this document</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#fix-recipes-common-solutions">Fix recipes (common solutions)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#notes">Notes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#assertion-index">Assertion Index</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#compile-time-checks-static_assert">Compile-time checks (static_assert)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#runtime-checks-pto_assert">Runtime checks (PTO_ASSERT)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cpu-simulator-checks-assert">CPU simulator checks (assert)</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Machine Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../machine/abstract-machine/">Abstract Machine</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../machine/">Machine Index</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">ISA Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../isa/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../isa/conventions/">ISA Conventions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO AS Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/PTO-AS/">PTO-AS Specification</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/conventions/">Conventions</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/nonisa-ops/">Non-ISA Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/elementwise-ops/">Elementwise Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/tile-scalar-ops/">Tile-Scalar Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/axis-ops/">Axis Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/memory-ops/">Memory Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/matrix-ops/">Matrix Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/data-movement-ops/">Data Movement Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/complex-ops/">Complex Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/manual-binding-ops/">Manual Binding Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/scalar-arith-ops/">Scalar Arithmetic Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/control-flow-ops/">Control Flow Operations</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../PTOISA/">PTO ISA Table</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Synchronization</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSYNC/">TSYNC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Manual / Resource Binding</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TASSIGN/">TASSIGN</a>
+                </li>
+                <li class="toctree-l2"><a class="" href="../../isa/TSETHF32MODE.md">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="" href="../../isa/TSETTF32MODE.md">TSETTF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSETFMATRIX/">TSETFMATRIX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSET_IMG2COL_PADDING/">TSET_IMG2COL_PADDING</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Elementwise (Tile-Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADD/">TADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TABS/">TABS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TAND/">TAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TOR/">TOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUB/">TSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMUL/">TMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMIN/">TMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMAX/">TMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCMP/">TCMP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TDIV/">TDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHL/">TSHL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHR/">TSHR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TXOR/">TXOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLOG/">TLOG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRECIP/">TRECIP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDC/">TADDC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBC/">TSUBC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCVT/">TCVT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSEL/">TSEL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRSQRT/">TRSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSQRT/">TSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXP/">TEXP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TNOT/">TNOT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRELU/">TRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TNEG/">TNEG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TREM/">TREM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFMOD/">TFMOD</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tile-Scalar / Tile-Immediate</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXPANDS/">TEXPANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCMPS/">TCMPS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSELS/">TSELS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMINS/">TMINS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBS/">TSUBS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TDIVS/">TDIVS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMULS/">TMULS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFMODS/">TFMODS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TREMS/">TREMS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMAXS/">TMAXS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TANDS/">TANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TORS/">TORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHLS/">TSHLS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHRS/">TSHRS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TXORS/">TXORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLRELU/">TLRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDSC/">TADDSC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBSC/">TSUBSC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Axis Reduce / Expand</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWSUM/">TROWSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWPROD/">TROWPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLSUM/">TCOLSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLPROD/">TCOLPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLMAX/">TCOLMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWMAX/">TROWMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWMIN/">TROWMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLMIN/">TCOLMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPAND/">TROWEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDDIV/">TROWEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMUL/">TROWEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDSUB/">TROWEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDADD/">TROWEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMAX/">TROWEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMIN/">TROWEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDEXPDIF/">TROWEXPANDEXPDIF</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPAND/">TCOLEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDDIV/">TCOLEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMUL/">TCOLEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDADD/">TCOLEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMAX/">TCOLEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMIN/">TCOLEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDSUB/">TCOLEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDEXPDIF/">TCOLEXPANDEXPDIF</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Memory (GM <-> Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLOAD/">TLOAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPREFETCH/">TPREFETCH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSTORE/">TSTORE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSTORE_FP/">TSTORE_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/MGATHER/">MGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/MSCATTER/">MSCATTER</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Matrix Multiply</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL/">TMATMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_ACC/">TMATMUL_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_BIAS/">TMATMUL_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_MX/">TMATMUL_MX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV/">TGEMV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_ACC/">TGEMV_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_BIAS/">TGEMV_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_MX/">TGEMV_MX</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Data Movement / Layout</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMOV/">TMOV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMOV_FP/">TMOV_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXTRACT/">TEXTRACT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXTRACT_FP/">TEXTRACT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TINSERT/">TINSERT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TINSERT_FP/">TINSERT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD/">TFILLPAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD_INPLACE/">TFILLPAD_INPLACE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD_EXPAND/">TFILLPAD_EXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRESHAPE/">TRESHAPE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TIMG2COL/">TIMG2COL</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGATHER/">TGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGATHERB/">TGATHERB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSCATTER/">TSCATTER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCI/">TCI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TTRI/">TTRI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTADD/">TPARTADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMUL/">TPARTMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMAX/">TPARTMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMIN/">TPARTMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSORT32/">TSORT32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMRGSORT/">TMRGSORT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../manual/isa-reference/">All Instructions Index</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples & Kernels</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../kernels/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >High-Performance Kernels</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../kernels/manual/a2a3/gemm_performance/">GEMM Performance</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../kernels/manual/common/flash_atten/">Flash Attention</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Baseline Demos</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../demos/baseline/add/">Add Demo</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../demos/baseline/gemm_basic/">GEMM Demo</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tests</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../tests/">Tests Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../tests/script/">Test Scripts</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../">Docs Index</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../website/">Build Documentation</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../all-pages/">Full Index</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PTO Virtual ISA Architectural Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Programming Model</li>
+      <li class="breadcrumb-item active">Debugging</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <!-- Generated from `docs/coding/debug.md` -->
+
+<h1 id="debugging-pto-tile-lib-assertions-guide">Debugging PTO Tile Lib (Assertions Guide)<a class="headerlink" href="#debugging-pto-tile-lib-assertions-guide" title="Permanent link">&para;</a></h1>
+<p>This document helps you diagnose compilation/runtime failures caused by assertions in <code>include/pto/</code>.</p>
+<p>PTO uses three common assertion mechanisms:</p>
+<ul>
+<li><strong>Compile-time checks</strong>: <code>static_assert(...)</code> in templates (fails compilation).</li>
+<li><strong>Device runtime checks</strong>: <code>PTO_ASSERT(cond, msg)</code> (prints a message and traps on device when <code>_DEBUG</code> is enabled; see <code>include/pto/common/debug.h</code>).</li>
+<li><strong>CPU simulator checks</strong>: <code>assert(cond)</code> in the CPU backend (aborts the process).</li>
+</ul>
+<h2 id="how-to-use-this-document">How to use this document<a class="headerlink" href="#how-to-use-this-document" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Copy the assertion message (or find the failing file/line in the compiler output).</li>
+<li>Search this document for the assertion ID (e.g., <code>SA-0123</code>) or a distinctive substring.</li>
+<li>Apply the suggested fix recipe(s) referenced by the index entry.</li>
+<li>If the assertion is instruction-specific, cross-check the instruction constraints in <code>docs/isa/</code>.</li>
+</ol>
+<h2 id="fix-recipes-common-solutions">Fix recipes (common solutions)<a class="headerlink" href="#fix-recipes-common-solutions" title="Permanent link">&para;</a></h2>
+<p>Use these codes referenced in the assertion index:</p>
+<ul>
+<li><code>FIX-A01</code> Dynamic shape/stride construction: make the number of runtime constructor arguments match the number of <code>pto::DYNAMIC</code> dimensions in <code>pto::Shape</code>/<code>pto::Stride</code>.</li>
+<li><code>FIX-A02</code> <code>GlobalTensor::GetShape/GetStride&lt;dim&gt;()</code> on dynamic dims: use the runtime <code>GetShape(dim)</code> / <code>GetStride(dim)</code> API, or make that dimension static (not <code>pto::DYNAMIC</code>).</li>
+<li><code>FIX-A03</code> <code>Layout::NZ</code> divisibility: choose <code>rows</code> divisible by 16 and <code>cols</code> divisible by <code>C0Size = (C0_SIZE_BYTE / sizeof(T))</code>, or use a different layout.</li>
+<li><code>FIX-A04</code> 32-byte alignment for unboxed tiles: for row-major unboxed tiles require <code>Cols * sizeof(T)</code> divisible by 32; for col-major unboxed tiles require <code>Rows * sizeof(T)</code> divisible by 32; otherwise use boxed layout (<code>SLayout != NoneBox</code>) or adjust the shape.</li>
+<li><code>FIX-A05</code> Valid-region compatibility: ensure <code>GetValidRow()</code>/<code>GetValidCol()</code> values match what the instruction expects (often src/dst valid sizes must match; reductions/expands have special rules).</li>
+<li><code>FIX-A06</code> Unsupported dtype/layout for an instruction: change the tile element type/layout to a supported one (often <code>float</code>/<code>half</code> and row-major), or add conversion (<code>TCVT</code>) / movement (<code>TMOV</code>, <code>TTRANS</code>) as required by the backend.</li>
+<li><code>FIX-A07</code> Event/<code>TSYNC</code> usage: single-op <code>TSYNC&lt;OpCode&gt;()</code> is restricted (vector-only on device); <code>Event&lt;SrcOp, DstOp&gt;</code> requires different ops and different pipeline classes—use the correct producer/consumer pair.</li>
+<li><code>FIX-A08</code> TileType mismatch: use the correct tile location (<code>Vec/Mat/Left/Right/Acc/...</code>) for the instruction, and insert <code>TMOV</code> between locations when required.</li>
+<li><code>FIX-A09</code> GlobalTensor shape/stride mismatch or out-of-range: ensure the 5-D shape/stride matches the intended view and obeys backend constraints (ND/DN/NZ rules, range limits for dims, and alignment restrictions).</li>
+<li><code>FIX-A10</code> Gather/scatter contiguity/alignment: some gather/scatter paths require continuous rows/cols or 32B alignment—adjust valid sizes, layout, or use a different path.</li>
+<li><code>FIX-A11</code> Invalid numeric domain (e.g., divide-by-zero): avoid feeding illegal inputs (add epsilon/clamp) before <code>RECIP/RSQRT/DIV</code>-like ops.</li>
+<li><code>FIX-A12</code> <code>TASSIGN&lt;Addr&gt;(tile)</code> address/capacity error: ensure the target memory space exists on the current architecture (e.g. <code>ScaleLeft</code>/<code>ScaleRight</code> are A5-only); reduce tile dimensions (<code>Rows</code>/<code>Cols</code>) or element size so that <code>Rows * Cols * sizeof(DType) &lt;= capacity</code>; choose <code>Addr</code> so that <code>Addr + tile_size &lt;= capacity</code> and <code>Addr</code> is a multiple of the alignment (typically 32 bytes). Capacities can be overridden via <code>-DPTO_xxx_SIZE_BYTES=&lt;value&gt;</code> (see <code>include/pto/common/buffer_limits.hpp</code>).</li>
+</ul>
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Many assertions are backend- and SoC-specific (e.g., <code>include/pto/npu/a2a3/*</code> vs <code>include/pto/npu/a5/*</code>).</li>
+<li>For instruction legality (tile types/layouts/supported dtypes), the authoritative reference is the instruction page under <code>docs/isa/</code>.</li>
+</ul>
+<!-- The assertion index below is generated from `include/pto/`. Keep it sorted and indexed for quick lookup. -->
+
+<h2 id="assertion-index">Assertion Index<a class="headerlink" href="#assertion-index" title="Permanent link">&para;</a></h2>
+<h3 id="compile-time-checks-static_assert">Compile-time checks (<code>static_assert</code>)<a class="headerlink" href="#compile-time-checks-static_assert" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>SA-0001</strong> 1-parameter constructors is only applicable to Stride with 1 dynamic dimension. (At: <code>include/pto/common/pto_tile.hpp:137 (+1)</code>; Fix: <code>FIX-A01,FIX-A09</code>)</li>
+<li><strong>SA-0002</strong> 2-parameter constructors is only applicable to Stride with 2 dynamic dimension. (At: <code>include/pto/common/pto_tile.hpp:149 (+1)</code>; Fix: <code>FIX-A01,FIX-A09</code>)</li>
+<li><strong>SA-0003</strong> 3-parameter constructors is only applicable to Stride with 3 dynamic dimension. (At: <code>include/pto/common/pto_tile.hpp:162 (+1)</code>; Fix: <code>FIX-A01,FIX-A09</code>)</li>
+<li><strong>SA-0004</strong> 4-parameter constructors is only applicable to Stride with 4 dynamic dimension. (At: <code>include/pto/common/pto_tile.hpp:100 (+1)</code>; Fix: <code>FIX-A01,FIX-A09</code>)</li>
+<li><strong>SA-0005</strong> Acc Type support int32_t or float. (At: <code>include/pto/npu/a5/TMatmul.hpp:121</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0006</strong> BFractal_ is RowMajor and SFractal_ is NoneBox: Rows must be 32 bytes align, \ BFractal_ is ColMa… (At: <code>include/pto/common/pto_tile.hpp:658</code>; Fix: <code>FIX-A04</code>)</li>
+<li><strong>SA-0007</strong> cols must be divisible by C0Size for Layout::NZ (At: <code>include/pto/common/pto_tile.hpp:409 (+1)</code>; Fix: <code>FIX-A03</code>)</li>
+<li><strong>SA-0008</strong> Data type must be b8/b16/b32 (At: <code>include/pto/npu/a2a3/TRowExpand.hpp:92 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0009</strong> Data type must be b8/b16/b32/b64 (At: <code>include/pto/npu/a5/TLoad.hpp:504</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0010</strong> Data type must be int8_t/uint8_t/int16_t/uint16_t/int32_t/uint32_t/half/bfloat16_t/float/int64_t/… (At: <code>include/pto/npu/a2a3/TLoad.hpp:355</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0011</strong> Data type must be int8_t/uint8_t/int16_t/uint16_t/int32_t/uint32_t/int64_t/uint64_t/half/bfloat16… (At: <code>include/pto/npu/a2a3/TStore.hpp:470</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0012</strong> Destination location only support Vec. (At: <code>include/pto/npu/a5/TMov.hpp:369 (+2)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0013</strong> Destination SFractalSize only support 512. (At: <code>include/pto/npu/a2a3/TMov.hpp:111</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0014</strong> Destination TileType only support Mat. (At: <code>include/pto/npu/a2a3/TMov.hpp:110</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0015</strong> dim 0 is dynamic, cannot be obtained using the template interface. (At: <code>include/pto/common/pto_tile.hpp:274 (+1)</code>; Fix: <code>FIX-A02</code>)</li>
+<li><strong>SA-0016</strong> dim 1 is dynamic, cannot be obtained using the template interface. (At: <code>include/pto/common/pto_tile.hpp:279 (+1)</code>; Fix: <code>FIX-A02</code>)</li>
+<li><strong>SA-0017</strong> dim 2 is dynamic, cannot be obtained using the template interface. (At: <code>include/pto/common/pto_tile.hpp:284 (+1)</code>; Fix: <code>FIX-A02</code>)</li>
+<li><strong>SA-0018</strong> dim 3 is dynamic, cannot be obtained using the template interface. (At: <code>include/pto/common/pto_tile.hpp:289 (+1)</code>; Fix: <code>FIX-A02</code>)</li>
+<li><strong>SA-0019</strong> dim 4 is dynamic, cannot be obtained using the template interface. (At: <code>include/pto/common/pto_tile.hpp:294 (+1)</code>; Fix: <code>FIX-A02</code>)</li>
+<li><strong>SA-0020</strong> DistVST DIST_NORM only support type b8/b16/b32 on current device (At: <code>include/pto/npu/a5/utils.hpp:44</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0021</strong> DN2NZ not support if input dtype is fp4 (At: <code>include/pto/npu/a5/TLoad.hpp:200</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0022</strong> Dst and src mube be same. (At: <code>include/pto/npu/a5/TSort32.hpp:181</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0023</strong> Dst and src must be float or half. (At: <code>include/pto/npu/a5/TSort32.hpp:176</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0024</strong> Dst and src must be float, half or bfloat16_t. (At: <code>include/pto/npu/a5/TMov.hpp:243</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0025</strong> Dst and src must be half / float / int16_t / int32_t / int8_t / bfloat16_t (At: <code>include/pto/npu/a5/TStore.hpp:85</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0026</strong> Dst and src must be half / float / int16_t / int32_t / int8_t / bfloat16_t. (At: <code>include/pto/npu/a2a3/TStore.hpp:321</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0027</strong> Dst and src must be half or float. (At: <code>include/pto/npu/a2a3/TSort32.hpp:156</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0028</strong> Dst and src must be same. (At: <code>include/pto/npu/a2a3/TSort32.hpp:161</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0029</strong> Dst fractal format should be (BFractal: ColMajor, SFractal: RowMajor). (At: <code>include/pto/npu/a2a3/TMov.hpp:117</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0030</strong> Dst Tile Cols * sizeof(dstT) must be multiples of 32 and not 0 when nz2nd. \ Dst Tile Rows * size… (At: <code>include/pto/npu/a5/TMov.hpp:234</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0031</strong> Dst Tile Cols * sizeof(DstType) must be multiples of 32 and not 0. (At: <code>include/pto/npu/a2a3/TMov.hpp:113</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0032</strong> Dst TileType must be Vec or Mat! (At: <code>include/pto/npu/a2a3/TLoad.hpp:363</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0033</strong> Dst TileType must be Vec Tile! (At: <code>include/pto/npu/a5/TRowExpand.hpp:26</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0034</strong> dstCol must be aligned (At: <code>include/pto/npu/a2a3/TExtract.hpp:199 (+3)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0035</strong> dstCol must be aligned to 16 (At: <code>include/pto/npu/a2a3/TExtract.hpp:191 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0036</strong> dstCol must be aligned to C0Size (At: <code>include/pto/npu/a2a3/TExtract.hpp:89 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0037</strong> DstOp is invalid. (At: <code>include/pto/common/event.hpp:134</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0038</strong> dstRow must be aligned (At: <code>include/pto/npu/a2a3/TExtract.hpp:198 (+3)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0039</strong> dstRow must be aligned to 16 (At: <code>include/pto/npu/a2a3/TExtract.hpp:88 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0040</strong> dstRow must be aligned to C0Size (At: <code>include/pto/npu/a2a3/TExtract.hpp:190 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0041</strong> DType not support b64 in ND2NZ or DN2NZ (At: <code>include/pto/npu/a5/TLoad.hpp:193</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0042</strong> Dual Dst Mode is not support in nz2dn. (At: <code>include/pto/npu/a5/TMov.hpp:92</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0043</strong> ERROR: Total memory usage exceeds UB limit! (At: <code>include/pto/npu/a2a3/TMrgSort.hpp:178 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0044</strong> expect b16/b32 (At: <code>include/pto/cpu/TGather.hpp:53 (+2)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0045</strong> expect b32 (At: <code>include/pto/cpu/TGather.hpp:55 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0046</strong> expect b32 or b16 (At: <code>include/pto/npu/a2a3/TCI.hpp:20 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0047</strong> expect b8/b16/b32 (At: <code>include/pto/npu/a5/TGather.hpp:26</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0048</strong> expect row is 1 (At: <code>include/pto/npu/a2a3/TCI.hpp:22 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0049</strong> Expect row major (At: <code>include/pto/npu/a2a3/TSort32.hpp:166 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0050</strong> expect same size for indice and dst (At: <code>include/pto/cpu/TGather.hpp:56 (+2)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0051</strong> expect src and dst same datatype (At: <code>include/pto/npu/a2a3/TCI.hpp:19 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0052</strong> Fp only support Scaling. (At: <code>include/pto/npu/a2a3/TMov.hpp:206 (+2)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0053</strong> GlobalTensor can only be assigned with address of pointer type. (At: <code>include/pto/cpu/TAssign.hpp:25 (+2)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0054</strong> GlobalTensor can only be assigned with pointer of same data type. (At: <code>include/pto/cpu/TAssign.hpp:28 (+2)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0055</strong> GlobalTensor input shape now only support 2 dim (At: <code>include/pto/npu/a5/TLoad.hpp:195</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0056</strong> GlobalTensor ony support 2 dim when DN2ZN! (At: <code>include/pto/npu/a2a3/TLoad.hpp:333</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0057</strong> GlobalTensor ony support 2 dim when ND2NZ! (At: <code>include/pto/npu/a2a3/TLoad.hpp:306</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0058</strong> Idx must be uint32_t. (At: <code>include/pto/npu/a2a3/TSort32.hpp:159 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0059</strong> Inconsistent number of m, k, n (At: <code>include/pto/cpu/TMatmul.hpp:57</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0060</strong> Inconsistent number of m, k, n. (At: <code>include/pto/npu/a2a3/TMatmul.hpp:72 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0061</strong> Inconsistent number of m, n (At: <code>include/pto/cpu/TRowSum.hpp:51</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0062</strong> Incorrect data type. (At: <code>include/pto/npu/a5/TMov.hpp:22</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0063</strong> input must be a Tile instance. (At: <code>include/pto/cpu/TReshape.hpp:25 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0064</strong> Invalid layout (At: <code>include/pto/cpu/tile_offsets.hpp:31</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0065</strong> Invalid Tile Layout. (At: <code>include/pto/common/pto_tile.hpp:606</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0066</strong> Layout cols must be divisible by inner box cols (At: <code>include/pto/common/pto_tile.hpp:655</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0067</strong> Layout rows must be divisible by inner box rows (At: <code>include/pto/common/pto_tile.hpp:653</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0068</strong> Left Type and Rigth Type must be int8_t when Acc Type is int32_t. (At: <code>include/pto/npu/a5/TMatmul.hpp:123</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0069</strong> MGATHER: element sizes must match (At: <code>include/pto/cpu/MGatherScatter.hpp:26</code>; Fix: <code>FIX-A10</code>)</li>
+<li><strong>SA-0070</strong> MGATHER: indexes must be an integral type (At: <code>include/pto/cpu/MGatherScatter.hpp:25</code>; Fix: <code>FIX-A10</code>)</li>
+<li><strong>SA-0071</strong> movemask: error mask index. (At: <code>include/pto/common/utils.hpp:32</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0072</strong> MSCATTER: element sizes must match (At: <code>include/pto/cpu/MGatherScatter.hpp:51</code>; Fix: <code>FIX-A10</code>)</li>
+<li><strong>SA-0073</strong> MSCATTER: indexes must be an integral type (At: <code>include/pto/cpu/MGatherScatter.hpp:50</code>; Fix: <code>FIX-A10</code>)</li>
+<li><strong>SA-0074</strong> No supported bias data type (At: <code>include/pto/cpu/TMatmul.hpp:73</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0075</strong> No supported bias data type. (At: <code>include/pto/npu/a2a3/TMatmul.hpp:117 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0076</strong> No supported data type when Acc Type is float. (At: <code>include/pto/npu/a5/TMatmul.hpp:126</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0077</strong> Non-conforming bias fractal (At: <code>include/pto/cpu/TMatmul.hpp:74</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0078</strong> Non-conforming bias fractal. (At: <code>include/pto/npu/a5/TMatmul.hpp:180</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0079</strong> Non-conforming matrix fractal (At: <code>include/pto/cpu/TMatmul.hpp:60</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0080</strong> Non-conforming matrix fractal. (At: <code>include/pto/npu/a5/TMatmul.hpp:139</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0081</strong> Not supported data type (At: <code>include/pto/cpu/TMatmul.hpp:49 (+1)</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0082</strong> now only support ND2NZ DN2NZ ND2ND DN2DN NZ2NZ DN2ZN in current platform (At: <code>include/pto/npu/a5/TLoad.hpp:171</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0083</strong> Number of valid columns must not be greater than number of tile columns. (At: <code>include/pto/npu/a2a3/TAddS.hpp:55 (+14)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0084</strong> Number of valid rows must not be greater than number of tile rows. (At: <code>include/pto/npu/a2a3/TAddS.hpp:56 (+14)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0085</strong> Only ND and DN GLobal Tensors are currently supported (At: <code>include/pto/cpu/TLoad.hpp:155 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0086</strong> only support get dim(0-4) (At: <code>include/pto/common/pto_tile.hpp:272 (+1)</code>; Fix: <code>FIX-A02</code>)</li>
+<li><strong>SA-0087</strong> Only support half and float. (At: <code>include/pto/npu/a5/TRowReduce.hpp:64</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0088</strong> Only support nz2nz, nz2nd or nz2dn. (At: <code>include/pto/npu/a5/TMov.hpp:229</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0089</strong> Only Tile and GlobalTensor data types are supported. (At: <code>include/pto/cpu/TAssign.hpp:23 (+2)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0090</strong> output must be a Tile instance. (At: <code>include/pto/cpu/TReshape.hpp:26 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0091</strong> Output type must be same as input type. (At: <code>include/pto/npu/a5/TRowReduce.hpp:66</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0092</strong> Quant is not support in dual Dst Mode. (At: <code>include/pto/npu/a5/TMov.hpp:396 (+2)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0093</strong> rows must be divisible by 16 for Layout::NZ (At: <code>include/pto/common/pto_tile.hpp:408 (+1)</code>; Fix: <code>FIX-A03</code>)</li>
+<li><strong>SA-0094</strong> rows or cols of fractal size is 0. (At: <code>include/pto/common/pto_tile.hpp:651</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0095</strong> SFractalSize_ illegal (At: <code>include/pto/common/pto_tile.hpp:667</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0096</strong> Single Op TSYNC only supports Vector PTO Instruction. (At: <code>include/pto/common/event.hpp:109</code>; Fix: <code>FIX-A07</code>)</li>
+<li><strong>SA-0097</strong> Size of datatype != 4 (At: <code>include/pto/common/pto_tile.hpp:574 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0098</strong> Source dtype must be same with dst dtype (At: <code>include/pto/cpu/TLoad.hpp:153</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0099</strong> Source dtype must be same with dst dtype! (At: <code>include/pto/cpu/TStore.hpp:127 (+4)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0100</strong> Source TileType only suport Vec/Acc! (At: <code>include/pto/npu/a5/TStore.hpp:418</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0101</strong> Source TileType only suport Vec/Acc/Mat! (At: <code>include/pto/npu/a2a3/TStore.hpp:525</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0102</strong> Source TileType only support Acc. (At: <code>include/pto/npu/a2a3/TMov.hpp:109 (+1)</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0103</strong> Src and dst layout must be ND! (At: <code>include/pto/npu/a2a3/TRowExpand.hpp:95</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0104</strong> Src and dst layout must be same! (At: <code>include/pto/npu/a5/TLoad.hpp:517</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0105</strong> Src and dst layout must be same, only support ND/DN/NZ or the special case of one row/one column! (At: <code>include/pto/npu/a2a3/TStore.hpp:480 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0106</strong> Src data type only support float or int32_t. (At: <code>include/pto/npu/a2a3/TMov.hpp:119 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0107</strong> Src fractal format should be (BFractal: ColMajor, SFractal: RowMajor). (At: <code>include/pto/npu/a2a3/TMov.hpp:115 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0108</strong> Src GlobalTensor Col and Tile ValidCol must be the same! (At: <code>include/pto/npu/a5/TLoad.hpp:526</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0109</strong> Src GlobalTensor Row Products and Tile ValidRow must be the same! (At: <code>include/pto/npu/a5/TLoad.hpp:533</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0110</strong> Src GlobalTensor staticShape[3][4] must be satisfied with NZ format require! (At: <code>include/pto/npu/a5/TLoad.hpp:211 (+1)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0111</strong> Src TileType must be Vec Tile! (At: <code>include/pto/npu/a5/TRowExpand.hpp:25</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0112</strong> Src TileType must be Vec! (At: <code>include/pto/npu/a2a3/TRowExpand.hpp:94</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0113</strong> srcCol must be aligned (At: <code>include/pto/npu/a2a3/TExtract.hpp:197 (+3)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0114</strong> srcCol must be aligned to 16 (At: <code>include/pto/npu/a2a3/TExtract.hpp:189 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0115</strong> srcCol must be aligned to C0Size (At: <code>include/pto/npu/a2a3/TExtract.hpp:87 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0116</strong> SrcOp is invalid. (At: <code>include/pto/common/event.hpp:133</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0117</strong> SrcOp is not allowed to be equal to DstOp. (At: <code>include/pto/common/event.hpp:135</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0118</strong> SrcPipe is not allowed to be equal to dstPipe. (At: <code>include/pto/common/event.hpp:136</code>; Fix: <code>FIX-A07</code>)</li>
+<li><strong>SA-0119</strong> srcRow must be aligned (At: <code>include/pto/npu/a2a3/TExtract.hpp:196 (+3)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0120</strong> srcRow must be aligned to 16 (At: <code>include/pto/npu/a2a3/TExtract.hpp:86 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0121</strong> srcRow must be aligned to C0Size (At: <code>include/pto/npu/a2a3/TExtract.hpp:188 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0122</strong> SrcTile bytes size must be 512B align and dstTile greater than or equal to srcTile. (At: <code>include/pto/npu/a5/TMov.hpp:249</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0123</strong> static_assert (SrcTileData::ValidRow == DstTileData::ValidCol &amp;&amp; SrcTileData::ValidCol == DstTile… (At: <code>include/pto/cpu/TTrans.hpp:36</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0124</strong> static_assert( ((GlobalData::layout == pto::Layout::ND) &amp;&amp; (TileData::Cols * sizeof(typename Tile… (At: <code>include/pto/npu/a5/TStore.hpp:157</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0125</strong> static_assert( std::is_same_v<typename TileData::DType, int8_t> || std::is_same_v&lt;typename TileDa… (At: <code>include/pto/npu/a5/TStore.hpp:134</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0126</strong> static_assert((GlobalData::layout == pto::Layout::ND &amp;&amp; TileData::Rows &gt;= 1 &amp;&amp; TileData::Rows &lt;= … (At: <code>include/pto/npu/a2a3/TStore.hpp:513 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0127</strong> static_assert(std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t> || std::is_same_v&lt;T, int16_… (At: <code>include/pto/npu/a5/TGather.hpp:305</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0128</strong> static_assert(std::is_same_v<U, int8_t> || std::is_same_v<U, uint8_t> || std::is_same_v&lt;U, int16_… (At: <code>include/pto/npu/a5/TGather.hpp:312</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0129</strong> static_assert(SupportBytes<T, 1, 2, 4>(), "DistVST DIST_ONEPT only support type b8/b16/b32 on " "… (At: <code>include/pto/npu/a5/utils.hpp:53</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0130</strong> TABS: Invalid data type (At: <code>include/pto/cpu/TAbs.hpp:65 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0131</strong> TABS: Number of valid columns must not be greater than number of tile columns. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:375</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0132</strong> TABS: Number of valid rows must not be greater than number of tile rows. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:376</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0133</strong> TABS: TileType of src and dst tiles must be TileType::Vec. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:374</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0134</strong> TADD: Invalid data type. (At: <code>include/pto/npu/a2a3/TAdd.hpp:47 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0135</strong> TADD: not supported Layout type (At: <code>include/pto/npu/a5/TAdd.hpp:61</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0136</strong> TADD: not supported Layout type. (At: <code>include/pto/npu/a2a3/TAdd.hpp:55</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0137</strong> TADDS: Invalid data type (At: <code>include/pto/npu/a2a3/TAddS.hpp:45</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0138</strong> TBinSOps: Invalid data type. (At: <code>include/pto/npu/a5/TBinSOp.hpp:173</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0139</strong> TCI data type must match tile data type (At: <code>include/pto/cpu/TCi.hpp:31</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0140</strong> TCI only support 1 row tile (At: <code>include/pto/cpu/TCi.hpp:30</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0141</strong> TCOLEXPANDDIV: Invalid data type. (At: <code>include/pto/npu/a5/TColExpandDiv.hpp:51</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0142</strong> TCOLEXPANDDIV: not supported Layout type (At: <code>include/pto/npu/a5/TColExpandDiv.hpp:54</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0143</strong> TCOLEXPANDEXPDIF: Invalid data type. (At: <code>include/pto/npu/a5/TColExpandExpdif.hpp:57</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0144</strong> TCOLEXPANDEXPDIF: not supported Layout type (At: <code>include/pto/npu/a5/TColExpandExpdif.hpp:60</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0145</strong> TCOLEXPANDMUL: Invalid data type. (At: <code>include/pto/npu/a5/TColExpandMul.hpp:51</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0146</strong> TCOLEXPANDMUL: not supported Layout type (At: <code>include/pto/npu/a5/TColExpandMul.hpp:54</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0147</strong> TCOLEXPANDSUB: Invalid data type. (At: <code>include/pto/npu/a5/TColExpandSub.hpp:51</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0148</strong> TCOLEXPANDSUB: not supported Layout type (At: <code>include/pto/npu/a5/TColExpandSub.hpp:54</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0149</strong> TCOPY: src and dst data type is different! (At: <code>include/pto/npu/a5/TFillPad.hpp:67</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0150</strong> TDIV: Invalid data type. (At: <code>include/pto/npu/a2a3/TDiv.hpp:47 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0151</strong> TDIV: not supported Layout type (At: <code>include/pto/npu/a5/TDiv.hpp:54</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0152</strong> TDIVS: Invalid data type (At: <code>include/pto/npu/a2a3/TDivS.hpp:212 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0153</strong> TEXP: Invalid data type (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:338</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0154</strong> TEXP: not supported Layout type (At: <code>include/pto/npu/a5/TUnaryOp.hpp:236 (+1)</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0155</strong> TEXP: Number of valid columns must not be greater than number of tile columns. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:344</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0156</strong> TEXP: Number of valid rows must not be greater than number of tile rows. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:345</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0157</strong> TEXP: TileType of src and dst tiles must be TileType::Vec. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:343</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0158</strong> TEXPANDS: Invalid data type (At: <code>include/pto/npu/a2a3/TExpandS.hpp:43</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0159</strong> TExtract: Destination and Source tile data types must be the same (At: <code>include/pto/npu/a5/TExtract.hpp:175</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0160</strong> TExtract: Destination and Source tile data types must be the same. (At: <code>include/pto/npu/a2a3/TExtract.hpp:208</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0161</strong> TExtract: DstTile Invalid Fractal (At: <code>include/pto/npu/a5/TExtract.hpp:183 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0162</strong> TExtract: Invalid data type. (At: <code>include/pto/npu/a2a3/TExtract.hpp:210</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0163</strong> TExtract: LeftTile Invalid Fractal. (At: <code>include/pto/npu/a2a3/TExtract.hpp:223</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0164</strong> TExtract: RightTile Invalid Fractal. (At: <code>include/pto/npu/a2a3/TExtract.hpp:231</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0165</strong> TExtract: SrcTile Invalid Fractal (At: <code>include/pto/npu/a5/TExtract.hpp:178</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0166</strong> TExtract: SrcTile Invalid Fractal. (At: <code>include/pto/npu/a2a3/TExtract.hpp:215</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0167</strong> TExtract: Unsupported data type! Supported types: int8_t, hifloat8_t, fp8_e5m2_t, fp8_e4m3fn_t, \… (At: <code>include/pto/npu/a5/TExtract.hpp:171</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0168</strong> TFillPad, dst vecTile pad value can't be Null! (At: <code>include/pto/cpu/TFillPad.hpp:71</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0169</strong> TFillPad, src and dst data type shouuld be the same! (At: <code>include/pto/cpu/TFillPad.hpp:72</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0170</strong> TFillPad: dst and src should have the same rows/cols! (At: <code>include/pto/cpu/TFillPad.hpp:103 (+2)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0171</strong> TFillPad: dst vecTile pad value must not be Null! (At: <code>include/pto/npu/a2a3/TFillPad.hpp:230 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0172</strong> TFillPad: Dst vecTile Rows/Cols must be greater or equal to src vecTile. (At: <code>include/pto/npu/a2a3/TFillPad.hpp:254 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0173</strong> TFillPad: Dst/Src vecTile Rows/Cols must be the same. (At: <code>include/pto/npu/a2a3/TFillPad.hpp:246 (+3)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0174</strong> TFillPad: Invalid data type! (At: <code>include/pto/cpu/TFillPad.hpp:73</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0175</strong> TFillPad: Invalid data type. (At: <code>include/pto/npu/a2a3/TFillPad.hpp:232 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0176</strong> TFillPad: src and dst data type is different! (At: <code>include/pto/npu/a2a3/TFillPad.hpp:231 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0177</strong> TFILLPAD: Unsupported DType for PadValue! (At: <code>include/pto/npu/a2a3/TFillPad.hpp:29 (+1)</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0178</strong> TGATHER: expect row major (At: <code>include/pto/cpu/TGather.hpp:117 (+2)</code>; Fix: <code>FIX-A10</code>)</li>
+<li><strong>SA-0179</strong> TGATHER: expect same type size for dst and src (At: <code>include/pto/cpu/TGather.hpp:118 (+2)</code>; Fix: <code>FIX-A10</code>)</li>
+<li><strong>SA-0180</strong> TGATHER: expect vec TileType (At: <code>include/pto/cpu/TGather.hpp:115 (+2)</code>; Fix: <code>FIX-A08,FIX-A10</code>)</li>
+<li><strong>SA-0181</strong> TGATHER: src element type must be 16 or 32-bit wide (At: <code>include/pto/cpu/TGather.hpp:114 (+1)</code>; Fix: <code>FIX-A10</code>)</li>
+<li><strong>SA-0182</strong> TGATHERB: Invalid data type. (At: <code>include/pto/npu/a2a3/TGatherB.hpp:139 (+1)</code>; Fix: <code>FIX-A05,FIX-A10</code>)</li>
+<li><strong>SA-0183</strong> TGATHERB: not supported Layout type. (At: <code>include/pto/cpu/TGatherB.hpp:51 (+1)</code>; Fix: <code>FIX-A06,FIX-A10</code>)</li>
+<li><strong>SA-0184</strong> The Cols of TileData must be less than 16384! (At: <code>include/pto/npu/a2a3/TLoad.hpp:343</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0185</strong> The data type is not supported. (At: <code>include/pto/npu/a2a3/TMatmul.hpp:62</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0186</strong> The Idx data type must be uint32 (At: <code>include/pto/cpu/TSort32.hpp:99</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0187</strong> The input data type is not supported by this instruction. (At: <code>include/pto/npu/a2a3/TColReduceOps.hpp:82 (+3)</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0188</strong> The input data type must be consistent with the output data type (At: <code>include/pto/npu/a2a3/TRowExpand.hpp:98</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0189</strong> The input data type must be consistent with the output data type and the tmp data type. (At: <code>include/pto/npu/a2a3/TColSum.hpp:99</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0190</strong> The input data type must be consistent with the output data type. (At: <code>include/pto/npu/a2a3/TColReduceOps.hpp:85 (+3)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0191</strong> The input data type must be restricted to int32_t/float! (At: <code>include/pto/npu/a2a3/TStore.hpp:503 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0192</strong> The output data layout must be ND or NZ. (At: <code>include/pto/npu/a2a3/TStore.hpp:501</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0193</strong> The output data type must be restricted to half/bfloat16_t. (At: <code>include/pto/npu/a2a3/TMov.hpp:123</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0194</strong> The output data type must be restricted to half/bfloat16_t/float. (At: <code>include/pto/npu/a5/TMov.hpp:221</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0195</strong> The output data type must be restricted to int32_t. (At: <code>include/pto/npu/a5/TMov.hpp:225</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0196</strong> The output data type must be restricted to int32_t/float/half/bfloat16_t! (At: <code>include/pto/npu/a2a3/TStore.hpp:506 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0197</strong> The output data type must be restricted to int8_t. (At: <code>include/pto/npu/a2a3/TMov.hpp:127</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0198</strong> The output data type must be restricted to int8_t/uint8_t/half/bfloat16_t. (At: <code>include/pto/npu/a5/TMov.hpp:215</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0199</strong> The output data type must be restricted to int8_t/uint8_t/half/int16_t. (At: <code>include/pto/npu/a2a3/TMov.hpp:129</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0200</strong> The output data type must be restricted to int8_t/uint8_t/hifloat/bfloat8_t/half/bfloat16_t. (At: <code>include/pto/npu/a5/TMov.hpp:210</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0201</strong> The range of Cols is [1, 4095]. (At: <code>include/pto/npu/a2a3/TStore.hpp:512 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0202</strong> The Rows of TileData must be less than 16384! (At: <code>include/pto/npu/a2a3/TLoad.hpp:316</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0203</strong> The Src data type must be consistent with the dst data type (At: <code>include/pto/cpu/TSort32.hpp:97</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0204</strong> The src data type must be restricted to float. (At: <code>include/pto/npu/a2a3/TMov.hpp:122</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0205</strong> The Src stride must be consistent with the idx stride (At: <code>include/pto/cpu/TSort32.hpp:100</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0206</strong> The Src0 data type must be consistent with the dst and src1 data type (At: <code>include/pto/cpu/TPartOp.hpp:48</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0207</strong> This instruction only support Nd fractal Tile (At: <code>include/pto/npu/a2a3/TColReduceOps.hpp:78 (+9)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0208</strong> This instruction only support Nd fractal Tile or DN Tile with Col is 1. (At: <code>include/pto/npu/a2a3/TRowReduceOps.hpp:181</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0209</strong> This instruction only support ND layout for input tile. (At: <code>include/pto/npu/a5/TRowReduce.hpp:71</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0210</strong> This instruction only support ND or DN with Col = 1 for output tile. (At: <code>include/pto/npu/a5/TRowReduce.hpp:73</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0211</strong> This instruction only support Vec Tile (At: <code>include/pto/npu/a2a3/TColReduceOps.hpp:76 (+3)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0212</strong> This instruction only support Vec Tile. (At: <code>include/pto/npu/a5/TRowReduce.hpp:68</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0213</strong> This optimization is only for [16, 512] input. (At: <code>include/pto/npu/a2a3/TRowReduceOps.hpp:82</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0214</strong> This optimization is only for [32, 256] input. (At: <code>include/pto/npu/a2a3/TRowReduceOps.hpp:59</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0215</strong> This optimization is only for [64, 128] input. (At: <code>include/pto/npu/a2a3/TRowReduceOps.hpp:39</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0216</strong> This optimization is only for [8, 1024] input. (At: <code>include/pto/npu/a2a3/TRowReduceOps.hpp:102</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0217</strong> This optimization is only for float type. (At: <code>include/pto/npu/a2a3/TRowReduceOps.hpp:100 (+3)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0218</strong> Tile can only be assigned with address of int type. (At: <code>include/pto/npu/a2a3/TAssign.hpp:22 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0219</strong> TileBias must be single row. (At: <code>include/pto/npu/a2a3/TMatmul.hpp:118</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0220</strong> TileData ony support SFractalSize = 512Bytes! (At: <code>include/pto/npu/a2a3/TLoad.hpp:309 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0221</strong> TileData SFractalSize must be 512 of NZ format in L1 (At: <code>include/pto/npu/a5/TLoad.hpp:192</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0222</strong> TileData static shape must less than 512KB in L1 (At: <code>include/pto/npu/a5/TLoad.hpp:187</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0223</strong> TileData::PadVal only support Null or Zero in B64 mode (At: <code>include/pto/npu/a5/TLoad.hpp:509</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0224</strong> TileData::Rows must less than 16384 in L1 (At: <code>include/pto/npu/a5/TLoad.hpp:186</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0225</strong> TileLeft TileType must be set to TileType::Left. (At: <code>include/pto/npu/a2a3/TMatmul.hpp:76</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0226</strong> TileRes TileType must be set to TileType::Acc. (At: <code>include/pto/npu/a2a3/TMatmul.hpp:78</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0227</strong> TileRight TileType must be set to TileType::Right. (At: <code>include/pto/npu/a2a3/TMatmul.hpp:77</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0228</strong> TileType must be Vec! (At: <code>include/pto/npu/a5/TSort32.hpp:183</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0229</strong> TileType must be Vec. (At: <code>include/pto/npu/a2a3/TSort32.hpp:163</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0230</strong> TileType of dst tiles must be TileType::Vec. (At: <code>include/pto/npu/a2a3/TCmp.hpp:112 (+1)</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0231</strong> TileType of src and dst tiles must be TileType::Vec. (At: <code>include/pto/npu/a2a3/TAddS.hpp:54 (+12)</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0232</strong> TileType of src tiles must be TileType::Vec. (At: <code>include/pto/npu/a2a3/TCmp.hpp:111 (+1)</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0233</strong> TLOAD only support ND2ND/DN2DN for b64! (At: <code>include/pto/npu/a2a3/TLoad.hpp:370</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0234</strong> TLOAD(MatTile, GlobalTensor) only support ND2ND/DN2DN/NZ2NZ/ND2NZ/DN2ZN! (At: <code>include/pto/npu/a2a3/TLoad.hpp:398</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0235</strong> TLOAD(VecTile, GlobalTensor) only support ND2ND/DN2DN/NZ2NZ! (At: <code>include/pto/npu/a2a3/TLoad.hpp:390</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0236</strong> TLOAD: Rows&gt;=4095 not supported in A2/A3 (At: <code>include/pto/npu/a2a3/TLoad.hpp:62</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0237</strong> TLOAD: Unsupported DType for PadValue! (At: <code>include/pto/common/constants.hpp:80</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0238</strong> TLOG: Invalid data type (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:400</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0239</strong> TLOG: Number of valid columns must not be greater than number of tile columns. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:406</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0240</strong> TLOG: Number of valid rows must not be greater than number of tile rows. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:407</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0241</strong> TLOG: TileType of src and dst tiles must be TileType::Vec. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:405</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0242</strong> TMatmulMX:Inconsistent number of m, k, n (At: <code>include/pto/npu/a5/TMatmul.hpp:104</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0243</strong> TMatmulMX:k must be a multiple of 64. (At: <code>include/pto/npu/a5/TMatmul.hpp:103</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0244</strong> TMatmulMX:No supported bias data type. (At: <code>include/pto/npu/a5/TMatmul.hpp:223</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0245</strong> TMatmulMX:No supported data type (At: <code>include/pto/npu/a5/TMatmul.hpp:86</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0246</strong> TMatmulMX:Non-conforming matrix fractal (At: <code>include/pto/npu/a5/TMatmul.hpp:107</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0247</strong> TMatmulMX:TileBias must be single row. (At: <code>include/pto/npu/a5/TMatmul.hpp:224</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0248</strong> TMAX: Invalid data type. (At: <code>include/pto/npu/a2a3/TMax.hpp:47 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0249</strong> TMAX: not supported Layout type (At: <code>include/pto/npu/a5/TMax.hpp:54</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0250</strong> TMAX: not supported Layout type. (At: <code>include/pto/npu/a2a3/TMax.hpp:55</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0251</strong> TMIN: Invalid data type. (At: <code>include/pto/npu/a2a3/TMin.hpp:47 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0252</strong> TMIN: not supported Layout type (At: <code>include/pto/npu/a5/TMin.hpp:53</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0253</strong> TMIN: not supported Layout type. (At: <code>include/pto/npu/a2a3/TMin.hpp:55</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0254</strong> TMov: Destination and Source tile data types must be the same. (At: <code>include/pto/npu/a2a3/TMov.hpp:27 (+2)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0255</strong> TMov: DstTile Invalid Fractal. (At: <code>include/pto/npu/a5/TMov.hpp:310 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0256</strong> TMov: Invalid data type. (At: <code>include/pto/npu/a2a3/TMov.hpp:61</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0257</strong> TMov: Invalid TileType. (At: <code>include/pto/npu/a2a3/TMov.hpp:141 (+1)</code>; Fix: <code>FIX-A05,FIX-A08</code>)</li>
+<li><strong>SA-0258</strong> TMOV: src and dst data type is different! (At: <code>include/pto/npu/a2a3/TCopy.hpp:30</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0259</strong> TMov: SrcTile Invalid Fractal. (At: <code>include/pto/npu/a5/TMov.hpp:195</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0260</strong> TMov: The memory occupation of BiasTile exceeds 4.0KB bias table size. (At: <code>include/pto/npu/a5/TMov.hpp:38</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0261</strong> TMov: The memory occupation of FbTile exceeds 4.0KB fixpipe buffer size. (At: <code>include/pto/npu/a5/TMov.hpp:72</code>; Fix: <code>FIX-A07</code>)</li>
+<li><strong>SA-0262</strong> TMov: The shape of destination and source tile must be the same. (At: <code>include/pto/npu/a5/TMov.hpp:302</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0263</strong> TMov: The shape of src needs to be the same as that of dst. (At: <code>include/pto/npu/a2a3/TMov.hpp:139</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0264</strong> TMov: Unsupported data type! Supported types: int8_t, hifloat8_t, fp8_e5m2_t, fp8_e4m3fn_t, \ hal… (At: <code>include/pto/npu/a5/TMov.hpp:189</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0265</strong> TMov: When Source tile data types is half, dst tile data types must be float (At: <code>include/pto/npu/a2a3/TMov.hpp:30</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0266</strong> TMov: When TileType is Bias, col * sizeof(Dtype) must be aligned to 64. (At: <code>include/pto/npu/a5/TMov.hpp:36</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0267</strong> TMov: When TileType is Bias, col * sizeof(srcDType) must be aligned to 64 (At: <code>include/pto/npu/a2a3/TMov.hpp:34</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0268</strong> TMov: When TileType is Bias, row must be 1 (At: <code>include/pto/npu/a2a3/TMov.hpp:33</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0269</strong> TMov: When TileType is Bias, row must be 1. (At: <code>include/pto/npu/a5/TMov.hpp:35</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0270</strong> TMov: When TileType is Scaling, col * sizeof(Dtype) must be aligned to 128. (At: <code>include/pto/npu/a5/TMov.hpp:70</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0271</strong> TMov: When TileType is Scaling, col * sizeof(srcType) must be aligned to 128 (At: <code>include/pto/npu/a2a3/TMov.hpp:63</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0272</strong> TMov: When TileType is Scaling, row must be 1 (At: <code>include/pto/npu/a2a3/TMov.hpp:62</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0273</strong> TMov: When TileType is Scaling, row must be 1. (At: <code>include/pto/npu/a5/TMov.hpp:69</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0274</strong> TMRGSORT: BLayout must be RowMajor. (At: <code>include/pto/cpu/TMrgSort.hpp:52</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0275</strong> TMrgsort: Destination and Source tile data types must be the same. (At: <code>include/pto/npu/a2a3/TMrgSort.hpp:188 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0276</strong> TMRGSORT: invalid struct size. (At: <code>include/pto/cpu/TMrgSort.hpp:43</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0277</strong> TMrgsort: the BLayout of Destination and Source tile must be RowMajor. (At: <code>include/pto/npu/a2a3/TMrgSort.hpp:201 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0278</strong> TMrgsort: the row of Destination and Source tile must be 1. (At: <code>include/pto/npu/a2a3/TMrgSort.hpp:198 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0279</strong> TMrgsort: the TileType of Destination and Source tile must be Vec. (At: <code>include/pto/npu/a2a3/TMrgSort.hpp:194 (+1)</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0280</strong> TMRGSORT: tile rows must be 1. (At: <code>include/pto/cpu/TMrgSort.hpp:51</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0281</strong> TMRGSORT: tile type must be Vec. (At: <code>include/pto/cpu/TMrgSort.hpp:50</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0282</strong> TMrgsort: Unsupported data type! Supported types is half/float (At: <code>include/pto/npu/a2a3/TMrgSort.hpp:186 (+1)</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0283</strong> TMUL: Invalid data type. (At: <code>include/pto/npu/a2a3/TMul.hpp:47 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0284</strong> TMUL: not supported Layout type (At: <code>include/pto/npu/a5/TMul.hpp:59</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0285</strong> TMul: not supported Layout type. (At: <code>include/pto/npu/a2a3/TMul.hpp:59</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0286</strong> TMULS: Invalid data type (At: <code>include/pto/npu/a2a3/TMulS.hpp:46</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0287</strong> TPARTADD: Invalid data type. (At: <code>include/pto/npu/a2a3/TPartAdd.hpp:70 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0288</strong> TPARTADD: not supported BLayout type. (At: <code>include/pto/npu/a2a3/TPartAdd.hpp:78</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0289</strong> TPARTADD: src and dst data type is different! (At: <code>include/pto/npu/a2a3/TPartAdd.hpp:67 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0290</strong> TPARTMAX: Input and output types should match (At: <code>include/pto/npu/a5/TPartBinOps.hpp:189</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0291</strong> TPARTMAX: Invalid data type. (At: <code>include/pto/cpu/TPartOp.hpp:46 (+2)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0292</strong> TPARTMAX: not supported BLayout type. (At: <code>include/pto/npu/a2a3/TPartMax.hpp:78</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0293</strong> TPARTMAX: src and dst data type is different! (At: <code>include/pto/npu/a2a3/TPartMax.hpp:67</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0294</strong> TPARTMIN: Invalid data type. (At: <code>include/pto/npu/a2a3/TPartMin.hpp:70</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0295</strong> TPARTMIN: not supported BLayout type. (At: <code>include/pto/npu/a2a3/TPartMin.hpp:78</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0296</strong> TPARTMIN: src and dst data type is different! (At: <code>include/pto/npu/a2a3/TPartMin.hpp:67</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0297</strong> TRECIP: Invalid data type (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:431</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0298</strong> TRECIP: Number of valid columns must not be greater than number of tile columns. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:437</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0299</strong> TRECIP: Number of valid rows must not be greater than number of tile rows. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:438</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0300</strong> TRECIP: TileType of src and dst tiles must be TileType::Vec. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:436</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0301</strong> TRESHAPE: Cannot reshape between boxed and non-boxed layouts. (At: <code>include/pto/cpu/TReshape.hpp:50 (+1)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0302</strong> TRESHAPE: Element types must be compatible. (At: <code>include/pto/cpu/TReshape.hpp:44 (+1)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0303</strong> TRESHAPE: Source and target TileType must be identical. (At: <code>include/pto/npu/a2a3/TReshape.hpp:41</code>; Fix: <code>FIX-A08,FIX-A09</code>)</li>
+<li><strong>SA-0304</strong> TRESHAPE: Source and target TileType must be same. (At: <code>include/pto/cpu/TReshape.hpp:38</code>; Fix: <code>FIX-A08,FIX-A09</code>)</li>
+<li><strong>SA-0305</strong> TRESHAPE: Total byte size must match. (At: <code>include/pto/cpu/TReshape.hpp:41 (+1)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0306</strong> TROWEXPANDDIV: Invalid data type. (At: <code>include/pto/npu/a2a3/TRowExpandDiv.hpp:53 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0307</strong> TROWEXPANDDIV: Invalid tile shape. (At: <code>include/pto/npu/a2a3/TRowExpandDiv.hpp:58 (+1)</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0308</strong> TROWEXPANDDIV: src and dst data type is different! (At: <code>include/pto/npu/a2a3/TRowExpandDiv.hpp:51 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0309</strong> TROWEXPANDEXPDIF: Invalid data type. (At: <code>include/pto/npu/a5/TRowExpandExpdif.hpp:59</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0310</strong> TROWEXPANDEXPDIF: Invalid tile shape. (At: <code>include/pto/npu/a5/TRowExpandExpdif.hpp:62</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0311</strong> TROWEXPANDEXPDIF: src and dst data type is different! (At: <code>include/pto/npu/a5/TRowExpandExpdif.hpp:57</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0312</strong> TROWEXPANDMUL: Invalid data type. (At: <code>include/pto/npu/a2a3/TRowExpandMul.hpp:53 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0313</strong> TROWEXPANDMUL: Invalid tile shape. (At: <code>include/pto/npu/a2a3/TRowExpandMul.hpp:58 (+1)</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0314</strong> TROWEXPANDMUL: src and dst data type is different! (At: <code>include/pto/npu/a2a3/TRowExpandMul.hpp:51 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0315</strong> TROWEXPANDSUB: Invalid data type. (At: <code>include/pto/npu/a2a3/TRowExpandSub.hpp:53 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0316</strong> TROWEXPANDSUB: Invalid tile shape. (At: <code>include/pto/npu/a2a3/TRowExpandSub.hpp:58 (+1)</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0317</strong> TROWEXPANDSUB: src and dst data type is different! (At: <code>include/pto/npu/a2a3/TRowExpandSub.hpp:51 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0318</strong> TRSQRT: Invalid data type (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:265</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0319</strong> TRSQRT: not supported Layout type (At: <code>include/pto/npu/a5/TUnaryOp.hpp:319 (+1)</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0320</strong> TRSQRT: Number of valid columns must not be greater than number of tile columns. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:271</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0321</strong> TRSQRT: Number of valid rows must not be greater than number of tile rows. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:272</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0322</strong> TRSQRT: TileType of src and dst tiles must be TileType::Vec. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:270</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0323</strong> TSCATTER: indexes must be an integral type (At: <code>include/pto/cpu/TScatter.hpp:24</code>; Fix: <code>FIX-A10</code>)</li>
+<li><strong>SA-0324</strong> TSCATTER: Invalid data type (At: <code>include/pto/npu/a2a3/TScatter.hpp:46</code>; Fix: <code>FIX-A05,FIX-A10</code>)</li>
+<li><strong>SA-0325</strong> TSCATTER: Invalid data type of indexes (At: <code>include/pto/npu/a2a3/TScatter.hpp:54</code>; Fix: <code>FIX-A05,FIX-A10</code>)</li>
+<li><strong>SA-0326</strong> TSEL: Invalid data type. (At: <code>include/pto/npu/a2a3/TSel.hpp:55</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0327</strong> TSELS: Invalid data type (At: <code>include/pto/npu/a2a3/TSels.hpp:180</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0328</strong> TSELS: Invalid data type. (At: <code>include/pto/npu/a5/TSels.hpp:104</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0329</strong> TSORT32: Invalid data type. (At: <code>include/pto/cpu/TSort32.hpp:95</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0330</strong> TSORT32: only NoneBox tiles are supported in CPU sim (At: <code>include/pto/cpu/TSort32.hpp:104</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0331</strong> TSORT32: only RowMajor tiles are supported in CPU sim (At: <code>include/pto/cpu/TSort32.hpp:102</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0332</strong> TSQRT: Invalid data type (At: <code>include/pto/cpu/TSqrt.hpp:35 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0333</strong> TSQRT: not supported Layout type (At: <code>include/pto/npu/a5/TUnaryOp.hpp:269 (+1)</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0334</strong> TSQRT: Number of valid columns must not be greater than number of tile columns. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:313</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0335</strong> TSQRT: Number of valid rows must not be greater than number of tile rows. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:314</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0336</strong> TSQRT: TileType of src and dst tiles must be TileType::Vec. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:312</code>; Fix: <code>FIX-A08</code>)</li>
+<li><strong>SA-0337</strong> TSTORE(Acc2GM) only support NZ2ND / NZ2NZ. (At: <code>include/pto/npu/a5/TStore.hpp:111</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0338</strong> TSTORE(GlobalTensor, VecTile) only support ND2ND/DN2DN for b64! (At: <code>include/pto/npu/a2a3/TStore.hpp:490</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0339</strong> TSUB: Invalid data type. (At: <code>include/pto/npu/a2a3/TSub.hpp:47 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0340</strong> TSUB: not supported BLayout type. (At: <code>include/pto/npu/a2a3/TSub.hpp:55</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0341</strong> TSUB: not supported Layout type (At: <code>include/pto/npu/a5/TSub.hpp:60</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0342</strong> TTRANS: Inconsistent input and output data types. (At: <code>include/pto/npu/a2a3/TTrans.hpp:280</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0343</strong> TTRANS: Inconsistent Input Shape. (At: <code>include/pto/npu/a5/TTrans.hpp:126 (+1)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0344</strong> TTRANS: Inconsistent Output Shape. (At: <code>include/pto/npu/a5/TTrans.hpp:127 (+1)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>SA-0345</strong> TTRANS: Inconsistent source and destination data types. (At: <code>include/pto/npu/a5/TTrans.hpp:123</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0346</strong> TTRANS: Invalid data type. (At: <code>include/pto/npu/a2a3/TTrans.hpp:272 (+4)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>SA-0347</strong> TTRANS: not supported Layout type. (At: <code>include/pto/npu/a2a3/TTrans.hpp:281</code>; Fix: <code>FIX-A06</code>)</li>
+<li><strong>SA-0348</strong> Unsupport CMP_MODE. (At: <code>include/pto/cpu/ElementOp.h:416</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0349</strong> Unsupport element op. (At: <code>include/pto/cpu/ElementOp.h:77</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0350</strong> When TileData is NZ format, the last 2 dim must be static and satisfy [16, 32 / sizeof(DataType)] (At: <code>include/pto/npu/a2a3/TLoad.hpp:144 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>SA-0351</strong> TASSIGN: memory space is not available on this architecture (capacity is 0). (At: <code>include/pto/common/tassign_check.hpp</code>; Fix: <code>FIX-A12</code>)</li>
+<li><strong>SA-0352</strong> TASSIGN: Tile storage size exceeds memory space capacity. (At: <code>include/pto/common/tassign_check.hpp</code>; Fix: <code>FIX-A12</code>)</li>
+<li><strong>SA-0353</strong> TASSIGN: addr + tile_size exceeds memory space capacity (out of bounds). (At: <code>include/pto/common/tassign_check.hpp</code>; Fix: <code>FIX-A12</code>)</li>
+<li><strong>SA-0354</strong> TASSIGN: addr is not properly aligned for the target memory space. (At: <code>include/pto/common/tassign_check.hpp</code>; Fix: <code>FIX-A12</code>)</li>
+</ul>
+<h3 id="runtime-checks-pto_assert">Runtime checks (<code>PTO_ASSERT</code>)<a class="headerlink" href="#runtime-checks-pto_assert" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>PA-0001</strong> blockLen is a multiple of 64 (At: <code>include/pto/npu/a2a3/TMrgSort.hpp:282</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0002</strong> Data type must be int8_t/uint8_t/int16_t/uint16_t/int32_t/uint32_t/int64_t/uint64_t/half/bfloat16_t/float! (At: <code>include/pto/npu/a2a3/TStore.hpp:395</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0003</strong> ERROR: The input Tile Valid size requirement is an integer multiple of blockLen * 4. (At: <code>include/pto/npu/a2a3/TMrgSort.hpp:283</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0004</strong> ERROR: The range of Tile Valid divided by blockLen is [1,255]. (At: <code>include/pto/npu/a2a3/TMrgSort.hpp:286</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0005</strong> ERROR: The range of valid aMatrixCol is [1, 4095]. (At: <code>include/pto/npu/a2a3/TMatmul.hpp:85</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0006</strong> ERROR: The range of valid aMatrixRow is [1, 4095]. (At: <code>include/pto/npu/a2a3/TMatmul.hpp:84</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0007</strong> ERROR: The range of valid bMatrixCol is [1, 4095]. (At: <code>include/pto/npu/a2a3/TMatmul.hpp:86</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0008</strong> ERROR: Total memory usage exceeds UB limit! (At: <code>include/pto/npu/a2a3/TMrgSort.hpp:214 (+3)</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0009</strong> expect continuous memory for dst. (At: <code>include/pto/npu/a2a3/TGather.hpp:125</code>; Fix: <code>FIX-A10</code>)</li>
+<li><strong>PA-0010</strong> illegal src is zero (At: <code>include/pto/cpu/ElementOp.h:108 (+5)</code>; Fix: <code>FIX-A11</code>)</li>
+<li><strong>PA-0011</strong> indexCol must be aligned (At: <code>include/pto/npu/a2a3/TExtract.hpp:100 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0012</strong> indexCol must be aligned to 16 (At: <code>include/pto/npu/a2a3/TExtract.hpp:193</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0013</strong> indexCol must be aligned to C0Size (At: <code>include/pto/npu/a2a3/TExtract.hpp:91</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0014</strong> indexRow must be aligned (At: <code>include/pto/npu/a2a3/TExtract.hpp:200 (+1)</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0015</strong> indexRow must be aligned to 16 (At: <code>include/pto/npu/a2a3/TExtract.hpp:90</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0016</strong> indexRow must be aligned to c0Size (At: <code>include/pto/npu/a2a3/TExtract.hpp:192</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0017</strong> Number of columns of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TAddS.hpp:58 (+10)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0018</strong> Number of columns of src and indexes must be the same. (At: <code>include/pto/npu/a2a3/TScatter.hpp:61</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0019</strong> Number of columns of src0, src1 and dst must be the same. (At: <code>include/pto/npu/a2a3/TSels.hpp:197 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0020</strong> Number of rows of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TAddS.hpp:59 (+7)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0021</strong> Number of rows of src and indexes must be the same. (At: <code>include/pto/npu/a2a3/TScatter.hpp:62</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0022</strong> Number of rows of src0, src1 and dst must be the same. (At: <code>include/pto/npu/a2a3/TSels.hpp:198 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0023</strong> NZ2ND only supports 2D-to-2D conversions. (At: <code>include/pto/npu/a2a3/TStore.hpp:352</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0024</strong> TABS: Number of columns of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:378</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0025</strong> TABS: Number of rows of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:379</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0026</strong> TEXP: Number of columns of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:347</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0027</strong> TEXP: Number of rows of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:348</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0028</strong> The 4th dim of DN shape must be 32 bytes aligned! (At: <code>include/pto/npu/a2a3/TLoad.hpp:231 (+1)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>PA-0029</strong> The 5th dim of ND shape must be 32 bytes aligned! (At: <code>include/pto/npu/a2a3/TLoad.hpp:196 (+1)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>PA-0030</strong> The input shape is invalid, validCol or validRow is 0. (At: <code>include/pto/npu/a2a3/TRowReduceOps.hpp:190 (+2)</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0031</strong> The input valid col must be consistent with the output valid row. (At: <code>include/pto/npu/a2a3/TColReduceOps.hpp:87 (+1)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0032</strong> The input valid row must be consistent with the output valid row. (At: <code>include/pto/npu/a2a3/TRowReduceOps.hpp:191 (+2)</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0033</strong> The range of validCol is [1, 4095]. (At: <code>include/pto/npu/a2a3/TStore.hpp:519</code>; Fix: <code>FIX-A05</code>)</li>
+<li><strong>PA-0034</strong> The shape of src and dst must be greater than 0! (At: <code>include/pto/npu/a2a3/TLoad.hpp:375 (+1)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>PA-0035</strong> The Shape3 of GlobalTensor must be in range of [1, 16384]! (At: <code>include/pto/npu/a2a3/TLoad.hpp:312</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>PA-0036</strong> The Shape3 of GlobalTensor must be must be in range of [1, 65535]! (At: <code>include/pto/npu/a2a3/TLoad.hpp:340</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>PA-0037</strong> The Shape4 of GlobalTensor must be in range of [1, 16384]! (At: <code>include/pto/npu/a2a3/TLoad.hpp:339</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>PA-0038</strong> The Shape4 of GlobalTensor must be must be in range of [1, 65535]! (At: <code>include/pto/npu/a2a3/TLoad.hpp:313</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>PA-0039</strong> The Stride3 of GlobalTensor must be must be in range of [1, 65535]! (At: <code>include/pto/npu/a2a3/TLoad.hpp:314 (+1)</code>; Fix: <code>FIX-A09</code>)</li>
+<li><strong>PA-0040</strong> The sum of indexCol and dstCol should be less than srcCol! (At: <code>include/pto/npu/a2a3/TExtract.hpp:220</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0041</strong> The sum of indexRow and dstRow should be less than srcRow! (At: <code>include/pto/npu/a2a3/TExtract.hpp:218</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0042</strong> The validCol of TileData must be equal to Shape0 * Shape1 * Shape4 of NZ shape! (At: <code>include/pto/npu/a2a3/TLoad.hpp:148 (+3)</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0043</strong> The validCol of TileData must be equal to the 4th dim(Shape3) of DN shape! (At: <code>include/pto/npu/a2a3/TLoad.hpp:104 (+3)</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0044</strong> The validCol of TileData must be equal to the 5th dim(Shape4) of ND shape! (At: <code>include/pto/npu/a2a3/TLoad.hpp:198 (+4)</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0045</strong> The validRow of TileData must be equal to (Shape0 * Shape1 * Shape2 * Shape3) of ND shape! (At: <code>include/pto/npu/a2a3/TLoad.hpp:199 (+3)</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0046</strong> The validRow of TileData must be equal to (Shape0 * Shape1 * Shape2 * Shape4) of DN shape! (At: <code>include/pto/npu/a2a3/TLoad.hpp:105 (+3)</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0047</strong> The validRow of TileData must be equal to Shape2 * Shape3 of NZ shape! (At: <code>include/pto/npu/a2a3/TLoad.hpp:147 (+3)</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0048</strong> The validRow of TileData must be equal to Shape3 of ND shape! (At: <code>include/pto/npu/a2a3/TStore.hpp:354</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0049</strong> TLOG: Number of columns of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:409</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0050</strong> TLOG: Number of rows of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:410</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0051</strong> TPARTADD: At most one entry in the valid-rows and valid-cols of src0 and src1 is smaller than dst. (At: <code>include/pto/npu/a2a3/TPartAdd.hpp:43</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0052</strong> TPARTMAX: At most one entry in the valid-rows and valid-cols of src0 and src1 is smaller than dst. (At: <code>include/pto/npu/a2a3/TPartMax.hpp:43</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0053</strong> TPARTMIN: At most one entry in the valid-rows and valid-cols of src0 and src1 is smaller than dst. (At: <code>include/pto/npu/a2a3/TPartMin.hpp:43</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0054</strong> TPARTOPS: At most one entry in the valid-rows and valid-cols of src0 and src1 is smaller than dst. (At: <code>include/pto/npu/a2a3/TPartOp.hpp:180</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0055</strong> TRECIP: Number of columns of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:440</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0056</strong> TRECIP: Number of rows of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:441</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0057</strong> TROWEXPANDDIV: invalid src1 shape. (At: <code>include/pto/npu/a2a3/TRowExpandDiv.hpp:63</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0058</strong> TROWEXPANDMUL: invalid src1 shape. (At: <code>include/pto/npu/a2a3/TRowExpandMul.hpp:63</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0059</strong> TROWEXPANDSUB: invalid src1 shape. (At: <code>include/pto/npu/a2a3/TRowExpandSub.hpp:63</code>; Fix: <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0060</strong> TRSQRT: Number of columns of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:274</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0061</strong> TRSQRT: Number of rows of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:275</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0062</strong> TSQRT: Number of columns of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:316</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0063</strong> TSQRT: Number of rows of src and dst must be the same. (At: <code>include/pto/npu/a2a3/TUnaryOp.hpp:317</code>; Fix: <code>-</code>)</li>
+<li><strong>PA-0064</strong> When GlobalData is ND format, the range of validRow is [1, 8192]. (At: <code>include/pto/npu/a2a3/TStore.hpp:355</code>; Fix: <code>FIX-A05</code>)</li>
+</ul>
+<h3 id="cpu-simulator-checks-assert">CPU simulator checks (<code>assert</code>)<a class="headerlink" href="#cpu-simulator-checks-assert" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>CA-0001</strong> assert (src.GetValidRow() == dst.GetValidRow() &amp;&amp; src.GetValidRow() == dst.GetValidRow()); (At: <code>include/pto/cpu/TMov.hpp:23</code>)</li>
+<li><strong>CA-0002</strong> assert((gShape0<em>gShape1</em>gShape2<em>gShape3 == validRow &amp;&amp; gShape4==validCol &amp;&amp; TileData::isRowMajor) || (gShape0</em>gShape1… (At: <code>include/pto/cpu/TLoad.hpp:134 (+1)</code>)</li>
+<li><strong>CA-0003</strong> assert(dst.GetValidCol() == DstTileData::Cols); (At: <code>include/pto/cpu/TGather.hpp:119</code>)</li>
+<li><strong>CA-0004</strong> assert(gShape0==1 &amp;&amp; gShape1==1 &amp;&amp; gShape2==1 &amp;&amp; "ND,DN -&gt; Nz,Zn convertion does support only 2D GMs"); (At: <code>include/pto/cpu/TLoad.hpp:145</code>)</li>
+<li><strong>CA-0005</strong> assert(gShape0==1 &amp;&amp; gShape1==1 &amp;&amp; gShape2==1 &amp;&amp; "Nz,Zn -&gt; ND,DN convertion does support only 2D GMs"); (At: <code>include/pto/cpu/TStore.hpp:119</code>)</li>
+<li><strong>CA-0006</strong> assert(src.GetValidRow() - idxRow == dst.GetValidRow() &amp;&amp; src.GetValidCol() - idxCol == dst.GetValidCol()); (At: <code>include/pto/cpu/TExtract.hpp:20</code>)</li>
+<li><strong>CA-0007</strong> assert(validCol * sizeof(typename TileDataDst::TileDType) % 32 == 0); (At: <code>include/pto/cpu/TGatherB.hpp:54</code>)</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../opt/" class="btn btn-neutral float-left" title="Optimization"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../machine/abstract-machine/" class="btn btn-neutral float-right" title="Abstract Machine">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/PTO-ISA/pto-isa" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../opt/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../machine/abstract-machine/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../assets/javascripts/mathjax.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../../assets/javascripts/nav-collapse.js"></script>
+      <script src="../../../assets/javascripts/nav-translator.js"></script>
+      <script src="../../../assets/javascripts/language-switcher.js"></script>
+      <script src="../../../assets/javascripts/chinese-navigation.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

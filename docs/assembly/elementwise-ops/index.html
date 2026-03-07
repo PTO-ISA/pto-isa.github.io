@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/assembly/elementwise-ops/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Elementwise Operations - PTO Virtual ISA Architectural Manual</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/stylesheets/custom.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Elementwise Operations";
+        var mkdocs_page_input_path = "docs/assembly/elementwise-ops.md";
+        var mkdocs_page_url = "/docs/assembly/elementwise-ops/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PTO Virtual ISA Architectural Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">PTO Virtual ISA Manual</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/">Preface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/01-overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/02-machine-model/">Execution Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/03-state-and-types/">State and Types</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/04-tiles-and-globaltensor/">Tiles and GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/05-synchronization/">Synchronization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/06-assembly/">PTO Assembly (PTO-AS)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/07-instructions/">Instruction Set (overview)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/08-programming/">Programming Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/09-virtual-isa-and-ir/">Virtual ISA and IR</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/10-bytecode-and-toolchain/">Bytecode and Toolchain</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/11-memory-ordering-and-consistency/">Memory Ordering and Consistency</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/12-backend-profiles-and-conformance/">Backend Profiles and Conformance</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-a-glossary/">Glossary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-b-instruction-contract-template/">Instruction Contract Template</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-c-diagnostics-taxonomy/">Diagnostics Taxonomy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-d-instruction-family-matrix/">Instruction Family Matrix</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Programming Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/ProgrammingModel/">Programming Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/Tile/">Tile</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/GlobalTensor/">GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/Scalar/">Scalar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/Event/">Event</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/tutorial/">Tutorial</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tutorials</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../coding/tutorials/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../coding/tutorials/vec-add/">Vec Add</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../coding/tutorials/row-softmax/">Row Softmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../coding/tutorials/gemm/">GEMM</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/opt/">Optimization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/debug/">Debugging</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Machine Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../machine/abstract-machine/">Abstract Machine</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../machine/">Machine Index</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">ISA Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../isa/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../isa/conventions/">ISA Conventions</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >PTO AS Reference</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../PTO-AS/">PTO-AS Specification</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../conventions/">Conventions</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../nonisa-ops/">Non-ISA Operations</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Elementwise Operations</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#operations">Operations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#tadd">TADD</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tabs">TABS</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tand">TAND</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tor">TOR</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tsub">TSUB</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tmul">TMUL</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tmin">TMIN</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tmax">TMAX</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tcmp">TCMP</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tdiv">TDIV</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tshl">TSHL</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tshr">TSHR</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#txor">TXOR</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tlog">TLOG</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#trecip">TRECIP</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tprelu">TPRELU</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#taddc">TADDC</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tsubc">TSUBC</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tcvt">TCVT</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tsel">TSEL</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#trsqrt">TRSQRT</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tsqrt">TSQRT</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#texp">TEXP</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tnot">TNOT</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#trelu">TRELU</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tneg">TNEG</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#trem">TREM</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tfmod">TFMOD</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../tile-scalar-ops/">Tile-Scalar Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../axis-ops/">Axis Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../memory-ops/">Memory Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../matrix-ops/">Matrix Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../data-movement-ops/">Data Movement Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../complex-ops/">Complex Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../manual-binding-ops/">Manual Binding Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../scalar-arith-ops/">Scalar Arithmetic Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../control-flow-ops/">Control Flow Operations</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../PTOISA/">PTO ISA Table</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Synchronization</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSYNC/">TSYNC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Manual / Resource Binding</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TASSIGN/">TASSIGN</a>
+                </li>
+                <li class="toctree-l2"><a class="" href="../../isa/TSETHF32MODE.md">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="" href="../../isa/TSETTF32MODE.md">TSETTF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSETFMATRIX/">TSETFMATRIX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSET_IMG2COL_PADDING/">TSET_IMG2COL_PADDING</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Elementwise (Tile-Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADD/">TADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TABS/">TABS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TAND/">TAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TOR/">TOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUB/">TSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMUL/">TMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMIN/">TMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMAX/">TMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCMP/">TCMP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TDIV/">TDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHL/">TSHL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHR/">TSHR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TXOR/">TXOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLOG/">TLOG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRECIP/">TRECIP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDC/">TADDC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBC/">TSUBC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCVT/">TCVT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSEL/">TSEL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRSQRT/">TRSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSQRT/">TSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXP/">TEXP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TNOT/">TNOT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRELU/">TRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TNEG/">TNEG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TREM/">TREM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFMOD/">TFMOD</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tile-Scalar / Tile-Immediate</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXPANDS/">TEXPANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCMPS/">TCMPS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSELS/">TSELS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMINS/">TMINS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBS/">TSUBS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TDIVS/">TDIVS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMULS/">TMULS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFMODS/">TFMODS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TREMS/">TREMS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMAXS/">TMAXS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TANDS/">TANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TORS/">TORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHLS/">TSHLS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHRS/">TSHRS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TXORS/">TXORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLRELU/">TLRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDSC/">TADDSC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBSC/">TSUBSC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Axis Reduce / Expand</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWSUM/">TROWSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWPROD/">TROWPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLSUM/">TCOLSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLPROD/">TCOLPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLMAX/">TCOLMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWMAX/">TROWMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWMIN/">TROWMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLMIN/">TCOLMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPAND/">TROWEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDDIV/">TROWEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMUL/">TROWEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDSUB/">TROWEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDADD/">TROWEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMAX/">TROWEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMIN/">TROWEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDEXPDIF/">TROWEXPANDEXPDIF</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPAND/">TCOLEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDDIV/">TCOLEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMUL/">TCOLEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDADD/">TCOLEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMAX/">TCOLEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMIN/">TCOLEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDSUB/">TCOLEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDEXPDIF/">TCOLEXPANDEXPDIF</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Memory (GM <-> Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLOAD/">TLOAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPREFETCH/">TPREFETCH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSTORE/">TSTORE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSTORE_FP/">TSTORE_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/MGATHER/">MGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/MSCATTER/">MSCATTER</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Matrix Multiply</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL/">TMATMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_ACC/">TMATMUL_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_BIAS/">TMATMUL_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_MX/">TMATMUL_MX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV/">TGEMV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_ACC/">TGEMV_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_BIAS/">TGEMV_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_MX/">TGEMV_MX</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Data Movement / Layout</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMOV/">TMOV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMOV_FP/">TMOV_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXTRACT/">TEXTRACT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXTRACT_FP/">TEXTRACT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TINSERT/">TINSERT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TINSERT_FP/">TINSERT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD/">TFILLPAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD_INPLACE/">TFILLPAD_INPLACE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD_EXPAND/">TFILLPAD_EXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRESHAPE/">TRESHAPE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TIMG2COL/">TIMG2COL</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGATHER/">TGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGATHERB/">TGATHERB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSCATTER/">TSCATTER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCI/">TCI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TTRI/">TTRI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTADD/">TPARTADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMUL/">TPARTMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMAX/">TPARTMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMIN/">TPARTMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSORT32/">TSORT32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMRGSORT/">TMRGSORT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../manual/isa-reference/">All Instructions Index</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples & Kernels</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../kernels/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >High-Performance Kernels</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../kernels/manual/a2a3/gemm_performance/">GEMM Performance</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../kernels/manual/common/flash_atten/">Flash Attention</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Baseline Demos</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../demos/baseline/add/">Add Demo</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../demos/baseline/gemm_basic/">GEMM Demo</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tests</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../tests/">Tests Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../tests/script/">Test Scripts</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../">Docs Index</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../website/">Build Documentation</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../all-pages/">Full Index</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PTO Virtual ISA Architectural Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">ISA Reference</li>
+          <li class="breadcrumb-item">PTO AS Reference</li>
+      <li class="breadcrumb-item active">Elementwise Operations</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <!-- Generated from `docs/assembly/elementwise-ops.md` -->
+
+<h1 id="elementwise-tile-tile">Elementwise (Tile-Tile)<a class="headerlink" href="#elementwise-tile-tile" title="Permanent link">&para;</a></h1>
+<p>This document describes element-wise operations between two tiles.</p>
+<p><strong>Total Operations:</strong> 28</p>
+<hr />
+<h2 id="operations">Operations<a class="headerlink" href="#operations" title="Permanent link">&para;</a></h2>
+<h3 id="tadd">TADD<a class="headerlink" href="#tadd" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TADD/">isa/TADD</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tadd %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tabs">TABS<a class="headerlink" href="#tabs" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TABS/">isa/TABS</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tabs %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tabs ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tand">TAND<a class="headerlink" href="#tand" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TAND/">isa/TAND</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tand %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tand ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tor">TOR<a class="headerlink" href="#tor" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TOR/">isa/TOR</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tor %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tor ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tsub">TSUB<a class="headerlink" href="#tsub" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TSUB/">isa/TSUB</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tsub %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tsub ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tmul">TMUL<a class="headerlink" href="#tmul" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TMUL/">isa/TMUL</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tmul %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tmul ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tmin">TMIN<a class="headerlink" href="#tmin" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TMIN/">isa/TMIN</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tmin %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tmin ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tmax">TMAX<a class="headerlink" href="#tmax" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TMAX/">isa/TMAX</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tmax %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tmax ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tcmp">TCMP<a class="headerlink" href="#tcmp" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TCMP/">isa/TCMP</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tcmp %src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tcmp ins(%src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tdiv">TDIV<a class="headerlink" href="#tdiv" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TDIV/">isa/TDIV</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tdiv %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tdiv ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tshl">TSHL<a class="headerlink" href="#tshl" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TSHL/">isa/TSHL</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tshl %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tshl ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tshr">TSHR<a class="headerlink" href="#tshr" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TSHR/">isa/TSHR</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tshr %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tshr ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="txor">TXOR<a class="headerlink" href="#txor" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TXOR/">isa/TXOR</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.txor %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.txor ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tlog">TLOG<a class="headerlink" href="#tlog" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TLOG/">isa/TLOG</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tlog %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tlog ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="trecip">TRECIP<a class="headerlink" href="#trecip" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TRECIP/">isa/TRECIP</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.trecip %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.trecip ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tprelu">TPRELU<a class="headerlink" href="#tprelu" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TPRELU/">isa/TPRELU</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tprelu %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tprelu ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="taddc">TADDC<a class="headerlink" href="#taddc" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TADDC/">isa/TADDC</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.taddc %src0, %src1, %src2 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.taddc ins(%src0, %src1, %src2 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tsubc">TSUBC<a class="headerlink" href="#tsubc" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TSUBC/">isa/TSUBC</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tsubc %src0, %src1, %src2 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tsubc ins(%src0, %src1, %src2 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tcvt">TCVT<a class="headerlink" href="#tcvt" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TCVT/">isa/TCVT</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tcvt %src{rmode = #pto&lt;round_mode xx&gt;}: !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tcvt ins(%src{rmode = #pto&lt;round_mode xx&gt;}: !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tsel">TSEL<a class="headerlink" href="#tsel" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TSEL/">isa/TSEL</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tsel %mask, %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tsel ins(%mask, %src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="trsqrt">TRSQRT<a class="headerlink" href="#trsqrt" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TRSQRT/">isa/TRSQRT</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.trsqrt %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.trsqrt ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tsqrt">TSQRT<a class="headerlink" href="#tsqrt" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TSQRT/">isa/TSQRT</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tsqrt %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tsqrt ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="texp">TEXP<a class="headerlink" href="#texp" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TEXP/">isa/TEXP</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.texp %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.texp ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tnot">TNOT<a class="headerlink" href="#tnot" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TNOT/">isa/TNOT</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tnot %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tnot ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="trelu">TRELU<a class="headerlink" href="#trelu" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TRELU/">isa/TRELU</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.trelu %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.trelu ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tneg">TNEG<a class="headerlink" href="#tneg" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TNEG/">isa/TNEG</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tneg %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tneg ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="trem">TREM<a class="headerlink" href="#trem" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TREM/">isa/TREM</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.trem %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.trem ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="tfmod">TFMOD<a class="headerlink" href="#tfmod" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TFMOD/">isa/TFMOD</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.tfmod %src0, %src1 : !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.tfmod ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../nonisa-ops/" class="btn btn-neutral float-left" title="Non-ISA Operations"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../tile-scalar-ops/" class="btn btn-neutral float-right" title="Tile-Scalar Operations">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/PTO-ISA/pto-isa" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../nonisa-ops/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../tile-scalar-ops/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../assets/javascripts/mathjax.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../../assets/javascripts/nav-collapse.js"></script>
+      <script src="../../../assets/javascripts/nav-translator.js"></script>
+      <script src="../../../assets/javascripts/language-switcher.js"></script>
+      <script src="../../../assets/javascripts/chinese-navigation.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
