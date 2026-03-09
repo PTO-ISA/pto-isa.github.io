@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,15 +511,15 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>带偏置加法的矩阵乘法。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let:</p>
+<p>设：</p>
 <ul>
 <li><code>M = aMatrix.GetValidRow()</code></li>
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>For <code>0 &lt;= i &lt; M</code> and <code>0 &lt;= j &lt; N</code>:</p>
+<p>对于 <code>0 &lt;= i &lt; M</code> 和 <code>0 &lt;= j &lt; N</code>：</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} + \mathrm{Bias}_{0,j} \]</div>
-<p>Bias broadcasting behavior is implementation-defined.</p>
+<p>偏置广播行为由实现定义。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
@@ -543,13 +539,13 @@ PTO_INST RecordEvent TMATMUL_BIAS(TileRes&amp; cMatrix, TileLeft&amp; aMatrix, T
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>All constraints from <code>TMATMUL</code> apply to the <code>(cMatrix, aMatrix, bMatrix)</code> triple.</li>
-<li><strong>Bias constraints (A2A3)</strong>:</li>
-<li><code>TileBias::DType</code> must match <code>TileRes::DType</code>.</li>
-<li><code>TileBias::Loc == TileType::Bias</code> and <code>TileBias::Rows == 1</code>.</li>
-<li><strong>Bias constraints (A5)</strong>:</li>
-<li><code>TileBias::DType</code> must match <code>TileRes::DType</code>.</li>
-<li><code>TileBias::Loc == TileType::Bias</code>, <code>TileBias::Rows == 1</code>, and <code>TileBias::isRowMajor</code>.</li>
+<li>所有来自 <code>TMATMUL</code> 的约束都适用于 <code>(cMatrix, aMatrix, bMatrix)</code> 三元组。</li>
+<li><strong>偏置约束 (A2A3)</strong>:</li>
+<li><code>TileBias::DType</code> 必须匹配 <code>TileRes::DType</code>。</li>
+<li><code>TileBias::Loc == TileType::Bias</code> 且 <code>TileBias::Rows == 1</code>。</li>
+<li><strong>偏置约束 (A5)</strong>:</li>
+<li><code>TileBias::DType</code> 必须匹配 <code>TileRes::DType</code>。</li>
+<li><code>TileBias::Loc == TileType::Bias</code>、<code>TileBias::Rows == 1</code> 且 <code>TileBias::isRowMajor</code>。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -539,25 +535,25 @@ PTO_INST RecordEvent TTRANS(TileDataDst&amp; dst, TileDataSrc&amp; src, TileData
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
 <li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>.</li>
-<li>Source layout must be row-major (<code>TileDataSrc::isRowMajor</code>).</li>
-<li>Element size must be <code>1</code>, <code>2</code>, or <code>4</code> bytes.</li>
+<li>Source layout 必须是 行主序 (<code>TileDataSrc::isRowMajor</code>）。</li>
+<li>Element size 必须是 <code>1</code>, <code>2</code>,或<code>4</code> 字节.</li>
 <li>Supported element types are restricted per element width:<ul>
-<li>4 bytes: <code>uint32_t</code>, <code>int32_t</code>, <code>float</code></li>
-<li>2 bytes: <code>uint16_t</code>, <code>int16_t</code>, <code>half</code>, <code>bfloat16_t</code></li>
+<li>4 字节: <code>uint32_t</code>, <code>int32_t</code>, <code>float</code></li>
+<li>2 字节: <code>uint16_t</code>, <code>int16_t</code>, <code>half</code>, <code>bfloat16_t</code></li>
 <li>1 byte: <code>uint8_t</code>, <code>int8_t</code></li>
 </ul>
 </li>
 <li>The transpose size is taken from <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code>.</li>
 <li><strong>实现检查 (A5)</strong>:</li>
 <li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>.</li>
-<li>32-byte alignment constraints are enforced on the major dimension of both input and output (row-major checks <code>Cols * sizeof(T) % 32 == 0</code>, col-major checks <code>Rows * sizeof(T) % 32 == 0</code>).</li>
+<li>32-byte alignment constraints are enforced on the major dimension of 都input且output (行主序 checks <code>Cols * sizeof(T) % 32 == 0</code>, col-major checks <code>Rows * sizeof(T) % 32 == 0</code>）。</li>
 <li>Supported element types are restricted per element width:<ul>
-<li>4 bytes: <code>uint32_t</code>, <code>int32_t</code>, <code>float</code></li>
-<li>2 bytes: <code>uint16_t</code>, <code>int16_t</code>, <code>half</code>, <code>bfloat16_t</code></li>
+<li>4 字节: <code>uint32_t</code>, <code>int32_t</code>, <code>float</code></li>
+<li>2 字节: <code>uint16_t</code>, <code>int16_t</code>, <code>half</code>, <code>bfloat16_t</code></li>
 <li>1 byte: <code>uint8_t</code>, <code>int8_t</code></li>
 </ul>
 </li>
-<li>The implementation operates over the static tile shape (<code>TileDataSrc::Rows/Cols</code>) and does not consult <code>GetValidRow/GetValidCol</code>.</li>
+<li>The implementation operates over the static tile shape (<code>TileDataSrc::Rows/Cols</code>)且does not consult <code>GetValidRow/GetValidCol</code>.</li>
 <li><strong>Temporary tile</strong>:</li>
 <li>The C++ API requires <code>tmp</code>, but some implementations may not use it.</li>
 </ul>

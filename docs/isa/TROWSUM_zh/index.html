@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -538,20 +534,20 @@ PTO_INST RecordEvent TROWSUM(TileDataOut&amp; dst, TileDataIn&amp; src, TileData
 <p>实现检查 (NPU):</p>
 <ul>
 <li>A2A3:</li>
-<li>Tile location: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile 布局 of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>Tile 布局 of <code>dst</code>: DN layout Tile of 1D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::RowMajor, ValidRows, 1&gt;</code></li>
-<li>数据类型: <code>half</code> or <code>float</code>.</li>
+<li>Tile 位置: <code>dst</code>且<code>src</code> 必须是 <code>TileType::Vec</code>.</li>
+<li>Tile 布局 of <code>src</code>: ND fractal (<code>isRowMajor</code>且<code>SLayout::NoneBox</code>）。</li>
+<li>Tile 布局 of <code>dst</code>: DN layout Tile of 1D, 例如， <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::RowMajor, ValidRows, 1&gt;</code></li>
+<li>数据类型: <code>half</code>或<code>float</code>.</li>
 <li>数据类型一致性: <code>dst.DType == src.DType</code>.</li>
 <li>运行期有效区域检查:<ul>
-<li><code>srcValidCol != 0</code> and <code>srcValidRow != 0</code>.</li>
-<li><code>srcValidRow == dstValidRow</code> (the output valid row must match the input valid row).</li>
+<li><code>srcValidCol != 0</code>且<code>srcValidRow != 0</code>.</li>
+<li><code>srcValidRow == dstValidRow</code> (the output valid row 必须匹配 the input valid row).</li>
 </ul>
 </li>
 <li>A5:</li>
-<li>数据类型: <code>half</code> or <code>float</code>.</li>
+<li>数据类型: <code>half</code>或<code>float</code>.</li>
 <li>数据类型一致性: <code>dst.DType == src.DType</code>.</li>
-<li>No explicit runtime assertions on <code>validRow/validCol</code> in the implementation; the loops use <code>src.GetValidRow()</code> and <code>src.GetValidCol()</code>.</li>
+<li>No explicit runtime assertions on <code>validRow/validCol</code> 在实现中; the loops use <code>src.GetValidRow()</code>且<code>src.GetValidCol()</code>.</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

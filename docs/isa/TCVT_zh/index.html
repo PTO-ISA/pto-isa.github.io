@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -517,7 +513,7 @@
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{cast}_{\mathrm{rmode}}\!\left(\mathrm{src}_{i,j}\right) \]</div>
-<p>where <code>rmode</code> is a rounding policy (see <code>pto::RoundMode</code>).</p>
+<p>其中 <code>rmode</code> 是舍入策略（参见 <code>pto::RoundMode</code>）。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
@@ -530,16 +526,16 @@
 <pre><code class="language-text">pto.tcvt ins(%src{rmode = #pto&lt;round_mode xx&gt;}: !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code> 和 <code>include/pto/common/constants.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCVT(TileDataD&amp; dst, TileDataS&amp; src, RoundMode mode, WaitEvents&amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>dst</code> and <code>src</code> must be compatible in shape/valid region as required by the implementation.</li>
-<li>The conversion <code>(src element type) -&gt; (dst element type)</code> must be supported by the target for the given <code>RoundMode</code>.</li>
-<li><strong>Implementation notes (A2A3/A5)</strong>:</li>
-<li><code>TCVT_IMPL</code> does not enforce additional <code>static_assert</code>/<code>PTO_ASSERT</code> checks on the type pair; unsupported conversions are target-defined.</li>
+<li><code>dst</code> 和 <code>src</code> 必须在形状/有效区域方面兼容，如实现所要求的。</li>
+<li>对于给定的 <code>RoundMode</code>，转换 <code>(src 元素类型) -&gt; (dst 元素类型)</code> 必须被目标支持。</li>
+<li><strong>实现说明 (A2A3/A5)</strong>:</li>
+<li><code>TCVT_IMPL</code> 不对类型对强制执行额外的 <code>static_assert</code>/<code>PTO_ASSERT</code> 检查；不支持的转换由目标定义。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

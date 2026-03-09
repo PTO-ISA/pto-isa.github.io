@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -537,16 +533,16 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileDat
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
-<li>The fp store path is implemented via <code>TSTORE_IMPL(dst, src, fp)</code> and uses the same accumulator-to-GM legality checks as quantized accumulator stores:<ul>
-<li>Destination layout must be ND or NZ.</li>
-<li>Source dtype must be <code>int32_t</code> or <code>float</code>.</li>
-<li>Static shape constraints: <code>1 &lt;= TileData::Cols &lt;= 4095</code>; if ND then <code>1 &lt;= TileData::Rows &lt;= 8192</code>; if NZ then <code>1 &lt;= TileData::Rows &lt;= 65535</code> and <code>TileData::Cols % 16 == 0</code>.</li>
-<li>Runtime: <code>1 &lt;= src.GetValidCol() &lt;= 4095</code>.</li>
+<li>The fp store path is implemented via <code>TSTORE_IMPL(dst, src, fp)</code>且uses the same accumulator-to-GM legality checks as quantized accumulator stores:<ul>
+<li>目标布局 必须是 ND或NZ.</li>
+<li>Source dtype 必须是 <code>int32_t</code>或<code>float</code>.</li>
+<li>Static shape constraints: <code>1 &lt;= TileData::Cols &lt;= 4095</code>; if ND then <code>1 &lt;= TileData::Rows &lt;= 8192</code>; if NZ then <code>1 &lt;= TileData::Rows &lt;= 65535</code>且<code>TileData::Cols % 16 == 0</code>.</li>
+<li>运行时： <code>1 &lt;= src.GetValidCol() &lt;= 4095</code>.</li>
 </ul>
 </li>
 <li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code> (the implementation uses <code>fp</code> to set FPC state).</li>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li>Implemented via <code>TSTORE_IMPL(dst, src, fp)</code> and validated by <code>CheckStaticAcc&lt;..., true&gt;()</code> for the accumulator path (ND/NZ only, <code>int32_t/float</code> source dtype, rows/cols ranges).</li>
+<li>已实现 via <code>TSTORE_IMPL(dst, src, fp)</code>且validated by <code>CheckStaticAcc&lt;..., true&gt;()</code> 对于the accumulator path (ND/NZ 仅, <code>int32_t/float</code> source dtype, rows/cols ranges).</li>
 <li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code> (the implementation uses <code>fp</code> to set FPC state).</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>

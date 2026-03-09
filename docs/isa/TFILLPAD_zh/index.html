@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,7 +511,7 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>复制 Tile 并在有效区域外使用编译时填充值进行填充。</p>
 <p>Copy a source tile into a destination tile and fill the remaining (padded) elements with a compile-time pad value
-selected by <code>TileDataDst::PadVal</code> (e.g., <code>PadValue::Min</code>/<code>PadValue::Max</code>).</p>
+selected by <code>TileDataDst::PadVal</code> (e.g., <code>PadValue::Min</code>/<code>PadValue::Max</code>）。</p>
 <p>This is commonly used to materialize deterministic values outside the runtime valid region so that subsequent ops can
 operate on a full static tile shape.</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
@@ -528,7 +524,7 @@ operate on a full static tile shape.</p>
 \end{cases}
 \]</div>
 <p><code>pad</code> is determined by <code>TileDataDst::PadVal</code> and the element type (e.g., <code>+inf/-inf</code> for floating types when available,
-otherwise <code>std::numeric_limits&lt;T&gt;::max()/min()</code>).</p>
+otherwise <code>std::numeric_limits&lt;T&gt;::max()/min()</code>）。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>Synchronous form (conceptual):</p>
@@ -557,10 +553,10 @@ PTO_INTERNAL void TFILLPAD(TileData &amp;dst, TileData &amp;src);
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>TileDataDst::PadVal != PadValue::Null</code>.</li>
-<li><code>sizeof(TileDataDst::DType) == sizeof(TileDataSrc::DType)</code> and element size must be <code>1</code>, <code>2</code>, or <code>4</code> bytes.</li>
-<li><code>TFILLPAD</code>: <code>TileDataDst::Rows/Cols</code> must match <code>TileDataSrc::Rows/Cols</code>.</li>
-<li><code>TFILLPAD_EXPAND</code>: <code>TileDataDst::Rows &gt;= TileDataSrc::Rows</code> and <code>TileDataDst::Cols &gt;= TileDataSrc::Cols</code>.</li>
-<li><code>TFILLPAD(TileData &amp;dst, TileData &amp;src)</code>:<code>if TileData::TileType is Mat, layout only support (!TileData::isRowMajor &amp;&amp; TileData::Slayout::RowMajor), and PadVal only support PadValue::Zero</code></li>
+<li><code>sizeof(TileDataDst::DType) == sizeof(TileDataSrc::DType)</code>且元素大小必须是 <code>1</code>, <code>2</code>,或<code>4</code> 字节.</li>
+<li><code>TFILLPAD</code>: <code>TileDataDst::Rows/Cols</code> 必须匹配 <code>TileDataSrc::Rows/Cols</code>.</li>
+<li><code>TFILLPAD_EXPAND</code>: <code>TileDataDst::Rows &gt;= TileDataSrc::Rows</code>且<code>TileDataDst::Cols &gt;= TileDataSrc::Cols</code>.</li>
+<li><code>TFILLPAD(TileData &amp;dst, TileData &amp;src)</code>:<code>if TileData::TileType is Mat, layout 仅 support (!TileData::isRowMajor &amp;&amp; TileData::Slayout::RowMajor),且PadVal 仅 support PadValue::Zero</code></li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;

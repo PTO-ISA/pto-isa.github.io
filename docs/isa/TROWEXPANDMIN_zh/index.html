@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,8 +511,8 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>行广播最小值：与每行标量向量取最小值。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. Let <code>s_i</code> be the per-row scalar taken from <code>src1</code> (one value per row).</p>
-<p>For <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
+<p>设 <code>R = dst.GetValidRow()</code> 和 <code>C = dst.GetValidCol()</code>。设 <code>s_i</code> 为从 <code>src1</code> 中获取的每行标量（每行一个值）。</p>
+<p>对于 <code>0 &lt;= i &lt; R</code> 和 <code>0 &lt;= j &lt; C</code>：</p>
 <div class="arithmatex">\[
 \mathrm{dst}_{i,j} = \min(\mathrm{src0}_{i,j}, s_i)
 \]</div>
@@ -539,14 +535,14 @@ PTO_INST RecordEvent TROWEXPANDMIN(TileDataDst &amp;dst, TileDataSrc0 &amp;src0,
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>TileDataDst::DType == TileDataSrc0::DType == TileDataSrc1::DType</code></li>
-<li><code>TileDataDst::DType</code>, <code>TileDataSrc0::DType</code>, <code>TileDataSrc1::DType</code> must be one of: <code>half</code>, <code>float</code>.</li>
-<li>Tile 形状/布局约束 (compile-time): <code>TileDataDst::isRowMajor</code>.</li>
-<li>Mode 1: <code>src1</code> is expected to provide <strong>one scalar per row</strong> (i.e., its valid shape must cover <code>R</code> values).</li>
-<li>Mode 2: <code>src1</code> is expected to provide <strong>32 bytes data per row</strong>.</li>
-<li>Exact layout/fractal constraints are target-specific; see backend headers under <code>include/pto/npu/*/TRowExpand*.hpp</code>.</li>
+<li><code>TileDataDst::DType</code>、<code>TileDataSrc0::DType</code>、<code>TileDataSrc1::DType</code> 必须是以下之一：<code>half</code>、<code>float</code>。</li>
+<li>Tile 形状/布局约束（编译时）：<code>TileDataDst::isRowMajor</code>。</li>
+<li>模式 1：<code>src1</code> 预期提供<strong>每行一个标量</strong>（即，其有效形状必须覆盖 <code>R</code> 个值）。</li>
+<li>模式 2：<code>src1</code> 预期提供<strong>每行 32 字节数据</strong>。</li>
+<li>确切的布局/分形约束是目标特定的；参见 <code>include/pto/npu/*/TRowExpand*.hpp</code> 下的后端头文件。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>See related examples in <code>docs/isa/</code> and <code>docs/coding/tutorials/</code>.</p>
+<p>参见 <code>docs/isa/</code> 和 <code>docs/coding/tutorials/</code> 中的相关示例。</p>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
 <h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。

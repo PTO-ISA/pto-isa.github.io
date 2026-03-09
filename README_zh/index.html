@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../docs/isa/TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../docs/isa/TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../docs/isa/TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../docs/isa/TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../docs/isa/TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -669,23 +665,57 @@
 <h2 id="_6">快速开始<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>更详细、分操作系统的环境配置（Windows / Linux / macOS），请参考：<a href="../docs/getting-started_zh/">docs/getting-started_zh.md</a>。</p>
 <h3 id="mkdocs">构建文档（MkDocs）<a class="headerlink" href="#mkdocs" title="Permanent link">&para;</a></h3>
-<p>如果想直接查阅PTO ISA文档，可访问以下链接获取完整内容：</p>
+<p>本仓库在 <code>docs/mkdocs/</code> 下提供完整的 API 文档和 ISA 指令参考，使用 MkDocs（Material 主题）构建。文档内容包括：</p>
 <ul>
-<li><a href="https://pto-isa.gitcode.com">文档中心</a></li>
+<li>完整的 PTO ISA 指令参考</li>
+<li>API 使用指南与示例</li>
+<li>性能调优指南</li>
+<li>架构与设计文档</li>
 </ul>
-<p>如希望自行构建文档，也可参考以下步骤进行操作。</p>
-<p>本仓库在 <code>docs/mkdocs/</code> 下提供 MkDocs（Read the Docs 主题）站点。</p>
-<p>先安装 mkdocs 依赖：</p>
+<p><strong>选项 1：访问在线文档（推荐）</strong></p>
+<p>访问<a href="https://pto-isa.gitcode.com">文档中心</a>获取最新文档。</p>
+<p><strong>选项 2：本地构建文档</strong></p>
+<p>如果需要离线访问、正在修改文档或想查看未发布的功能，可以本地构建文档。</p>
+<p><strong>前置条件：</strong>
+- Python &gt;= 3.8
+- pip（Python 包管理器）</p>
+<p><strong>方法 1：使用 MkDocs CLI 快速开始</strong></p>
+<ol>
+<li>安装 MkDocs 及依赖：</li>
+</ol>
 <pre><code class="language-bash">python -m pip install -r docs/mkdocs/requirements.txt
-python -m mkdocs serve -f docs/mkdocs/mkdocs.yml
 </code></pre>
-<p>构建静态站点：</p>
+<ol>
+<li>选择以下选项之一：</li>
+</ol>
+<p><strong>选项 A：本地运行文档服务器（用于开发/预览）</strong></p>
+<pre><code class="language-bash">python -m mkdocs serve -f docs/mkdocs/mkdocs.yml
+</code></pre>
+<p>文档将在 <code>http://127.0.0.1:8000</code> 可访问。服务器会监听文件变化并自动重新加载。按 <code>Ctrl+C</code> 停止服务器。</p>
+<p><strong>选项 B：构建静态 HTML 站点（用于离线使用/部署）</strong></p>
 <pre><code class="language-bash">python -m mkdocs build -f docs/mkdocs/mkdocs.yml
 </code></pre>
-<p>通过 CMake 构建文档：</p>
+<p>输出将位于 <code>docs/mkdocs/site/</code>。在浏览器中打开 <code>docs/mkdocs/site/index.html</code> 即可查看。</p>
+<p><strong>方法 2：通过 CMake 构建（高级）</strong></p>
+<p>此方法适用于 CI/CD 流水线或将文档构建集成到开发工作流中。</p>
+<ol>
+<li>创建 Python 虚拟环境（推荐）：</li>
+</ol>
+<pre><code class="language-bash">python3 -m venv .venv-mkdocs
+source .venv-mkdocs/bin/activate  # Windows: .venv-mkdocs\Scripts\Activate.ps1
+python -m pip install -r docs/mkdocs/requirements.txt
+</code></pre>
+<ol>
+<li>使用 CMake 配置和构建：</li>
+</ol>
 <pre><code class="language-bash">cmake -S docs -B build/docs -DPython3_EXECUTABLE=$PWD/.venv-mkdocs/bin/python
 cmake --build build/docs --target pto_docs
 </code></pre>
+<p>Windows (PowerShell)：</p>
+<pre><code class="language-powershell">cmake -S docs -B build/docs -DPython3_EXECUTABLE=&quot;$PWD\.venv-mkdocs\Scripts\python.exe&quot;
+cmake --build build/docs --target pto_docs
+</code></pre>
+<p>构建的文档将位于 <code>build/docs/site/</code>。</p>
 <h3 id="cpu-simulator">运行 CPU Simulator（建议第一步）<a class="headerlink" href="#cpu-simulator" title="Permanent link">&para;</a></h3>
 <p>CPU 仿真跨平台，不依赖昇腾驱动/CANN：</p>
 <pre><code class="language-bash">python3 tests/run_cpu.py --clean --verbose

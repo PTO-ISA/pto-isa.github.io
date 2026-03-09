@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,10 +511,10 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>将 Tile 对象绑定到实现定义的片上地址（手动放置）。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Not applicable.</p>
+<p>不适用。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p><code>TASSIGN</code> is typically introduced by bufferization/lowering when mapping SSA tiles to physical storage.</p>
+<p><code>TASSIGN</code> 通常在将 SSA tile 映射到物理存储时由缓冲化/降级引入。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">tassign %tile, %addr : !pto.tile&lt;...&gt;, index
 </code></pre>
@@ -680,14 +676,14 @@ PTO_INST void TASSIGN(T&amp; obj);
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查</strong>:</li>
-<li>若 <code>obj</code> 为 Tile：<ul>
-<li>在手动模式下（未定义 <code>__PTO_AUTO__</code>），<code>addr</code> 必须为整型，将被解释为 Tile 的存储地址。</li>
-<li>在自动模式下（已定义 <code>__PTO_AUTO__</code>），<code>TASSIGN(tile, addr)</code> 为空操作。</li>
+<li>如果 <code>obj</code> 是 Tile：<ul>
+<li>在手动模式下（未定义 <code>__PTO_AUTO__</code> 时），<code>addr</code> 必须是整数类型，并被重新解释为 tile 的存储地址。</li>
+<li>在自动模式下（定义了 <code>__PTO_AUTO__</code> 时），<code>TASSIGN(tile, addr)</code> 是空操作。</li>
 </ul>
 </li>
-<li>若 <code>obj</code> 为 <code>GlobalTensor</code>：<ul>
-<li><code>addr</code> 必须为指针类型。</li>
-<li>被指向的元素类型必须与 <code>GlobalTensor::DType</code> 一致。</li>
+<li>如果 <code>obj</code> 是 <code>GlobalTensor</code>：<ul>
+<li><code>addr</code> 必须是指针类型。</li>
+<li>指向的元素类型必须匹配 <code>GlobalTensor::DType</code>。</li>
 </ul>
 </li>
 </ul>

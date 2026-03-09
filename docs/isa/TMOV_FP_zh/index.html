@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,7 +511,7 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>使用缩放 (<code>fp</code>) Tile 作为向量量化参数，将累加器 Tile 移动/转换到目标 Tile。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Conceptually converts each element using an implementation-defined quantization/dequantization configuration derived from <code>fp</code>:</p>
+<p>概念上使用从 <code>fp</code> 派生的实现定义的量化/反量化配置转换每个元素：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{Convert}\!\left(\mathrm{src}_{i,j};\ \mathrm{fp}\right) \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
@@ -529,7 +525,7 @@
 <pre><code class="language-text">pto.tmov.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code> 和 <code>include/pto/common/constants.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename FpTileData,
           ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV_FP(DstTileData&amp; dst, SrcTileData&amp; src, FpTileData&amp; fp, WaitEvents&amp;... events);
@@ -537,12 +533,12 @@ PTO_INST RecordEvent TMOV_FP(DstTileData&amp; dst, SrcTileData&amp; src, FpTileD
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
-<li>The fp path is only supported for accumulator conversion and is validated by internal compile-time checks in <code>TMOV_IMPL(dst, src, fp)</code>.</li>
-<li><code>FpTileData::Loc</code> must be <code>TileType::Scaling</code> (<code>static_assert</code>).</li>
+<li>fp 路径仅支持累加器转换，并通过 <code>TMOV_IMPL(dst, src, fp)</code> 中的内部编译时检查进行验证。</li>
+<li><code>FpTileData::Loc</code> 必须是 <code>TileType::Scaling</code>（<code>static_assert</code>）。</li>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li>Validated by <code>CheckTMovAccValid(...)</code> and related compile-time checks in <code>TMOV_IMPL(dst, src, fp)</code>.</li>
-<li><code>FpTileData::Loc</code> must be <code>TileType::Scaling</code> (<code>static_assert</code>).</li>
-<li>Destination location is target-dependent (<code>Vec</code> or <code>Mat</code> are supported in the fp path).</li>
+<li>通过 <code>CheckTMovAccValid(...)</code> 和 <code>TMOV_IMPL(dst, src, fp)</code> 中的相关编译时检查进行验证。</li>
+<li><code>FpTileData::Loc</code> 必须是 <code>TileType::Scaling</code>（<code>static_assert</code>）。</li>
+<li>目标位置取决于目标（fp 路径支持 <code>Vec</code> 或 <code>Mat</code>）。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

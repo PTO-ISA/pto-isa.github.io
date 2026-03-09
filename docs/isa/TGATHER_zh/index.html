@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -546,30 +542,30 @@ PTO_INST RecordEvent TGATHER(DstTileData&amp; dst, SrcTileData&amp; src, WaitEve
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Index-based gather: implementation checks (A2A3)</strong>:</li>
-<li><code>sizeof(DstTileData::DType)</code> must be must be <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
-<li><code>sizeof(Src1TileData::DType)</code> must be must be <code>int32_t</code>, <code>uint32_t</code>.</li>
-<li><code>DstTileData::DType</code> must be the same type as <code>Src0TileData::DType</code>.</li>
-<li><code>src1.GetValidCol() == Src1TileData::Cols</code> and <code>dst.GetValidCol() == DstTileData::Cols</code>.</li>
-<li><strong>Index-based gather: implementation checks (A5)</strong>:</li>
-<li><code>sizeof(DstTileData::DType)</code> must be must be <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
-<li><code>sizeof(Src1TileData::DType)</code> must be must be <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>.</li>
-<li><code>DstTileData::DType</code> must be the same type as <code>Src0TileData::DType</code>.</li>
-<li><code>src1.GetValidCol() == Src1TileData::Cols</code> and <code>dst.GetValidCol() == DstTileData::Cols</code>.</li>
-<li><strong>基于掩码模式的 gather： implementation checks (A2A3)</strong>:</li>
-<li>Source element size must be <code>2</code> or <code>4</code> bytes.</li>
-<li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> must be <code>int16_t</code> or <code>uint16_t</code> or <code>int32_t</code> or <code>uint32_t</code>
-    or <code>half</code> or <code>bfloat16_t</code> or <code>float</code>.</li>
-<li><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code> and row-major.</li>
-<li><code>sizeof(dst element) == sizeof(src element)</code> and <code>dst.GetValidCol() == DstTileData::Cols</code> (continuous dst storage).</li>
-<li><strong>基于掩码模式的 gather： implementation checks (A5)</strong>:</li>
-<li>Source element size must be <code>1</code> or <code>2</code> or <code>4</code> bytes.</li>
-<li><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code> and row-major.</li>
-<li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> must be <code>int8_t</code> or <code>uint8_t</code> or <code>int16_t</code> or <code>uint16_t</code> or <code>int32_t</code> or <code>uint32_t</code>
-    or <code>half</code> or <code>bfloat16_t</code> or <code>float</code> or <code>float8_e4m3_t</code>or <code>float8_e5m2_t</code> or <code>hifloat8_t</code>.</li>
-<li>Supported dtypes are restricted to a target-defined set (checked via <code>static_assert</code> in the implementation), and <code>sizeof(dst element) == sizeof(src element)</code>, <code>dst.GetValidCol() == DstTileData::Cols</code> (continuous dst storage).</li>
+<li><strong>基于索引的 gather： 实现检查 (A2A3)</strong>:</li>
+<li><code>sizeof(DstTileData::DType)</code> 必须是 必须是 <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
+<li><code>sizeof(Src1TileData::DType)</code> 必须是 必须是 <code>int32_t</code>, <code>uint32_t</code>.</li>
+<li><code>DstTileData::DType</code> 必须是 相同的类型 <code>Src0TileData::DType</code>.</li>
+<li><code>src1.GetValidCol() == Src1TileData::Cols</code>且<code>dst.GetValidCol() == DstTileData::Cols</code>.</li>
+<li><strong>基于索引的 gather： 实现检查 (A5)</strong>:</li>
+<li><code>sizeof(DstTileData::DType)</code> 必须是 必须是 <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
+<li><code>sizeof(Src1TileData::DType)</code> 必须是 必须是 <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>.</li>
+<li><code>DstTileData::DType</code> 必须是 相同的类型 <code>Src0TileData::DType</code>.</li>
+<li><code>src1.GetValidCol() == Src1TileData::Cols</code>且<code>dst.GetValidCol() == DstTileData::Cols</code>.</li>
+<li><strong>基于掩码模式的 gather： 实现检查 (A2A3)</strong>:</li>
+<li>源元素大小 必须是 <code>2</code>或<code>4</code> 字节.</li>
+<li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> 必须是 <code>int16_t</code>或<code>uint16_t</code>或<code>int32_t</code>或<code>uint32_t</code>
+   或<code>half</code>或<code>bfloat16_t</code>或<code>float</code>.</li>
+<li><code>dst</code>且<code>src</code> 必须都是 <code>TileType::Vec</code>且行主序.</li>
+<li><code>sizeof(dst element) == sizeof(src element)</code>且<code>dst.GetValidCol() == DstTileData::Cols</code> (连续的目标存储).</li>
+<li><strong>基于掩码模式的 gather： 实现检查 (A5)</strong>:</li>
+<li>源元素大小 必须是 <code>1</code>或<code>2</code>或<code>4</code> 字节.</li>
+<li><code>dst</code>且<code>src</code> 必须都是 <code>TileType::Vec</code>且行主序.</li>
+<li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> 必须是 <code>int8_t</code>或<code>uint8_t</code>或<code>int16_t</code>或<code>uint16_t</code>或<code>int32_t</code>或<code>uint32_t</code>
+   或<code>half</code>或<code>bfloat16_t</code>或<code>float</code>或<code>float8_e4m3_t</code>or <code>float8_e5m2_t</code>或<code>hifloat8_t</code>.</li>
+<li>支持的数据类型限制为目标定义的集合 (通过 <code>static_assert</code> 在实现中),且<code>sizeof(dst element) == sizeof(src element)</code>, <code>dst.GetValidCol() == DstTileData::Cols</code> (连续的目标存储).</li>
 <li><strong>边界 / 有效性</strong>:</li>
-<li>Index bounds are not validated by explicit runtime assertions; out-of-range indices are target-defined.</li>
+<li>Index bounds 不通过显式运行时断言进行验证; 超出范围的索引由目标定义.</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

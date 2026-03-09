@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,13 +511,13 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>带累加器输入的矩阵乘法（融合累加）。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let:</p>
+<p>设：</p>
 <ul>
 <li><code>M = aMatrix.GetValidRow()</code></li>
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>For <code>0 &lt;= i &lt; M</code> and <code>0 &lt;= j &lt; N</code>:</p>
+<p>对于 <code>0 &lt;= i &lt; M</code> 和 <code>0 &lt;= j &lt; N</code>：</p>
 <div class="arithmatex">\[ \mathrm{C1}_{i,j} = \mathrm{C0}_{i,j} + \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
@@ -542,10 +538,10 @@ PTO_INST RecordEvent TMATMUL_ACC(TileRes&amp; cOutMatrix, TileRes&amp; cInMatrix
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>All constraints from <code>TMATMUL</code> apply to the <code>(cOutMatrix, aMatrix, bMatrix)</code> triple.</li>
-<li><strong>Implementation notes (A2A3/A5)</strong>:</li>
-<li><code>TMATMUL_ACC_IMPL</code> uses <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, and <code>bMatrix.GetValidCol()</code> for <code>m/k/n</code>.</li>
-<li><code>cInMatrix</code> is not validated by explicit assertions in the current implementations (target-defined behavior).</li>
+<li>所有来自 <code>TMATMUL</code> 的约束都适用于 <code>(cOutMatrix, aMatrix, bMatrix)</code> 三元组。</li>
+<li><strong>实现说明 (A2A3/A5)</strong>:</li>
+<li><code>TMATMUL_ACC_IMPL</code> 使用 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code> 和 <code>bMatrix.GetValidCol()</code> 作为 <code>m/k/n</code>。</li>
+<li><code>cInMatrix</code> 在当前实现中不通过显式断言进行验证（目标定义的行为）。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,9 +511,9 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>比较两个 Tile 并写入一个打包的谓词掩码。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Conceptually, for each element <code>(i, j)</code> in the valid region, define a predicate:</p>
+<p>概念上，对于有效区域中的每个元素 <code>(i, j)</code>，定义一个谓词：</p>
 <div class="arithmatex">\[ p_{i,j} = \left(\mathrm{src0}_{i,j}\ \mathrm{cmpMode}\ \mathrm{src1}_{i,j}\right) \]</div>
-<p>The predicate mask is stored in <code>dst</code> using an implementation-defined packed layout.</p>
+<p>谓词掩码使用实现定义的打包布局存储在 <code>dst</code> 中。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
@@ -530,7 +526,7 @@
 <pre><code class="language-text">pto.tcmp ins(%src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/type.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code> 和 <code>include/pto/common/type.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCMP(TileDataDst&amp; dst, TileDataSrc&amp; src0, TileDataSrc&amp; src1, CmpMode cmpMode,
                           WaitEvents&amp;... events);
@@ -538,20 +534,20 @@ PTO_INST RecordEvent TCMP(TileDataDst&amp; dst, TileDataSrc&amp; src0, TileDataS
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
-<li>Input type must be one of: <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>Output type must be <code>uint8_t</code>.</li>
-<li><code>src0/src1/dst</code> tile location must be <code>TileType::Vec</code>.</li>
-<li>Static valid bounds: <code>TileDataSrc::ValidRow &lt;= TileDataSrc::Rows</code> and <code>TileDataSrc::ValidCol &lt;= TileDataSrc::Cols</code>.</li>
-<li>Runtime: <code>src0.GetValidRow() == dst.GetValidRow()</code> and <code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
-<li>Note: <code>src1</code> shape/valid is not validated by explicit runtime assertions in this implementation.</li>
-<li>For <code>TileDataSrc::DType == int32_t</code>, the implementation uses the <code>EQ</code> compare path regardless of <code>cmpMode</code>.</li>
+<li>输入类型必须是以下之一：<code>int32_t</code>、<code>half</code>、<code>float</code>。</li>
+<li>输出类型必须是 <code>uint8_t</code>。</li>
+<li><code>src0/src1/dst</code> tile 位置必须是 <code>TileType::Vec</code>。</li>
+<li>静态有效边界：<code>TileDataSrc::ValidRow &lt;= TileDataSrc::Rows</code> 且 <code>TileDataSrc::ValidCol &lt;= TileDataSrc::Cols</code>。</li>
+<li>运行时：<code>src0.GetValidRow() == dst.GetValidRow()</code> 且 <code>src0.GetValidCol() == dst.GetValidCol()</code>。</li>
+<li>注意：<code>src1</code> 的形状/有效性在此实现中不通过显式运行时断言进行验证。</li>
+<li>对于 <code>TileDataSrc::DType == int32_t</code>，实现使用 <code>EQ</code> 比较路径，无论 <code>cmpMode</code> 如何。</li>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li>Input type must be one of: <code>uint32_t</code>, <code>int32_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint8_t</code>,  <code>int8_t</code>, <code>float</code>, <code>half</code>.</li>
-<li>Output type must be <code>uint32_t</code>.</li>
-<li>Implemented (see <code>include/pto/npu/a5/TCmp.hpp</code>).</li>
-<li>The A5 implementation uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain and writes a packed predicate mask into <code>dst</code> (target-defined packing).</li>
-<li><strong>Mask encoding</strong>:</li>
-<li>The mask tile is interpreted as packed predicate bits in a target-defined layout.</li>
+<li>输入类型必须是以下之一：<code>uint32_t</code>、<code>int32_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint8_t</code>、<code>int8_t</code>、<code>float</code>、<code>half</code>。</li>
+<li>输出类型必须是 <code>uint32_t</code>。</li>
+<li>已实现（参见 <code>include/pto/npu/a5/TCmp.hpp</code>）。</li>
+<li>A5 实现使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域，并将打包的谓词掩码写入 <code>dst</code>（目标定义的打包方式）。</li>
+<li><strong>掩码编码</strong>:</li>
+<li>掩码 tile 被解释为目标定义布局中的打包谓词位。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

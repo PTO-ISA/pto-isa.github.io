@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,8 +511,8 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>从源 Tile 中提取子 Tile。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Conceptually copies a window starting at <code>(indexRow, indexCol)</code> from <code>src</code> into <code>dst</code>. Exact mapping depends on layouts.</p>
-<p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
+<p>概念上从 <code>src</code> 中复制从 <code>(indexRow, indexCol)</code> 开始的窗口到 <code>dst</code>。确切的映射取决于布局。</p>
+<p>设 <code>R = dst.GetValidRow()</code> 和 <code>C = dst.GetValidCol()</code>。对于 <code>0 &lt;= i &lt; R</code> 和 <code>0 &lt;= j &lt; C</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{\mathrm{indexRow}+i,\; \mathrm{indexCol}+j} \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
@@ -538,18 +534,18 @@ PTO_INST RecordEvent TEXTRACT(DstTileData&amp; dst, SrcTileData&amp; src, uint16
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
-<li><code>DstTileData::DType</code> must equal <code>SrcTileData::DType</code> and must be one of: <code>int8_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
-<li>Source fractal must satisfy: <code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> or <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code>.</li>
-<li>Runtime bounds checks:<ul>
+<li><code>DstTileData::DType</code> 必须等于 <code>SrcTileData::DType</code> 且必须是以下之一：<code>int8_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
+<li>源分形必须满足：<code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> 或 <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code>。</li>
+<li>运行时边界检查：<ul>
 <li><code>indexRow + DstTileData::Rows &lt;= SrcTileData::Rows</code></li>
 <li><code>indexCol + DstTileData::Cols &lt;= SrcTileData::Cols</code></li>
 </ul>
 </li>
-<li>Destination must be <code>TileType::Left</code> or <code>TileType::Right</code> with a target-supported fractal configuration.</li>
+<li>目标必须是 <code>TileType::Left</code> 或 <code>TileType::Right</code>，具有目标支持的分形配置。</li>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li><code>DstTileData::DType</code> must equal <code>SrcTileData::DType</code> and must be one of: <code>int8_t</code>, <code>hifloat8_t</code>, <code>float8_e5m2_t</code>, <code>float8_e4m3_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, <code>float4_e2m1x2_t</code>, <code>float4_e1m2x2_t</code>, <code>float8_e8m0_t</code>.</li>
-<li>Source fractal must satisfy: <code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> or <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code> for Left/Right, <code>(SFractal == RowMajor &amp;&amp; isRowMajor)</code> for ScaleLeft, <code>(SFractal == ColMajor &amp;&amp; !isRowMajor)</code> for ScaleRight.</li>
-<li>Destination supports <code>Mat -&gt; Left/Right/Scale</code> and also supports <code>Vec -&gt; Mat</code> for specific tile locations (no explicit runtime bounds assertions are enforced in <code>TEXTRACT_IMPL</code> on this target).</li>
+<li><code>DstTileData::DType</code> 必须等于 <code>SrcTileData::DType</code> 且必须是以下之一：<code>int8_t</code>、<code>hifloat8_t</code>、<code>float8_e5m2_t</code>、<code>float8_e4m3_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>、<code>float4_e2m1x2_t</code>、<code>float4_e1m2x2_t</code>、<code>float8_e8m0_t</code>。</li>
+<li>源分形必须满足：对于 Left/Right 为 <code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> 或 <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code>，对于 ScaleLeft 为 <code>(SFractal == RowMajor &amp;&amp; isRowMajor)</code>，对于 ScaleRight 为 <code>(SFractal == ColMajor &amp;&amp; !isRowMajor)</code>。</li>
+<li>目标支持 <code>Mat -&gt; Left/Right/Scale</code>，也支持特定 tile 位置的 <code>Vec -&gt; Mat</code>（此目标的 <code>TEXTRACT_IMPL</code> 中不强制执行显式运行时边界断言）。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

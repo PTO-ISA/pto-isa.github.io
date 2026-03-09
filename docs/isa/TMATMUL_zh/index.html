@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,15 +511,15 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>矩阵乘法 (GEMM)，生成累加器/输出 Tile。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let:</p>
+<p>设：</p>
 <ul>
 <li><code>M = aMatrix.GetValidRow()</code></li>
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>For <code>0 &lt;= i &lt; M</code> and <code>0 &lt;= j &lt; N</code> (output elements in the effective matmul domain):</p>
+<p>对于 <code>0 &lt;= i &lt; M</code> 和 <code>0 &lt;= j &lt; N</code>（有效矩阵乘法域中的输出元素）：</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p>Exact accumulator behavior and datatype promotion are target/implementation-defined.</p>
+<p>精确的累加器行为和数据类型提升由目标/实现定义。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
@@ -543,28 +539,28 @@ PTO_INST RecordEvent TMATMUL(TileRes&amp; cMatrix, TileLeft&amp; aMatrix, TileRi
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
-<li>Supported <code>(CType, AType, BType)</code> triples:<ul>
+<li>支持的 <code>(CType, AType, BType)</code> 三元组：<ul>
 <li><code>(int32_t, int8_t, int8_t)</code></li>
 <li><code>(float, half, half)</code></li>
 <li><code>(float, float, float)</code></li>
 <li><code>(float, bfloat16_t, bfloat16_t)</code></li>
 </ul>
 </li>
-<li>Static shape constraints: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</li>
-<li>Tile locations: <code>TileLeft::Loc == Left</code>, <code>TileRight::Loc == Right</code>, <code>TileRes::Loc == Acc</code>.</li>
-<li>Runtime: <code>m/k/n</code> (taken from <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code>.</li>
+<li>静态形状约束：<code>TileLeft::Rows == TileRes::Rows</code>、<code>TileLeft::Cols == TileRight::Rows</code>、<code>TileRight::Cols == TileRes::Cols</code>。</li>
+<li>Tile 位置：<code>TileLeft::Loc == Left</code>、<code>TileRight::Loc == Right</code>、<code>TileRes::Loc == Acc</code>。</li>
+<li>运行时：<code>m/k/n</code>（取自 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code>、<code>bMatrix.GetValidCol()</code>）必须在 <code>[1, 4095]</code> 范围内。</li>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li>Accumulator type must be <code>int32_t</code> or <code>float</code>.<ul>
-<li>If <code>int32_t</code>: <code>AType == int8_t</code> and <code>BType == int8_t</code>.</li>
-<li>If <code>float</code>: supports <code>half/bfloat16_t/float</code> and selected fp8 pairs (target-defined).</li>
+<li>累加器类型必须是 <code>int32_t</code> 或 <code>float</code>。<ul>
+<li>如果是 <code>int32_t</code>：<code>AType == int8_t</code> 且 <code>BType == int8_t</code>。</li>
+<li>如果是 <code>float</code>：支持 <code>half/bfloat16_t/float</code> 和选定的 fp8 对（目标定义）。</li>
 </ul>
 </li>
-<li>Static shape constraints: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</li>
-<li>Fractal/layout constraints are enforced:<ul>
-<li>Left: <code>Loc == Left</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></li>
-<li>Right: <code>Loc == Right</code>, <code>isRowMajor</code>, <code>SFractal == ColMajor</code></li>
-<li>Acc: <code>Loc == Acc</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></li>
-<li>Runtime: <code>m/k/n</code> (taken from <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code>.</li>
+<li>静态形状约束：<code>TileLeft::Rows == TileRes::Rows</code>、<code>TileLeft::Cols == TileRight::Rows</code>、<code>TileRight::Cols == TileRes::Cols</code>。</li>
+<li>强制执行分形/布局约束：<ul>
+<li>Left：<code>Loc == Left</code>、<code>!isRowMajor</code>、<code>SFractal == RowMajor</code></li>
+<li>Right：<code>Loc == Right</code>、<code>isRowMajor</code>、<code>SFractal == ColMajor</code></li>
+<li>Acc：<code>Loc == Acc</code>、<code>!isRowMajor</code>、<code>SFractal == RowMajor</code></li>
+<li>运行时：<code>m/k/n</code>（取自 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code>、<code>bMatrix.GetValidCol()</code>）必须在 <code>[1, 4095]</code> 范围内。</li>
 </ul>
 </li>
 </ul>

@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,14 +511,14 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>带缩放 Tile 的 GEMV 变体，支持混合精度/量化矩阵向量计算。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Conceptually (base GEMV path):</p>
+<p>概念上（基础 GEMV 路径）：</p>
 <div class="arithmatex">\[
 \mathrm{C}_{0,j} = \sum_{k=0}^{K-1} \mathrm{A}_{0,k} \cdot \mathrm{B}_{k,j}
 \]</div>
-<p>For <code>TGEMV_MX</code>, scale tiles participate in implementation-defined mixed-precision reconstruction / scaling. The architectural contract is that output corresponds to the target-defined mx GEMV semantics.</p>
+<p>对于 <code>TGEMV_MX</code>，缩放 tile 参与实现定义的混合精度重建/缩放。架构约定是输出对应于目标定义的 mx GEMV 语义。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>Schematic form:</p>
+<p>示意形式：</p>
 <pre><code class="language-text">%acc = tgemv.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
@@ -538,15 +534,15 @@
 PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix,
                               TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
 </code></pre>
-<p>Additional overloads support accumulation/bias variants and <code>AccPhase</code> selection.</p>
+<p>附加重载支持累加/偏置变体和 <code>AccPhase</code> 选择。</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Uses backend-specific mx legality checks for data types, tile locations, fractal/layout combinations, and scaling formats.</li>
-<li>Scale tile compatibility and accumulator promotion are implementation-defined by target backend.</li>
-<li>For portability, validate the exact <code>(A, B, scaleA, scaleB, C)</code> type tuple and tile layout against target implementation constraints.</li>
+<li>使用后端特定的 mx 合法性检查，用于数据类型、tile 位置、分形/布局组合以及缩放格式。</li>
+<li>缩放 tile 兼容性和累加器提升由目标后端的实现定义。</li>
+<li>为了可移植性，请根据目标实现约束验证确切的 <code>(A, B, scaleA, scaleB, C)</code> 类型元组和 tile 布局。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>For practical usage patterns, see:</p>
+<p>实际使用模式请参见：</p>
 <ul>
 <li><code>docs/isa/TMATMUL_MX.md</code></li>
 <li><code>docs/isa/TGEMV.md</code></li>

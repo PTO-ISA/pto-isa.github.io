@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -541,14 +537,14 @@ PTO_INST RecordEvent TCOLSUM(TileDataOut&amp; dst, TileDataIn&amp; src, TileData
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>实现检查 (NPU):</p>
 <ul>
-<li>Tile location: <code>dst</code>, <code>src</code>, <code>tmp</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile 布局: all tiles must be ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
+<li>Tile 位置: <code>dst</code>, <code>src</code>, <code>tmp</code> 必须是 <code>TileType::Vec</code>.</li>
+<li>Tile 布局: 所有tiles 必须是 ND 分形（<code>isRowMajor</code>且<code>SLayout::NoneBox</code>）。</li>
 <li>数据类型一致性:</li>
-<li>A2A3: <code>src.DType</code> must be one of <code>half</code>, <code>float</code>, <code>int16_t</code>, <code>int32_t</code>, and <code>dst.DType == tmp.DType == src.DType</code>.</li>
-<li>A5: <code>dst.DType == src.DType</code> is required by <code>TColReduceCheck</code>; the exact supported <code>src.DType</code> set is target-defined (see <code>include/pto/npu/a5/TColReduceOps.hpp</code>).</li>
+<li>A2A3: <code>src.DType</code> 必须是 one of <code>half</code>, <code>float</code>, <code>int16_t</code>, <code>int32_t</code>,且<code>dst.DType == tmp.DType == src.DType</code>.</li>
+<li>A5：<code>TColReduceCheck</code> 要求 <code>dst.DType == src.DType</code>；确切支持的 <code>src.DType</code> 集合由目标定义（参见 <code>include/pto/npu/a5/TColReduceOps.hpp</code>）。</li>
 <li>运行期有效区域检查:</li>
-<li>A2A3: <code>src.GetValidCol() == dst.GetValidCol()</code>; returns early if <code>src.GetValidRow() == 0</code> or <code>src.GetValidCol() == 0</code>.</li>
-<li>A5: <code>srcValidRow</code> and <code>srcValidCol</code> must be non-zero; <code>srcValidCol == dstValidCol</code> is asserted by <code>TColReduceCheck</code>.</li>
+<li>A2A3: <code>src.GetValidCol() == dst.GetValidCol()</code>; returns early if <code>src.GetValidRow() == 0</code>或<code>src.GetValidCol() == 0</code>.</li>
+<li>A5: <code>srcValidRow</code>且<code>srcValidCol</code> 必须是 non-zero; <code>srcValidCol == dstValidCol</code> is asserted by <code>TColReduceCheck</code>.</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

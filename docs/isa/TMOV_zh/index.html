@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -514,20 +510,20 @@
 <p><img alt="TMOV tile operation" src="../../figures/isa/TMOV.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>在 Tile 之间移动/复制，可选应用实现定义的转换模式。</p>
-<p>Move/copy between tiles, optionally applying implementation-defined conversion modes selected by template parameters and overloads.</p>
-<p><code>TMOV</code> is used for:</p>
+<p>在 Tile 之间移动/复制，可选通过模板参数和重载选择实现定义的转换模式。</p>
+<p><code>TMOV</code> 用于：</p>
 <ul>
-<li>Vec -&gt; Vec moves</li>
-<li>Mat -&gt; Left/Right/Bias/Scaling/Scale(Microscaling) moves (target-dependent)</li>
-<li>Acc -&gt; Vec moves (target-dependent)</li>
+<li>Vec -&gt; Vec 移动</li>
+<li>Mat -&gt; Left/Right/Bias/Scaling/Scale（微缩放）移动（取决于目标）</li>
+<li>Acc -&gt; Vec 移动（取决于目标）</li>
 </ul>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Conceptually copies or transforms elements from <code>src</code> into <code>dst</code> over the valid region. Exact transformation depends on the selected mode and target.</p>
-<p>For the pure copy case:</p>
+<p>概念上在有效区域上将元素从 <code>src</code> 复制或转换到 <code>dst</code>。确切的转换取决于所选模式和目标。</p>
+<p>对于纯复制情况：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{i,j} \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>The PTO AS design recommends splitting <code>TMOV</code> into a family of ops:</p>
+<p>PTO AS 设计建议将 <code>TMOV</code> 拆分为一系列操作：</p>
 <pre><code class="language-text">%left  = tmov.m2l %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 %right = tmov.m2r %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 %bias  = tmov.m2b %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
@@ -542,7 +538,7 @@
 <pre><code class="language-text">pto.tmov ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code> 和 <code>include/pto/common/constants.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV(DstTileData&amp; dst, SrcTileData&amp; src, WaitEvents&amp;... events);
 
@@ -572,25 +568,25 @@ PTO_INST RecordEvent TMOV(DstTileData&amp; dst, SrcTileData&amp; src, FpTileData
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
-<li>Shapes must match: <code>SrcTileData::Rows == DstTileData::Rows</code> and <code>SrcTileData::Cols == DstTileData::Cols</code>.</li>
-<li>Supported location pairs (compile-time checked):<ul>
+<li>形状必须匹配：<code>SrcTileData::Rows == DstTileData::Rows</code> 且 <code>SrcTileData::Cols == DstTileData::Cols</code>。</li>
+<li>支持的位置对（编译时检查）：<ul>
 <li><code>Mat -&gt; Left/Right/Bias/Scaling</code></li>
 <li><code>Vec -&gt; Vec</code></li>
-<li><code>Acc -&gt; Mat</code> (including optional pre-quant / relu / fp variants via overloads)</li>
+<li><code>Acc -&gt; Mat</code>（包括通过重载的可选预量化/relu/fp 变体）</li>
 </ul>
 </li>
-<li>For <code>Acc -&gt; Mat</code>, additional fractal/type constraints are enforced (e.g., <code>Acc</code> uses NZ-like fractal, <code>Mat</code> uses 512B fractal, and only specific dtype conversions are allowed).</li>
+<li>对于 <code>Acc -&gt; Mat</code>，强制执行额外的分形/类型约束（例如，<code>Acc</code> 使用类 NZ 分形，<code>Mat</code> 使用 512B 分形，且仅允许特定的数据类型转换）。</li>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li>For <code>Mat -&gt; *</code>, shapes must match; for some <code>Vec</code> moves, the effective copy size is the min of src/dst valid rows/cols.</li>
-<li>Supported location pairs include (target-dependent):<ul>
+<li>对于 <code>Mat -&gt; *</code>，形状必须匹配；对于某些 <code>Vec</code> 移动，有效复制大小是 src/dst 有效行/列的最小值。</li>
+<li>支持的位置对包括（取决于目标）：<ul>
 <li><code>Mat -&gt; Left/Right/Bias/Scaling/Scale</code></li>
-<li><code>Vec -&gt; Vec</code> and <code>Vec -&gt; Mat</code></li>
-<li><code>Acc -&gt; Vec</code> and <code>Acc -&gt; Mat</code> (including optional pre-quant / relu / fp variants via overloads)</li>
+<li><code>Vec -&gt; Vec</code> 和 <code>Vec -&gt; Mat</code></li>
+<li><code>Acc -&gt; Vec</code> 和 <code>Acc -&gt; Mat</code>（包括通过重载的可选预量化/relu/fp 变体）</li>
 </ul>
 </li>
-<li>For <code>Mat -&gt; Left/Right</code>, additional fractal and dtype constraints are enforced via <code>CommonCheck</code> (source fractal must be compatible and element types must match).</li>
-<li>For <code>Acc -&gt; Vec/Mat</code>, additional fractal/type/alignment constraints are enforced via <code>CheckTMovAccValid</code>.</li>
-<li>For <code>Mat -&gt; Scale</code>, additional fractal and dtype constraints are enforced via <code>CommonCheckMX</code> (source fractal must be compatible and element types must match).</li>
+<li>对于 <code>Mat -&gt; Left/Right</code>，通过 <code>CommonCheck</code> 强制执行额外的分形和数据类型约束（源分形必须兼容且元素类型必须匹配）。</li>
+<li>对于 <code>Acc -&gt; Vec/Mat</code>，通过 <code>CheckTMovAccValid</code> 强制执行额外的分形/类型/对齐约束。</li>
+<li>对于 <code>Mat -&gt; Scale</code>，通过 <code>CommonCheckMX</code> 强制执行额外的分形和数据类型约束（源分形必须兼容且元素类型必须匹配）。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -511,9 +507,7 @@
 
 <h1 id="trowprod">TROWPROD<a class="headerlink" href="#trowprod" title="Permanent link">&para;</a></h1>
 <h2 id="tile">Tile 操作图示<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h2>
-<!-- ![TROWPROD tile operation](../figures/isa/TROWPROD.svg) -->
-<!-- TODO: 添加 TROWPROD 图示 -->
-
+<p><img alt="TROWPROD tile operation" src="../../figures/isa/TROWPROD.svg" /></p>
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>对每行元素进行乘积归约。</p>
 <h2 id="_2">数学定义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
@@ -524,7 +518,7 @@
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>Lowering 可能引入内部临时 tile；C++ 内建函数需要显式的 <code>tmp</code> 操作数。</p>
+<p>降级可能引入内部临时 tile；C++ 内建函数需要显式的 <code>tmp</code> 操作数。</p>
 <h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.trowprod %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -559,7 +553,7 @@ PTO_INST RecordEvent TROWPROD(TileDataOut&amp; dst, TileDataIn&amp; src, TileDat
 <h2 id="_5">实现说明<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>与使用 <code>vcadd</code>/<code>vcgadd</code> 指令的 TROWSUM 不同，TROWPROD 使用 <code>vmul</code> 进行二分归约，因为 A2A3 没有 <code>vcmul</code> 指令。实现步骤：</p>
 <ol>
-<li>将相邻的 repeat 对相乘，结果存入 <code>tmp</code></li>
+<li>将相邻的重复对相乘，结果存入 <code>tmp</code></li>
 <li>对 <code>tmp</code> 迭代执行二分乘法归约</li>
 <li>持续归约直到每行只剩一个元素</li>
 </ol>

@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -515,18 +511,18 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>带额外缩放 Tile 的矩阵乘法 (GEMM)，用于支持目标上的混合精度/量化矩阵乘法。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let:</p>
+<p>设：</p>
 <ul>
 <li><code>M = aMatrix.GetValidRow()</code></li>
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>Conceptually, the result corresponds to a matrix multiply over the effective matmul domain (<code>0 &lt;= i &lt; M</code>, <code>0 &lt;= j &lt; N</code>), with the scaling tiles <code>aScaleMatrix</code> / <code>bScaleMatrix</code> configuring implementation-defined mixed-precision behavior:</p>
+<p>概念上，结果对应于有效矩阵乘法域（<code>0 &lt;= i &lt; M</code>，<code>0 &lt;= j &lt; N</code>）上的矩阵乘法，缩放 tile <code>aScaleMatrix</code> / <code>bScaleMatrix</code> 配置实现定义的混合精度行为：</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p>The exact role of <code>aScaleMatrix</code> / <code>bScaleMatrix</code> (and any dequant/quant semantics) is target-defined.</p>
+<p><code>aScaleMatrix</code> / <code>bScaleMatrix</code> 的确切作用（以及任何反量化/量化语义）由目标定义。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>Synchronous forms (conceptual):</p>
+<p>同步形式（概念性）：</p>
 <pre><code class="language-text">%c = tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c_out = tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c = tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
@@ -567,10 +563,10 @@ PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li><code>m/k/n</code> are taken from <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, <code>bMatrix.GetValidCol()</code>.</li>
-<li>Static legality checks are enforced via <code>CheckMadMxValid&lt;...&gt;()</code> (types, shapes, fractals, and scaling tile legality).</li>
-<li><strong>Bias form</strong>:</li>
-<li><code>TileBias::DType</code> must be <code>float</code> and <code>TileBias::Loc == TileType::Bias</code> with <code>TileBias::Rows == 1</code> (A5 checks via <code>static_assert</code>).</li>
+<li><code>m/k/n</code> 取自 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code>、<code>bMatrix.GetValidCol()</code>。</li>
+<li>静态合法性检查通过 <code>CheckMadMxValid&lt;...&gt;()</code>（类型、形状、分形和缩放 tile 合法性）。</li>
+<li><strong>偏置形式</strong>:</li>
+<li><code>TileBias::DType</code> 必须是 <code>float</code> 且 <code>TileBias::Loc == TileType::Bias</code>，<code>TileBias::Rows == 1</code>（A5 通过 <code>static_assert</code> 检查）。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

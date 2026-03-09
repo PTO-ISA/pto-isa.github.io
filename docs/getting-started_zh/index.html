@@ -175,10 +175,6 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../isa/TASSIGN/">TASSIGN</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../isa/TSETHF32MODE.md">TSETHF32MODE</a>
-                </li>
-                <li class="toctree-l2"><a class="" href="../isa/TSETTF32MODE.md">TSETTF32MODE</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../isa/TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../isa/TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -514,50 +510,48 @@
 </p>
 
 <h1 id="_1">快速开始<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>本指南涵盖在 <strong>macOS / Linux / Windows</strong> 系统上的先决条件与设置，并首先演示如何构建和运行 <strong>CPU 模拟器</strong>（推荐）。在 Ascend（NPU / 模拟器）上运行需要 Ascend CANN 环境，通常<strong>仅限于 Linux</strong>。</p>
-<h2 id="_2">先决条件<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<h3 id="cpu">必需项（CPU 模拟器）<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Git</li>
-<li>Python <code>&gt;= 3.8</code>（推荐 3.10+）</li>
-<li>CMake <code>&gt;= 3.16</code></li>
-<li>支持 C++20 的 C++ 编译器：</li>
-<li>Linux: GCC 13+ 或 Clang 15+</li>
-<li>macOS: Xcode/AppleClang（或 Homebrew LLVM）</li>
-<li>Windows: Visual Studio 2022 Build Tools (MSVC)</li>
-<li>Python 包：<code>numpy</code>（CPU 测试数据生成器需要使用它）</li>
-</ul>
+<p>本指南帮助您设置和运行 PTO ISA 项目。它涵盖两种主要场景：</p>
+<ol>
+<li><strong>CPU 模拟器</strong>（推荐新手）- 跨平台支持 macOS、Linux 和 Windows</li>
+<li><strong>NPU 环境</strong>（高级）- Linux 上的 Ascend 910B/910C 与 CANN toolkit</li>
+</ol>
+<p>请选择符合您需求的部分。大多数用户应该从 CPU 模拟器开始。</p>
+<hr />
+<h2 id="cpu">第一部分：CPU 模拟器（跨平台）<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h2>
+<p>CPU 模拟器是最简单的入门方式。它可以在 macOS、Linux 和 Windows 上运行，无需专用硬件。</p>
+<h3 id="_2">先决条件<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<p><strong>必需项：</strong>
+- Git
+- Python <code>&gt;= 3.8</code>（推荐 3.10+）
+- CMake <code>&gt;= 3.16</code>
+- 支持 C++20 的 C++ 编译器：
+  - Linux: GCC 13+ 或 Clang 15+（GCC &gt;= 14 启用 bfloat16 支持）
+  - macOS: Xcode/AppleClang（或 Homebrew LLVM）
+  - Windows: Visual Studio 2022 Build Tools (MSVC)
+- Python 包：<code>numpy</code></p>
 <p><code>run_cpu.py</code> 可以自动安装 <code>numpy</code>（除非您传递 <code>--no-install</code> 参数）。</p>
-<h3 id="_3">可选项（用于加速构建）<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Ninja (CMake 生成器)</li>
-<li>有效的互联网连接（如果未在系统范围内安装 GoogleTest，CMake 可能需要获取它来编译 CPU ST 测试)</li>
-</ul>
-<h2 id="_4">操作系统设置<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<h3 id="macos">macOS<a class="headerlink" href="#macos" title="Permanent link">&para;</a></h3>
-<ul>
-<li>安装 Xcode 命令行工具：</li>
-</ul>
+<p><strong>可选项（用于加速构建）：</strong>
+- Ninja (CMake 生成器)
+- 互联网连接（如果未在系统范围内安装 GoogleTest，CMake 可能需要获取它）</p>
+<h3 id="_3">操作系统特定设置<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<h4 id="macos">macOS<a class="headerlink" href="#macos" title="Permanent link">&para;</a></h4>
+<p>安装 Xcode 命令行工具：</p>
 <p><code>bash
   xcode-select --install</code></p>
-<ul>
-<li>安装依赖项（推荐通过 Homebrew）：</li>
-</ul>
+<p>安装依赖项（推荐通过 Homebrew）：</p>
 <p><code>bash
   brew install cmake ninja python</code></p>
 <p>如果不使用 Homebrew，请确保 <code>python3</code>、<code>cmake</code> 和现代的 <code>clang++</code> 在 <code>PATH</code> 环境变量中。</p>
-<h3 id="linux-ubuntu-2004">Linux (Ubuntu 20.04)<a class="headerlink" href="#linux-ubuntu-2004" title="Permanent link">&para;</a></h3>
+<h4 id="linux-ubuntu-2004">Linux (Ubuntu 20.04+)<a class="headerlink" href="#linux-ubuntu-2004" title="Permanent link">&para;</a></h4>
 <pre><code class="language-bash">sudo apt-get update
 sudo apt-get install -y build-essential cmake ninja-build python3 python3-pip python3-venv git
 </code></pre>
-<h3 id="windows">Windows<a class="headerlink" href="#windows" title="Permanent link">&para;</a></h3>
-<p>安装以下软件：</p>
-<ul>
-<li>Git for Windows</li>
-<li>Python 3（并确保其在 <code>PATH</code> 中）</li>
-<li>CMake</li>
-<li>Visual Studio 2022 Build Tools（需包含“使用 C++ 的桌面开发”）</li>
-</ul>
+<h4 id="windows">Windows<a class="headerlink" href="#windows" title="Permanent link">&para;</a></h4>
+<p>安装以下软件：
+- Git for Windows
+- Python 3（并确保其在 <code>PATH</code> 中）
+- CMake
+- Visual Studio 2022 Build Tools（需包含"使用 C++ 的桌面开发"）</p>
 <p>使用 <code>winget</code>（可选）：</p>
 <pre><code class="language-powershell">winget install --id Git.Git -e
 winget install --id Python.Python.3.11 -e
@@ -565,201 +559,169 @@ winget install --id Kitware.CMake -e
 winget install --id Microsoft.VisualStudio.2022.BuildTools -e
 </code></pre>
 <p>安装完成后，打开 <strong>Developer Command Prompt for VS 2022</strong>（或确保 <code>cl.exe</code> 在 <code>PATH</code> 中）。</p>
-<p>手动下载编译器（可选）：</p>
-<p>可选方案：
-- https://winlibs.com
-- https://www.msys2.org</p>
-<p>安装后，将 <code>path_to_compiler/bin</code> 目录添加到 <code>PATH</code> 环境变量中（确保在 PowerShell 中 <code>gcc -v</code> 可执行）。</p>
-<h2 id="_5">获取代码<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案：手动安装编译器</strong></p>
+<p>如果您不想使用 Visual Studio：
+- <a href="https://winlibs.com">WinLibs</a>
+- <a href="https://www.msys2.org">MSYS2</a></p>
+<p>安装后，将 <code>path_to_compiler/bin</code> 目录添加到 <code>PATH</code> 环境变量中（在 PowerShell 中使用 <code>gcc -v</code> 验证）。</p>
+<h3 id="_4">获取代码<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <pre><code class="language-bash">git clone &lt;YOUR_REPO_URL&gt;
 cd pto-isa
 </code></pre>
-<h2 id="python">Python 环境<a class="headerlink" href="#python" title="Permanent link">&para;</a></h2>
+<h3 id="python">Python 环境设置<a class="headerlink" href="#python" title="Permanent link">&para;</a></h3>
 <p>创建并激活虚拟环境：</p>
-<ul>
-<li>macOS / Linux：</li>
-</ul>
+<p><strong>macOS / Linux：</strong></p>
 <p><code>bash
   python3 -m venv .venv
   source .venv/bin/activate
   python -m pip install -U pip
   python -m pip install numpy</code></p>
-<ul>
-<li>Windows (PowerShell)：</li>
-</ul>
+<p><strong>Windows (PowerShell)：</strong></p>
 <p><code>powershell
   py -3 -m venv .venv
   .\.venv\Scripts\Activate.ps1
   python -m pip install -U pip
   python -m pip install numpy</code></p>
-<h2 id="cpu_1">运行 CPU 模拟器<a class="headerlink" href="#cpu_1" title="Permanent link">&para;</a></h2>
-<p>此命令将构建并运行 <code>tests/cpu/st</code> 目录下的 CPU ST 测试二进制文件，并执行所有测试用例：</p>
+<h3 id="cpu_1">运行 CPU 模拟器<a class="headerlink" href="#cpu_1" title="Permanent link">&para;</a></h3>
+<p>构建并运行 <code>tests/cpu/st</code> 目录下的所有 CPU ST 测试二进制文件：</p>
 <pre><code class="language-bash">python3 tests/run_cpu.py --clean --verbose
 </code></pre>
-<p>常用选项：</p>
-<ul>
-<li>运行单个测试用例：</li>
-</ul>
+<p><strong>常用选项：</strong></p>
+<p>运行单个测试用例：</p>
 <p><code>bash
   python3 tests/run_cpu.py --testcase tadd</code></p>
-<ul>
-<li>运行单个 gtest 用例：</li>
-</ul>
+<p>运行特定的 gtest 用例：</p>
 <p><code>bash
   python3 tests/run_cpu.py --testcase tadd --gtest_filter 'TADDTest.*'</code></p>
-<ul>
-<li>构建并运行 GEMM 演示：</li>
-</ul>
+<p>构建并运行 GEMM 演示：</p>
 <p><code>bash
   python3 tests/run_cpu.py --demo gemm --verbose</code></p>
-<ul>
-<li>构建并运行 Flash Attention 演示：</li>
-</ul>
+<p>构建并运行 Flash Attention 演示：</p>
 <p><code>bash
   python3 tests/run_cpu.py --demo flash_attn --verbose</code></p>
-<ul>
-<li>可选参数：</li>
-</ul>
+<p><strong>其他选项：</strong></p>
+<p>指定编译器路径：</p>
 <p><code>bash
-  # 指定 cxx 编译器路径
   python3 tests/run_cpu.py --cxx=/path/to/compiler</code></p>
+<p>打印详细日志：</p>
 <p><code>bash
-  # 打印详细日志
   python3 tests/run_cpu.py --verbose</code></p>
+<p>删除构建目录并重新构建：</p>
 <p><code>bash
-  # 删除构建目录并重新构建
   python3 tests/run_cpu.py --clean</code></p>
+<p>Windows 特定选项（如需要）：</p>
 <p><code>bash
-  # 在 Windows 上，可能需要指定生成器和 cmake_prefix_path
   python3 tests/run_cpu.py --clean --generator "MinGW Makefiles" --cmake_prefix_path D:\gtest\</code></p>
-<ul>
-<li>设置环境变量：
-  <code>bash
-  export LD_LIBRARY_PATH=/path_to_compiler/lib64:$LD_LIBRARY_PATH</code></li>
-</ul>
-<h2 id="npu">运行 NPU 测试<a class="headerlink" href="#npu" title="Permanent link">&para;</a></h2>
-<p>首先根据 ./getting-started.md#environment-variables 设置环境变量；</p>
-<ul>
-<li>运行单个 ST 测试用例</li>
-</ul>
-<p>运行 ST 测试需要一个可用的 Ascend CANN 环境，并且通常仅限于 Linux。</p>
+<p>设置库路径（Linux）：</p>
+<p><code>bash
+  export LD_LIBRARY_PATH=/path_to_compiler/lib64:$LD_LIBRARY_PATH</code></p>
+<hr />
+<h2 id="npu-ascend-910b910c-linux">第二部分：NPU 环境（Ascend 910B/910C，仅限 Linux）<a class="headerlink" href="#npu-ascend-910b910c-linux" title="Permanent link">&para;</a></h2>
+<p>本部分适用于需要在 Ascend NPU 硬件或模拟器上运行的用户。它需要 Linux 环境和 Ascend CANN toolkit。</p>
+<h3 id="_5">先决条件<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p><strong>系统要求：</strong>
+- Linux（推荐 Ubuntu 20.04+）
+- Python &gt;= 3.8.0
+- GCC &gt;= 7.3.0
+- CMake &gt;= 3.16.0
+- Ascend NPU 驱动和固件（用于硬件执行）
+- CANN toolkit &gt;= 8.5.0</p>
+<p><strong>GoogleTest（单元测试所需）：</strong></p>
+<p>下载 <a href="https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz">GoogleTest 1.14.0</a> 并安装：</p>
+<pre><code class="language-bash">tar -xf googletest-1.14.0.tar.gz
+cd googletest-1.14.0
+mkdir temp &amp;&amp; cd temp
+cmake .. -DCMAKE_CXX_FLAGS=&quot;-fPIC&quot;
+make
+sudo make install
+</code></pre>
+<blockquote>
+<p><strong>注意：</strong> Python 需要以下包：os、numpy、ctypes、struct、copy、math、enum、ml_dtypes、en_dtypes 等。</p>
+<p>如果您使用不同的标志安装了 GoogleTest（例如 <code>-D_GLIBCXX_USE_CXX11_ABI=0</code>），则必须在 <code>tests/npu/[a2a3|a5]/src/st/CMakeLists.txt</code> 中添加 <code>add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)</code> 进行相应更新。</p>
+</blockquote>
+<h3 id="_6">安装选项<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h4 id="1">选项 1：快速安装（推荐）<a class="headerlink" href="#1" title="Permanent link">&para;</a></h4>
+<p>完整的安装指南（包括驱动、固件和 toolkit）：</p>
+<p>https://www.hiascend.com/cann/download</p>
+<p>此方法会自动处理所有依赖项。</p>
+<h4 id="2">选项 2：手动安装<a class="headerlink" href="#2" title="Permanent link">&para;</a></h4>
+<p><strong>步骤 1：安装驱动和固件</strong></p>
+<p>在实际 NPU 硬件上运行时需要（如果仅构建或使用模拟器，可跳过）。</p>
+<p>安装指南：<a href="https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/softwareinst/instg/instg_0001.html?Mode=VmIns&amp;OS=Ubuntu&amp;Software=cannToolKit">NPU 驱动和固件安装指南</a></p>
+<p><strong>步骤 2：安装 CANN Toolkit</strong></p>
+<p>从 <a href="https://www.hiascend.com/developer/download/community/result?module=cann">CANN 下载页面</a> 下载相应的 <code>Ascend-cann-toolkit_${cann_version}_linux-${arch}.run</code> 安装包。</p>
+<p>要求版本：CANN &gt;= 8.5.0</p>
+<pre><code class="language-bash"># 使安装包可执行
+chmod +x Ascend-cann-toolkit_${cann_version}_linux-${arch}.run
+
+# 安装
+./Ascend-cann-toolkit_${cann_version}_linux-${arch}.run --install --force --install-path=${install_path}
+</code></pre>
+<p>参数说明：
+- <code>${cann_version}</code>：CANN toolkit 版本
+- <code>${arch}</code>：CPU 架构（<code>aarch64</code> 或 <code>x86_64</code>）
+- <code>${install_path}</code>：安装路径（可选）</p>
+<p>默认路径：
+- Root 用户安装：<code>/usr/local/Ascend/cann</code>
+- 非 root 用户安装：<code>$HOME/Ascend/cann</code></p>
+<h3 id="_7">环境变量<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>在运行 NPU 测试之前设置 CANN 环境：</p>
+<p><strong>Root 用户安装（默认路径）：</strong></p>
+<pre><code class="language-bash">source /usr/local/Ascend/cann/bin/setenv.bash
+</code></pre>
+<p><strong>非 root 用户安装（默认路径）：</strong></p>
+<pre><code class="language-bash">source $HOME/Ascend/cann/bin/setenv.bash
+</code></pre>
+<p><strong>自定义安装路径：</strong></p>
+<pre><code class="language-bash">source ${install_path}/cann/bin/setenv.bash
+</code></pre>
+<h3 id="_8">下载源代码<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash">git clone https://gitcode.com/cann/pto-isa.git
+cd pto-isa
+</code></pre>
+<h3 id="npu">运行 NPU 测试<a class="headerlink" href="#npu" title="Permanent link">&para;</a></h3>
+<p><strong>运行单个 ST 测试用例：</strong></p>
 <p><code>bash
   python3 tests/script/run_st.py -r [sim|npu] -v [a3|a5] -t [TEST_CASE] -g [GTEST_FILTER_CASE]</code></p>
-<p>注意：<code>a3</code> 后端覆盖 A2/A3 系列 (<code>include/pto/npu/a2a3</code>)。</p>
+<p>注意：<code>a3</code> 后端覆盖 A2/A3 系列（<code>include/pto/npu/a2a3</code>）。</p>
 <p>示例：</p>
 <p><code>bash
   python3 tests/script/run_st.py -r npu -v a3 -t tmatmul -g TMATMULTest.case1
   python3 tests/script/run_st.py -r sim -v a5 -t tmatmul -g TMATMULTest.case1</code></p>
-<ul>
-<li>运行推荐的测试套件</li>
-</ul>
-<p><code>bash
-  # 从项目根目录执行以下命令：
-  chmod +x ./tests/run_st.sh
-  ./tests/run_st.sh a5 npu simple
-  ulimit -n 65536;./tests/run_st.sh a3 sim all # 如果要在模拟器上运行，请先使用 ulimit -n</code></p>
-<ul>
-<li>运行完整的 ST 测试：</li>
-</ul>
-<p><code>bash
-  chmod +x build.sh
-  ./build.sh --run_all --a3 --sim</code>
-- 运行简化的 ST 测试：</p>
+<p><strong>运行推荐的测试套件：</strong></p>
+<p>```bash</p>
+<h1 id="_9">从项目根目录执行<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h1>
+<p>chmod +x ./tests/run_st.sh
+  ./tests/run_st.sh a5 npu simple</p>
+<h1 id="_10">对于模拟器（首先增加文件描述符限制）<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h1>
+<p>ulimit -n 65536
+./tests/run_st.sh a3 sim all
+  ```</p>
+<p><strong>运行完整的 ST 测试：</strong></p>
 <p><code>bash
   chmod +x build.sh
-  ./build.sh --run_simple --a5 --npu</code>
-- 打包：</p>
+  ./build.sh --run_all --a3 --sim</code></p>
+<p><strong>运行简化的 ST 测试：</strong></p>
 <p><code>bash
   chmod +x build.sh
-  ./build.sh --pkg</code>
-- 设置环境</p>
-<p>注意：如果您尚未安装 toolkit，您需要先下载 toolkit 安装包。
-  <code>bash
+  ./build.sh --run_simple --a5 --npu</code></p>
+<p><strong>打包：</strong></p>
+<p><code>bash
+  chmod +x build.sh
+  ./build.sh --pkg</code></p>
+<p><strong>环境设置脚本：</strong></p>
+<p>如果您尚未安装 toolkit，请先下载 toolkit 安装包，然后：</p>
+<p><code>bash
   chmod +x ./scripts/install_pto.sh
   ./scripts/install_pto.sh &lt;toolkit_install_path&gt; [toolkit_package_path]</code></p>
-<h1 id="ascend-910b910c-linux">环境设置 (Ascend 910B/910C, Linux)<a class="headerlink" href="#ascend-910b910c-linux" title="Permanent link">&para;</a></h1>
-<h2 id="_6">先决条件<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>在使用本项目前，请确保已安装以下基本依赖项以及 NPU 驱动/固件。</p>
-<ol>
-<li>
-<p><strong>安装构建依赖</strong></p>
-<p>项目从源码构建需要以下依赖（请注意版本要求）：</p>
+<hr />
+<h2 id="_11">下一步<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Python &gt;= 3.8.0</li>
-<li>GCC &gt;= 7.3.0</li>
-<li>CMake &gt;= 3.16.0</li>
-<li>
-<p>GoogleTest（仅在运行单元测试时需要；推荐版本：
-  https://github.com/google/googletest/releases/tag/v1.14.0）</p>
-<p>下载
-https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz 后，
-通过以下方式安装：</p>
-<p>```bash
-tar -xf googletest-1.14.0.tar.gz
-cd googletest-1.14.0
-mkdir temp &amp;&amp; cd temp                # 在 googletest 源码目录下创建临时构建目录
-cmake .. -DCMAKE_CXX_FLAGS="-fPIC"
-make
-make install                         # 以 root 用户安装</p>
-<h1 id="sudo-make-install-root">sudo make install                  # 以非 root 用户安装<a class="headerlink" href="#sudo-make-install-root" title="Permanent link">&para;</a></h1>
-<p><code>``
-      &gt; **注意**
-      &gt; 
-      &gt; Python 需要下载 os、numpy、ctypes、struct、copy、math、enum、ml_dtypes、en_dtypes 等包。
-      &gt; 
-      &gt; 如果您已通过其他方式安装了 googletest，则需要相应地修改 CMakeLists.txt。例如，如果您在安装 googletest 时使用了</code>cmake .. -DCMAKE_CXX_FLAGS="-fPIC -D_GLIBCXX_USE_CXX11_ABI=0"<code>，则需要在 tests/npu/[a2a3 | a5]/src/st/CMakeLists.txt 中添加</code>add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)`。</p>
-</li>
+<li>CPU 开发：探索 <code>tests/cpu/demos/</code> 下的演示</li>
+<li>NPU 开发：查看 <code>tests/npu/</code> 下的测试用例</li>
+<li>查看 API 文档了解详细的指令使用方法</li>
+<li>加入社区获取支持和讨论</li>
 </ul>
-</li>
-<li>
-<p><strong>安装驱动和固件（运行时依赖）</strong></p>
-<p>运行算子需要驱动和固件。如果仅需构建，可跳过此步骤。
-安装指南请参考：
-https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/softwareinst/instg/instg_0001.html?Mode=VmIns&amp;OS=Ubuntu&amp;Software=cannToolKit。</p>
-</li>
-</ol>
-<h2 id="_7">安装软件包<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<p>本项目支持从源码构建。在构建前，请按以下步骤准备环境。</p>
-<ol>
-<li>
-<p><strong>安装社区版 CANN toolkit</strong></p>
-<p>根据您的环境下载相应的 <code>Ascend-cann-toolkit_${cann_version}_linux-${arch}.run</code> 安装包。https://www.hiascend.com/developer/download/community/result?module=cann.</p>
-<p>我们要求的 CANN 版本是 8.5.0 或更高。</p>
-<p>```bash</p>
-<h1 id="_8">确保安装包具有可执行权限<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h1>
-<p>chmod +x Ascend-cann-toolkit_<span class="arithmatex">\({cann_version}_linux-\)</span>{arch}.run</p>
-<h1 id="_9">安装<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h1>
-<p>./Ascend-cann-toolkit_<span class="arithmatex">\({cann_version}_linux-\)</span>{arch}.run --install --force --install-path=${install_path}
-<code>``
--</code>${cann_version}<code>: CANN toolkit 版本。
--</code>${arch}<code>: CPU 架构，例如</code>aarch64<code>或</code>x86_64<code>。
--</code>${install_path}<code>: 安装路径。
-- 如果省略</code>--install-path<code>，将使用默认路径。如果以 root 用户安装，软件将放置在</code>/usr/local/Ascend/cann<code>下。如果以非 root 用户安装，将放置在</code>$HOME/Ascend/cann` 下。</p>
-</li>
-</ol>
-<h2 id="_10">环境变量<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<ul>
-<li>
-<p>默认路径（以 root 用户安装）</p>
-<p><code>bash
-source /usr/local/Ascend/cann/bin/setenv.bash</code></p>
-</li>
-<li>
-<p>默认路径（以非 root 用户安装）
-    <code>bash
-    source $HOME/Ascend/cann/bin/setenv.bash</code></p>
-</li>
-<li>
-<p>自定义安装路径
-    <code>bash
-    source ${install_path}/cann/bin/setenv.bash</code></p>
-</li>
-</ul>
-<h2 id="_11">源代码下载<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
-<p>通过以下命令下载源码：</p>
-<pre><code class="language-bash"># 克隆仓库（以 master 分支为例）
-git clone https://gitcode.com/cann/pto-isa.git
-</code></pre>
               
             </div>
           </div><footer>
