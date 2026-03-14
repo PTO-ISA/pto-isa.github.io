@@ -506,354 +506,247 @@
                 <!-- Generated from `docs/coding/memory-optimization.md` -->
 
 <h1 id="memory-optimization">Memory Optimization<a class="headerlink" href="#memory-optimization" title="Permanent link">&para;</a></h1>
-<p>This document provides memory optimization techniques for PTO operator development, helping developers fully utilize on-chip memory and reduce memory access overhead.</p>
+<p>This document covers memory optimization techniques for PTO kernels. For the abstract on-chip memory model see <a href="../../machine/abstract-machine/"><code>docs/machine/abstract-machine.md</code></a>; for example-driven tuning see <a href="../opt/"><code>opt.md</code></a>.</p>
 <h2 id="contents">Contents<a class="headerlink" href="#contents" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="#1-memory-hierarchy">1. Memory Hierarchy</a></li>
-<li><a href="#2-l1-memory-optimization">2. L1 Memory Optimization</a></li>
-<li><a href="#3-l0-memory-optimization">3. L0 Memory Optimization</a></li>
-<li><a href="#4-memory-alignment">4. Memory Alignment</a></li>
-<li><a href="#5-memory-reuse-strategies">5. Memory Reuse Strategies</a></li>
-<li><a href="#6-memory-bandwidth-optimization">6. Memory Bandwidth Optimization</a></li>
+<li><a href="#1-on-chip-storage-model">1. On-Chip Storage Model</a></li>
+<li><a href="#2-tile-sizing-and-capacity">2. Tile Sizing and Capacity</a></li>
+<li><a href="#3-data-reuse">3. Data Reuse</a></li>
+<li><a href="#4-layout-and-alignment">4. Layout and Alignment</a></li>
+<li><a href="#5-reducing-gm-traffic">5. Reducing GM Traffic</a></li>
+<li><a href="#6-double-buffering">6. Double Buffering</a></li>
+<li><a href="#7-valid-region-and-padding">7. Valid Region and Padding</a></li>
+<li><a href="#8-checklist">8. Checklist</a></li>
 </ul>
 <hr />
-<h2 id="1-memory-hierarchy">1. Memory Hierarchy<a class="headerlink" href="#1-memory-hierarchy" title="Permanent link">&para;</a></h2>
-<h3 id="11-ascend-memory-architecture">1.1 Ascend Memory Architecture<a class="headerlink" href="#11-ascend-memory-architecture" title="Permanent link">&para;</a></h3>
-<pre><code>Global Memory (GM)
-    ↓ MTE2 (DMA)
-L1 Cache (~512KB - 1MB/core)
-    ↓ MTE1
-L0 Cache (register level)
-    ↓
-Compute Units (CUBE/VECTOR)
-</code></pre>
-<p><strong>Access Latency Comparison</strong>:</p>
+<h2 id="1-on-chip-storage-model">1. On-Chip Storage Model<a class="headerlink" href="#1-on-chip-storage-model" title="Permanent link">&para;</a></h2>
+<p>PTO exposes on-chip storage through tile types. Each <code>TileType</code> maps to a storage class:</p>
 <table>
 <thead>
 <tr>
-<th>Memory Level</th>
-<th>Latency</th>
-<th>Bandwidth</th>
+<th>Tile type</th>
+<th>Storage</th>
+<th>Typical use</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>L0</td>
-<td>~1 cycle</td>
-<td>Highest</td>
+<td><code>TileType::Vec</code></td>
+<td>Vector buffer (UB)</td>
+<td>Elementwise ops, reductions</td>
 </tr>
 <tr>
-<td>L1</td>
-<td>~10 cycles</td>
-<td>High</td>
+<td><code>TileType::Mat</code></td>
+<td>Matrix staging (L1-like)</td>
+<td>TLOAD target, GEMM staging</td>
 </tr>
 <tr>
-<td>GM</td>
-<td>~100+ cycles</td>
-<td>Limited</td>
+<td><code>TileType::Left/Right</code></td>
+<td>Matrix operand regs (L0A/L0B)</td>
+<td>TMATMUL inputs</td>
+</tr>
+<tr>
+<td><code>TileType::Acc</code></td>
+<td>Accumulator regs (L0C)</td>
+<td>TMATMUL output</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Optimization Principles</strong>:
-- Complete computation in L0 as much as possible
-- Cache frequently accessed data in L1
-- Reduce GM access count</p>
+<p>Data flows along a fixed path:</p>
+<pre><code>GM --TLOAD--&gt; Mat --TMOV/TEXTRACT--&gt; Left/Right --TMATMUL--&gt; Acc --TSTORE--&gt; GM
+</code></pre>
+<p>Vector ops (<code>TADD</code>, <code>TEXP</code>, <code>TROWSUM</code>, etc.) work directly on <code>Vec</code> tiles.
+Conversion between <code>Mat</code> and <code>Vec</code> uses <code>TMOV</code> or <code>TEXTRACT</code>.</p>
 <hr />
-<h2 id="2-l1-memory-optimization">2. L1 Memory Optimization<a class="headerlink" href="#2-l1-memory-optimization" title="Permanent link">&para;</a></h2>
-<h3 id="21-l1-capacity-planning">2.1 L1 Capacity Planning<a class="headerlink" href="#21-l1-capacity-planning" title="Permanent link">&para;</a></h3>
-<p><strong>Platform Capacity</strong>:
-- A2/A3: ~512 KB/core
-- A5: ~1 MB/core</p>
-<p><strong>Capacity Allocation Example (GEMM)</strong>:</p>
-<pre><code class="language-cpp">// A2/A3 platform
-constexpr int L1_CAPACITY = 512 * 1024;  // 512KB
-
-// Double buffer A Tile: 2 × 128×64×2 = 32KB
-constexpr int A_BUFFER_SIZE = 2 * 128 * 64 * sizeof(half);
-
-// Double buffer B Tile: 2 × 64×256×2 = 64KB
-constexpr int B_BUFFER_SIZE = 2 * 64 * 256 * sizeof(half);
-
-// Accumulator: 128×256×4 = 128KB
-constexpr int ACC_BUFFER_SIZE = 128 * 256 * sizeof(float);
-
-// Total: 32 + 64 + 128 = 224KB &lt; 512KB ✓
+<h2 id="2-tile-sizing-and-capacity">2. Tile Sizing and Capacity<a class="headerlink" href="#2-tile-sizing-and-capacity" title="Permanent link">&para;</a></h2>
+<h3 id="estimate-footprint-before-declaring-tiles">Estimate footprint before declaring tiles<a class="headerlink" href="#estimate-footprint-before-declaring-tiles" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">constexpr int TM = 128, TK = 64, TN = 256;
+// Mat staging (double-buffered)
+constexpr size_t staging = 2*(TM*TK + TK*TN)*sizeof(half);  // 2*(16+32) KB = 96 KB
+// Accumulator
+constexpr size_t accum   = TM * TN * sizeof(float);          // 128 KB
+// Total: 224 KB -- must fit within target on-chip limit
 </code></pre>
-<h3 id="22-avoid-l1-overflow">2.2 Avoid L1 Overflow<a class="headerlink" href="#22-avoid-l1-overflow" title="Permanent link">&para;</a></h3>
-<p><strong>Check Method</strong>:</p>
-<pre><code class="language-cpp">// Compile-time check
-static_assert(TOTAL_L1_USAGE &lt; L1_CAPACITY, 
-              &quot;L1 memory overflow!&quot;);
+<p>If the total exceeds the limit: reduce tile dimensions, drop to single buffering, or split the accumulator range.</p>
+<h3 id="alignment-rules-enforced-by-static_assert">Alignment rules (enforced by <code>static_assert</code>)<a class="headerlink" href="#alignment-rules-enforced-by-static_assert" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Row-major tile: <code>Cols * sizeof(Element)</code> must be a multiple of 32 bytes.</li>
+<li>Col-major tile: <code>Rows * sizeof(Element)</code> must be a multiple of 32 bytes.</li>
+<li>Boxed tiles (<code>TileLeft</code>, <code>TileRight</code>, <code>TileAcc</code>): shape must match fractal base-tile size (<code>fractalABSize=512</code>, <code>fractalCSize=1024</code>).</li>
+</ul>
+<p>Common <code>TileLeft</code>/<code>TileRight</code> base shapes for <code>fractalABSize=512</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Base rows×cols</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fp32</code></td>
+<td>16×8</td>
+</tr>
+<tr>
+<td><code>fp16</code></td>
+<td>16×16</td>
+</tr>
+<tr>
+<td><code>int8</code></td>
+<td>16×32</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-data-reuse">3. Data Reuse<a class="headerlink" href="#3-data-reuse" title="Permanent link">&para;</a></h2>
+<h3 id="k-dimension-blocking-gemm">K-dimension blocking (GEMM)<a class="headerlink" href="#k-dimension-blocking-gemm" title="Permanent link">&para;</a></h3>
+<p>Load each A/B panel once, accumulate across the full K loop:</p>
+<pre><code class="language-cpp">TileAcc&lt;float, TM, TN&gt; acc;
+TFILL(acc, 0.0f);
 
-// Runtime check (debug mode)
-#ifdef DEBUG
-  size_t total_usage = calculate_l1_usage();
-  assert(total_usage &lt; L1_CAPACITY);
-#endif
-</code></pre>
-<p><strong>Overflow Consequences</strong>:
-- Performance drops dramatically (10-100×)
-- Frequent L1 ↔ GM paging
-- Pipeline stalls</p>
-<p><strong>Solutions</strong>:</p>
-<pre><code class="language-cpp">// Solution 1: Reduce Tile size
-// Before: 
-using TileT = Tile&lt;TileType::Vec, float, 32, 512&gt;;  // 64KB
+for (int k = 0; k &lt; K; k += TK) {
+    Tile&lt;TileType::Mat, half, TM, TK&gt; a_mat;
+    Tile&lt;TileType::Mat, half, TK, TN&gt; b_mat;
+    TLOAD(a_mat, gA_view);    // 1 GM access per TM×TK block
+    TLOAD(b_mat, gB_view);
 
-// After:
-using TileT = Tile&lt;TileType::Vec, float, 16, 256&gt;;  // 16KB
+    TileLeft&lt;half, TM, TK&gt;   a_left;
+    TileRight&lt;half, TK, TN&gt;  b_right;
+    TMOV(a_left, a_mat);
+    TMOV(b_right, b_mat);
 
-// Solution 2: Reduce buffer count
-// Change from triple buffering to double buffering
-</code></pre>
-<h3 id="23-l1-data-reuse">2.3 L1 Data Reuse<a class="headerlink" href="#23-l1-data-reuse" title="Permanent link">&para;</a></h3>
-<p><strong>Strategy 1: K-dimension Blocking</strong></p>
-<pre><code class="language-cpp">// GEMM example: Reuse A and B
-for (int k = 0; k &lt; K; k += TILE_K) {
-  // Load to L1 once
-  TLOAD(tileA_L1, A[m:m+M, k:k+TILE_K]);
-  TLOAD(tileB_L1, B[k:k+TILE_K, n:n+N]);
-
-  // Reuse multiple times in L1
-  for (int sub_k = 0; sub_k &lt; TILE_K; sub_k += SUB_K) {
-    TEXTRACT(tileA_L0, tileA_L1[sub_k:sub_k+SUB_K]);
-    TEXTRACT(tileB_L0, tileB_L1[sub_k:sub_k+SUB_K]);
-    TMATMUL(acc, tileA_L0, tileB_L0);
-  }
+    TMATMUL_ACC(acc, a_left, b_right);  // acc stays on-chip
 }
+TSTORE(gC_view, acc);   // 1 GM write at the end
 </code></pre>
-<p><strong>Strategy 2: Cache Constant Data</strong></p>
-<pre><code class="language-cpp">// Softmax example: Cache max and sum
-TLOAD(input_L1, input);
-TROWMAX(max_val, input_L1);  // Compute once, cache in L1
-TROWEXPANDSUB(shifted, input_L1, max_val);  // Reuse max_val
-TEXP(exp_vals, shifted);
-TROWSUM(sum_val, exp_vals);  // Compute once, cache in L1
-TROWEXPANDDIV(output, exp_vals, sum_val);  // Reuse sum_val
+<h3 id="cache-row-statistics-softmax">Cache row statistics (Softmax)<a class="headerlink" href="#cache-row-statistics-softmax" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">Tile&lt;TileType::Vec, float, R, C&gt; input, shifted, exp_v, output;
+Tile&lt;TileType::Vec, float, R, 1&gt;  row_max, row_sum;
+
+TLOAD(input, gInput);
+TROWMAX(row_max, input);             // computed once, stays on-chip
+TROWEXPANDSUB(shifted, input, row_max);
+TEXP(exp_v, shifted);
+TROWSUM(row_sum, exp_v);             // computed once, stays on-chip
+TROWEXPANDDIV(output, exp_v, row_sum);
+TSTORE(gOutput, output);
+</code></pre>
+<p>Storing and reloading <code>row_max</code>/<code>row_sum</code> would roughly triple GM traffic for the statistics.</p>
+<hr />
+<h2 id="4-layout-and-alignment">4. Layout and Alignment<a class="headerlink" href="#4-layout-and-alignment" title="Permanent link">&para;</a></h2>
+<p><strong>Match layout to the consuming instruction</strong> to avoid implicit conversions.</p>
+<ul>
+<li>Load <code>Mat</code> tiles with <code>BLayout::RowMajor</code> when GM data is row-major.</li>
+<li>Use <code>Layout::NZ</code> on <code>GlobalTensor</code> for GEMM inputs to eliminate the <code>TMOV</code> stage on supported targets.</li>
+<li>Use <code>TTRANS</code> only when source and target layouts genuinely differ.</li>
+</ul>
+<p><code>TileLeft</code> / <code>TileRight</code> / <code>TileAcc</code> aliases automatically select the correct <code>SLayout</code> and <code>SFractalSize</code>:</p>
+<pre><code class="language-cpp">TileLeft&lt;half, 128, 64&gt;   a_left;   // outer col-major + inner row-major
+TileRight&lt;half, 64, 256&gt;  b_right;  // outer row-major + inner col-major
+TileAcc&lt;float, 128, 256&gt;  acc;
+</code></pre>
+<p>Do not override <code>SLayout</code> or <code>SFractalSize</code> manually without a specific reason.</p>
+<hr />
+<h2 id="5-reducing-gm-traffic">5. Reducing GM Traffic<a class="headerlink" href="#5-reducing-gm-traffic" title="Permanent link">&para;</a></h2>
+<h3 id="operator-fusion">Operator fusion<a class="headerlink" href="#operator-fusion" title="Permanent link">&para;</a></h3>
+<p>Fuse consecutive operations to eliminate intermediate GM stores/reloads:</p>
+<pre><code class="language-cpp">// Unfused: 4 GM round-trips
+TLOAD(a, gInput); TADD(b, a, s); TSTORE(gTmp, b);
+TLOAD(c, gTmp);   TMUL(d, c, s2); TSTORE(gOut, d);
+
+// Fused: 2 GM round-trips
+TLOAD(a, gInput);
+TADD(b, a, s);    // b stays on-chip
+TMUL(d, b, s2);
+TSTORE(gOut, d);
+</code></pre>
+<h3 id="contiguous-access">Contiguous access<a class="headerlink" href="#contiguous-access" title="Permanent link">&para;</a></h3>
+<p>Prefer row-major traversal; strided column access reduces burst efficiency.
+If column access is unavoidable, load a row-major block then <code>TTRANS</code> on-chip.</p>
+<h3 id="tprefetch">TPREFETCH<a class="headerlink" href="#tprefetch" title="Permanent link">&para;</a></h3>
+<p>Issue non-blocking hints to overlap data movement with compute:</p>
+<pre><code class="language-cpp">if (k + TK &lt; K) { TPREFETCH(gA_next); TPREFETCH(gB_next); }
+TMATMUL_ACC(acc, a_left, b_right);  // overlaps with prefetch
 </code></pre>
 <hr />
-<h2 id="3-l0-memory-optimization">3. L0 Memory Optimization<a class="headerlink" href="#3-l0-memory-optimization" title="Permanent link">&para;</a></h2>
-<h3 id="31-l0-capacity-management">3.1 L0 Capacity Management<a class="headerlink" href="#31-l0-capacity-management" title="Permanent link">&para;</a></h3>
-<p><strong>L0 Types</strong>:
-- Vector L0 (UB): Vector registers
-- Matrix L0A/L0B: Matrix operand registers
-- Matrix L0C: Accumulator registers</p>
-<p><strong>Capacity Limits</strong>:
-- Typically tens of KB
-- Requires precise management</p>
-<h3 id="32-register-allocation">3.2 Register Allocation<a class="headerlink" href="#32-register-allocation" title="Permanent link">&para;</a></h3>
-<p><strong>Manual Allocation (Manual Mode)</strong>:</p>
-<pre><code class="language-cpp">// Use TASSIGN to bind addresses
-constexpr int ADDR_A = 0;
-constexpr int ADDR_B = 32 * 1024;  // 32KB offset
-constexpr int ADDR_C = 64 * 1024;  // 64KB offset
+<h2 id="6-double-buffering">6. Double Buffering<a class="headerlink" href="#6-double-buffering" title="Permanent link">&para;</a></h2>
+<p>Alternate between two staging tile sets to overlap the memory and compute pipelines:</p>
+<pre><code class="language-cpp">Tile&lt;TileType::Mat, half, TM, TK&gt; a_mat[2];
+Tile&lt;TileType::Mat, half, TK, TN&gt; b_mat[2];
+TileLeft&lt;half, TM, TK&gt;            a_left[2];
+TileRight&lt;half, TK, TN&gt;           b_right[2];
 
-TileLeft tileA;
-TileRight tileB;
-TileAcc tileC;
+Event&lt;Op::TLOAD, Op::TMOV&gt;    ev_load[2];
+Event&lt;Op::TMOV,  Op::TMATMUL&gt; ev_mov[2];
 
-TASSIGN(tileA, ADDR_A);
-TASSIGN(tileB, ADDR_B);
-TASSIGN(tileC, ADDR_C);
-</code></pre>
-<p><strong>Automatic Allocation (Auto Mode)</strong>:</p>
-<pre><code class="language-cpp">// Compiler manages automatically
-TileLeft tileA;
-TileRight tileB;
-TileAcc tileC;
-// No TASSIGN needed
-</code></pre>
-<h3 id="33-register-reuse">3.3 Register Reuse<a class="headerlink" href="#33-register-reuse" title="Permanent link">&para;</a></h3>
-<p><strong>Strategy 1: Temporal Reuse</strong></p>
-<pre><code class="language-cpp">// Reuse same register in different stages
-TileVec temp;
+// Warm-up
+ev_load[0] = TLOAD(a_mat[0], gA_view_0);
+ev_load[0] = TLOAD(b_mat[0], gB_view_0);
 
-// Stage 1: Use for intermediate result
-TADD(temp, a, b);
-TSTORE(output1, temp);
-
-// Stage 2: Reuse for other data
-TMUL(temp, c, d);
-TSTORE(output2, temp);
-</code></pre>
-<hr />
-<h2 id="4-memory-alignment">4. Memory Alignment<a class="headerlink" href="#4-memory-alignment" title="Permanent link">&para;</a></h2>
-<h3 id="41-alignment-requirements">4.1 Alignment Requirements<a class="headerlink" href="#41-alignment-requirements" title="Permanent link">&para;</a></h3>
-<p><strong>Basic Alignment</strong>:
-- Row-major: <code>Cols × sizeof(T)</code> aligned to 32 bytes
-- Column-major: <code>Rows × sizeof(T)</code> aligned to 32 bytes</p>
-<p><strong>Example</strong>:</p>
-<pre><code class="language-cpp">// Correct: Aligned to 32 bytes
-using TileT1 = Tile&lt;TileType::Vec, float, 16, 8&gt;;
-// 16 × 8 × 4 = 512 bytes (multiple of 32) ✓
-
-// Wrong: Not aligned
-using TileT2 = Tile&lt;TileType::Vec, float, 16, 7&gt;;
-// 16 × 7 × 4 = 448 bytes (not multiple of 32) ✗
-</code></pre>
-<h3 id="42-padding-techniques">4.2 Padding Techniques<a class="headerlink" href="#42-padding-techniques" title="Permanent link">&para;</a></h3>
-<p><strong>Method 1: Compile-time Padding</strong></p>
-<pre><code class="language-cpp">// Original size: Not aligned
-constexpr int ORIG_COLS = 127;
-
-// Pad to alignment
-constexpr int PADDED_COLS = ((ORIG_COLS + 7) / 8) * 8;  // 128
-
-using TileT = Tile&lt;TileType::Vec, float, 16, PADDED_COLS&gt;;
-</code></pre>
-<p><strong>Method 2: Runtime Padding</strong></p>
-<pre><code class="language-cpp">// Use valid region to handle non-aligned data
-using TileT = Tile&lt;TileType::Vec, float, 16, 128,
-                   RowMajor, 16, DYNAMIC&gt;;  // Dynamic column count
-
-TileT tile(actual_cols);  // actual_cols can be 127
-</code></pre>
-<hr />
-<h2 id="5-memory-reuse-strategies">5. Memory Reuse Strategies<a class="headerlink" href="#5-memory-reuse-strategies" title="Permanent link">&para;</a></h2>
-<h3 id="51-data-reuse-patterns">5.1 Data Reuse Patterns<a class="headerlink" href="#51-data-reuse-patterns" title="Permanent link">&para;</a></h3>
-<p><strong>Pattern 1: Temporal Reuse</strong></p>
-<pre><code class="language-cpp">// Same data used multiple times at different times
-TLOAD(tile, data);
-for (int i = 0; i &lt; N; i++) {
-  TCOMPUTE(result[i], tile, other[i]);  // Reuse tile
-}
-</code></pre>
-<p><strong>Pattern 2: Spatial Reuse</strong></p>
-<pre><code class="language-cpp">// Adjacent data loaded together, used separately
-TLOAD(tile_block, data[0:BLOCK_SIZE]);
-for (int i = 0; i &lt; BLOCK_SIZE; i++) {
-  TEXTRACT(tile_i, tile_block, i);
-  TCOMPUTE(result[i], tile_i);
-}
-</code></pre>
-<h3 id="52-gemm-reuse-strategy">5.2 GEMM Reuse Strategy<a class="headerlink" href="#52-gemm-reuse-strategy" title="Permanent link">&para;</a></h3>
-<p><strong>Three-level Reuse</strong>:</p>
-<pre><code class="language-cpp">// M×K×N GEMM
-for (int m = 0; m &lt; M; m += TILE_M) {
-  for (int n = 0; n &lt; N; n += TILE_N) {
-    // Accumulator reuse: Entire K loop
-    TileAcc acc;
-    TFILL(acc, 0);
-
-    for (int k = 0; k &lt; K; k += TILE_K) {
-      // A reuse: N direction
-      TLOAD(tileA, A[m:m+TILE_M, k:k+TILE_K]);
-
-      // B reuse: M direction
-      TLOAD(tileB, B[k:k+TILE_K, n:n+TILE_N]);
-
-      TMATMUL_ACC(acc, tileA, tileB);
+for (int k = 0, ping = 0; k &lt; K; k += TK, ping ^= 1) {
+    int pong = ping ^ 1;
+    // Load next (pong) while computing current (ping)
+    if (k + TK &lt; K) {
+        ev_load[pong] = TLOAD(a_mat[pong], gA_view_next);
+        ev_load[pong] = TLOAD(b_mat[pong], gB_view_next);
     }
-
-    TSTORE(C[m:m+TILE_M, n:n+TILE_N], acc);
-  }
+    ev_mov[ping]  = TMOV(a_left[ping],  a_mat[ping],  ev_load[ping]);
+    ev_mov[ping]  = TMOV(b_right[ping], b_mat[ping],  ev_load[ping]);
+    TMATMUL_ACC(acc, a_left[ping], b_right[ping], ev_mov[ping]);
 }
+TSTORE(gC_view, acc);
 </code></pre>
-<p><strong>Reuse Analysis</strong>:
-- Each element of A is reused N/TILE_N times
-- Each element of B is reused M/TILE_M times
-- Accumulator is reused K/TILE_K times</p>
+<p>Steady-state throughput approaches <code>max(T_load, T_compute)</code> instead of <code>T_load + T_compute</code>.</p>
+<p>For the event model see <a href="../Event/"><code>Event.md</code></a>.</p>
 <hr />
-<h2 id="6-memory-bandwidth-optimization">6. Memory Bandwidth Optimization<a class="headerlink" href="#6-memory-bandwidth-optimization" title="Permanent link">&para;</a></h2>
-<h3 id="61-reduce-memory-access">6.1 Reduce Memory Access<a class="headerlink" href="#61-reduce-memory-access" title="Permanent link">&para;</a></h3>
-<p><strong>Strategy 1: Operator Fusion</strong></p>
-<pre><code class="language-cpp">// Before fusion: 3 GM accesses
-TLOAD(a, input1);
-TADD(b, a, scalar);
-TSTORE(output1, b);
+<h2 id="7-valid-region-and-padding">7. Valid Region and Padding<a class="headerlink" href="#7-valid-region-and-padding" title="Permanent link">&para;</a></h2>
+<p>When dimensions are not multiples of tile sizes, use the valid-region rather than allocating multiple tile sizes:</p>
+<pre><code class="language-cpp">// Static valid region
+using TileT = pto::Tile&lt;pto::TileType::Vec, float, 128, 256,
+                        pto::BLayout::RowMajor, 100, 200&gt;;
 
-TLOAD(c, output1);  // Redundant access
-TMUL(d, c, scalar2);
-TSTORE(output2, d);
+// Dynamic valid region
+using TileD = pto::Tile&lt;pto::TileType::Vec, float, 128, 256,
+                        pto::BLayout::RowMajor,
+                        pto::DYNAMIC, pto::DYNAMIC&gt;;
+TileD t(actual_rows, actual_cols);
 
-// After fusion: 2 GM accesses
-TLOAD(a, input1);
-TADD(b, a, scalar);
-TMUL(d, b, scalar2);  // Use b directly, no store and reload
-TSTORE(output2, d);
+// Pad capacity to alignment; use valid region for actual extent
+constexpr int PADDED = ((127*4+31)/32)*32/4;  // 127 &gt; 128 cols
+using TileP = pto::Tile&lt;pto::TileType::Vec, float, 16, PADDED,
+                        pto::BLayout::RowMajor, 16, 127&gt;;
 </code></pre>
-<p><strong>Strategy 2: Compute-intensive Design</strong></p>
-<pre><code class="language-cpp">// Increase arithmetic intensity = FLOPs / Bytes
-// Goal: More computation per byte of data
-
-// Bad: Low arithmetic intensity
-for (int i = 0; i &lt; N; i++) {
-  TLOAD(tile, data[i]);     // 1 load
-  TADD(result, tile, 1);    // 1 compute
-  TSTORE(output[i], result); // 1 store
-}
-// Arithmetic intensity = 1 FLOP / (2 × tile_size bytes)
-
-// Good: High arithmetic intensity
-TLOAD(tile, data);           // 1 load
-for (int i = 0; i &lt; 100; i++) {
-  TADD(tile, tile, 1);       // 100 computes
-}
-TSTORE(output, tile);        // 1 store
-// Arithmetic intensity = 100 FLOPs / (2 × tile_size bytes)
-</code></pre>
-<h3 id="62-contiguous-access-pattern">6.2 Contiguous Access Pattern<a class="headerlink" href="#62-contiguous-access-pattern" title="Permanent link">&para;</a></h3>
-<p><strong>Row-major Optimization</strong>:</p>
-<pre><code class="language-cpp">// Good: Contiguous access
-for (int i = 0; i &lt; M; i++) {
-  TLOAD(tile, A[i, :]);  // Row contiguous
-  TCOMPUTE(result, tile);
-}
-
-// Bad: Strided access
-for (int j = 0; j &lt; N; j++) {
-  TLOAD(tile, A[:, j]);  // Column access, may not be contiguous
-  TCOMPUTE(result, tile);
-}
-</code></pre>
-<p><strong>Solution</strong>:</p>
-<pre><code class="language-cpp">// Solution 1: Transpose data
-TTRANS(A_T, A);
-for (int j = 0; j &lt; N; j++) {
-  TLOAD(tile, A_T[j, :]);  // Now contiguous
-  TCOMPUTE(result, tile);
-}
-
-// Solution 2: Use column-major layout
-using TileT = Tile&lt;TileType::Vec, float, M, N, ColMajor&gt;;
-</code></pre>
-<h3 id="63-prefetch-optimization">6.3 Prefetch Optimization<a class="headerlink" href="#63-prefetch-optimization" title="Permanent link">&para;</a></h3>
-<p><strong>Software Prefetch</strong>:</p>
-<pre><code class="language-cpp">// Prefetch next batch of data
-for (int i = 0; i &lt; N; i++) {
-  // Process current data
-  TCOMPUTE(result[i], tile[i]);
-
-  // Prefetch next batch
-  if (i + 1 &lt; N) {
-    TPREFETCH(tile[i+1], data[i+1]);
-  }
-}
-</code></pre>
-<p><strong>Double Buffering Prefetch</strong>:</p>
-<pre><code class="language-cpp">// Preload first batch
-TLOAD(tile[0], data[0]);
-
-for (int i = 0; i &lt; N; i++) {
-  int curr = i % 2;
-  int next = (i + 1) % 2;
-
-  // Process current
-  TCOMPUTE(result[i], tile[curr]);
-
-  // Load next batch simultaneously
-  if (i + 1 &lt; N) {
-    TLOAD(tile[next], data[i+1]);
-  }
-}
-</code></pre>
+<hr />
+<h2 id="8-checklist">8. Checklist<a class="headerlink" href="#8-checklist" title="Permanent link">&para;</a></h2>
+<p><strong>Capacity</strong>
+- [ ] Total tile footprint (staging + operands + accumulator × buffer count) fits on-chip.
+- [ ] For double buffering, staging tile count × 2 before checking.</p>
+<p><strong>Alignment</strong>
+- [ ] Let <code>static_assert</code> in <code>pto::Tile</code> catch violations at compile time.
+- [ ] Use <code>TileLeft</code> / <code>TileRight</code> / <code>TileAcc</code> aliases for correct fractal layout.</p>
+<p><strong>Data reuse</strong>
+- [ ] <code>TileAcc</code> stays on-chip for the full K loop; write back once.
+- [ ] Row/column statistics (<code>TROWMAX</code>, <code>TROWSUM</code>) cached in <code>Vec</code> tiles.
+- [ ] No unnecessary TSTORE/TLOAD pairs within a kernel.</p>
+<p><strong>GM traffic</strong>
+- [ ] Fuse consecutive elementwise ops into one kernel.
+- [ ] Row-major GM access; if column access needed, load block then <code>TTRANS</code>.
+- [ ] <code>TPREFETCH</code> used to overlap data movement with compute.</p>
+<p><strong>Synchronization</strong>
+- [ ] <code>Event&lt;SrcOp, DstOp&gt;</code> for fine-grained ordering; no global <code>TSYNC</code> in the steady-state loop.
+- [ ] Each consumer waits only on its specific producer event.</p>
 <hr />
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../opt/">Performance Optimization Guide</a></li>
+<li><a href="../../machine/abstract-machine/">Abstract Machine Model</a></li>
+<li><a href="../Tile/">Tile Programming Model</a></li>
+<li><a href="../GlobalTensor/">GlobalTensor Programming Model</a></li>
+<li><a href="../Event/">Events and Synchronization</a></li>
+<li><a href="../opt/">PTO Optimization Guide</a></li>
 <li><a href="../pipeline-parallel/">Pipeline and Parallel Execution</a></li>
-<li><a href="../performance-best-practices/">Performance Best Practices</a></li>
-<li><a href="../../../kernels/manual/a2a3/gemm_performance/">GEMM Optimization Case</a></li>
+<li><a href="../tutorials/gemm/">GEMM Tutorial</a></li>
+<li><a href="../../../kernels/manual/a2a3/gemm_performance/">GEMM Performance Kernel</a></li>
+<li><a href="../../../kernels/manual/common/flash_atten/">Flash Attention Kernel</a></li>
 </ul>
               
             </div>

@@ -505,478 +505,248 @@
               
                 <!-- Generated from `docs/coding/memory-optimization_zh.md` -->
 
-<h1 id="_1">内存优化技巧<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>本文档提供 PTO 算子开发中的内存优化技巧，帮助开发者充分利用片上内存，减少内存访问开销。</p>
+<h1 id="_1">内存优化<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>本文介绍 PTO 内核的内存优化技巧。片上内存抽象模型参见 <a href="../../machine/abstract-machine/"><code>docs/machine/abstract-machine.md</code></a>；示例驱动的调优参见 <a href="../opt/"><code>opt.md</code></a>。</p>
 <h2 id="_2">目录<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="#1-内存层次结构">1. 内存层次结构</a></li>
-<li><a href="#2-l1-内存优化">2. L1 内存优化</a></li>
-<li><a href="#3-l0-内存优化">3. L0 内存优化</a></li>
-<li><a href="#4-内存对齐优化">4. 内存对齐优化</a></li>
-<li><a href="#5-内存复用策略">5. 内存复用策略</a></li>
-<li><a href="#6-内存带宽优化">6. 内存带宽优化</a></li>
+<li><a href="#1-片上存储模型">1. 片上存储模型</a></li>
+<li><a href="#2-tile-尺寸与容量">2. Tile 尺寸与容量</a></li>
+<li><a href="#3-数据复用">3. 数据复用</a></li>
+<li><a href="#4-布局与对齐">4. 布局与对齐</a></li>
+<li><a href="#5-减少全局内存流量">5. 减少全局内存流量</a></li>
+<li><a href="#6-双缓冲">6. 双缓冲</a></li>
+<li><a href="#7-有效区域与-padding">7. 有效区域与 Padding</a></li>
+<li><a href="#8-实践检查清单">8. 实践检查清单</a></li>
 </ul>
 <hr />
-<h2 id="1">1. 内存层次结构<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
-<h3 id="11-ascend">1.1 Ascend 内存架构<a class="headerlink" href="#11-ascend" title="Permanent link">&para;</a></h3>
-<pre><code>全局内存 (GM)
-    ↓ MTE2 (DMA)
-L1 缓存 (~512KB - 1MB/核)
-    ↓ MTE1
-L0 缓存 (寄存器级)
-    ↓
-计算单元 (CUBE/VECTOR)
+<h2 id="1">1. 片上存储模型<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p>PTO 通过 Tile 类型暴露片上存储，每种 <code>TileType</code> 对应一类存储区域：</p>
+<table>
+<thead>
+<tr>
+<th>Tile 类型</th>
+<th>存储区</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TileType::Vec</code></td>
+<td>向量缓冲区（UB）</td>
+<td>逐元素操作、规约</td>
+</tr>
+<tr>
+<td><code>TileType::Mat</code></td>
+<td>矩阵暂存区（类 L1）</td>
+<td>TLOAD 目标、GEMM 暂存</td>
+</tr>
+<tr>
+<td><code>TileType::Left/Right</code></td>
+<td>矩阵操作数寄存器（L0A/L0B）</td>
+<td>TMATMUL 输入</td>
+</tr>
+<tr>
+<td><code>TileType::Acc</code></td>
+<td>累加器寄存器（L0C）</td>
+<td>TMATMUL 输出</td>
+</tr>
+</tbody>
+</table>
+<p>数据流向固定：</p>
+<pre><code>GM --TLOAD--&gt; Mat --TMOV/TEXTRACT--&gt; Left/Right --TMATMUL--&gt; Acc --TSTORE--&gt; GM
 </code></pre>
-<p><strong>访问延迟对比</strong>：
-| 内存层级 | 延迟 | 带宽 |
-|---------|------|------|
-| L0 | ~1 cycle | 最高 |
-| L1 | ~10 cycles | 高 |
-| GM | ~100+ cycles | 受限 |</p>
-<p><strong>优化原则</strong>：
-- 尽量在 L0 中完成计算
-- 在 L1 中缓存频繁访问的数据
-- 减少 GM 访问次数</p>
+<p>向量操作（<code>TADD</code>、<code>TEXP</code>、<code>TROWSUM</code> 等）直接作用于 <code>Vec</code> Tile。
+<code>Mat</code> 与 <code>Vec</code> 之间的转换使用 <code>TMOV</code> 或 <code>TEXTRACT</code>。</p>
 <hr />
-<h2 id="2-l1">2. L1 内存优化<a class="headerlink" href="#2-l1" title="Permanent link">&para;</a></h2>
-<h3 id="21-l1">2.1 L1 容量规划<a class="headerlink" href="#21-l1" title="Permanent link">&para;</a></h3>
-<p><strong>平台容量</strong>：
-- A2/A3：~512 KB/核
-- A5：~1 MB/核</p>
-<p><strong>容量分配示例（GEMM）</strong>：</p>
-<pre><code class="language-cpp">// A2/A3 平台
-constexpr int L1_CAPACITY = 512 * 1024;  // 512KB
-
-// 双缓冲 A Tile: 2 × 128×64×2 = 32KB
-constexpr int A_BUFFER_SIZE = 2 * 128 * 64 * sizeof(half);
-
-// 双缓冲 B Tile: 2 × 64×256×2 = 64KB
-constexpr int B_BUFFER_SIZE = 2 * 64 * 256 * sizeof(half);
-
-// 累加器: 128×256×4 = 128KB
-constexpr int ACC_BUFFER_SIZE = 128 * 256 * sizeof(float);
-
-// 总计: 32 + 64 + 128 = 224KB &lt; 512KB ✓
+<h2 id="2-tile">2. Tile 尺寸与容量<a class="headerlink" href="#2-tile" title="Permanent link">&para;</a></h2>
+<h3 id="tile">声明 Tile 前先估算占用<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">constexpr int TM = 128, TK = 64, TN = 256;
+// 暂存区（双缓冲）
+constexpr size_t staging = 2*(TM*TK + TK*TN)*sizeof(half);  // 2*(16+32) KB = 96 KB
+// 累加器
+constexpr size_t accum   = TM * TN * sizeof(float);          // 128 KB
+// 合计：224 KB——须在目标平台片上容量限制内
 </code></pre>
-<h3 id="22-l1">2.2 避免 L1 溢出<a class="headerlink" href="#22-l1" title="Permanent link">&para;</a></h3>
-<p><strong>检查方法</strong>：</p>
-<pre><code class="language-cpp">// 编译时检查
-static_assert(TOTAL_L1_USAGE &lt; L1_CAPACITY, 
-              &quot;L1 memory overflow!&quot;);
+<p>如果超出限制：缩小 Tile 尺寸、改为单缓冲，或拆分累加器范围。</p>
+<h3 id="static_assert">对齐规则（由 <code>static_assert</code> 编译期检查）<a class="headerlink" href="#static_assert" title="Permanent link">&para;</a></h3>
+<ul>
+<li>行主序 Tile：<code>Cols * sizeof(Element)</code> 必须是 32 字节的整数倍。</li>
+<li>列主序 Tile：<code>Rows * sizeof(Element)</code> 必须是 32 字节的整数倍。</li>
+<li>Boxed Tile（<code>TileLeft</code>、<code>TileRight</code>、<code>TileAcc</code>）：形状须匹配分形基础 Tile 尺寸（<code>fractalABSize=512</code>，<code>fractalCSize=1024</code>）。</li>
+</ul>
+<p><code>fractalABSize=512</code> 下常见基础形状：</p>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th>基础 rows×cols</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fp32</code></td>
+<td>16×8</td>
+</tr>
+<tr>
+<td><code>fp16</code></td>
+<td>16×16</td>
+</tr>
+<tr>
+<td><code>int8</code></td>
+<td>16×32</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3">3. 数据复用<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<h3 id="k-gemm">K 维度分块（GEMM）<a class="headerlink" href="#k-gemm" title="Permanent link">&para;</a></h3>
+<p>每个 A/B 面板只加载一次，在完整 K 循环内累加：</p>
+<pre><code class="language-cpp">TileAcc&lt;float, TM, TN&gt; acc;
+TFILL(acc, 0.0f);
 
-// 运行时检查（调试模式）
-#ifdef DEBUG
-  size_t total_usage = calculate_l1_usage();
-  assert(total_usage &lt; L1_CAPACITY);
-#endif
-</code></pre>
-<p><strong>溢出后果</strong>：
-- 性能急剧下降（10-100×）
-- 频繁的 L1 ↔ GM 换页
-- 流水线停顿</p>
-<p><strong>解决方案</strong>：</p>
-<pre><code class="language-cpp">// 方案1：减小 Tile 尺寸
-// 优化前：
-using TileT = Tile&lt;TileType::Vec, float, 32, 512&gt;;  // 64KB
+for (int k = 0; k &lt; K; k += TK) {
+    Tile&lt;TileType::Mat, half, TM, TK&gt; a_mat;
+    Tile&lt;TileType::Mat, half, TK, TN&gt; b_mat;
+    TLOAD(a_mat, gA_view);    // 每个 TM×TK 块只访问一次 GM
+    TLOAD(b_mat, gB_view);
 
-// 优化后：
-using TileT = Tile&lt;TileType::Vec, float, 16, 256&gt;;  // 16KB
+    TileLeft&lt;half, TM, TK&gt;   a_left;
+    TileRight&lt;half, TK, TN&gt;  b_right;
+    TMOV(a_left, a_mat);
+    TMOV(b_right, b_mat);
 
-// 方案2：减少缓冲区数量
-// 从三缓冲改为双缓冲
-</code></pre>
-<h3 id="23-l1">2.3 L1 数据复用<a class="headerlink" href="#23-l1" title="Permanent link">&para;</a></h3>
-<p><strong>策略1：K 维度分块</strong></p>
-<pre><code class="language-cpp">// GEMM 示例：复用 A 和 B
-for (int k = 0; k &lt; K; k += TILE_K) {
-  // 加载到 L1 一次
-  TLOAD(tileA_L1, A[m:m+M, k:k+TILE_K]);
-  TLOAD(tileB_L1, B[k:k+TILE_K, n:n+N]);
-
-  // 在 L1 中复用多次
-  for (int sub_k = 0; sub_k &lt; TILE_K; sub_k += SUB_K) {
-    TEXTRACT(tileA_L0, tileA_L1[sub_k:sub_k+SUB_K]);
-    TEXTRACT(tileB_L0, tileB_L1[sub_k:sub_k+SUB_K]);
-    TMATMUL(acc, tileA_L0, tileB_L0);
-  }
+    TMATMUL_ACC(acc, a_left, b_right);  // acc 全程驻留片上
 }
+TSTORE(gC_view, acc);   // 循环结束后一次性写回
 </code></pre>
-<p><strong>策略2：缓存常量数据</strong></p>
-<pre><code class="language-cpp">// Softmax 示例：缓存 max 和 sum
-TLOAD(input_L1, input);
-TROWMAX(max_val, input_L1);  // 计算一次，缓存在 L1
-TROWEXPANDSUB(shifted, input_L1, max_val);  // 复用 max_val
-TEXP(exp_vals, shifted);
-TROWSUM(sum_val, exp_vals);  // 计算一次，缓存在 L1
-TROWEXPANDDIV(output, exp_vals, sum_val);  // 复用 sum_val
+<h3 id="softmax">缓存行统计量（Softmax）<a class="headerlink" href="#softmax" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">Tile&lt;TileType::Vec, float, R, C&gt; input, shifted, exp_v, output;
+Tile&lt;TileType::Vec, float, R, 1&gt; row_max, row_sum;
+
+TLOAD(input, gInput);
+TROWMAX(row_max, input);             // 计算一次，驻留片上
+TROWEXPANDSUB(shifted, input, row_max);
+TEXP(exp_v, shifted);
+TROWSUM(row_sum, exp_v);             // 计算一次，驻留片上
+TROWEXPANDDIV(output, exp_v, row_sum);
+TSTORE(gOutput, output);
+</code></pre>
+<p>若将 <code>row_max</code>/<code>row_sum</code> 写回再重新加载，GM 流量约增加三倍。</p>
+<hr />
+<h2 id="4">4. 布局与对齐<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<p><strong>让布局与消费指令匹配</strong>，避免隐式转换。</p>
+<ul>
+<li>GM 数据为行主序时，以 <code>BLayout::RowMajor</code> 加载 <code>Mat</code> Tile。</li>
+<li>在支持的目标上，对 <code>GlobalTensor</code> 使用 <code>Layout::NZ</code> 可消除 GEMM 输入的 <code>TMOV</code> 阶段。</li>
+<li>只有源布局与目标布局确实不同时才使用 <code>TTRANS</code>。</li>
+</ul>
+<p><code>TileLeft</code> / <code>TileRight</code> / <code>TileAcc</code> 别名会自动选定正确的 <code>SLayout</code> 和 <code>SFractalSize</code>：</p>
+<pre><code class="language-cpp">TileLeft&lt;half, 128, 64&gt;   a_left;   // 外层列主序 + 内层行主序
+TileRight&lt;half, 64, 256&gt;  b_right;  // 外层行主序 + 内层列主序
+TileAcc&lt;float, 128, 256&gt;  acc;
+</code></pre>
+<p>没有明确理由，不要手动覆盖 <code>SLayout</code> 或 <code>SFractalSize</code>。</p>
+<hr />
+<h2 id="5">5. 减少全局内存流量<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<h3 id="_3">算子融合<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>将连续操作融合到同一内核，消除中间结果的 GM 存储和重新加载：</p>
+<pre><code class="language-cpp">// 未融合：4 次 GM 往返
+TLOAD(a, gInput); TADD(b, a, s); TSTORE(gTmp, b);
+TLOAD(c, gTmp);   TMUL(d, c, s2); TSTORE(gOut, d);
+
+// 融合后：2 次 GM 往返
+TLOAD(a, gInput);
+TADD(b, a, s);    // b 驻留片上
+TMUL(d, b, s2);
+TSTORE(gOut, d);
+</code></pre>
+<h3 id="_4">连续访问模式<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>优先使用行主序遍历；列主序跨步访问会降低突发传输效率。
+若必须按列访问，可加载行主序块后在片上 <code>TTRANS</code>。</p>
+<h3 id="tprefetch">TPREFETCH<a class="headerlink" href="#tprefetch" title="Permanent link">&para;</a></h3>
+<p>发出非阻塞提示，将数据移动与计算重叠：</p>
+<pre><code class="language-cpp">if (k + TK &lt; K) { TPREFETCH(gA_next); TPREFETCH(gB_next); }
+TMATMUL_ACC(acc, a_left, b_right);  // 与预取并行执行
 </code></pre>
 <hr />
-<h2 id="3-l0">3. L0 内存优化<a class="headerlink" href="#3-l0" title="Permanent link">&para;</a></h2>
-<h3 id="31-l0">3.1 L0 容量管理<a class="headerlink" href="#31-l0" title="Permanent link">&para;</a></h3>
-<p><strong>L0 类型</strong>：
-- Vector L0 (UB)：向量寄存器
-- Matrix L0A/L0B：矩阵操作数寄存器
-- Matrix L0C：累加器寄存器</p>
-<p><strong>容量限制</strong>：
-- 通常几十 KB
-- 需要精确管理</p>
-<h3 id="32">3.2 寄存器分配<a class="headerlink" href="#32" title="Permanent link">&para;</a></h3>
-<p><strong>手动分配（Manual Mode）</strong>：</p>
-<pre><code class="language-cpp">// 使用 TASSIGN 绑定地址
-constexpr int ADDR_A = 0;
-constexpr int ADDR_B = 32 * 1024;  // 32KB offset
-constexpr int ADDR_C = 64 * 1024;  // 64KB offset
+<h2 id="6">6. 双缓冲<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<p>在两组暂存 Tile 之间交替，使内存流水线与计算流水线同时保持繁忙：</p>
+<pre><code class="language-cpp">Tile&lt;TileType::Mat, half, TM, TK&gt; a_mat[2];
+Tile&lt;TileType::Mat, half, TK, TN&gt; b_mat[2];
+TileLeft&lt;half, TM, TK&gt;            a_left[2];
+TileRight&lt;half, TK, TN&gt;           b_right[2];
 
-TileLeft tileA;
-TileRight tileB;
-TileAcc tileC;
+Event&lt;Op::TLOAD, Op::TMOV&gt;    ev_load[2];
+Event&lt;Op::TMOV,  Op::TMATMUL&gt; ev_mov[2];
 
-TASSIGN(tileA, ADDR_A);
-TASSIGN(tileB, ADDR_B);
-TASSIGN(tileC, ADDR_C);
-</code></pre>
-<p><strong>自动分配（Auto Mode）</strong>：</p>
-<pre><code class="language-cpp">// 编译器自动管理
-TileLeft tileA;
-TileRight tileB;
-TileAcc tileC;
-// 无需 TASSIGN
-</code></pre>
-<h3 id="33">3.3 寄存器复用<a class="headerlink" href="#33" title="Permanent link">&para;</a></h3>
-<p><strong>策略1：时间复用</strong></p>
-<pre><code class="language-cpp">// 不同阶段复用同一寄存器
-TileVec temp;
+// 预热
+ev_load[0] = TLOAD(a_mat[0], gA_view_0);
+ev_load[0] = TLOAD(b_mat[0], gB_view_0);
 
-// 阶段1：用于中间结果
-TADD(temp, a, b);
-TSTORE(output1, temp);
-
-// 阶段2：复用存储其他数据
-TMUL(temp, c, d);
-TSTORE(output2, temp);
-</code></pre>
-<p><strong>策略2：空间复用</strong></p>
-<pre><code class="language-cpp">// 使用 union 复用内存
-union {
-  TileVec vec_tile;
-  TileMat mat_tile;
-} shared_buffer;
-
-// 先用作 vector
-TADD(shared_buffer.vec_tile, a, b);
-
-// 后用作 matrix
-TMOV(shared_buffer.mat_tile, ...);
-</code></pre>
-<hr />
-<h2 id="4">4. 内存对齐优化<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
-<h3 id="41">4.1 对齐要求<a class="headerlink" href="#41" title="Permanent link">&para;</a></h3>
-<p><strong>基本对齐</strong>：
-- 行主序：<code>Cols × sizeof(T)</code> 对齐到 32 字节
-- 列主序：<code>Rows × sizeof(T)</code> 对齐到 32 字节</p>
-<p><strong>示例</strong>：</p>
-<pre><code class="language-cpp">// 正确：对齐到 32 字节
-using TileT1 = Tile&lt;TileType::Vec, float, 16, 8&gt;;
-// 16 × 8 × 4 = 512 bytes (32的倍数) ✓
-
-// 错误：未对齐
-using TileT2 = Tile&lt;TileType::Vec, float, 16, 7&gt;;
-// 16 × 7 × 4 = 448 bytes (不是32的倍数) ✗
-</code></pre>
-<h3 id="42-padding">4.2 Padding 技巧<a class="headerlink" href="#42-padding" title="Permanent link">&para;</a></h3>
-<p><strong>方法1：编译时 Padding</strong></p>
-<pre><code class="language-cpp">// 原始大小：不对齐
-constexpr int ORIG_COLS = 127;
-
-// Padding 到对齐
-constexpr int PADDED_COLS = ((ORIG_COLS + 7) / 8) * 8;  // 128
-
-using TileT = Tile&lt;TileType::Vec, float, 16, PADDED_COLS&gt;;
-</code></pre>
-<p><strong>方法2：运行时 Padding</strong></p>
-<pre><code class="language-cpp">// 使用 valid region 处理非对齐数据
-using TileT = Tile&lt;TileType::Vec, float, 16, 128,
-                   RowMajor, 16, DYNAMIC&gt;;  // 动态列数
-
-TileT tile(actual_cols);  // actual_cols 可以是 127
-</code></pre>
-<h3 id="43">4.3 分形对齐<a class="headerlink" href="#43" title="Permanent link">&para;</a></h3>
-<p><strong>NZ 布局对齐</strong>：</p>
-<pre><code class="language-cpp">// NZ 布局要求
-// Rows 对齐到 16
-// Cols 对齐到 C0Size = 32 / sizeof(T)
-
-// fp16: C0Size = 16
-using TileNZ_fp16 = Tile&lt;TileType::Mat, half, 16, 16,
-                         RowMajor, 16, 16, RowMajor, 512&gt;;
-
-// fp32: C0Size = 8
-using TileNZ_fp32 = Tile&lt;TileType::Mat, float, 16, 8,
-                         RowMajor, 16, 8, RowMajor, 512&gt;;
-</code></pre>
-<hr />
-<h2 id="5">5. 内存复用策略<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
-<h3 id="51">5.1 数据复用模式<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
-<p><strong>模式1：时间复用（Temporal Reuse）</strong></p>
-<pre><code class="language-cpp">// 同一数据在不同时间被多次使用
-TLOAD(tile, data);
-for (int i = 0; i &lt; N; i++) {
-  TCOMPUTE(result[i], tile, other[i]);  // 复用 tile
-}
-</code></pre>
-<p><strong>模式2：空间复用（Spatial Reuse）</strong></p>
-<pre><code class="language-cpp">// 相邻数据一起加载，分别使用
-TLOAD(tile_block, data[0:BLOCK_SIZE]);
-for (int i = 0; i &lt; BLOCK_SIZE; i++) {
-  TEXTRACT(tile_i, tile_block, i);
-  TCOMPUTE(result[i], tile_i);
-}
-</code></pre>
-<h3 id="52-gemm">5.2 GEMM 复用策略<a class="headerlink" href="#52-gemm" title="Permanent link">&para;</a></h3>
-<p><strong>三级复用</strong>：</p>
-<pre><code class="language-cpp">// M×K×N GEMM
-for (int m = 0; m &lt; M; m += TILE_M) {
-  for (int n = 0; n &lt; N; n += TILE_N) {
-    // 累加器复用：整个 K 循环
-    TileAcc acc;
-    TFILL(acc, 0);
-
-    for (int k = 0; k &lt; K; k += TILE_K) {
-      // A 复用：N 方向
-      TLOAD(tileA, A[m:m+TILE_M, k:k+TILE_K]);
-
-      // B 复用：M 方向
-      TLOAD(tileB, B[k:k+TILE_K, n:n+TILE_N]);
-
-      TMATMUL_ACC(acc, tileA, tileB);
+for (int k = 0, ping = 0; k &lt; K; k += TK, ping ^= 1) {
+    int pong = ping ^ 1;
+    // 加载下一个（pong）的同时计算当前（ping）
+    if (k + TK &lt; K) {
+        ev_load[pong] = TLOAD(a_mat[pong], gA_view_next);
+        ev_load[pong] = TLOAD(b_mat[pong], gB_view_next);
     }
-
-    TSTORE(C[m:m+TILE_M, n:n+TILE_N], acc);
-  }
+    ev_mov[ping]  = TMOV(a_left[ping],  a_mat[ping],  ev_load[ping]);
+    ev_mov[ping]  = TMOV(b_right[ping], b_mat[ping],  ev_load[ping]);
+    TMATMUL_ACC(acc, a_left[ping], b_right[ping], ev_mov[ping]);
 }
+TSTORE(gC_view, acc);
 </code></pre>
-<p><strong>复用分析</strong>：
-- A 的每个元素被复用 N/TILE_N 次
-- B 的每个元素被复用 M/TILE_M 次
-- 累加器被复用 K/TILE_K 次</p>
-<h3 id="53-flash-attention">5.3 Flash Attention 复用<a class="headerlink" href="#53-flash-attention" title="Permanent link">&para;</a></h3>
-<p><strong>在线算法复用</strong>：</p>
-<pre><code class="language-cpp">// 不存储完整的注意力矩阵
-for (int i = 0; i &lt; SEQ_LEN; i += TILE_SIZE) {
-  // Q 复用：整个 K/V 循环
-  TLOAD(Q_tile, Q[i:i+TILE_SIZE, :]);
+<p>稳定运行时，实际吞吐量趋近于 <code>max(T_load, T_compute)</code>，而非 <code>T_load + T_compute</code>。</p>
+<p>事件模型详见 <a href="../Event_zh/"><code>Event_zh.md</code></a>。</p>
+<hr />
+<h2 id="7-padding">7. 有效区域与 Padding<a class="headerlink" href="#7-padding" title="Permanent link">&para;</a></h2>
+<p>当维度不是 Tile 尺寸整数倍时，使用有效区域而非申请多种 Tile 尺寸：</p>
+<pre><code class="language-cpp">// 静态有效区域
+using TileT = pto::Tile&lt;pto::TileType::Vec, float, 128, 256,
+                        pto::BLayout::RowMajor, 100, 200&gt;;
 
-  // 在线更新统计量
-  float max_val = -INF;
-  float sum_val = 0;
+// 动态有效区域
+using TileD = pto::Tile&lt;pto::TileType::Vec, float, 128, 256,
+                        pto::BLayout::RowMajor,
+                        pto::DYNAMIC, pto::DYNAMIC&gt;;
+TileD t(actual_rows, actual_cols);
 
-  for (int j = 0; j &lt; SEQ_LEN; j += TILE_SIZE) {
-    TLOAD(K_tile, K[j:j+TILE_SIZE, :]);
-    TMATMUL(S_tile, Q_tile, K_tile);  // 复用 Q_tile
-
-    // 更新统计量（复用 max_val 和 sum_val）
-    update_statistics(max_val, sum_val, S_tile);
-  }
-
-  // 使用统计量计算输出
-  compute_output(output, max_val, sum_val);
-}
+// 容量 Padding 到对齐边界，有效区域表达实际范围
+constexpr int PADDED = ((127*4+31)/32)*32/4;  // 127 列 -&gt; 128
+using TileP = pto::Tile&lt;pto::TileType::Vec, float, 16, PADDED,
+                        pto::BLayout::RowMajor, 16, 127&gt;;
 </code></pre>
 <hr />
-<h2 id="6">6. 内存带宽优化<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
-<h3 id="61">6.1 减少内存访问<a class="headerlink" href="#61" title="Permanent link">&para;</a></h3>
-<p><strong>策略1：算子融合</strong></p>
-<pre><code class="language-cpp">// 融合前：3 次 GM 访问
-TLOAD(a, input1);
-TADD(b, a, scalar);
-TSTORE(output1, b);
-
-TLOAD(c, output1);  // 重复访问
-TMUL(d, c, scalar2);
-TSTORE(output2, d);
-
-// 融合后：2 次 GM 访问
-TLOAD(a, input1);
-TADD(b, a, scalar);
-TMUL(d, b, scalar2);  // 直接使用 b，无需存储和重新加载
-TSTORE(output2, d);
-</code></pre>
-<p><strong>策略2：计算密集型设计</strong></p>
-<pre><code class="language-cpp">// 提高算术强度 = FLOPs / Bytes
-// 目标：每字节数据做更多计算
-
-// 不好：算术强度低
-for (int i = 0; i &lt; N; i++) {
-  TLOAD(tile, data[i]);     // 1 次加载
-  TADD(result, tile, 1);    // 1 次计算
-  TSTORE(output[i], result); // 1 次存储
-}
-// 算术强度 = 1 FLOP / (2 × tile_size bytes)
-
-// 好：算术强度高
-TLOAD(tile, data);           // 1 次加载
-for (int i = 0; i &lt; 100; i++) {
-  TADD(tile, tile, 1);       // 100 次计算
-}
-TSTORE(output, tile);        // 1 次存储
-// 算术强度 = 100 FLOPs / (2 × tile_size bytes)
-</code></pre>
-<h3 id="62">6.2 连续访问模式<a class="headerlink" href="#62" title="Permanent link">&para;</a></h3>
-<p><strong>行主序优化</strong>：</p>
-<pre><code class="language-cpp">// 好：连续访问
-for (int i = 0; i &lt; M; i++) {
-  TLOAD(tile, A[i, :]);  // 行连续
-  TCOMPUTE(result, tile);
-}
-
-// 不好：跨步访问
-for (int j = 0; j &lt; N; j++) {
-  TLOAD(tile, A[:, j]);  // 列访问，可能不连续
-  TCOMPUTE(result, tile);
-}
-</code></pre>
-<p><strong>解决方案</strong>：</p>
-<pre><code class="language-cpp">// 方案1：转置数据
-TTRANS(A_T, A);
-for (int j = 0; j &lt; N; j++) {
-  TLOAD(tile, A_T[j, :]);  // 现在是连续的
-  TCOMPUTE(result, tile);
-}
-
-// 方案2：使用列主序布局
-using TileT = Tile&lt;TileType::Vec, float, M, N, ColMajor&gt;;
-</code></pre>
-<h3 id="63">6.3 预取优化<a class="headerlink" href="#63" title="Permanent link">&para;</a></h3>
-<p><strong>软件预取</strong>：</p>
-<pre><code class="language-cpp">// 预取下一批数据
-for (int i = 0; i &lt; N; i++) {
-  // 处理当前数据
-  TCOMPUTE(result[i], tile[i]);
-
-  // 预取下一批
-  if (i + 1 &lt; N) {
-    TPREFETCH(tile[i+1], data[i+1]);
-  }
-}
-</code></pre>
-<p><strong>双缓冲预取</strong>：</p>
-<pre><code class="language-cpp">// 预加载第一批
-TLOAD(tile[0], data[0]);
-
-for (int i = 0; i &lt; N; i++) {
-  int curr = i % 2;
-  int next = (i + 1) % 2;
-
-  // 处理当前
-  TCOMPUTE(result[i], tile[curr]);
-
-  // 同时加载下一批
-  if (i + 1 &lt; N) {
-    TLOAD(tile[next], data[i+1]);
-  }
-}
-</code></pre>
+<h2 id="8">8. 实践检查清单<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<p><strong>片上容量</strong>
+- [ ] 所有 Tile 的片上占用（暂存 + 操作数 + 累加器 × 缓冲区数量）在目标限制内。
+- [ ] 双缓冲时，暂存 Tile 数量乘以 2 后再检查。</p>
+<p><strong>对齐</strong>
+- [ ] 让 <code>pto::Tile</code> 中的 <code>static_assert</code> 在编译时捕获违规。
+- [ ] 使用 <code>TileLeft</code> / <code>TileRight</code> / <code>TileAcc</code> 别名以保证正确的分形布局。</p>
+<p><strong>数据复用</strong>
+- [ ] <code>TileAcc</code> 在完整 K 循环期间驻留片上，循环结束后一次性写回。
+- [ ] 行/列统计量（<code>TROWMAX</code>、<code>TROWSUM</code>）缓存在 <code>Vec</code> Tile 中，不写回 GM。
+- [ ] 内核内无多余的 TSTORE/TLOAD 对。</p>
+<p><strong>GM 流量</strong>
+- [ ] 连续逐元素操作融合到同一内核。
+- [ ] 行主序 GM 访问；必须列访问时，加载块后片上 <code>TTRANS</code>。
+- [ ] 使用 <code>TPREFETCH</code> 将数据移动与计算重叠。</p>
+<p><strong>同步</strong>
+- [ ] 使用 <code>Event&lt;SrcOp, DstOp&gt;</code> 进行细粒度排序；稳定循环中不使用全局 <code>TSYNC</code>。
+- [ ] 每个消费者只等待其对应的生产者事件。</p>
 <hr />
-<h2 id="7">7. 内存优化检查清单<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
-<h3 id="_3">容量规划<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<h2 id="_5">参考资料<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>[ ] 计算总 L1 使用量</li>
-<li>[ ] 确保不超过平台限制</li>
-<li>[ ] 为双缓冲预留空间</li>
-<li>[ ] 考虑其他临时缓冲区</li>
-</ul>
-<h3 id="_4">对齐优化<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<ul>
-<li>[ ] 检查 Tile 对齐要求</li>
-<li>[ ] 使用 Padding 处理非对齐数据</li>
-<li>[ ] 验证分形布局对齐</li>
-</ul>
-<h3 id="_5">数据复用<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<ul>
-<li>[ ] 识别可复用的数据</li>
-<li>[ ] 在 L1 中缓存频繁访问的数据</li>
-<li>[ ] 设计合理的 tiling 策略</li>
-</ul>
-<h3 id="_6">带宽优化<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<ul>
-<li>[ ] 减少 GM 访问次数</li>
-<li>[ ] 使用连续访问模式</li>
-<li>[ ] 考虑算子融合</li>
-<li>[ ] 使用预取和双缓冲</li>
-</ul>
-<h3 id="_7">验证<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<ul>
-<li>[ ] 使用 profiler 检查内存带宽利用率</li>
-<li>[ ] 验证没有 L1 溢出</li>
-<li>[ ] 检查内存访问模式</li>
-</ul>
-<hr />
-<h2 id="8">8. 实战案例<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
-<h3 id="1gemm">案例1：GEMM 内存优化<a class="headerlink" href="#1gemm" title="Permanent link">&para;</a></h3>
-<p><strong>优化前</strong>：</p>
-<pre><code class="language-cpp">// 单缓冲，L1 使用 300KB
-for (int k = 0; k &lt; K; k += TILE_K) {
-  TLOAD(tileA, ...);  // 等待加载
-  TLOAD(tileB, ...);  // 等待加载
-  TMATMUL(acc, tileA, tileB);
-}
-// 内存带宽利用率：40%
-</code></pre>
-<p><strong>优化后</strong>：</p>
-<pre><code class="language-cpp">// 双缓冲，L1 使用 450KB
-TLOAD(tileA[0], ...);
-TLOAD(tileB[0], ...);
-
-for (int k = 0; k &lt; K; k += TILE_K) {
-  int curr = k % 2;
-  int next = (k + TILE_K) % 2;
-
-  // 计算当前
-  TMATMUL(acc, tileA[curr], tileB[curr]);
-
-  // 同时加载下一批
-  if (k + TILE_K &lt; K) {
-    TLOAD(tileA[next], ...);
-    TLOAD(tileB[next], ...);
-  }
-}
-// 内存带宽利用率：75%
-</code></pre>
-<p><strong>优化效果</strong>：
-- 内存带宽利用率：40% → 75%
-- 性能提升：1.8×</p>
-<h3 id="2softmax">案例2：Softmax 内存优化<a class="headerlink" href="#2softmax" title="Permanent link">&para;</a></h3>
-<p><strong>优化前</strong>：</p>
-<pre><code class="language-cpp">// 多次访问 GM
-TLOAD(input, ...);
-TROWMAX(max_val, input);
-TSTORE(max_val, ...);  // 存储到 GM
-
-TLOAD(input, ...);  // 重新加载
-TLOAD(max_val, ...);  // 重新加载
-TROWEXPANDSUB(shifted, input, max_val);
-// ...
-</code></pre>
-<p><strong>优化后</strong>：</p>
-<pre><code class="language-cpp">// 在 L1 中完成所有操作
-TLOAD(input, ...);
-TROWMAX(max_val, input);  // 保持在 L1
-TROWEXPANDSUB(shifted, input, max_val);  // 复用
-TEXP(exp_vals, shifted);
-TROWSUM(sum_val, exp_vals);  // 保持在 L1
-TROWEXPANDDIV(output, exp_vals, sum_val);  // 复用
-TSTORE(output, ...);
-</code></pre>
-<p><strong>优化效果</strong>：
-- GM 访问次数：6 → 2
-- 性能提升：2.5×</p>
-<hr />
-<h2 id="_8">参考资源<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../opt_zh/">性能优化指南</a></li>
+<li><a href="../../machine/abstract-machine/">抽象机器模型</a></li>
+<li><a href="../Tile_zh/">Tile 编程模型</a></li>
+<li><a href="../GlobalTensor_zh/">GlobalTensor 编程模型</a></li>
+<li><a href="../Event_zh/">事件与同步</a></li>
+<li><a href="../opt_zh/">PTO 优化指南</a></li>
 <li><a href="../pipeline-parallel_zh/">流水线与并行执行</a></li>
-<li><a href="../performance-best-practices_zh/">性能调优最佳实践</a></li>
-<li><a href="../../../kernels/manual/a2a3/gemm_performance/README_zh/">GEMM 优化案例</a></li>
+<li><a href="../tutorials/gemm_zh/">GEMM 教程</a></li>
+<li><a href="../../../kernels/manual/a2a3/gemm_performance/">GEMM 性能内核</a></li>
+<li><a href="../../../kernels/manual/common/flash_atten/">Flash Attention 内核</a></li>
 </ul>
               
             </div>

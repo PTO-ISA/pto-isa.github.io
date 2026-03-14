@@ -511,13 +511,13 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>部分逐元素最大值，对不匹配的有效区域具有实现定义的处理方式。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在目标有效区域中：</p>
+<p>对目标有效区域内的每个元素 <code>(i, j)</code>：</p>
 <div class="arithmatex">\[
 \mathrm{dst}_{i,j} =
-\b\begin{cases}
-\max(\mathrm{src0}_{i,j}, \mathrm{src1}_{i,j}) &amp; \text{如果两个输入在 } (i,j) \text{ 处有定义} \text{ 处都有定义} \\
-\mathrm{src0}_{i,j} &amp; \text{如果只有 src0 在 } (i,j) \text{ 处有定义} \text{ 处都有定义} \\
-\mathrm{src1}_{i,j} &amp; \text{如果只有 src1 在 } (i,j) \text{ 处有定义}
+\begin{cases}
+\max(\mathrm{src0}_{i,j}, \mathrm{src1}_{i,j}) &amp; \text{若两个输入在 } (i,j) \text{ 处均有定义} \\\\
+\mathrm{src0}_{i,j} &amp; \text{若仅 src0 在 } (i,j) \text{ 处有定义} \\\\
+\mathrm{src1}_{i,j} &amp; \text{若仅 src1 在 } (i,j) \text{ 处有定义}
 \end{cases}
 \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
@@ -539,14 +539,14 @@ PTO_INST RecordEvent TPARTMAX(TileDataDst&amp; dst, TileDataSrc0&amp; src0, Tile
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
-<li><code>dst/src0/src1</code> element types 必须是 identical,且必须是以下之一： <code>int32_t</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>All three tiles 必须是 行主序 (<code>isRowMajor</code>）。</li>
-<li>运行时： if <code>dst.GetValidRow() == 0</code>或<code>dst.GetValidCol() == 0</code>, the op returns early.</li>
-<li>运行时： the implementation requires at least one input's valid region to match <code>dst</code>'s valid region,且the onther's valid region not greater than <code>dst</code>'s valid region (otherwise it asserts).</li>
+<li><code>dst</code>/<code>src0</code>/<code>src1</code> 元素类型必须相同，且必须是以下之一：<code>int32_t</code>、<code>int16_t</code>、<code>half</code>、<code>float</code>。</li>
+<li>三个 Tile 都必须是行主序（<code>isRowMajor</code>）。</li>
+<li>运行时：若 <code>dst.GetValidRow() == 0</code> 或 <code>dst.GetValidCol() == 0</code>，操作提前返回。</li>
+<li>运行时：实现要求至少一个输入的有效区域与 <code>dst</code> 的有效区域匹配，另一个输入的有效区域不大于 <code>dst</code> 的有效区域（否则断言失败）。</li>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li><code>dst/src0/src1</code> element types 必须是 identical且必须是以下之一： <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
-<li>运行时： if any of <code>src0/src1/dst</code> has a zero valid region, the op returns early.</li>
-<li>Requires <code>src0</code>且<code>src1</code> valid region to be <code>&lt;= dst</code> valid region in 都dimensions; other patterns are not supported (target-defined behavior).</li>
+<li><code>dst</code>/<code>src0</code>/<code>src1</code> 元素类型必须相同，且必须是以下之一：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
+<li>运行时：若 <code>src0</code>/<code>src1</code>/<code>dst</code> 中任意一个的有效区域为零，操作提前返回。</li>
+<li>要求 <code>src0</code> 和 <code>src1</code> 的有效区域在两个维度上均不超过 <code>dst</code> 的有效区域；其他模式不受支持（由目标定义行为）。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

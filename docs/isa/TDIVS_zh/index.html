@@ -511,13 +511,13 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>与标量的逐元素除法（Tile/标量 或 标量/Tile）。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
+<p>对有效区域内的每个元素 <code>(i, j)</code>：</p>
 <ul>
-<li>Tile/scalar:</li>
+<li>Tile/标量形式：</li>
 </ul>
 <p>$$ \mathrm{dst}<em>{i,j} = \frac{\mathrm{src}</em>{i,j}}{\mathrm{scalar}} $$</p>
 <ul>
-<li>Scalar/tile:</li>
+<li>标量/Tile 形式：</li>
 </ul>
 <p>$$ \mathrm{dst}<em>{i,j} = \frac{\mathrm{scalar}}{\mathrm{src}</em>{i,j}} $$</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
@@ -546,17 +546,22 @@ PTO_INST RecordEvent TDIVS(TileData&amp; dst, typename TileData::DType scalar, T
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong> (两个重载):</li>
-<li><code>TileData::DType</code> 必须是以下之一： <code>int32_t</code>, <code>int</code>, <code>int16_t</code>, <code>half</code>, <code>float16_t</code>, <code>float</code>, <code>float32_t</code>.</li>
+<li><strong>实现检查 (A2A3)</strong>（两个重载）:</li>
+<li><code>TileData::DType</code> 必须是以下之一：<code>int32_t</code>、<code>int</code>、<code>int16_t</code>、<code>half</code>、<code>float16_t</code>、<code>float</code>、<code>float32_t</code>。</li>
 <li>Tile 位置必须是向量（<code>TileData::Loc == TileType::Vec</code>）。</li>
-<li>静态有效边界： <code>TileData::ValidRow &lt;= TileData::Rows</code>且<code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>运行时： <code>src0.GetValidRow() == dst.GetValidRow()</code>且<code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
+<li>静态有效边界：<code>TileData::ValidRow &lt;= TileData::Rows</code> 且 <code>TileData::ValidCol &lt;= TileData::Cols</code>。</li>
+<li>运行时：<code>src0.GetValidRow() == dst.GetValidRow()</code> 且 <code>src0.GetValidCol() == dst.GetValidCol()</code>。</li>
 <li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
-<li><strong>实现检查 (A5)</strong> (两个重载):</li>
-<li><code>TileData::DType</code> 必须是以下之一： <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
+<li><strong>实现检查 (A5)</strong>（两个重载）:</li>
+<li><code>TileData::DType</code> 必须是以下之一：<code>uint8_t</code>、<code>int8_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint32_t</code>、<code>int32_t</code>、<code>half</code>、<code>float</code>。</li>
 <li>Tile 位置必须是向量（<code>TileData::Loc == TileType::Vec</code>）。</li>
-<li>静态有效边界： <code>TileData::ValidRow &lt;= TileData::Rows</code>且<code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>运行时： <code>src0.GetValidRow() == dst.GetValidRow()</code>且<code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
+<li>静态有效边界：<code>TileData::ValidRow &lt;= TileData::Rows</code> 且 <code>TileData::ValidCol &lt;= TileData::Cols</code>。</li>
+<li>运行时：<code>src0.GetValidRow() == dst.GetValidRow()</code> 且 <code>src0.GetValidCol() == dst.GetValidCol()</code>。</li>
+<li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
+<li><strong>有效区域</strong>:</li>
+<li>该操作使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域。</li>
+<li><strong>除零</strong>:</li>
+<li>行为由目标定义；在 A5 上，Tile/标量形式映射到乘以倒数，并对 <code>scalar == 0</code> 使用 <code>1/0 -&gt; +inf</code>。dst.GetValidRow()<code>且</code>src0.GetValidCol() == dst.GetValidCol()`.</li>
 <li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
 <li><strong>有效区域</strong>:</li>
 <li>该操作使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域.</li>

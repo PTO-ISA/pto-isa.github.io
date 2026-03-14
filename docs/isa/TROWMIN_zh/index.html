@@ -511,14 +511,14 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>通过取列间最小值来归约每一行。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code>:</p>
+<p>设 <code>R = src.GetValidRow()</code>，<code>C = src.GetValidCol()</code>。对 <code>0 &lt;= i &lt; R</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,0} = \min_{0 \le j &lt; C} \mathrm{src}_{i,j} \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = trowmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
+<p>降低时可能引入内部临时 Tile；C++ 内建接口需要显式传入 <code>tmp</code> 操作数。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.trowmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -534,24 +534,24 @@ PTO_INST RecordEvent TROWMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileData
 <p>实现检查 (NPU):</p>
 <ul>
 <li>A2A3:</li>
-<li>Tile 位置: <code>dst</code>且<code>src</code> 必须是 <code>TileType::Vec</code>.</li>
-<li>Tile 布局 of <code>src</code>: ND fractal (<code>isRowMajor</code>且<code>SLayout::NoneBox</code>）。</li>
-<li>Tile 布局 of <code>dst</code>:<ul>
-<li><strong>推荐</strong>: DN layout Tile of 1D, 例如， <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code></li>
-<li><strong>将移除</strong>: ND layout Tile of 2D, 例如， <code>Tile&lt;TileType::Vec, T, ROWS, COLS, BLayout::RowMajor, ValidRows, 1&gt;</code></li>
+<li>Tile 位置：<code>dst</code> 和 <code>src</code> 必须是 <code>TileType::Vec</code>。</li>
+<li><code>src</code> 的 Tile 布局：ND 分形（<code>isRowMajor</code> 且 <code>SLayout::NoneBox</code>）。</li>
+<li><code>dst</code> 的 Tile 布局：<ul>
+<li><strong>推荐</strong>：DN 布局的一维 Tile，例如 <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code></li>
+<li><strong>将移除</strong>：ND 布局的二维 Tile，例如 <code>Tile&lt;TileType::Vec, T, ROWS, COLS, BLayout::RowMajor, ValidRows, 1&gt;</code></li>
 </ul>
 </li>
-<li>数据类型: <code>half</code>或<code>float</code>.</li>
-<li>数据类型一致性: <code>dst.DType == src.DType</code>.</li>
-<li>运行期有效区域检查:<ul>
-<li><code>srcValidCol != 0</code>且<code>srcValidRow != 0</code>.</li>
-<li><code>srcValidRow == dstValidRow</code> (the output valid row 必须匹配 the input valid row).</li>
+<li>数据类型：<code>half</code> 或 <code>float</code>。</li>
+<li>数据类型一致性：<code>dst.DType == src.DType</code>。</li>
+<li>运行期有效区域检查：<ul>
+<li><code>srcValidCol != 0</code> 且 <code>srcValidRow != 0</code>。</li>
+<li><code>srcValidRow == dstValidRow</code>（输出有效行数必须与输入有效行数匹配）。</li>
 </ul>
 </li>
 <li>A5:</li>
-<li>数据类型: <code>half</code>或<code>float</code>.</li>
-<li>数据类型一致性: <code>dst.DType == src.DType</code>.</li>
-<li>No explicit runtime assertions on <code>validRow/validCol</code> 在实现中; the loops use <code>src.GetValidRow()</code>且<code>src.GetValidCol()</code>.</li>
+<li>数据类型：<code>half</code> 或 <code>float</code>。</li>
+<li>数据类型一致性：<code>dst.DType == src.DType</code>。</li>
+<li>实现中对 <code>validRow/validCol</code> 无显式运行时断言；循环使用 <code>src.GetValidRow()</code> 和 <code>src.GetValidCol()</code>。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

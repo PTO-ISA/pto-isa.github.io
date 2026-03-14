@@ -510,12 +510,10 @@
 <p><img alt="TFILLPAD tile operation" src="../../figures/isa/TFILLPAD.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>复制 Tile 并在有效区域外使用编译时填充值进行填充。</p>
-<p>Copy a source tile into a destination tile and fill the remaining (padded) elements with a compile-time pad value
-selected by <code>TileDataDst::PadVal</code> (e.g., <code>PadValue::Min</code>/<code>PadValue::Max</code>）。</p>
-<p>This is commonly used to materialize deterministic values outside the runtime valid region so that subsequent ops can
-operate on a full static tile shape.</p>
+<p>将源 Tile 复制到目标 Tile 中，并使用由 <code>TileDataDst::PadVal</code> 选定的编译时填充值（如 <code>PadValue::Min</code>/<code>PadValue::Max</code>）填充剩余（填充）元素。</p>
+<p>此操作常用于在运行时有效区域之外确定性地物化特定值，使后续操作能够在完整的静态 Tile 形状上运算。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>VR = src.GetValidRow()</code> and <code>VC = src.GetValidCol()</code>. 对每个 destination element <code>(i, j)</code>:</p>
+<p>设 <code>VR = src.GetValidRow()</code>，<code>VC = src.GetValidCol()</code>。对每个目标元素 <code>(i, j)</code>：</p>
 <div class="arithmatex">\[
 \mathrm{dst}_{i,j} =
 \begin{cases}
@@ -523,11 +521,10 @@ operate on a full static tile shape.</p>
 \mathrm{pad}       &amp; \text{otherwise}
 \end{cases}
 \]</div>
-<p><code>pad</code> is determined by <code>TileDataDst::PadVal</code> and the element type (e.g., <code>+inf/-inf</code> for floating types when available,
-otherwise <code>std::numeric_limits&lt;T&gt;::max()/min()</code>）。</p>
+<p><code>pad</code> 由 <code>TileDataDst::PadVal</code> 和元素类型决定（例如，当浮点类型支持时使用 <code>+inf/-inf</code>，否则使用 <code>std::numeric_limits&lt;T&gt;::max()/min()</code>）。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>Synchronous form (conceptual):</p>
+<p>同步形式（概念性）：</p>
 <pre><code class="language-text">%dst = tfillpad %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
@@ -537,7 +534,7 @@ otherwise <code>std::numeric_limits&lt;T&gt;::max()/min()</code>）。</p>
 <pre><code class="language-text">pto.tfillpad ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>Implemented in the backend headers pulled in by <code>include/pto/common/pto_instr_impl.hpp</code>:</p>
+<p>在 <code>include/pto/common/pto_instr_impl.hpp</code> 引入的后端头文件中实现：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc&gt;
 PTO_INTERNAL void TFILLPAD(TileDataDst&amp; dst, TileDataSrc&amp; src);
 

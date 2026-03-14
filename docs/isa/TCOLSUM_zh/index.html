@@ -511,15 +511,15 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>通过对行求和来归约每一列。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= j &lt; C</code>:</p>
+<p>设 <code>R = src.GetValidRow()</code>，<code>C = src.GetValidCol()</code>。对 <code>0 &lt;= j &lt; C</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{0,j} = \sum_{i=0}^{R-1} \mathrm{src}_{i,j} \]</div>
-<p><code>isBinary</code> selects the implementation path (binary-tree accumulation vs. sequential accumulation).</p>
+<p><code>isBinary</code> 选择实现路径（二叉树累加 vs. 顺序累加）。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = tcolsum %src {isBinary = false} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
+<p>降低时可能引入内部临时 Tile；C++ 内建接口需要显式传入 <code>tmp</code> 操作数。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tcolsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 %dst = pto.tcolsum %src, %tmp {isBinary = false} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
@@ -537,14 +537,14 @@ PTO_INST RecordEvent TCOLSUM(TileDataOut&amp; dst, TileDataIn&amp; src, TileData
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>实现检查 (NPU):</p>
 <ul>
-<li>Tile 位置: <code>dst</code>, <code>src</code>, <code>tmp</code> 必须是 <code>TileType::Vec</code>.</li>
-<li>Tile 布局: 所有tiles 必须是 ND 分形（<code>isRowMajor</code>且<code>SLayout::NoneBox</code>）。</li>
-<li>数据类型一致性:</li>
-<li>A2A3: <code>src.DType</code> 必须是 one of <code>half</code>, <code>float</code>, <code>int16_t</code>, <code>int32_t</code>,且<code>dst.DType == tmp.DType == src.DType</code>.</li>
+<li>Tile 位置：<code>dst</code>、<code>src</code>、<code>tmp</code> 必须是 <code>TileType::Vec</code>。</li>
+<li>Tile 布局：所有 Tile 必须是 ND 分形（<code>isRowMajor</code> 且 <code>SLayout::NoneBox</code>）。</li>
+<li>数据类型一致性：</li>
+<li>A2A3：<code>src.DType</code> 必须是 <code>half</code>、<code>float</code>、<code>int16_t</code>、<code>int32_t</code> 之一，且 <code>dst.DType == tmp.DType == src.DType</code>。</li>
 <li>A5：<code>TColReduceCheck</code> 要求 <code>dst.DType == src.DType</code>；确切支持的 <code>src.DType</code> 集合由目标定义（参见 <code>include/pto/npu/a5/TColReduceOps.hpp</code>）。</li>
-<li>运行期有效区域检查:</li>
-<li>A2A3: <code>src.GetValidCol() == dst.GetValidCol()</code>; returns early if <code>src.GetValidRow() == 0</code>或<code>src.GetValidCol() == 0</code>.</li>
-<li>A5: <code>srcValidRow</code>且<code>srcValidCol</code> 必须是 non-zero; <code>srcValidCol == dstValidCol</code> is asserted by <code>TColReduceCheck</code>.</li>
+<li>运行期有效区域检查：</li>
+<li>A2A3：<code>src.GetValidCol() == dst.GetValidCol()</code>；若 <code>src.GetValidRow() == 0</code> 或 <code>src.GetValidCol() == 0</code> 则提前返回。</li>
+<li>A5：<code>srcValidRow</code> 和 <code>srcValidCol</code> 必须非零；<code>TColReduceCheck</code> 断言 <code>srcValidCol == dstValidCol</code>。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

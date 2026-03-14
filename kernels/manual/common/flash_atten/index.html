@@ -844,7 +844,7 @@ p_{ij} = \frac{e_{ij}}{S_i}
 - The kernel stores <span class="arithmatex">\(e_{ij}\)</span> (<code>x_exp</code>) for the PV matmul, while <span class="arithmatex">\(\text{exp\_max}_i\)</span> and <span class="arithmatex">\({S_i}\)</span> are kept for GU accumulation. </p>
 <p><!-- Embedded SVG diagram -->
 <div>
-<img src="fa_flows.svg" alt="FA Computation Flowg" />
+<img src="../fa_flows.svg" alt="FA Computation Flowg" />
 </div></p>
 </li>
 <li>
@@ -953,7 +953,7 @@ p_{ij} = \frac{e_{ij}}{S_i}
 <p><strong>FA pipeline stages inter-CV FIFOs and intra-stage ping/pong</strong></p>
 <p><!-- Embedded SVG diagram -->
 <div>
-<img src="fa_pipeline.svg" alt="Inter CV FIFOs and intra stage ping/pong" />
+<img src="../fa_pipeline.svg" alt="Inter CV FIFOs and intra stage ping/pong" />
 </div></p>
 </li>
 <li>
@@ -990,21 +990,21 @@ p_{ij} = \frac{e_{ij}}{S_i}
 </ul>
 <p>In theory, without software pipelining (pre-executing qk, p, and later pv) the execution would be fully in sequential below:</p>
 <p><div>
-<img src="fa_pipeline_preload0_generated.svg" alt="CV Seqential execution" />
+<img src="../fa_pipeline_preload0_generated.svg" alt="CV Seqential execution" />
 </div></p>
 <p>With pre-execution of qk, p (and later pv) would resolve the data depenency and keep the vector compute resoruce fully busy, below showing the intra-core (tload,tcompute,tstore) and inter-CV-stage pipeline</p>
 <p>QK pre-execution = 2 (Theory)</p>
 <p><div>
-<img src="fa_pipeline_preload2_generated.svg" alt="Pre-execution of QK twice" />
+<img src="../fa_pipeline_preload2_generated.svg" alt="Pre-execution of QK twice" />
 </div>    </p>
 <p>QK pre-execution = 4 (Theory)
 <div>
-<img src="fa_pipeline_preload4_generated.svg" alt="Pre-execution of QK=4" />
+<img src="../fa_pipeline_preload4_generated.svg" alt="Pre-execution of QK=4" />
 </div>    </p>
 <p>Actual kernel exection using simulation result for H128 Seqlen=1024, behaviour is similar to the theory one as we excepted.</p>
 <p>Kernel Execution - QK pre-execution = 4 (Sim)
 <div>
-<img src="fa_sim_run_pipeline_h128_s0_128_s1_1024.svg" alt="Pre-execution of QK=4" />
+<img src="../fa_sim_run_pipeline_h128_s0_128_s1_1024.svg" alt="Pre-execution of QK=4" />
 </div>    </p>
 <p>From the pipeline diagram, we could see the actual bound right now is on TSTORE on the cube side, and the cube utilization is bound ~30%, Next vesion we would see how we could further optiminize this case.</p>
 </li>

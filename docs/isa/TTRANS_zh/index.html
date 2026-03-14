@@ -511,15 +511,15 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>使用实现定义的临时 Tile 进行转置。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>For a 2D tile, over the effective transpose domain:</p>
+<p>对于二维 Tile，在有效转置域上：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{j,i} \]</div>
-<p>Exact shape/layout and the transpose domain depend on the target (see Constraints).</p>
+<p>确切的形状/布局及转置域取决于目标硬件（参见约束）。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = ttrans %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
+<p>降低时可能引入内部临时 Tile；C++ 内建接口需要显式传入 <code>tmp</code> 操作数。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.ttrans %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -534,28 +534,28 @@ PTO_INST RecordEvent TTRANS(TileDataDst&amp; dst, TileDataSrc&amp; src, TileData
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
-<li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>.</li>
-<li>Source layout 必须是 行主序 (<code>TileDataSrc::isRowMajor</code>）。</li>
-<li>Element size 必须是 <code>1</code>, <code>2</code>,或<code>4</code> 字节.</li>
-<li>Supported element types are restricted per element width:<ul>
-<li>4 字节: <code>uint32_t</code>, <code>int32_t</code>, <code>float</code></li>
-<li>2 字节: <code>uint16_t</code>, <code>int16_t</code>, <code>half</code>, <code>bfloat16_t</code></li>
-<li>1 byte: <code>uint8_t</code>, <code>int8_t</code></li>
+<li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>。</li>
+<li>源布局必须是行主序（<code>TileDataSrc::isRowMajor</code>）。</li>
+<li>元素大小必须是 <code>1</code>、<code>2</code> 或 <code>4</code> 字节。</li>
+<li>支持的元素类型按元素宽度限制如下：<ul>
+<li>4 字节：<code>uint32_t</code>、<code>int32_t</code>、<code>float</code></li>
+<li>2 字节：<code>uint16_t</code>、<code>int16_t</code>、<code>half</code>、<code>bfloat16_t</code></li>
+<li>1 字节：<code>uint8_t</code>、<code>int8_t</code></li>
 </ul>
 </li>
-<li>The transpose size is taken from <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code>.</li>
+<li>转置大小取自 <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code>。</li>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>.</li>
-<li>32-byte alignment constraints are enforced on the major dimension of 都input且output (行主序 checks <code>Cols * sizeof(T) % 32 == 0</code>, col-major checks <code>Rows * sizeof(T) % 32 == 0</code>）。</li>
-<li>Supported element types are restricted per element width:<ul>
-<li>4 字节: <code>uint32_t</code>, <code>int32_t</code>, <code>float</code></li>
-<li>2 字节: <code>uint16_t</code>, <code>int16_t</code>, <code>half</code>, <code>bfloat16_t</code></li>
-<li>1 byte: <code>uint8_t</code>, <code>int8_t</code></li>
+<li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>。</li>
+<li>对输入和输出的主维度强制执行 32 字节对齐约束（行主序检查 <code>Cols * sizeof(T) % 32 == 0</code>，列主序检查 <code>Rows * sizeof(T) % 32 == 0</code>）。</li>
+<li>支持的元素类型按元素宽度限制如下：<ul>
+<li>4 字节：<code>uint32_t</code>、<code>int32_t</code>、<code>float</code></li>
+<li>2 字节：<code>uint16_t</code>、<code>int16_t</code>、<code>half</code>、<code>bfloat16_t</code></li>
+<li>1 字节：<code>uint8_t</code>、<code>int8_t</code></li>
 </ul>
 </li>
-<li>The implementation operates over the static tile shape (<code>TileDataSrc::Rows/Cols</code>)且does not consult <code>GetValidRow/GetValidCol</code>.</li>
-<li><strong>Temporary tile</strong>:</li>
-<li>The C++ API requires <code>tmp</code>, but some implementations may not use it.</li>
+<li>实现在静态 Tile 形状（<code>TileDataSrc::Rows/Cols</code>）上运算，不参考 <code>GetValidRow/GetValidCol</code>。</li>
+<li><strong>临时 Tile</strong>:</li>
+<li>C++ API 需要 <code>tmp</code>，但某些实现可能不使用它。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

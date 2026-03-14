@@ -826,7 +826,7 @@ p_{ij} = \frac{e_{ij}}{S_i}
 - 当全局 max 增大时，通过重标定历史累加项保证数值稳定
 - Kernel 会保存 <code>x_exp</code> 供 <code>compute_pv</code> 使用，同时保留 <code>l1_exp_max</code> 与 <code>l2_global_sum</code> 供 <code>compute_gu</code> 做 running 累加与最终归一化</p>
 <div>
-<img src="fa_flows.svg" alt="FA Computation Flow" />
+<img src="../fa_flows.svg" alt="FA Computation Flow" />
 </div>
 
 <h3 id="2">2. 张量形状（按阶段）<a class="headerlink" href="#2" title="Permanent link">&para;</a></h3>
@@ -890,7 +890,7 @@ p_{ij} = \frac{e_{ij}}{S_i}
 <h3 id="4-cubevector">4. 流水线编排（Cube/Vector 并行）<a class="headerlink" href="#4-cubevector" title="Permanent link">&para;</a></h3>
 <p>跨阶段通过 CV FIFO + 阶段内 ping/pong 做软件流水化：</p>
 <div>
-<img src="fa_pipeline.svg" alt="Inter CV FIFOs and intra stage ping/pong" />
+<img src="../fa_pipeline.svg" alt="Inter CV FIFOs and intra stage ping/pong" />
 </div>
 
 <p>S1 tiles 循环中的典型流程：</p>
@@ -908,21 +908,21 @@ p_{ij} = \frac{e_{ij}}{S_i}
 <li>以 Head=128、S0=128、S1=1024 为例，CUBE_S1=128 时共有 4 个 loop，每个 loop 执行 <code>compute_qk -&gt; compute_p -&gt; compute_pv -&gt; compute_gu</code>。在不做预执行（preload）的情况下，这四段会趋向串行：</li>
 </ul>
 <div>
-<img src="fa_pipeline_preload0_generated.svg" alt="CV sequential execution" />
+<img src="../fa_pipeline_preload0_generated.svg" alt="CV sequential execution" />
 </div>
 
 <p>增大 <code>qkPreloadNum</code> 后，可以让 cube pipeline “跑在前面”，更好地把 vector 侧资源摊平（下图为示意）：</p>
 <div>
-<img src="fa_pipeline_preload2_generated.svg" alt="Pre-execution of QK twice" />
+<img src="../fa_pipeline_preload2_generated.svg" alt="Pre-execution of QK twice" />
 </div>
 
 <div>
-<img src="fa_pipeline_preload4_generated.svg" alt="Pre-execution of QK=4" />
+<img src="../fa_pipeline_preload4_generated.svg" alt="Pre-execution of QK=4" />
 </div>
 
 <p>仿真中（H128，Seqlen=1024）的行为与上述趋势一致：</p>
 <div>
-<img src="fa_sim_run_pipeline_h128_s0_128_s1_1024.svg" alt="Sim run (preload=4)" />
+<img src="../fa_sim_run_pipeline_h128_s0_128_s1_1024.svg" alt="Sim run (preload=4)" />
 </div>
 
 <p>从该 case 的流水线图可以看到瓶颈更偏向 cube 侧的 <code>TSTORE</code>（Cube 利用率约 30%），后续优化会优先围绕这一点展开。</p>

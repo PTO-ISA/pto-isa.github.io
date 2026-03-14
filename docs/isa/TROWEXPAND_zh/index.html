@@ -511,7 +511,7 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>将每个源行的第一个元素广播到目标行中。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
+<p>设 <code>R = dst.GetValidRow()</code>，<code>C = dst.GetValidCol()</code>。对 <code>0 &lt;= i &lt; R</code> 且 <code>0 &lt;= j &lt; C</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{i,0} \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
@@ -532,12 +532,12 @@ PTO_INST RecordEvent TROWEXPAND(TileDataDst&amp; dst, TileDataSrc&amp; src, Wait
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>实现检查 (NPU):</p>
 <ul>
-<li>Tile Type: <code>dst</code>且<code>src</code> 必须是 <code>TileType::Vec</code>.</li>
-<li>Tile 布局: ND fractal (<code>isRowMajor</code>且<code>SLayout::NoneBox</code>) 对于都<code>src</code>且<code>dst</code>.</li>
-<li>Data type: A2A3/A5 element types 必须是以下之一： <code>int8_t</code>或<code>uint8_t</code>或<code>int16_t</code>或<code>uint16_t</code>或<code>int32_t</code>或<code>uint32_t</code>或<code>half</code>或<code>bfloat16_t</code>或<code>float</code>.</li>
-<li>运行期有效区域检查:</li>
-<li>A2A3: returns early if any of <code>dstValidRow</code>, <code>dstValidCol</code>, <code>srcValidRow</code>, <code>srcValidCol</code> is zero.</li>
-<li>A5: asserts <code>srcValidRow == dstValidRow</code>且asserts <code>srcValidRow != 0 &amp;&amp; srcValidCol != 0</code>.</li>
+<li>Tile 类型：<code>dst</code> 和 <code>src</code> 必须是 <code>TileType::Vec</code>。</li>
+<li>Tile 布局：<code>src</code> 和 <code>dst</code> 均为 ND 分形（<code>isRowMajor</code> 且 <code>SLayout::NoneBox</code>）。</li>
+<li>数据类型：A2A3/A5 元素类型必须是以下之一：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
+<li>运行期有效区域检查：</li>
+<li>A2A3：若 <code>dstValidRow</code>、<code>dstValidCol</code>、<code>srcValidRow</code>、<code>srcValidCol</code> 中任意一个为零则提前返回。</li>
+<li>A5：断言 <code>srcValidRow == dstValidRow</code>，且断言 <code>srcValidRow != 0 &amp;&amp; srcValidCol != 0</code>。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

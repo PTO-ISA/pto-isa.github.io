@@ -539,14 +539,14 @@ PTO_INST RecordEvent TPARTADD(TileDataDst&amp; dst, TileDataSrc0&amp; src0, Tile
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
-<li><code>dst/src0/src1</code> element types 必须是 identical,且必须是以下之一： <code>int32_t</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>All three tiles 必须是 行主序 (<code>isRowMajor</code>）。</li>
-<li>运行时： if <code>dst.GetValidRow() == 0</code>或<code>dst.GetValidCol() == 0</code>, the op returns early.</li>
-<li>运行时： the implementation requires at least one input's valid region to match <code>dst</code>'s valid region,且the other's valid region not greater than <code>dst</code>'s valid region (otherwise it asserts).</li>
+<li><code>dst</code>/<code>src0</code>/<code>src1</code> 元素类型必须相同，且必须是以下之一：<code>int32_t</code>、<code>int16_t</code>、<code>half</code>、<code>float</code>。</li>
+<li>三个 Tile 都必须是行主序（<code>isRowMajor</code>）。</li>
+<li>运行时：若 <code>dst.GetValidRow() == 0</code> 或 <code>dst.GetValidCol() == 0</code>，操作提前返回。</li>
+<li>运行时：实现要求至少一个输入的有效区域与 <code>dst</code> 的有效区域匹配，另一个输入的有效区域不大于 <code>dst</code> 的有效区域（否则断言失败）。</li>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li><code>dst/src0/src1</code> element types 必须是 identical,且必须是以下之一： <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>, <code>bfloat16_t</code>.</li>
-<li>运行时： if <code>dst</code> has a zero valid region, the op returns early.</li>
-<li>Only certain partial-validity patterns are handled (例如， one source equal to <code>dst</code> while the other is smaller by valid-rows或valid-cols); other patterns are not supported (target-defined behavior).</li>
+<li><code>dst</code>/<code>src0</code>/<code>src1</code> 元素类型必须相同，且必须是以下之一：<code>uint8_t</code>、<code>int8_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint32_t</code>、<code>int32_t</code>、<code>half</code>、<code>float</code>、<code>bfloat16_t</code>。</li>
+<li>运行时：若 <code>dst</code> 的有效区域为零，操作提前返回。</li>
+<li>仅处理特定的部分有效性模式（例如，一个源与 <code>dst</code> 相等，另一个源在有效行或有效列上更小）；其他模式不受支持（由目标定义行为）。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

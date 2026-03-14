@@ -511,9 +511,9 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>使用逐元素行索引将源 Tile 的行散播到目标 Tile 中。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个源元素 <code>(i, j)</code>, write:</p>
+<p>对每个源元素 <code>(i, j)</code>，写入：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{\mathrm{idx}_{i,j},\ j} = \mathrm{src}_{i,j} \]</div>
-<p>If multiple elements map to the same destination location, the final value is implementation-defined (last writer wins in the current implementation).</p>
+<p>若多个元素映射到同一目标位置，最终值由实现定义（当前实现中以最后写入者为准）。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
@@ -533,25 +533,25 @@ PTO_INST RecordEvent TSCATTER(TileDataD&amp; dst, TileDataS&amp; src, TileDataI&
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
-<li><code>TileDataD::Loc</code>, <code>TileDataS::Loc</code>, <code>TileDataI::Loc</code> 必须是 <code>TileType::Vec</code>.</li>
-<li><code>TileDataD::DType</code>, <code>TileDataS::DType</code> 必须是以下之一： <code>int32_t</code>, <code>int16_t</code>, <code>int8_t</code>, <code>half</code>, <code>float32_t</code>, <code>uint32_t</code>, <code>uint16_t</code>, <code>uint8_t</code>, <code>bfloat16_t</code>.</li>
-<li><code>TileDataI::DType</code> 必须是以下之一： <code>int16_t</code>, <code>int32_t</code>, <code>uint16_t</code>或<code>uint32_t</code>.</li>
-<li>No bounds checks are enforced on <code>indexes</code> 值.</li>
-<li>静态有效边界： <code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>, <code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>, <code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>, <code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>, <code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>, <code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>.</li>
-<li><code>TileDataD::DType</code>且<code>TileDataS::DType</code> 必须是 the same.</li>
-<li>When size of <code>TileDataD::DType</code> is 4 字节, the size of <code>TileDataI::DType</code> 必须是 4 字节.</li>
-<li>When size of <code>TileDataD::DType</code> is 2 字节, the size of <code>TileDataI::DType</code> 必须是 2 字节.</li>
-<li>When size of <code>TileDataD::DType</code> is 1 字节, the size of <code>TileDataI::DType</code> 必须是 2 字节.</li>
+<li><code>TileDataD::Loc</code>、<code>TileDataS::Loc</code>、<code>TileDataI::Loc</code> 必须是 <code>TileType::Vec</code>。</li>
+<li><code>TileDataD::DType</code>、<code>TileDataS::DType</code> 必须是以下之一：<code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>half</code>、<code>float32_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>uint8_t</code>、<code>bfloat16_t</code>。</li>
+<li><code>TileDataI::DType</code> 必须是以下之一：<code>int16_t</code>、<code>int32_t</code>、<code>uint16_t</code> 或 <code>uint32_t</code>。</li>
+<li>不对 <code>indexes</code> 值执行边界检查。</li>
+<li>静态有效边界：<code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>、<code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>、<code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>、<code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>、<code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>、<code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>。</li>
+<li><code>TileDataD::DType</code> 与 <code>TileDataS::DType</code> 必须相同。</li>
+<li>当 <code>TileDataD::DType</code> 大小为 4 字节时，<code>TileDataI::DType</code> 大小必须为 4 字节。</li>
+<li>当 <code>TileDataD::DType</code> 大小为 2 字节时，<code>TileDataI::DType</code> 大小必须为 2 字节。</li>
+<li>当 <code>TileDataD::DType</code> 大小为 1 字节时，<code>TileDataI::DType</code> 大小必须为 2 字节。</li>
 <li><strong>实现检查 (A5)</strong>:</li>
-<li><code>TileDataD::Loc</code>, <code>TileDataS::Loc</code>, <code>TileDataI::Loc</code> 必须是 <code>TileType::Vec</code>.</li>
-<li><code>TileDataD::DType</code>, <code>TileDataS::DType</code> 必须是以下之一： <code>int32_t</code>, <code>int16_t</code>, <code>int8_t</code>, <code>half</code>, <code>float32_t</code>, <code>uint32_t</code>, <code>uint16_t</code>, <code>uint8_t</code>, <code>bfloat16_t</code>.</li>
-<li><code>TileDataI::DType</code> 必须是以下之一： <code>int16_t</code>, <code>int32_t</code>, <code>uint16_t</code>或<code>uint32_t</code>.</li>
-<li>No bounds checks are enforced on <code>indexes</code> 值.</li>
-<li>静态有效边界： <code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>, <code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>, <code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>, <code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>, <code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>, <code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>.</li>
-<li><code>TileDataD::DType</code>且<code>TileDataS::DType</code> 必须是 the same.</li>
-<li>When size of <code>TileDataD::DType</code> is 4 字节, the size of <code>TileDataI::DType</code> 必须是 4 字节.</li>
-<li>When size of <code>TileDataD::DType</code> is 2 字节, the size of <code>TileDataI::DType</code> 必须是 2 字节.</li>
-<li>When size of <code>TileDataD::DType</code> is 1 字节, the size of <code>TileDataI::DType</code> 必须是 2 字节.</li>
+<li><code>TileDataD::Loc</code>、<code>TileDataS::Loc</code>、<code>TileDataI::Loc</code> 必须是 <code>TileType::Vec</code>。</li>
+<li><code>TileDataD::DType</code>、<code>TileDataS::DType</code> 必须是以下之一：<code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>half</code>、<code>float32_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>uint8_t</code>、<code>bfloat16_t</code>。</li>
+<li><code>TileDataI::DType</code> 必须是以下之一：<code>int16_t</code>、<code>int32_t</code>、<code>uint16_t</code> 或 <code>uint32_t</code>。</li>
+<li>不对 <code>indexes</code> 值执行边界检查。</li>
+<li>静态有效边界：<code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>、<code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>、<code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>、<code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>、<code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>、<code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>。</li>
+<li><code>TileDataD::DType</code> 与 <code>TileDataS::DType</code> 必须相同。</li>
+<li>当 <code>TileDataD::DType</code> 大小为 4 字节时，<code>TileDataI::DType</code> 大小必须为 4 字节。</li>
+<li>当 <code>TileDataD::DType</code> 大小为 2 字节时，<code>TileDataI::DType</code> 大小必须为 2 字节。</li>
+<li>当 <code>TileDataD::DType</code> 大小为 1 字节时，<code>TileDataI::DType</code> 大小必须为 2 字节。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
