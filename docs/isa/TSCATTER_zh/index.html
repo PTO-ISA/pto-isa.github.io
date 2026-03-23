@@ -509,10 +509,11 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TSCATTER tile operation" src="../../figures/isa/TSCATTER.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>使用逐元素行索引将源 Tile 的行散播到目标 Tile 中。</p>
+<p>使用逐元素目标扁平偏移，将源 Tile 元素散播到目标 Tile 中。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个源元素 <code>(i, j)</code>，写入：</p>
-<div class="arithmatex">\[ \mathrm{dst}_{\mathrm{idx}_{i,j},\ j} = \mathrm{src}_{i,j} \]</div>
+<p>对每个源元素 <code>(i, j)</code>，令 <code>k = idx[i,j]</code>，并写入：</p>
+<div class="arithmatex">\[ \mathrm{dst\_flat}_{k} = \mathrm{src}_{i,j} \]</div>
+<p>其中 <code>dst_flat</code> 表示将目标 Tile 按其存储顺序展平后得到的一维序列。<code>TSCATTER</code> <strong>不会</strong> 将 <code>idx[i,j]</code> 解释为目标行号。在标准行主序 Tile 布局下，这等价于写入目标 Tile 展平后的第 <code>k</code> 个元素。</p>
 <p>若多个元素映射到同一目标位置，最终值由实现定义（当前实现中以最后写入者为准）。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
@@ -536,6 +537,7 @@ PTO_INST RecordEvent TSCATTER(TileDataD&amp; dst, TileDataS&amp; src, TileDataI&
 <li><code>TileDataD::Loc</code>、<code>TileDataS::Loc</code>、<code>TileDataI::Loc</code> 必须是 <code>TileType::Vec</code>。</li>
 <li><code>TileDataD::DType</code>、<code>TileDataS::DType</code> 必须是以下之一：<code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>half</code>、<code>float32_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>uint8_t</code>、<code>bfloat16_t</code>。</li>
 <li><code>TileDataI::DType</code> 必须是以下之一：<code>int16_t</code>、<code>int32_t</code>、<code>uint16_t</code> 或 <code>uint32_t</code>。</li>
+<li><code>indexes</code> 的值按目标 Tile 存储顺序解释为扁平元素偏移。</li>
 <li>不对 <code>indexes</code> 值执行边界检查。</li>
 <li>静态有效边界：<code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>、<code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>、<code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>、<code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>、<code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>、<code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>。</li>
 <li><code>TileDataD::DType</code> 与 <code>TileDataS::DType</code> 必须相同。</li>
@@ -546,6 +548,7 @@ PTO_INST RecordEvent TSCATTER(TileDataD&amp; dst, TileDataS&amp; src, TileDataI&
 <li><code>TileDataD::Loc</code>、<code>TileDataS::Loc</code>、<code>TileDataI::Loc</code> 必须是 <code>TileType::Vec</code>。</li>
 <li><code>TileDataD::DType</code>、<code>TileDataS::DType</code> 必须是以下之一：<code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>half</code>、<code>float32_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>uint8_t</code>、<code>bfloat16_t</code>。</li>
 <li><code>TileDataI::DType</code> 必须是以下之一：<code>int16_t</code>、<code>int32_t</code>、<code>uint16_t</code> 或 <code>uint32_t</code>。</li>
+<li><code>indexes</code> 的值按目标 Tile 存储顺序解释为扁平元素偏移。</li>
 <li>不对 <code>indexes</code> 值执行边界检查。</li>
 <li>静态有效边界：<code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>、<code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>、<code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>、<code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>、<code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>、<code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>。</li>
 <li><code>TileDataD::DType</code> 与 <code>TileDataS::DType</code> 必须相同。</li>

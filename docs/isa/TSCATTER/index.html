@@ -549,10 +549,11 @@
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
 <p><img alt="TSCATTER tile operation" src="../../figures/isa/TSCATTER.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Scatter rows of a source tile into a destination tile using per-element row indices.</p>
+<p>Scatter source elements into a destination tile using per-element flattened destination offsets.</p>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
-<p>For each source element <code>(i, j)</code>, write:</p>
-<div class="arithmatex">\[ \mathrm{dst}_{\mathrm{idx}_{i,j},\ j} = \mathrm{src}_{i,j} \]</div>
+<p>For each source element <code>(i, j)</code>, let <code>k = idx[i,j]</code> and write:</p>
+<div class="arithmatex">\[ \mathrm{dst\_flat}_{k} = \mathrm{src}_{i,j} \]</div>
+<p>Here <code>dst_flat</code> denotes the destination tile viewed as a single linear storage sequence. <code>TSCATTER</code> does <strong>not</strong> interpret <code>idx[i,j]</code> as a destination row selector. On the standard row-major tile layout, this is equivalent to writing the <code>k</code>-th flattened destination element.</p>
 <p>If multiple elements map to the same destination location, the final value is implementation-defined (last writer wins in the current implementation).</p>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>PTO-AS form: see <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
@@ -576,6 +577,7 @@ PTO_INST RecordEvent TSCATTER(TileDataD&amp; dst, TileDataS&amp; src, TileDataI&
 <li><code>TileDataD::Loc</code>, <code>TileDataS::Loc</code>, <code>TileDataI::Loc</code> must be <code>TileType::Vec</code>.</li>
 <li><code>TileDataD::DType</code>, <code>TileDataS::DType</code> must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>int8_t</code>, <code>half</code>, <code>float32_t</code>, <code>uint32_t</code>, <code>uint16_t</code>, <code>uint8_t</code>, <code>bfloat16_t</code>.</li>
 <li><code>TileDataI::DType</code> must be one of: <code>int16_t</code>, <code>int32_t</code>, <code>uint16_t</code> or <code>uint32_t</code>.</li>
+<li><code>indexes</code> values are interpreted as flattened destination element offsets in destination tile storage order.</li>
 <li>No bounds checks are enforced on <code>indexes</code> values.</li>
 <li>Static valid bounds: <code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>, <code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>, <code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>, <code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>, <code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>, <code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>.</li>
 <li><code>TileDataD::DType</code> and <code>TileDataS::DType</code> must be the same.</li>
@@ -586,6 +588,7 @@ PTO_INST RecordEvent TSCATTER(TileDataD&amp; dst, TileDataS&amp; src, TileDataI&
 <li><code>TileDataD::Loc</code>, <code>TileDataS::Loc</code>, <code>TileDataI::Loc</code> must be <code>TileType::Vec</code>.</li>
 <li><code>TileDataD::DType</code>, <code>TileDataS::DType</code> must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>int8_t</code>, <code>half</code>, <code>float32_t</code>, <code>uint32_t</code>, <code>uint16_t</code>, <code>uint8_t</code>, <code>bfloat16_t</code>.</li>
 <li><code>TileDataI::DType</code> must be one of: <code>int16_t</code>, <code>int32_t</code>, <code>uint16_t</code> or <code>uint32_t</code>.</li>
+<li><code>indexes</code> values are interpreted as flattened destination element offsets in destination tile storage order.</li>
 <li>No bounds checks are enforced on <code>indexes</code> values.</li>
 <li>Static valid bounds: <code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>, <code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>, <code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>, <code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>, <code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>, <code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>.</li>
 <li><code>TileDataD::DType</code> and <code>TileDataS::DType</code> must be the same.</li>
