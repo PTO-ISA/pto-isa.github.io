@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -542,28 +570,38 @@ PTO_INST RecordEvent TGATHER(DstTileData&amp; dst, SrcTileData&amp; src, WaitEve
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>基于索引的 gather：实现检查 (A2A3)</strong>:</li>
+<li><strong>基于索引的 gather：实现检查 (A2A3)</strong>:<ul>
 <li><code>sizeof(DstTileData::DType)</code> 对应类型必须是 <code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>float</code> 之一。</li>
 <li><code>sizeof(Src1TileData::DType)</code> 对应类型必须是 <code>int32_t</code>、<code>uint32_t</code> 之一。</li>
 <li><code>DstTileData::DType</code> 必须与 <code>Src0TileData::DType</code> 类型相同。</li>
 <li><code>src1.GetValidCol() == Src1TileData::Cols</code> 且 <code>dst.GetValidCol() == DstTileData::Cols</code>。</li>
-<li><strong>基于索引的 gather：实现检查 (A5)</strong>:</li>
+</ul>
+</li>
+<li><strong>基于索引的 gather：实现检查 (A5)</strong>:<ul>
 <li><code>sizeof(DstTileData::DType)</code> 对应类型必须是 <code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>float</code> 之一。</li>
 <li><code>sizeof(Src1TileData::DType)</code> 对应类型必须是 <code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code> 之一。</li>
 <li><code>DstTileData::DType</code> 必须与 <code>Src0TileData::DType</code> 类型相同。</li>
 <li><code>src1.GetValidCol() == Src1TileData::Cols</code> 且 <code>dst.GetValidCol() == DstTileData::Cols</code>。</li>
-<li><strong>基于掩码模式的 gather：实现检查 (A2A3)</strong>:</li>
+</ul>
+</li>
+<li><strong>基于掩码模式的 gather：实现检查 (A2A3)</strong>:<ul>
 <li>源元素大小必须是 <code>2</code> 或 <code>4</code> 字节。</li>
 <li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> 必须是 <code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code> 或 <code>float</code> 之一。</li>
 <li><code>dst</code> 和 <code>src</code> 必须都是 <code>TileType::Vec</code> 且行主序。</li>
 <li><code>sizeof(dst element) == sizeof(src element)</code> 且 <code>dst.GetValidCol() == DstTileData::Cols</code>（连续的目标存储）。</li>
-<li><strong>基于掩码模式的 gather：实现检查 (A5)</strong>:</li>
+</ul>
+</li>
+<li><strong>基于掩码模式的 gather：实现检查 (A5)</strong>:<ul>
 <li>源元素大小必须是 <code>1</code>、<code>2</code> 或 <code>4</code> 字节。</li>
 <li><code>dst</code> 和 <code>src</code> 必须都是 <code>TileType::Vec</code> 且行主序。</li>
 <li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> 必须是 <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>、<code>float8_e4m3_t</code>、<code>float8_e5m2_t</code> 或 <code>hifloat8_t</code> 之一。</li>
 <li>支持的数据类型限制为目标定义的集合（通过实现中的 <code>static_assert</code> 强制执行），且 <code>sizeof(dst element) == sizeof(src element)</code>，<code>dst.GetValidCol() == DstTileData::Cols</code>（连续的目标存储）。</li>
-<li><strong>边界 / 有效性</strong>:</li>
+</ul>
+</li>
+<li><strong>边界 / 有效性</strong>:<ul>
 <li>索引边界不通过显式运行时断言进行验证；超出范围的索引行为由目标定义。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -610,7 +648,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tgather %src, %indices : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tgather ins(%src, %indices : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

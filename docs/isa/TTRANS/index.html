@@ -405,9 +405,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -466,6 +466,34 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
                 </li>
     </ul>
                   </li>
@@ -560,42 +588,44 @@
 <pre><code class="language-text">%dst = ttrans %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.ttrans %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.ttrans ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataTmp, typename... WaitEvents&gt;
-PTO_INST RecordEvent TTRANS(TileDataDst&amp; dst, TileDataSrc&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
+PTO_INST RecordEvent TTRANS(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Implementation checks (A2A3)</strong>:</li>
+<li><strong>Implementation checks (A2A3)</strong>:<ul>
 <li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>.</li>
 <li>Source layout must be row-major (<code>TileDataSrc::isRowMajor</code>).</li>
 <li>Element size must be <code>1</code>, <code>2</code>, or <code>4</code> bytes.</li>
-<li>Supported element types are restricted per element width:<ul>
+<li>Supported element types are restricted per element width:</li>
 <li>4 bytes: <code>uint32_t</code>, <code>int32_t</code>, <code>float</code></li>
 <li>2 bytes: <code>uint16_t</code>, <code>int16_t</code>, <code>half</code>, <code>bfloat16_t</code></li>
 <li>1 byte: <code>uint8_t</code>, <code>int8_t</code></li>
+<li>The transpose size is taken from <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code>.</li>
 </ul>
 </li>
-<li>The transpose size is taken from <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code>.</li>
-<li><strong>Implementation checks (A5)</strong>:</li>
+<li><strong>Implementation checks (A5)</strong>:<ul>
 <li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>.</li>
 <li>32-byte alignment constraints are enforced on the major dimension of both input and output (row-major checks <code>Cols * sizeof(T) % 32 == 0</code>, col-major checks <code>Rows * sizeof(T) % 32 == 0</code>).</li>
-<li>Supported element types are restricted per element width:<ul>
+<li>Supported element types are restricted per element width:</li>
 <li>4 bytes: <code>uint32_t</code>, <code>int32_t</code>, <code>float</code></li>
 <li>2 bytes: <code>uint16_t</code>, <code>int16_t</code>, <code>half</code>, <code>bfloat16_t</code></li>
 <li>1 byte: <code>uint8_t</code>, <code>int8_t</code></li>
+<li>The implementation operates over the static tile shape (<code>TileDataSrc::Rows/Cols</code>) and does not consult <code>GetValidRow/GetValidCol</code>.</li>
 </ul>
 </li>
-<li>The implementation operates over the static tile shape (<code>TileDataSrc::Rows/Cols</code>) and does not consult <code>GetValidRow/GetValidCol</code>.</li>
-<li><strong>Temporary tile</strong>:</li>
+<li><strong>Temporary tile</strong>:<ul>
 <li>The C++ API requires <code>tmp</code>, but some implementations may not use it.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -645,7 +675,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = ttrans %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.ttrans ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

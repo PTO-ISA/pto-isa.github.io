@@ -435,9 +435,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -472,6 +472,34 @@
         </ul>
     </li>
     </ul>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
                 </li>
     </ul>
                   </li>
@@ -568,20 +596,16 @@
 <p>PTO-AS form: see <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <pre><code class="language-text">tprint %src : !pto.tile&lt;...&gt; | !pto.global&lt;...&gt;
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
 </code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename T, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPRINT(T &amp;src, WaitEvents&amp;... events) {
-  TSYNC(events...);
-  MAP_INSTR_IMPL(TPRINT, src);
-  return {};
-}
+<pre><code class="language-cpp">template &lt;typename TileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TPRINT(TileData &amp;src, WaitEvents &amp;... events);
 </code></pre>
 <h3 id="supported-types-for-t">Supported Types for T<a class="headerlink" href="#supported-types-for-t" title="Permanent link">&para;</a></h3>
 <ul>
@@ -590,10 +614,12 @@ PTO_INST RecordEvent TPRINT(T &amp;src, WaitEvents&amp;... events) {
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Supported element type</strong>:</li>
+<li><strong>Supported element type</strong>:<ul>
 <li>Floating-point: <code>float</code>, <code>half</code></li>
 <li>Signed integers: <code>int8_t</code>, <code>int16_t</code>, <code>int32_t</code></li>
 <li>Unsigned integers: <code>uint8_t</code>, <code>uint16_t</code>, <code>uint32_t</code></li>
+</ul>
+</li>
 <li><strong>For Tiles</strong>: <code>TileData::Loc == TileType::Vec</code> (only vector tiles are printable).</li>
 <li><strong>For GlobalTensor</strong>: Layout must be one of <code>Layout::ND</code>, <code>Layout::DN</code>, or <code>Layout::NZ</code>.</li>
 </ul>
@@ -613,13 +639,13 @@ PTO_INST RecordEvent TPRINT(T &amp;src, WaitEvents&amp;... events) {
 <ul>
 <li>
 <p><strong>Formatting</strong>:</p>
-</li>
-<li>
-<p>Floating-point values: printed as <code>%6.2f</code></p>
-</li>
+<ul>
+<li>Floating-point values: printed as <code>%6.2f</code></li>
 <li>Integer values: printed as <code>%6d</code></li>
 <li>For <code>GlobalTensor</code>, due to data size and buffer limitations, only elements within its logical shape (defined by <code>Shape</code>) are printed.</li>
 <li>For <code>Tile</code>, invalid regions (beyond <code>validRows</code>/<code>validCols</code>) are still printed but marked with a <code>|</code> separator when partial validity is specified.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="print-a-tile">Print a Tile<a class="headerlink" href="#print-a-tile" title="Permanent link">&para;</a></h3>
@@ -667,7 +693,7 @@ pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype
 </code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)
 </code></pre>
               
@@ -675,7 +701,7 @@ pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;M
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../TQUANT/" class="btn btn-neutral float-left" title="TQUANT"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../../reference/pto-intrinsics-header/" class="btn btn-neutral float-right" title="Intrinsics Header">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../comm/" class="btn btn-neutral float-right" title="Overview">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -705,7 +731,7 @@ pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;M
       <span><a href="../TQUANT/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../../reference/pto-intrinsics-header/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../comm/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

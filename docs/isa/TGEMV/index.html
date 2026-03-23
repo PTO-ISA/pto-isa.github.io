@@ -381,9 +381,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -474,6 +474,34 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
                 </li>
     </ul>
                   </li>
@@ -584,12 +612,12 @@
 
 %acc = tgemv.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%c = pto.tgemv %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c_out = pto.tgemv.acc %c_in, %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c = pto.tgemv.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tgemv ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
 pto.tgemv.acc ins(%c_in, %a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
 pto.tgemv.bias ins(%a, %b, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
@@ -607,39 +635,33 @@ PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Implementation checks (A2A3)</strong>:</li>
-<li>Supported <code>(CType, AType, BType)</code> triples:<ul>
+<li><strong>Implementation checks (A2A3)</strong>:<ul>
+<li>Supported <code>(CType, AType, BType)</code> triples:</li>
 <li><code>(int32_t, int8_t, int8_t)</code></li>
 <li><code>(float, half, half)</code></li>
 <li><code>(float, float, float)</code></li>
 <li><code>(float, bfloat16_t, bfloat16_t)</code></li>
-</ul>
-</li>
 <li>Static shape constraints: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</li>
 <li>Tile locations: <code>TileLeft::Loc == Left</code>, <code>TileRight::Loc == Right</code>, <code>TileRes::Loc == Acc</code>.</li>
 <li>Runtime: <code>m</code> must be 1 ; <code>k/n</code> (taken from <code>bMatrix.GetValidRow()</code>, <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code>.</li>
-<li>Bias checks:<ul>
+<li>Bias checks:</li>
 <li>The data type of the bias tile <code>TileBias::DType</code> must exactly match the data type of the result tile <code>(TileRes::DType)</code>.</li>
 <li>The bias tile must be configured as a single row.</li>
 <li>The bias tile's location must be <code>TileBias::Loc == TileType::Bias</code>.</li>
 </ul>
 </li>
-<li><strong>Implementation checks (A5)</strong>:</li>
-<li>Accumulator type must be <code>int32_t</code> or <code>float</code>.<ul>
+<li><strong>Implementation checks (A5)</strong>:<ul>
+<li>Accumulator type must be <code>int32_t</code> or <code>float</code>.</li>
 <li>If <code>int32_t</code>: <code>AType == int8_t</code> and <code>BType == int8_t</code>.</li>
 <li>If <code>float</code>: supports <code>half/bfloat16_t/float</code> and selected fp8 pairs (target-defined).</li>
-</ul>
-</li>
 <li>Static shape constraints: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</li>
-<li>Fractal/layout constraints are enforced:<ul>
+<li>Fractal/layout constraints are enforced:</li>
 <li>Left: <code>Loc == Left</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></li>
 <li>Right: <code>Loc == Right</code>, <code>isRowMajor</code>, <code>SFractal == ColMajor</code></li>
 <li>Acc: <code>Loc == Acc</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></li>
-</ul>
-</li>
 <li>No explicit runtime range checks on <code>m/k/n</code> are enforced in <code>TMATMUL_IMPL</code> on this target.</li>
 <li>Runtime: <code>m</code> must be 1 ; <code>k/n</code> (taken from <code>bMatrix.GetValidRow()</code>, <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code>.</li>
-<li>Bias checks:<ul>
+<li>Bias checks:</li>
 <li>The data type of the bias tile <code>TileBias::DType</code> must exactly match the data type of the result tile <code>(TileRes::DType)</code>.</li>
 <li>The bias tile must be configured as a single row.</li>
 <li>The bias tile's location must be <code>TileBias::Loc == TileType::Bias</code>.</li>
@@ -768,7 +790,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%acc = tgemv %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tgemv ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

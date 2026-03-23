@@ -413,9 +413,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -466,6 +466,34 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
                 </li>
     </ul>
                   </li>
@@ -564,11 +592,11 @@
 <p>Mask-pattern gather:</p>
 <pre><code class="language-text">%dst = tgather %src {maskPattern = #pto.mask_pattern&lt;P0101&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tgather %src, %indices : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %dst = pto.tgather %src {maskPattern = #pto.mask_pattern&lt;P0101&gt;}: !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tgather ins(%src, %indices : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 pto.tgather ins(%src, {maskPattern = #pto.mask_pattern&lt;P0101&gt;} : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
@@ -582,30 +610,40 @@ PTO_INST RecordEvent TGATHER(DstTileData&amp; dst, SrcTileData&amp; src, WaitEve
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Index-based gather: implementation checks (A2A3)</strong>:</li>
+<li><strong>Index-based gather: implementation checks (A2A3)</strong>:<ul>
 <li><code>sizeof(DstTileData::DType)</code> must be must be <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
 <li><code>sizeof(Src1TileData::DType)</code> must be must be <code>int32_t</code>, <code>uint32_t</code>.</li>
 <li><code>DstTileData::DType</code> must be the same type as <code>Src0TileData::DType</code>.</li>
 <li><code>src1.GetValidCol() == Src1TileData::Cols</code> and <code>dst.GetValidCol() == DstTileData::Cols</code>.</li>
-<li><strong>Index-based gather: implementation checks (A5)</strong>:</li>
+</ul>
+</li>
+<li><strong>Index-based gather: implementation checks (A5)</strong>:<ul>
 <li><code>sizeof(DstTileData::DType)</code> must be must be <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
 <li><code>sizeof(Src1TileData::DType)</code> must be must be <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>.</li>
 <li><code>DstTileData::DType</code> must be the same type as <code>Src0TileData::DType</code>.</li>
 <li><code>src1.GetValidCol() == Src1TileData::Cols</code> and <code>dst.GetValidCol() == DstTileData::Cols</code>.</li>
-<li><strong>Mask-pattern gather: implementation checks (A2A3)</strong>:</li>
+</ul>
+</li>
+<li><strong>Mask-pattern gather: implementation checks (A2A3)</strong>:<ul>
 <li>Source element size must be <code>2</code> or <code>4</code> bytes.</li>
 <li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> must be <code>int16_t</code> or <code>uint16_t</code> or <code>int32_t</code> or <code>uint32_t</code>
-    or <code>half</code> or <code>bfloat16_t</code> or <code>float</code>.</li>
+or <code>half</code> or <code>bfloat16_t</code> or <code>float</code>.</li>
 <li><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code> and row-major.</li>
 <li><code>sizeof(dst element) == sizeof(src element)</code> and <code>dst.GetValidCol() == DstTileData::Cols</code> (continuous dst storage).</li>
-<li><strong>Mask-pattern gather: implementation checks (A5)</strong>:</li>
+</ul>
+</li>
+<li><strong>Mask-pattern gather: implementation checks (A5)</strong>:<ul>
 <li>Source element size must be <code>1</code> or <code>2</code> or <code>4</code> bytes.</li>
 <li><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code> and row-major.</li>
 <li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> must be <code>int8_t</code> or <code>uint8_t</code> or <code>int16_t</code> or <code>uint16_t</code> or <code>int32_t</code> or <code>uint32_t</code>
-    or <code>half</code> or <code>bfloat16_t</code> or <code>float</code> or <code>float8_e4m3_t</code>or <code>float8_e5m2_t</code> or <code>hifloat8_t</code>.</li>
+or <code>half</code> or <code>bfloat16_t</code> or <code>float</code> or <code>float8_e4m3_t</code>or <code>float8_e5m2_t</code> or <code>hifloat8_t</code>.</li>
 <li>Supported dtypes are restricted to a target-defined set (checked via <code>static_assert</code> in the implementation), and <code>sizeof(dst element) == sizeof(src element)</code>, <code>dst.GetValidCol() == DstTileData::Cols</code> (continuous dst storage).</li>
-<li><strong>Bounds / validity</strong>:</li>
+</ul>
+</li>
+<li><strong>Bounds / validity</strong>:<ul>
 <li>Index bounds are not validated by explicit runtime assertions; out-of-range indices are target-defined.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -652,7 +690,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tgather %src, %indices : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tgather ins(%src, %indices : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

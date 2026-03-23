@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -528,30 +556,30 @@
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
-PTO_INST RecordEvent TROWMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
+PTO_INST RecordEvent TROWMIN(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>实现检查 (NPU):</p>
 <ul>
-<li>A2A3:</li>
+<li>A2A3:<ul>
 <li>Tile 位置：<code>dst</code> 和 <code>src</code> 必须是 <code>TileType::Vec</code>。</li>
 <li><code>src</code> 的 Tile 布局：ND 分形（<code>isRowMajor</code> 且 <code>SLayout::NoneBox</code>）。</li>
-<li><code>dst</code> 的 Tile 布局：<ul>
+<li><code>dst</code> 的 Tile 布局：</li>
 <li><strong>推荐</strong>：DN 布局的一维 Tile，例如 <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code></li>
 <li><strong>将移除</strong>：ND 布局的二维 Tile，例如 <code>Tile&lt;TileType::Vec, T, ROWS, COLS, BLayout::RowMajor, ValidRows, 1&gt;</code></li>
-</ul>
-</li>
 <li>数据类型：<code>half</code> 或 <code>float</code>。</li>
 <li>数据类型一致性：<code>dst.DType == src.DType</code>。</li>
-<li>运行期有效区域检查：<ul>
+<li>运行期有效区域检查：</li>
 <li><code>srcValidCol != 0</code> 且 <code>srcValidRow != 0</code>。</li>
 <li><code>srcValidRow == dstValidRow</code>（输出有效行数必须与输入有效行数匹配）。</li>
 </ul>
 </li>
-<li>A5:</li>
+<li>A5:<ul>
 <li>数据类型：<code>half</code> 或 <code>float</code>。</li>
 <li>数据类型一致性：<code>dst.DType == src.DType</code>。</li>
 <li>实现中对 <code>validRow/validCol</code> 无显式运行时断言；循环使用 <code>src.GetValidRow()</code> 和 <code>src.GetValidCol()</code>。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -601,7 +629,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = trowmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.trowmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

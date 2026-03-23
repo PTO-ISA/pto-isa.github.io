@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../docs/isa/comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../docs/reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -573,9 +601,39 @@ export PATH=$MPI_HOME/bin:$PATH
 <pre><code class="language-bash">mpirun --version
 mpirun -n 2 echo &quot;MPI OK&quot;
 </code></pre>
-<h3 id="_4">快速开始<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<pre><code class="language-bash"># 8 卡全量测试（默认 A2/A3）
+<h3 id="_4">同步与异步指令测试<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>通信测试分为<strong>同步指令</strong>（如 <code>tput</code>、<code>tget</code>）和<strong>异步指令</strong>（如 <code>tput_async</code>、<code>tget_async</code>）两类：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>测试用例示例</th>
+<th>CANN 版本要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>同步指令</td>
+<td><code>tput</code>、<code>tget</code>、<code>treduce</code>、<code>tbroadcast</code> 等</td>
+<td>CANN 8.x 及以上</td>
+</tr>
+<tr>
+<td>异步指令</td>
+<td><code>tput_async</code>、<code>tget_async</code></td>
+<td><strong>CANN 9.0 及以上</strong></td>
+</tr>
+</tbody>
+</table>
+<p>异步指令依赖 CANN 9.0 引入的 SDMA opapi 接口（如 <code>aclnnShmemSdmaStarsQuery</code>），在低版本 CANN 上会因符号缺失而运行失败。因此 <code>run_comm_test.sh</code> <strong>默认不包含异步指令测试</strong>，需通过 <code>-a</code> 参数显式启用。</p>
+<h3 id="_5">快速开始<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash"># 8 卡全量测试（默认 A2/A3，不含异步指令）
 ./run_comm_test.sh
+
+# 包含异步指令测试（需 CANN 9.0+）
+./run_comm_test.sh -a
+
+# 仅跑异步 tput 用例
+./run_comm_test.sh -t tput_async
 
 # 指定 A5 SoC，2 卡
 ./run_comm_test.sh -v a5 -n 2
@@ -586,7 +644,14 @@ mpirun -n 2 echo &quot;MPI OK&quot;
 # 开启 debug 日志
 ./run_comm_test.sh -d -t tput
 </code></pre>
-<h3 id="_5">参数说明<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>也可以通过 <code>run_st.py</code> 直接运行，脚本会自动按 rank 数分轮执行：</p>
+<pre><code class="language-bash"># 自动分轮运行 tput_async（2/4/8 rank）
+python3 tests/script/run_st.py -r npu -v a3 -t comm/tput_async
+
+# 限制最多 2 rank
+python3 tests/script/run_st.py -r npu -v a3 -t comm/tput_async -n 2
+</code></pre>
+<h3 id="_6">参数说明<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -612,15 +677,20 @@ mpirun -n 2 echo &quot;MPI OK&quot;
 <td>全部</td>
 </tr>
 <tr>
+<td><code>-a</code></td>
+<td>包含异步指令测试（<code>*_async</code>），需 CANN 9.0+</td>
+<td>关闭</td>
+</tr>
+<tr>
 <td><code>-d</code></td>
 <td>开启调试模式，打印详细初始化与同步日志</td>
 <td>关闭</td>
 </tr>
 </tbody>
 </table>
-<h3 id="_6">运行机制<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h3 id="_7">运行机制<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <p>脚本会根据 <code>-n</code> 指定的卡数，自动为每个测试用例分别以 2 / 4 / 8 rank 运行，通过 GTest Filter 确保每次只执行与当前 rank 数匹配的测试。例如 <code>-n 4</code> 时会先以 2 rank 跑默认用例，再以 4 rank 跑带 <code>4Ranks</code> 后缀的用例，跳过 8 rank 用例。</p>
-<h2 id="_7">建议阅读顺序<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_8">建议阅读顺序<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li>入门指南（建议先 CPU，再 NPU）：<a href="../../docs/getting-started/">docs/getting-started.md</a></li>
 </ul>

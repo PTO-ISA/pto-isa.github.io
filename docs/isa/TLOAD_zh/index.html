@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -528,35 +556,33 @@
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TLOAD(TileData&amp; dst, GlobalData&amp; src, WaitEvents&amp;... events);
+PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
 <li><code>TileData::DType</code> 必须是以下之一：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>int64_t</code>、<code>uint64_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
 <li>目标 tile 位置必须是 <code>TileType::Vec</code> 或 <code>TileType::Mat</code>。</li>
 <li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>。</li>
 <li>运行时：所有 <code>src.GetShape(dim)</code> 值和 <code>dst.GetValidRow()/GetValidCol()</code> 必须 <code>&gt; 0</code>。</li>
 <li><code>TileType::Vec</code> 加载仅支持匹配的布局：ND-&gt;ND、DN-&gt;DN、NZ-&gt;NZ。</li>
-<li><code>TileType::Mat</code> 加载支持：ND-&gt;ND、DN-&gt;DN、NZ-&gt;NZ，以及 ND-&gt;NZ 和 DN-&gt;ZN。<ul>
+<li><code>TileType::Mat</code> 加载支持：ND-&gt;ND、DN-&gt;DN、NZ-&gt;NZ，以及 ND-&gt;NZ 和 DN-&gt;ZN。</li>
 <li>对于 ND-&gt;NZ 或 DN-&gt;ZN：<code>GlobalData::staticShape[0..2] == 1</code> 且 <code>TileData::SFractalSize == 512</code>。</li>
+<li>对于 <code>int64_t/uint64_t</code>，仅支持 ND-&gt;ND 或 DN-&gt;DN。</li>
 </ul>
 </li>
-<li>对于 <code>int64_t/uint64_t</code>，仅支持 ND-&gt;ND 或 DN-&gt;DN。</li>
-<li><strong>实现检查 (A5)</strong>:</li>
+<li>
+<p><strong>实现检查 (A5)</strong>:</p>
+<ul>
 <li><code>sizeof(TileData::DType)</code> 必须是 <code>1</code>、<code>2</code>、<code>4</code> 或 <code>8</code> 字节，且必须匹配 <code>sizeof(GlobalData::DType)</code>。</li>
 <li>对于 <code>int64_t/uint64_t</code>，<code>TileData::PadVal</code> 必须是 <code>PadValue::Null</code> 或 <code>PadValue::Zero</code>。</li>
-<li><code>TileType::Vec</code> 加载需要以下布局对之一：<ul>
+<li><code>TileType::Vec</code> 加载需要以下布局对之一：</li>
 <li>ND 使用行主序 + <code>SLayout::NoneBox</code>（ND-&gt;ND），</li>
 <li>DN 使用列主序 + <code>SLayout::NoneBox</code>（DN-&gt;DN），</li>
 <li>NZ 使用 <code>SLayout::RowMajor</code>（NZ-&gt;NZ）。</li>
-</ul>
-</li>
 <li>对于使用编译时已知形状的行主序 ND-&gt;ND，<code>TileData::ValidCol</code> 必须等于 <code>GlobalData::staticShape[4]</code>，且 <code>TileData::ValidRow</code> 必须等于 <code>GlobalData::staticShape[0..3]</code> 的乘积。</li>
 <li><code>TileType::Mat</code> 加载还受到 <code>TLoadCubeCheck</code> 的约束（例如，仅特定的 ND/DN/NZ 转换和 L1 大小限制）。</li>
-<li>
-<p><code>TileType::Mat</code> 加载还处理 mx 格式的加载，包括 <code>MX_A_ZZ/MX_A_ND/MX_A_DN</code> 到 ZZ（用于 scalarA）和 <code>MX_B_NN/MX_B_ND/MX_B_DN</code> 到 NN（用于 scalarB）。</p>
-<ul>
+<li><code>TileType::Mat</code> 加载还处理 mx 格式的加载，包括 <code>MX_A_ZZ/MX_A_ND/MX_A_DN</code> 到 ZZ（用于 scalarA）和 <code>MX_B_NN/MX_B_ND/MX_B_DN</code> 到 NN（用于 scalarB）。</li>
 <li>对于 <code>MX_A_ZZ/MX_B_NN</code>：<code>GlobalData::staticShape[3] == 16</code> 且 <code>GlobalData::staticShape[4] == 2</code>。</li>
 <li>对于 <code>MX_A_ND/MX_ADN/MX_B_ND/MX_B_DN</code>：<code>GlobalData::staticShape[0] == 1</code> 且 <code>GlobalData::staticShape[1] == 1</code> 且 <code>GlobalData::staticShape[4] == 2</code>。</li>
 <li>对于 scaleA，<code>dst.GetValidCol() % 2 == 0</code>。</li>
@@ -565,8 +591,10 @@ PTO_INST RecordEvent TLOAD(TileData&amp; dst, GlobalData&amp; src, WaitEvents&am
 </li>
 <li>
 <p><strong>有效区域</strong>:</p>
-</li>
+<ul>
 <li>实现使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为传输大小。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -618,7 +646,7 @@ void example_manual(__gm__ T* in) {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

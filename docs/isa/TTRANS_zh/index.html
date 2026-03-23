@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -529,33 +557,35 @@
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataTmp, typename... WaitEvents&gt;
-PTO_INST RecordEvent TTRANS(TileDataDst&amp; dst, TileDataSrc&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
+PTO_INST RecordEvent TTRANS(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
 <li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>。</li>
 <li>源布局必须是行主序（<code>TileDataSrc::isRowMajor</code>）。</li>
 <li>元素大小必须是 <code>1</code>、<code>2</code> 或 <code>4</code> 字节。</li>
-<li>支持的元素类型按元素宽度限制如下：<ul>
+<li>支持的元素类型按元素宽度限制如下：</li>
 <li>4 字节：<code>uint32_t</code>、<code>int32_t</code>、<code>float</code></li>
 <li>2 字节：<code>uint16_t</code>、<code>int16_t</code>、<code>half</code>、<code>bfloat16_t</code></li>
 <li>1 字节：<code>uint8_t</code>、<code>int8_t</code></li>
+<li>转置大小取自 <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code>。</li>
 </ul>
 </li>
-<li>转置大小取自 <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code>。</li>
-<li><strong>实现检查 (A5)</strong>:</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
 <li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>。</li>
 <li>对输入和输出的主维度强制执行 32 字节对齐约束（行主序检查 <code>Cols * sizeof(T) % 32 == 0</code>，列主序检查 <code>Rows * sizeof(T) % 32 == 0</code>）。</li>
-<li>支持的元素类型按元素宽度限制如下：<ul>
+<li>支持的元素类型按元素宽度限制如下：</li>
 <li>4 字节：<code>uint32_t</code>、<code>int32_t</code>、<code>float</code></li>
 <li>2 字节：<code>uint16_t</code>、<code>int16_t</code>、<code>half</code>、<code>bfloat16_t</code></li>
 <li>1 字节：<code>uint8_t</code>、<code>int8_t</code></li>
+<li>实现在静态 Tile 形状（<code>TileDataSrc::Rows/Cols</code>）上运算，不参考 <code>GetValidRow/GetValidCol</code>。</li>
 </ul>
 </li>
-<li>实现在静态 Tile 形状（<code>TileDataSrc::Rows/Cols</code>）上运算，不参考 <code>GetValidRow/GetValidCol</code>。</li>
-<li><strong>临时 Tile</strong>:</li>
+<li><strong>临时 Tile</strong>:<ul>
 <li>C++ API 需要 <code>tmp</code>，但某些实现可能不使用它。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -605,7 +635,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = ttrans %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.ttrans ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

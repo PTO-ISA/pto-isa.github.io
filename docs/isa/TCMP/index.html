@@ -211,9 +211,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -469,6 +469,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -559,21 +587,20 @@
 <p>Synchronous form:</p>
 <pre><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tcmp %src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tcmp ins(%src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/type.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCMP(TileDataDst&amp; dst, TileDataSrc&amp; src0, TileDataSrc&amp; src1, CmpMode cmpMode,
-                          WaitEvents&amp;... events);
+PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataSrc &amp;src1, CmpMode cmpMode, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Implementation checks (A2A3)</strong>:</li>
+<li><strong>Implementation checks (A2A3)</strong>:<ul>
 <li>Input type must be one of: <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
 <li>Output type must be <code>uint8_t</code>.</li>
 <li><code>src0/src1/dst</code> tile location must be <code>TileType::Vec</code>.</li>
@@ -581,13 +608,19 @@ PTO_INST RecordEvent TCMP(TileDataDst&amp; dst, TileDataSrc&amp; src0, TileDataS
 <li>Runtime: <code>src0.GetValidRow() == dst.GetValidRow()</code> and <code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
 <li>Note: <code>src1</code> shape/valid is not validated by explicit runtime assertions in this implementation.</li>
 <li>For <code>TileDataSrc::DType == int32_t</code>, the implementation uses the <code>EQ</code> compare path regardless of <code>cmpMode</code>.</li>
-<li><strong>Implementation checks (A5)</strong>:</li>
+</ul>
+</li>
+<li><strong>Implementation checks (A5)</strong>:<ul>
 <li>Input type must be one of: <code>uint32_t</code>, <code>int32_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint8_t</code>,  <code>int8_t</code>, <code>float</code>, <code>half</code>.</li>
 <li>Output type must be <code>uint32_t</code>.</li>
 <li>Implemented (see <code>include/pto/npu/a5/TCmp.hpp</code>).</li>
 <li>The A5 implementation uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain and writes a packed predicate mask into <code>dst</code> (target-defined packing).</li>
-<li><strong>Mask encoding</strong>:</li>
+</ul>
+</li>
+<li><strong>Mask encoding</strong>:<ul>
 <li>The mask tile is interpreted as packed predicate bits in a target-defined layout.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -633,7 +666,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tcmp ins(%src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

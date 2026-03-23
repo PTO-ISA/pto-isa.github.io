@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -528,24 +556,32 @@
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TEXTRACT(DstTileData&amp; dst, SrcTileData&amp; src, uint16_t indexRow = 0, uint16_t indexCol = 0,
-                              WaitEvents&amp;... events);
+PTO_INST RecordEvent TEXTRACT(DstTileData &amp;dst, SrcTileData &amp;src, uint16_t indexRow = 0, uint16_t indexCol = 0, WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, ReluPreMode reluMode, typename... WaitEvents&gt;
+PTO_INST RecordEvent TEXTRACT(DstTileData &amp;dst, SrcTileData &amp;src, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TEXTRACT(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
 <li><code>DstTileData::DType</code> 必须等于 <code>SrcTileData::DType</code> 且必须是以下之一：<code>int8_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
-<li>源分形必须满足：<code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> 或 <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code>。</li>
-<li>运行时边界检查：<ul>
+<li>源分形必须满足：<code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> 或 <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code>，GEMV场景中，目标为Left时，源分形满足<code>(SrcTileData::Rows == 1 &amp;&amp; SrcTileData::isRowMajor)</code></li>
+<li>运行时边界检查：</li>
 <li><code>indexRow + DstTileData::Rows &lt;= SrcTileData::Rows</code></li>
 <li><code>indexCol + DstTileData::Cols &lt;= SrcTileData::Cols</code></li>
+<li>目标必须是 <code>TileType::Left</code> 或 <code>TileType::Right</code>，具有目标支持的分形配置。</li>
 </ul>
 </li>
-<li>目标必须是 <code>TileType::Left</code> 或 <code>TileType::Right</code>，具有目标支持的分形配置。</li>
-<li><strong>实现检查 (A5)</strong>:</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
 <li><code>DstTileData::DType</code> 必须等于 <code>SrcTileData::DType</code> 且必须是以下之一：<code>int8_t</code>、<code>hifloat8_t</code>、<code>float8_e5m2_t</code>、<code>float8_e4m3_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>、<code>float4_e2m1x2_t</code>、<code>float4_e1m2x2_t</code>、<code>float8_e8m0_t</code>。</li>
-<li>源分形必须满足：对于 Left/Right 为 <code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> 或 <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code>，对于 ScaleLeft 为 <code>(SFractal == RowMajor &amp;&amp; isRowMajor)</code>，对于 ScaleRight 为 <code>(SFractal == ColMajor &amp;&amp; !isRowMajor)</code>。</li>
+<li>源分形必须满足：对于 Left/Right 为 <code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> 或 <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code>，GEMV场景中，目标为Left时，源分形满足<code>(SrcTileData::Rows == 1 &amp;&amp; SrcTileData::isRowMajor)</code>；对于 ScaleLeft 为 <code>(SFractal == RowMajor &amp;&amp; isRowMajor)</code>，对于 ScaleRight 为 <code>(SFractal == ColMajor &amp;&amp; !isRowMajor)</code>。</li>
 <li>目标支持 <code>Mat -&gt; Left/Right/Scale</code>，也支持特定 tile 位置的 <code>Vec -&gt; Mat</code>（此目标的 <code>TEXTRACT_IMPL</code> 中不强制执行显式运行时边界断言）。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -590,7 +626,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = textract %src[%r0, %r1] : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.textract ins(%src, %idxrow, %idxcol : !pto.tile_buf&lt;...&gt;, dtype, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

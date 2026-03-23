@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -531,39 +559,39 @@ outs(%dst, %executed : !pto.tile_buf&lt;...&gt;, vector&lt;4xi16&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData,
-          typename Src1TileData, typename Src2TileData, typename Src3TileData,
-          bool exhausted, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData&amp; dst, MrgSortExecutedNumList&amp; executedNumList,
-                             TmpTileData&amp; tmp, Src0TileData&amp; src0, Src1TileData&amp; src1,
-                             Src2TileData&amp; src2, Src3TileData&amp; src3, WaitEvents&amp;... events);
+<pre><code class="language-cpp">template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData,
+          typename Src2TileData, typename Src3TileData, bool exhausted, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, Src2TileData &amp;src2, Src3TileData &amp;src3, WaitEvents &amp;... events);
 
-template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData,
-          typename Src1TileData, typename Src2TileData, bool exhausted, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData&amp; dst, MrgSortExecutedNumList&amp; executedNumList,
-                             TmpTileData&amp; tmp, Src0TileData&amp; src0, Src1TileData&amp; src1,
-                             Src2TileData&amp; src2, WaitEvents&amp;... events);
+template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData,
+          typename Src2TileData, bool exhausted, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, Src2TileData &amp;src2, WaitEvents &amp;... events);
 
-template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData,
-          typename Src1TileData, bool exhausted, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData&amp; dst, MrgSortExecutedNumList&amp; executedNumList,
-                             TmpTileData&amp; tmp, Src0TileData&amp; src0, Src1TileData&amp; src1, WaitEvents&amp;... events);
+template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData, bool exhausted,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, WaitEvents &amp;... events);
 
 template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData&amp; dst, SrcTileData&amp; src, uint32_t blockLen, WaitEvents&amp;... events);
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, SrcTileData &amp;src, uint32_t blockLen, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3/A5)</strong>:</li>
+<li><strong>实现检查 (A2A3/A5)</strong>:<ul>
 <li>元素类型必须是 <code>half</code> 或 <code>float</code>，且在 <code>dst</code>/<code>tmp</code>/<code>src*</code> Tile 间必须一致。</li>
 <li>所有 Tile 必须是 <code>TileType::Vec</code>、行主序，且 <code>Rows == 1</code>（列表存储在单行中）。</li>
 <li>针对目标限制，编译时和运行时均会检查 UB 内存使用量（包括各输入、<code>tmp</code> 和 <code>dst</code> 的 <code>Cols</code>）。</li>
-<li><strong>单列表变体（<code>TMRGSORT(dst, src, blockLen)</code>）</strong>：</li>
+</ul>
+</li>
+<li><strong>单列表变体（<code>TMRGSORT(dst, src, blockLen)</code>）</strong>：<ul>
 <li><code>blockLen</code> 必须是 64 的倍数（由实现检查）。</li>
 <li><code>src.GetValidCol()</code> 必须是 <code>blockLen * 4</code> 的整数倍。</li>
 <li><code>repeatTimes = src.GetValidCol() / (blockLen * 4)</code> 必须在 <code>[1, 255]</code> 范围内。</li>
-<li><strong>多列表变体</strong>：</li>
+</ul>
+</li>
+<li><strong>多列表变体</strong>：<ul>
 <li>需要 <code>tmp</code>，<code>executedNumList</code> 由实现写入；支持的列表数量及确切语义由目标定义。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -608,7 +636,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tmrgsort %src, %blockLen : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tmrgsort ins(%src, %blockLen : !pto.tile_buf&lt;...&gt;, dtype)  outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

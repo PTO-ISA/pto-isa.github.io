@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -540,53 +568,49 @@
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code> 和 <code>include/pto/common/constants.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMOV(DstTileData&amp; dst, SrcTileData&amp; src, WaitEvents&amp;... events);
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);
 
 template &lt;typename DstTileData, typename SrcTileData, ReluPreMode reluMode, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMOV(DstTileData&amp; dst, SrcTileData&amp; src, WaitEvents&amp;... events);
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);
 
 template &lt;typename DstTileData, typename SrcTileData, AccToVecMode mode, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TMOV(DstTileData&amp; dst, SrcTileData&amp; src, WaitEvents&amp;... events);
-
-template &lt;typename DstTileData, typename SrcTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TMOV(DstTileData&amp; dst, SrcTileData&amp; src, uint64_t preQuantScalar, WaitEvents&amp;... events);
-
-template &lt;typename DstTileData, typename SrcTileData, AccToVecMode mode, ReluPreMode reluMode = ReluPreMode::NoRelu,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TMOV(DstTileData&amp; dst, SrcTileData&amp; src, uint64_t preQuantScalar, WaitEvents&amp;... events);
-
-template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TMOV_FP(DstTileData&amp; dst, SrcTileData&amp; src, FpTileData&amp; fp, WaitEvents&amp;... events);
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);
 
 template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, AccToVecMode mode,
           ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMOV(DstTileData&amp; dst, SrcTileData&amp; src, FpTileData&amp; fp, WaitEvents&amp;... events);
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, AccToVecMode mode, ReluPreMode reluMode = ReluPreMode::NoRelu,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
 <li>形状必须匹配：<code>SrcTileData::Rows == DstTileData::Rows</code> 且 <code>SrcTileData::Cols == DstTileData::Cols</code>。</li>
-<li>支持的位置对（编译时检查）：<ul>
+<li>支持的位置对（编译时检查）：</li>
 <li><code>Mat -&gt; Left/Right/Bias/Scaling</code></li>
 <li><code>Vec -&gt; Vec</code></li>
 <li><code>Acc -&gt; Mat</code>（包括通过重载的可选预量化/relu/fp 变体）</li>
+<li>对于 <code>Acc -&gt; Mat</code>，强制执行额外的分形/类型约束（例如，<code>Acc</code> 使用类 NZ 分形，<code>Mat</code> 使用 512B 分形，且仅允许特定的数据类型转换）。</li>
 </ul>
 </li>
-<li>对于 <code>Acc -&gt; Mat</code>，强制执行额外的分形/类型约束（例如，<code>Acc</code> 使用类 NZ 分形，<code>Mat</code> 使用 512B 分形，且仅允许特定的数据类型转换）。</li>
-<li><strong>实现检查 (A5)</strong>:</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
 <li>对于 <code>Mat -&gt; *</code>，形状必须匹配；对于某些 <code>Vec</code> 移动，有效复制大小是 src/dst 有效行/列的最小值。</li>
-<li>支持的位置对包括（取决于目标）：<ul>
+<li>支持的位置对包括（取决于目标）：</li>
 <li><code>Mat -&gt; Left/Right/Bias/Scaling/Scale</code></li>
 <li><code>Vec -&gt; Vec</code> 和 <code>Vec -&gt; Mat</code></li>
 <li><code>Acc -&gt; Vec</code> 和 <code>Acc -&gt; Mat</code>（包括通过重载的可选预量化/relu/fp 变体）</li>
-</ul>
-</li>
 <li>对于 <code>Mat -&gt; Left/Right</code>，通过 <code>CommonCheck</code> 强制执行额外的分形和数据类型约束（源分形必须兼容且元素类型必须匹配）。</li>
 <li>对于 <code>Acc -&gt; Vec/Mat</code>，通过 <code>CheckTMovAccValid</code> 强制执行额外的分形/类型/对齐约束。</li>
 <li>对于 <code>Mat -&gt; Scale</code>，通过 <code>CommonCheckMX</code> 强制执行额外的分形和数据类型约束（源分形必须兼容且元素类型必须匹配）。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -629,7 +653,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tmov.s2d %src  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tmov ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

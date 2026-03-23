@@ -126,7 +126,7 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">ISA Reference</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../../">Overview</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../conventions/">ISA Conventions</a>
@@ -431,6 +431,56 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Communication</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">TNOTIFY</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#basic-set-notification">Basic Set Notification</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#atomic-counter-increment">Atomic Counter Increment</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#producer-consumer-pattern">Producer-Consumer Pattern</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -494,6 +544,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">ISA Reference</li>
+          <li class="breadcrumb-item">Communication</li>
       <li class="breadcrumb-item active">TNOTIFY</li>
     <li class="wy-breadcrumbs-aside">
     </li>
@@ -525,14 +577,20 @@ PTO_INST void TNOTIFY(GlobalSignalData &amp;dstSignalData, int32_t value, Notify
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Type constraints</strong>:</li>
+<li><strong>Type constraints</strong>:<ul>
 <li><code>GlobalSignalData::DType</code> must be <code>int32_t</code> (32-bit signal).</li>
-<li><strong>Memory constraints</strong>:</li>
+</ul>
+</li>
+<li><strong>Memory constraints</strong>:<ul>
 <li><code>dstSignalData</code> must point to remote address (on target NPU).</li>
 <li><code>dstSignalData</code> should be 4-byte aligned.</li>
-<li><strong>Operation semantics</strong>:</li>
+</ul>
+</li>
+<li><strong>Operation semantics</strong>:<ul>
 <li><code>NotifyOp::Set</code>: Direct store to remote memory.</li>
 <li><code>NotifyOp::AtomicAdd</code>: Hardware atomic add using <code>st_atomic</code> instruction.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-set-notification">Basic Set Notification<a class="headerlink" href="#basic-set-notification" title="Permanent link">&para;</a></h3>
@@ -583,6 +641,10 @@ void consumer(__gm__ int32_t* local_flag) {
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../TGET_ASYNC/" class="btn btn-neutral float-left" title="TGET_ASYNC"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../TWAIT/" class="btn btn-neutral float-right" title="TWAIT">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -608,6 +670,10 @@ void consumer(__gm__ int32_t* local_flag) {
         </span>
     
     
+      <span><a href="../TGET_ASYNC/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../TWAIT/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

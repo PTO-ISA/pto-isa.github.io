@@ -433,9 +433,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -466,6 +466,34 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
                 </li>
     </ul>
                   </li>
@@ -559,51 +587,51 @@
 <pre><code class="language-text">%dst, %executed = tmrgsort %src0, %src1 {exhausted = false}
     : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; (!pto.tile&lt;...&gt;, vector&lt;4xi16&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tmrgsort %src, %blockLen : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
 %dst, %executed = pto.tmrgsort %src0, %src1, %src2, %src3 {exhausted = false}
  : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, vector&lt;4xi16&gt;)
 </code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tmrgsort ins(%src, %blockLen : !pto.tile_buf&lt;...&gt;, dtype)  outs(%dst : !pto.tile_buf&lt;...&gt;)
 pto.tmrgsort ins(%src0, %src1, %src2, %src3 {exhausted = false} : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
 outs(%dst, %executed : !pto.tile_buf&lt;...&gt;, vector&lt;4xi16&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData,
-          typename Src1TileData, typename Src2TileData, typename Src3TileData,
-          bool exhausted, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData&amp; dst, MrgSortExecutedNumList&amp; executedNumList,
-                             TmpTileData&amp; tmp, Src0TileData&amp; src0, Src1TileData&amp; src1,
-                             Src2TileData&amp; src2, Src3TileData&amp; src3, WaitEvents&amp;... events);
+<pre><code class="language-cpp">template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData,
+          typename Src2TileData, typename Src3TileData, bool exhausted, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, Src2TileData &amp;src2, Src3TileData &amp;src3, WaitEvents &amp;... events);
 
-template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData,
-          typename Src1TileData, typename Src2TileData, bool exhausted, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData&amp; dst, MrgSortExecutedNumList&amp; executedNumList,
-                             TmpTileData&amp; tmp, Src0TileData&amp; src0, Src1TileData&amp; src1,
-                             Src2TileData&amp; src2, WaitEvents&amp;... events);
+template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData,
+          typename Src2TileData, bool exhausted, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, Src2TileData &amp;src2, WaitEvents &amp;... events);
 
-template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData,
-          typename Src1TileData, bool exhausted, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData&amp; dst, MrgSortExecutedNumList&amp; executedNumList,
-                             TmpTileData&amp; tmp, Src0TileData&amp; src0, Src1TileData&amp; src1, WaitEvents&amp;... events);
+template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData, bool exhausted,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, WaitEvents &amp;... events);
 
 template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData&amp; dst, SrcTileData&amp; src, uint32_t blockLen, WaitEvents&amp;... events);
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, SrcTileData &amp;src, uint32_t blockLen, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Implementation checks (A2A3/A5)</strong>:</li>
+<li><strong>Implementation checks (A2A3/A5)</strong>:<ul>
 <li>Element type must be <code>half</code> or <code>float</code> and must match across <code>dst/tmp/src*</code> tiles.</li>
 <li>All tiles must be <code>TileType::Vec</code>, row-major, and have <code>Rows == 1</code> (list stored in a single row).</li>
 <li>UB memory usage is checked (compile-time and runtime) against target limits (single <code>Cols</code> across inputs plus <code>tmp</code>/<code>dst</code>).</li>
-<li><strong>Single-list variant (<code>TMRGSORT(dst, src, blockLen)</code>)</strong>:</li>
+</ul>
+</li>
+<li><strong>Single-list variant (<code>TMRGSORT(dst, src, blockLen)</code>)</strong>:<ul>
 <li><code>blockLen</code> must be a multiple of 64 (as checked by the implementation).</li>
 <li><code>src.GetValidCol()</code> must be an integer multiple of <code>blockLen * 4</code>.</li>
 <li><code>repeatTimes = src.GetValidCol() / (blockLen * 4)</code> must be in <code>[1, 255]</code>.</li>
-<li><strong>Multi-list variants</strong>:</li>
+</ul>
+</li>
+<li><strong>Multi-list variants</strong>:<ul>
 <li><code>tmp</code> is required and <code>executedNumList</code> is written by the implementation; supported list counts and exact semantics are target-defined.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -648,7 +676,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tmrgsort %src, %blockLen : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tmrgsort ins(%src, %blockLen : !pto.tile_buf&lt;...&gt;, dtype)  outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -532,15 +560,30 @@ PTO_INST RecordEvent TCMPS(TileDataDst&amp; dst, TileDataSrc0&amp; src0, T src1,
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
-<li><code>src0</code>且<code>dst</code> tile 位置 必须是 vector (<code>TileType::Vec</code>）。</li>
-<li>静态有效边界： <code>TileDataSrc0::ValidRow &lt;= TileDataSrc0::Rows</code>且<code>TileDataSrc0::ValidCol &lt;= TileDataSrc0::Cols</code>.</li>
-<li>运行时： <code>src0.GetValidRow() == dst.GetValidRow()</code>且<code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
-<li><strong>实现检查 (A5)</strong>:</li>
-<li><code>TCMPS_IMPL</code> 不强制执行显式的 <code>static_assert</code>/<code>PTO_ASSERT</code> 形状检查。</li>
-<li>有效支持取决于 <code>TileDataSrc0::DType</code>（实现中仅分派特定的 1/2/4 字节整数/浮点类型）。</li>
-<li><strong>有效区域</strong>:</li>
-<li>实现使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域.</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
+<li><code>TileData::DType</code> 必须是以下之一：<code>int32_t</code>、<code>float</code>、<code>half</code>、<code>uint16_t</code>、<code>int16_t</code>。</li>
+<li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
+</ul>
+</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
+<li><code>TileData::DType</code> 必须是以下之一：<code>int32_t</code>、<code>float</code>、<code>half</code>、<code>uint16_t</code>、<code>int16_t</code>。</li>
+<li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
+</ul>
+</li>
+<li><strong>通用约束</strong>:<ul>
+<li>Tile 位置必须是向量（<code>TileData::Loc == TileType::Vec</code>）。</li>
+<li>静态有效边界：<code>TileData::ValidRow &lt;= TileData::Rows</code> 且 <code>TileData::ValidCol &lt;= TileData::Cols</code>。</li>
+<li>运行时：<code>src0</code> 和 <code>dst</code> 的有效行列数必须相同。</li>
+</ul>
+</li>
+<li><strong>有效区域</strong>:<ul>
+<li>该操作使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域。</li>
+</ul>
+</li>
+<li><strong>比较模式</strong>:<ul>
+<li>支持 <code>CmpMode::EQ</code>、<code>CmpMode::NE</code>、<code>CmpMode::LT</code>、<code>CmpMode::GT</code>、<code>CmpMode::LE</code>、<code>CmpMode::GE</code>。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -585,7 +628,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = tcmps %src, %scalar {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tcmps ins(%src, %scalar{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/comm/TSCATTER/" />
       <link rel="shortcut icon" href="../../../../img/favicon.ico" />
-    <title>TSCATTER - PTO Virtual ISA Architectural Manual</title>
+    <title>TSCATTER (comm) - PTO Virtual ISA Architectural Manual</title>
     <link rel="stylesheet" href="../../../../css/theme.css" />
     <link rel="stylesheet" href="../../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,7 +13,7 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "TSCATTER";
+        var mkdocs_page_name = "TSCATTER (comm)";
         var mkdocs_page_input_path = "docs/isa/comm/TSCATTER.md";
         var mkdocs_page_url = "/docs/isa/comm/TSCATTER/";
       </script>
@@ -126,7 +126,7 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">ISA Reference</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../../">Overview</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../conventions/">ISA Conventions</a>
@@ -431,6 +431,54 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Communication</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">TSCATTER (comm)</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#basic-scatter-single-staging-tile">Basic Scatter (Single Staging Tile)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ping-pong-scatter-double-buffering">Ping-Pong Scatter (Double Buffering)</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -494,7 +542,9 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">TSCATTER</li>
+          <li class="breadcrumb-item">ISA Reference</li>
+          <li class="breadcrumb-item">Communication</li>
+      <li class="breadcrumb-item active">TSCATTER (comm)</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -533,20 +583,28 @@ PTO_INST RecordEvent TSCATTER(ParallelGroupType &amp;parallelGroup, GlobalSrcDat
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Type constraints</strong>:</li>
+<li><strong>Type constraints</strong>:<ul>
 <li><code>ParallelGroup::value_type::RawDType</code> must equal <code>GlobalSrcData::RawDType</code>.</li>
 <li><code>TileData::DType</code> must equal <code>GlobalSrcData::RawDType</code>.</li>
-<li><strong>Memory constraints</strong>:</li>
+</ul>
+</li>
+<li><strong>Memory constraints</strong>:<ul>
 <li><code>srcGlobalData</code> must point to local memory (current NPU) and be large enough to hold data for all ranks. Specifically, <code>srcGlobalData.GetShape(DIM_3)</code> must be <span class="arithmatex">\(\geq N \times H\)</span> where <span class="arithmatex">\(H\)</span> is each rank's <code>GetShape(DIM_3)</code>.</li>
 <li>If <code>srcGlobalData.GetShape(DIM_3) &gt; N × H</code>, only the first <code>N × H</code> rows are read; remaining rows are ignored.</li>
 <li><code>stagingTileData</code> (or <code>pingTile</code> / <code>pongTile</code>) must be pre-allocated in UB.</li>
-<li><strong>ParallelGroup constraints</strong>:</li>
+</ul>
+</li>
+<li><strong>ParallelGroup constraints</strong>:<ul>
 <li><code>parallelGroup.tensors[r]</code> must refer to rank <code>r</code>'s destination buffer (remote GM as seen by the root).</li>
 <li><code>parallelGroup.GetRootIdx()</code> identifies the calling NPU as the scatter root.</li>
 <li>All destination tensors are assumed to have the same shape and strides; behavior is undefined if they differ.</li>
-<li><strong>Chunked mode constraints</strong> (when per-rank data exceeds a single UB tile):</li>
+</ul>
+</li>
+<li><strong>Chunked mode constraints</strong> (when per-rank data exceeds a single UB tile):<ul>
 <li>If <code>TileData</code> has static <code>ValidRow</code>, <code>GetShape(DIM_3)</code> of each rank's destination must be divisible by <code>ValidRow</code>. Use a Tile with <code>DYNAMIC</code> ValidRow for partial row support.</li>
 <li>If <code>TileData</code> has static <code>ValidCol</code>, <code>GetShape(DIM_4)</code> must be divisible by <code>ValidCol</code>. Use a Tile with <code>DYNAMIC</code> ValidCol for partial column support.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-scatter-single-staging-tile">Basic Scatter (Single Staging Tile)<a class="headerlink" href="#basic-scatter-single-staging-tile" title="Permanent link">&para;</a></h3>
@@ -608,6 +666,10 @@ void scatter_pingpong(__gm__ T* local_data, __gm__ T* group_addrs[NRANKS], int m
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../TGATHER/" class="btn btn-neutral float-left" title="TGATHER (comm)"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../TREDUCE/" class="btn btn-neutral float-right" title="TREDUCE">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -633,6 +695,10 @@ void scatter_pingpong(__gm__ T* local_data, __gm__ T* group_addrs[NRANKS], int m
         </span>
     
     
+      <span><a href="../TGATHER/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../TREDUCE/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

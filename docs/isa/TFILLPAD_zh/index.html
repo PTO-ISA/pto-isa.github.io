@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -535,17 +563,11 @@
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>在 <code>include/pto/common/pto_instr_impl.hpp</code> 引入的后端头文件中实现：</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc&gt;
-PTO_INTERNAL void TFILLPAD(TileDataDst&amp; dst, TileDataSrc&amp; src);
+<pre><code class="language-cpp">template &lt;typename TileData, PadValue PadVal = PadValue::Zero, typename... WaitEvents&gt;
+PTO_INST RecordEvent TFILLPAD(TileData &amp;dst, TileData &amp;src, WaitEvents &amp;... events);
 
-template &lt;typename TileDataDst, typename TileDataSrc&gt;
-PTO_INTERNAL void TFILLPAD_INPLACE(TileDataDst&amp; dst, TileDataSrc&amp; src);
-
-template &lt;typename TileDataDst, typename TileDataSrc&gt;
-PTO_INTERNAL void TFILLPAD_EXPAND(TileDataDst&amp; dst, TileDataSrc&amp; src);
-
-template &lt;typename TileData, PadValue PadVal = PadValue::Zero&gt;
-PTO_INTERNAL void TFILLPAD(TileData &amp;dst, TileData &amp;src);
+template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TFILLPAD(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
@@ -590,7 +612,7 @@ void example2() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tfillpad %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tfillpad ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

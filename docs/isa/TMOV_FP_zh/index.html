@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -526,19 +554,23 @@
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code> 和 <code>include/pto/common/constants.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename FpTileData,
-          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMOV_FP(DstTileData&amp; dst, SrcTileData&amp; src, FpTileData&amp; fp, WaitEvents&amp;... events);
+<pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
 <li>fp 路径仅支持累加器转换，并通过 <code>TMOV_IMPL(dst, src, fp)</code> 中的内部编译时检查进行验证。</li>
 <li><code>FpTileData::Loc</code> 必须是 <code>TileType::Scaling</code>（<code>static_assert</code>）。</li>
-<li><strong>实现检查 (A5)</strong>:</li>
+</ul>
+</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
 <li>通过 <code>CheckTMovAccValid(...)</code> 和 <code>TMOV_IMPL(dst, src, fp)</code> 中的相关编译时检查进行验证。</li>
 <li><code>FpTileData::Loc</code> 必须是 <code>TileType::Scaling</code>（<code>static_assert</code>）。</li>
 <li>目标位置取决于目标（fp 路径支持 <code>Vec</code> 或 <code>Mat</code>）。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -590,7 +622,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = tmov.fp %src, %fp : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tmov.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

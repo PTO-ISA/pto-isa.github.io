@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -528,12 +556,11 @@
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code> 和 <code>include/pto/common/type.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCMP(TileDataDst&amp; dst, TileDataSrc&amp; src0, TileDataSrc&amp; src1, CmpMode cmpMode,
-                          WaitEvents&amp;... events);
+PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataSrc &amp;src1, CmpMode cmpMode, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
 <li>输入类型必须是以下之一：<code>int32_t</code>、<code>half</code>、<code>float</code>。</li>
 <li>输出类型必须是 <code>uint8_t</code>。</li>
 <li><code>src0/src1/dst</code> tile 位置必须是 <code>TileType::Vec</code>。</li>
@@ -541,13 +568,19 @@ PTO_INST RecordEvent TCMP(TileDataDst&amp; dst, TileDataSrc&amp; src0, TileDataS
 <li>运行时：<code>src0.GetValidRow() == dst.GetValidRow()</code> 且 <code>src0.GetValidCol() == dst.GetValidCol()</code>。</li>
 <li>注意：<code>src1</code> 的形状/有效性在此实现中不通过显式运行时断言进行验证。</li>
 <li>对于 <code>TileDataSrc::DType == int32_t</code>，实现使用 <code>EQ</code> 比较路径，无论 <code>cmpMode</code> 如何。</li>
-<li><strong>实现检查 (A5)</strong>:</li>
+</ul>
+</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
 <li>输入类型必须是以下之一：<code>uint32_t</code>、<code>int32_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint8_t</code>、<code>int8_t</code>、<code>float</code>、<code>half</code>。</li>
 <li>输出类型必须是 <code>uint32_t</code>。</li>
 <li>已实现（参见 <code>include/pto/npu/a5/TCmp.hpp</code>）。</li>
 <li>A5 实现使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域，并将打包的谓词掩码写入 <code>dst</code>（目标定义的打包方式）。</li>
-<li><strong>掩码编码</strong>:</li>
+</ul>
+</li>
+<li><strong>掩码编码</strong>:<ul>
 <li>掩码 tile 被解释为目标定义布局中的打包谓词位。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -593,7 +626,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tcmp ins(%src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

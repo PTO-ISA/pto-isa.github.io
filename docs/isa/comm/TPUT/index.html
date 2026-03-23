@@ -126,7 +126,7 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">ISA Reference</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../../">Overview</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../conventions/">ISA Conventions</a>
@@ -431,6 +431,64 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Communication</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../">Overview</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">TPUT</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#single-tile-auto-chunking">Single-tile (auto-chunking)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ping-pong-double-buffering">Ping-pong double buffering</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#runtime-atomic-type">Runtime atomic type</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#basic-usage">Basic Usage</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ping-pong-double-buffering_1">Ping-pong Double Buffering</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#runtime-atomic-type_1">Runtime Atomic Type</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -494,6 +552,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">ISA Reference</li>
+          <li class="breadcrumb-item">Communication</li>
       <li class="breadcrumb-item active">TPUT</li>
     <li class="wy-breadcrumbs-aside">
     </li>
@@ -541,21 +601,31 @@ PTO_INST RecordEvent TPUT(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;s
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Type constraints</strong>:</li>
+<li><strong>Type constraints</strong>:<ul>
 <li><code>GlobalSrcData::RawDType</code> must equal <code>GlobalDstData::RawDType</code>.</li>
 <li><code>TileData::DType</code> must equal <code>GlobalSrcData::RawDType</code>.</li>
 <li><code>GlobalSrcData::layout</code> must equal <code>GlobalDstData::layout</code>.</li>
-<li><strong>Memory constraints</strong>:</li>
+</ul>
+</li>
+<li><strong>Memory constraints</strong>:<ul>
 <li><code>dstGlobalData</code> must point to remote address (on target NPU).</li>
 <li><code>srcGlobalData</code> must point to local address (on current NPU).</li>
 <li><code>stagingTileData</code> / <code>pingTile</code> / <code>pongTile</code> must be pre-allocated in Unified Buffer.</li>
-<li><strong>Valid region</strong>:</li>
+</ul>
+</li>
+<li><strong>Valid region</strong>:<ul>
 <li>Transfer size is determined by <code>GlobalTensor</code> shape (auto-chunked to fit tile).</li>
-<li><strong>Atomic operation</strong>:</li>
+</ul>
+</li>
+<li><strong>Atomic operation</strong>:<ul>
 <li><code>atomicType</code> supports <code>AtomicNone</code> and <code>AtomicAdd</code>.</li>
-<li><strong>Ping-pong</strong>:</li>
+</ul>
+</li>
+<li><strong>Ping-pong</strong>:<ul>
 <li><code>pingTile</code> and <code>pongTile</code> must have the same type and dimensions.</li>
 <li>Must reside at non-overlapping UB offsets.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h3>
@@ -605,6 +675,10 @@ comm::TPUT(dstG, srcG, stagingTile, AtomicType::AtomicAdd);
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../" class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../TGET/" class="btn btn-neutral float-right" title="TGET">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -630,6 +704,10 @@ comm::TPUT(dstG, srcG, stagingTile, AtomicType::AtomicAdd);
         </span>
     
     
+      <span><a href="../" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../TGET/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

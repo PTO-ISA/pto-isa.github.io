@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -531,7 +559,27 @@ PTO_INST RecordEvent TLRELU(TileData&amp; dst, TileData&amp; src0, typename Tile
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>该操作在 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 上迭代。</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
+<li><code>TileData::DType</code> 必须是以下之一：<code>half</code>、<code>float16_t</code>、<code>float</code>、<code>float32_t</code>（仅浮点类型）。</li>
+<li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
+</ul>
+</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
+<li><code>TileData::DType</code> 必须是以下之一：<code>half</code>、<code>float16_t</code>、<code>float</code>、<code>float32_t</code>（仅浮点类型）。</li>
+<li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
+</ul>
+</li>
+<li><strong>通用约束</strong>:<ul>
+<li>Tile 位置必须是向量（<code>TileData::Loc == TileType::Vec</code>）。</li>
+<li>静态有效边界：<code>TileData::ValidRow &lt;= TileData::Rows</code> 且 <code>TileData::ValidCol &lt;= TileData::Cols</code>。</li>
+<li>运行时：<code>dst</code> 和 <code>src</code> 的有效行列数必须相同。</li>
+<li>斜率标量类型必须与 Tile 数据类型一致。</li>
+</ul>
+</li>
+<li><strong>有效区域</strong>:<ul>
+<li>该操作使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -558,7 +606,7 @@ void example() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = tlrelu %src, %slope : !pto.tile&lt;...&gt;, f32
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tlrelu ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

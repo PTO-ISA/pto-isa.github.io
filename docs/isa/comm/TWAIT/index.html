@@ -126,7 +126,7 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">ISA Reference</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../../">Overview</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../conventions/">ISA Conventions</a>
@@ -431,6 +431,58 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Communication</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">TWAIT</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#wait-for-single-signal">Wait for Single Signal</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#wait-for-signal-matrix">Wait for Signal Matrix</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#wait-for-counter-threshold">Wait for Counter Threshold</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#producer-consumer-pattern">Producer-Consumer Pattern</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -494,6 +546,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">ISA Reference</li>
+          <li class="breadcrumb-item">Communication</li>
       <li class="breadcrumb-item active">TWAIT</li>
     <li class="wy-breadcrumbs-aside">
     </li>
@@ -528,13 +582,19 @@ PTO_INST void TWAIT(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp 
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Type constraints</strong>:</li>
+<li><strong>Type constraints</strong>:<ul>
 <li><code>GlobalSignalData::DType</code> must be <code>int32_t</code> (32-bit signal).</li>
-<li><strong>Memory constraints</strong>:</li>
+</ul>
+</li>
+<li><strong>Memory constraints</strong>:<ul>
 <li><code>signalData</code> must point to local address (on current NPU).</li>
-<li><strong>Shape semantics</strong>:</li>
+</ul>
+</li>
+<li><strong>Shape semantics</strong>:<ul>
 <li>For single signal: Shape is <code>&lt;1,1,1,1,1&gt;</code>.</li>
 <li>For signal tensor: Shape determines the multi-dimensional region (up to 5-D) to wait on. All signals in the tensor must satisfy the condition.</li>
+</ul>
+</li>
 <li><strong>Comparison operators</strong> (WaitCmp):
   | Value | Condition |
   |-------|-----------|
@@ -607,6 +667,10 @@ void consumer(__gm__ int32_t* local_flag) {
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../TNOTIFY/" class="btn btn-neutral float-left" title="TNOTIFY"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../TTEST/" class="btn btn-neutral float-right" title="TTEST">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -632,6 +696,10 @@ void consumer(__gm__ int32_t* local_flag) {
         </span>
     
     
+      <span><a href="../TNOTIFY/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../TTEST/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

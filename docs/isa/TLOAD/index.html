@@ -349,9 +349,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -469,6 +469,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -558,45 +586,43 @@
 <p>Synchronous form:</p>
 <pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
 !pto.tile&lt;loc, dtype, rows, cols, blayout, slayout, fractal, pad&gt;
 </code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TLOAD(TileData&amp; dst, GlobalData&amp; src, WaitEvents&amp;... events);
+PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Implementation checks (A2A3)</strong>:</li>
+<li><strong>Implementation checks (A2A3)</strong>:<ul>
 <li><code>TileData::DType</code> must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>int64_t</code>, <code>uint64_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
 <li>Destination tile location must be <code>TileType::Vec</code> or <code>TileType::Mat</code>.</li>
 <li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>.</li>
 <li>Runtime: all <code>src.GetShape(dim)</code> values and <code>dst.GetValidRow()/GetValidCol()</code> must be <code>&gt; 0</code>.</li>
 <li><code>TileType::Vec</code> loads only support matching layouts: ND-&gt;ND, DN-&gt;DN, NZ-&gt;NZ.</li>
-<li><code>TileType::Mat</code> loads support: ND-&gt;ND, DN-&gt;DN, NZ-&gt;NZ, plus ND-&gt;NZ and DN-&gt;ZN.<ul>
+<li><code>TileType::Mat</code> loads support: ND-&gt;ND, DN-&gt;DN, NZ-&gt;NZ, plus ND-&gt;NZ and DN-&gt;ZN.</li>
 <li>For ND-&gt;NZ or DN-&gt;ZN: <code>GlobalData::staticShape[0..2] == 1</code> and <code>TileData::SFractalSize == 512</code>.</li>
+<li>For <code>int64_t/uint64_t</code>, only ND-&gt;ND or DN-&gt;DN are supported.</li>
 </ul>
 </li>
-<li>For <code>int64_t/uint64_t</code>, only ND-&gt;ND or DN-&gt;DN are supported.</li>
-<li><strong>Implementation checks (A5)</strong>:</li>
+<li>
+<p><strong>Implementation checks (A5)</strong>:</p>
+<ul>
 <li><code>sizeof(TileData::DType)</code> must be <code>1</code>, <code>2</code>, <code>4</code>, or <code>8</code> bytes, and must match <code>sizeof(GlobalData::DType)</code>.</li>
 <li>For <code>int64_t/uint64_t</code>, <code>TileData::PadVal</code> must be <code>PadValue::Null</code> or <code>PadValue::Zero</code>.</li>
-<li><code>TileType::Vec</code> loads require one of the following layout pairs:<ul>
+<li><code>TileType::Vec</code> loads require one of the following layout pairs:</li>
 <li>ND with row-major + <code>SLayout::NoneBox</code> (ND-&gt;ND),</li>
 <li>DN with col-major + <code>SLayout::NoneBox</code> (DN-&gt;DN),</li>
 <li>NZ with <code>SLayout::RowMajor</code> (NZ-&gt;NZ).</li>
-</ul>
-</li>
 <li>For row-major ND-&gt;ND with compile-time-known shapes, <code>TileData::ValidCol</code> must equal <code>GlobalData::staticShape[4]</code>, and <code>TileData::ValidRow</code> must equal the product of <code>GlobalData::staticShape[0..3]</code>.</li>
 <li><code>TileType::Mat</code> loads are additionally constrained by <code>TLoadCubeCheck</code> (e.g., only specific ND/DN/NZ conversions and L1-size limits).</li>
-<li>
-<p><code>TileType::Mat</code> loads also handle loads for mx format, which include <code>MX_A_ZZ/MX_A_ND/MX_A_DN</code> to ZZ for scalarA and <code>MX_B_NN/MX_B_ND/MX_B_DN</code> to NN for scalarB.</p>
-<ul>
+<li><code>TileType::Mat</code> loads also handle loads for mx format, which include <code>MX_A_ZZ/MX_A_ND/MX_A_DN</code> to ZZ for scalarA and <code>MX_B_NN/MX_B_ND/MX_B_DN</code> to NN for scalarB.</li>
 <li>for <code>MX_A_ZZ/MX_B_NN</code>: <code>GlobalData::staticShape[3] == 16</code> and <code>GlobalData::staticShape[4] == 2</code>.</li>
 <li>for <code>MX_A_ND/MX_ADN/MX_B_ND/MX_B_DN</code>: <code>GlobalData::staticShape[0] == 1</code> and <code>GlobalData::staticShape[1] == 1</code> and <code>GlobalData::staticShape[4] == 2</code>.</li>
 <li>for scaleA, <code>dst.GetValidCol() % 2 == 0</code>.</li>
@@ -605,8 +631,10 @@ PTO_INST RecordEvent TLOAD(TileData&amp; dst, GlobalData&amp; src, WaitEvents&am
 </li>
 <li>
 <p><strong>Valid region</strong>:</p>
-</li>
+<ul>
 <li>The implementation uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the transfer size.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -658,7 +686,7 @@ void example_manual(__gm__ T* in) {
 </code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

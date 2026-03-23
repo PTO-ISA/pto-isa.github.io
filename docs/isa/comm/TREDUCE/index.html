@@ -126,7 +126,7 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">ISA Reference</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../../">Overview</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../conventions/">ISA Conventions</a>
@@ -431,6 +431,54 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Communication</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">TREDUCE</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#basic-reduce-sum">Basic Reduce Sum</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#max-reduce">Max Reduce</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -494,6 +542,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">ISA Reference</li>
+          <li class="breadcrumb-item">Communication</li>
       <li class="breadcrumb-item active">TREDUCE</li>
     <li class="wy-breadcrumbs-aside">
     </li>
@@ -536,19 +586,27 @@ PTO_INST RecordEvent TREDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Type constraints</strong>:</li>
+<li><strong>Type constraints</strong>:<ul>
 <li><code>ParallelGroup::value_type::RawDType</code> must equal <code>GlobalDstData::RawDType</code>.</li>
 <li><code>TileData::DType</code> must equal <code>GlobalDstData::RawDType</code>.</li>
-<li><strong>Memory constraints</strong>:</li>
+</ul>
+</li>
+<li><strong>Memory constraints</strong>:<ul>
 <li><code>dstGlobalData</code> must point to local address (on current NPU).</li>
 <li><code>accTileData</code>, <code>recvTileData</code> (or <code>accTileData</code>, <code>pingTileData</code>, <code>pongTileData</code>) must be pre-allocated UB tiles.</li>
-<li><strong>ParallelGroup constraints</strong>:</li>
+</ul>
+</li>
+<li><strong>ParallelGroup constraints</strong>:<ul>
 <li><code>parallelGroup.tensors[r]</code> must refer to rank <code>r</code>'s source buffer (remote GM as seen by the root).</li>
 <li><code>parallelGroup.GetRootIdx()</code> identifies the calling NPU as the reduce root.</li>
 <li>All source tensors are assumed to have the same shape and strides.</li>
-<li><strong>Chunked mode constraints</strong> (when data exceeds a single UB tile):</li>
+</ul>
+</li>
+<li><strong>Chunked mode constraints</strong> (when data exceeds a single UB tile):<ul>
 <li>If <code>TileData</code> has static <code>ValidRow</code>, <code>GetShape(DIM_3)</code> must be divisible by <code>ValidRow</code>. Use a Tile with <code>DYNAMIC</code> ValidRow for partial row support.</li>
 <li>If <code>TileData</code> has static <code>ValidCol</code>, <code>GetShape(DIM_4)</code> must be divisible by <code>ValidCol</code>. Use a Tile with <code>DYNAMIC</code> ValidCol for partial column support.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-reduce-sum">Basic Reduce Sum<a class="headerlink" href="#basic-reduce-sum" title="Permanent link">&para;</a></h3>
@@ -601,6 +659,10 @@ void reduce_max(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_rank) {
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../TSCATTER/" class="btn btn-neutral float-left" title="TSCATTER (comm)"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../TBROADCAST/" class="btn btn-neutral float-right" title="TBROADCAST">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -626,6 +688,10 @@ void reduce_max(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_rank) {
         </span>
     
     
+      <span><a href="../TSCATTER/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../TBROADCAST/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

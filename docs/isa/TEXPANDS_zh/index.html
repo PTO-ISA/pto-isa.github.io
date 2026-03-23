@@ -431,6 +431,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -527,30 +555,26 @@
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TEXPANDS(TileData&amp; dst, typename TileData::DType scalar, WaitEvents&amp;... events);
+PTO_INST RecordEvent TEXPANDS(TileData &amp;dst, typename TileData::DType scalar, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
-<li>对于Tile位置是向量（<code>TileData::Loc == TileType::Vec</code>）:<ul>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
+<li>对于Tile位置是向量（<code>TileData::Loc == TileType::Vec</code>）:</li>
 <li><code>TileData::DType</code> 必须是以下之一： <code>int32_t</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
 <li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
 <li>静态有效边界： <code>TileData::ValidRow &lt;= TileData::Rows</code>且<code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-</ul>
-</li>
-<li>对于Tile位置是Mat（<code>TileData::Loc == TileType::Mat</code>）:<ul>
+<li>对于Tile位置是Mat（<code>TileData::Loc == TileType::Mat</code>）:</li>
 <li><code>TileData::DType</code> 必须是以下之一：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
 <li>有效边界：<code>TileData::Rows * TileData::Cols * sizeof(T) / 32</code> 必须在<code>[1, 32767]</code>范围内。</li>
 </ul>
 </li>
-<li><strong>实现检查 (A5)</strong>:</li>
-<li>对于Tile位置是向量（<code>TileData::Loc == TileType::Vec</code>）:<ul>
+<li><strong>实现检查 (A5)</strong>:<ul>
+<li>对于Tile位置是向量（<code>TileData::Loc == TileType::Vec</code>）:</li>
 <li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
 <li>静态有效边界： <code>TileData::ValidRow &lt;= TileData::Rows</code>且<code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
 <li><code>TileData::DType</code> 必须是以下之一： <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
-</ul>
-</li>
-<li>对于Tile位置是Mat（<code>TileData::Loc == TileType::Mat</code>）:<ul>
+<li>对于Tile位置是Mat（<code>TileData::Loc == TileType::Mat</code>）:</li>
 <li><code>TileData::DType</code> 必须是以下之一： <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
 <li>对于<code>TileDataDst::layout == pto::Layout::NC1HWC0 || TileDataDst::layout == pto::Layout::FRACTAL_Z</code>:</li>
 <li><code>TileData::shape0 * TileData::shape1 * TileData::shape2 * TileData::shape3</code> 必须在<code>[1, 32767]</code>范围内。</li>
@@ -558,12 +582,10 @@ PTO_INST RecordEvent TEXPANDS(TileData&amp; dst, typename TileData::DType scalar
 <li><code>TileData::shape0 * TileData::shape1 * TileData::shape2 * TileData::shape3 * TileData::shape4</code> 必须在<code>[1, 32767]</code>范围内。</li>
 </ul>
 </li>
-<li><strong>有效区域</strong>:</li>
-<li>对于Tile位置是向量（<code>TileData::Loc == TileType::Vec</code>）:<ul>
+<li><strong>有效区域</strong>:<ul>
+<li>对于Tile位置是向量（<code>TileData::Loc == TileType::Vec</code>）:</li>
 <li>该操作在 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 上填充 <code>dst</code>。</li>
-</ul>
-</li>
-<li>对于Tile位置是Mat（<code>TileData::Loc == TileType::Mat</code>）:<ul>
+<li>对于Tile位置是Mat（<code>TileData::Loc == TileType::Mat</code>）:</li>
 <li>对于Tile，该操作在 <code>TileData::Rows</code> / <code>TileData::Cols</code> 上填充 <code>dst</code>。</li>
 <li>对于convTile，该操作在<code>ConvTileData</code>的<code>shape</code>内填充<code>dst</code>。</li>
 </ul>
@@ -607,7 +629,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = texpands %scalar : f32, !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.texpands ins(%scalar : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               

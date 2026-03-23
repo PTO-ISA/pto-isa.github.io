@@ -301,9 +301,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -469,6 +469,34 @@
                 </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Reference</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
@@ -560,31 +588,37 @@
 <pre><code class="language-text">%dst = tcolsum %src {isBinary = false} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tcolsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 %dst = pto.tcolsum %src, %tmp {isBinary = false} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tcolsum ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 pto.tcolsum ins(%src, %tmp {isBinary = false} : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCOLSUM(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, bool isBinary,
-                             WaitEvents&amp;... events);
+<pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCOLSUM(TileDataOut &amp;dst, TileDataIn &amp;src, WaitEvents &amp;... events);
+
+template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCOLSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, bool isBinary, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <p>Implementation checks (NPU):</p>
 <ul>
 <li>Tile location: <code>dst</code>, <code>src</code>, <code>tmp</code> must be <code>TileType::Vec</code>.</li>
 <li>Tile layout: all tiles must be ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>DType consistency:</li>
+<li>DType consistency:<ul>
 <li>A2A3: <code>src.DType</code> must be one of <code>half</code>, <code>float</code>, <code>int16_t</code>, <code>int32_t</code>, and <code>dst.DType == tmp.DType == src.DType</code>.</li>
 <li>A5: <code>dst.DType == src.DType</code> is required by <code>TColReduceCheck</code>; the exact supported <code>src.DType</code> set is target-defined (see <code>include/pto/npu/a5/TColReduceOps.hpp</code>).</li>
-<li>Runtime valid checks:</li>
+</ul>
+</li>
+<li>Runtime valid checks:<ul>
 <li>A2A3: <code>src.GetValidCol() == dst.GetValidCol()</code>; returns early if <code>src.GetValidRow() == 0</code> or <code>src.GetValidCol() == 0</code>.</li>
 <li>A5: <code>srcValidRow</code> and <code>srcValidCol</code> must be non-zero; <code>srcValidCol == dstValidCol</code> is asserted by <code>TColReduceCheck</code>.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -634,7 +668,7 @@ void example_manual() {
 </code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = tcolsum %src {isBinary = false} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# IR Level 2 (DPS)
+# AS Level 2 (DPS)
 pto.tcolsum ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
