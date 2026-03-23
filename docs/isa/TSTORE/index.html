@@ -578,6 +578,7 @@ template &lt;typename TileData, typename GlobalData, typename FpTileData, Atomic
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileData&amp; fp, WaitEvents&amp;... events);
 </code></pre>
+<p>The <code>preQuantScalar</code> and <code>TSTORE_FP</code> quantized-store overloads are only legal for <code>TileType::Acc</code> on current A2/A3 and A5 backends. They do not provide a native vec-tile quantized store contract.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Implementation checks (A2A3)</strong>:</li>
@@ -588,6 +589,7 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileDat
 <li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>.</li>
 <li>Layouts must match ND/DN/NZ (or a special case where <code>TileData::Rows == 1</code> or <code>TileData::Cols == 1</code>).</li>
 <li>For <code>int64_t/uint64_t</code>, only ND-&gt;ND or DN-&gt;DN are supported.</li>
+<li>A2/A3 does not expose a native vec quantized-store path. Frontends that need <code>vec -&gt; GM</code> dtype conversion or quantization MUST first materialize the converted vec tile (for example via <code>TCVT</code>) and then issue a same-dtype <code>TSTORE</code>.</li>
 </ul>
 </li>
 <li>For <code>TileType::Acc</code> (including quantized/atomic variants):<ul>

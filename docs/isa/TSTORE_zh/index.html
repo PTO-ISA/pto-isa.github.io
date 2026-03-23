@@ -538,6 +538,7 @@ template &lt;typename TileData, typename GlobalData, typename FpTileData, Atomic
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileData&amp; fp, WaitEvents&amp;... events);
 </code></pre>
+<p>在当前 A2/A3 与 A5 后端上，<code>preQuantScalar</code> 与 <code>TSTORE_FP</code> 量化存储重载仅对 <code>TileType::Acc</code> 合法；它们不提供原生的 Vec Tile 量化存储契约。</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:</li>
@@ -548,6 +549,7 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileDat
 <li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>。</li>
 <li>布局必须匹配 ND/DN/NZ（或特殊情况：<code>TileData::Rows == 1</code> 或 <code>TileData::Cols == 1</code>）。</li>
 <li>对于 <code>int64_t/uint64_t</code>，仅支持 ND-&gt;ND 或 DN-&gt;DN。</li>
+<li>A2/A3 不暴露原生的 Vec 量化存储路径。当前端需要执行 <code>vec -&gt; GM</code> 的类型转换或量化时，必须先生成转换后的 Vec Tile（例如通过 <code>TCVT</code>），再发射同类型的 <code>TSTORE</code>。</li>
 </ul>
 </li>
 <li>对于 <code>TileType::Acc</code>（包括量化/原子变体）：<ul>
