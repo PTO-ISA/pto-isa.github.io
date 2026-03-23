@@ -175,6 +175,10 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -254,6 +258,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMINS/">TMINS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TAXPY/">TAXPY</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSUBS/">TSUBS</a>
                 </li>
@@ -395,7 +401,15 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TRESHAPE/">TRESHAPE</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TCONCAT/">TCONCAT</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
@@ -426,6 +440,16 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMRGSORT/">TMRGSORT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../THISTOGRAM/">THISTOGRAM</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
                 </li>
@@ -539,15 +563,23 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>通过对行求和来归约每一列。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>设 <code>R = src.GetValidRow()</code>，<code>C = src.GetValidCol()</code>。对 <code>0 &lt;= j &lt; C</code>：</p>
+<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= j &lt; C</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{0,j} = \sum_{i=0}^{R-1} \mathrm{src}_{i,j} \]</div>
-<p><code>isBinary</code> 选择实现路径（二叉树累加 vs. 顺序累加）。</p>
+<p><code>isBinary</code> selects the implementation path (binary-tree accumulation vs. sequential accumulation).</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = tcolsum %src {isBinary = false} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>降低时可能引入内部临时 Tile；C++ 内建接口需要显式传入 <code>tmp</code> 操作数。</p>
+<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.tcolsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+%dst = pto.tcolsum %src, %tmp {isBinary = false} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tcolsum ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+pto.tcolsum ins(%src, %tmp {isBinary = false} : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tcolsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 %dst = pto.tcolsum %src, %tmp {isBinary = false} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
@@ -557,7 +589,7 @@
 pto.tcolsum ins(%src, %tmp {isBinary = false} : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCOLSUM(TileDataOut &amp;dst, TileDataIn &amp;src, WaitEvents &amp;... events);
 
@@ -567,16 +599,16 @@ PTO_INST RecordEvent TCOLSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileData
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>实现检查 (NPU):</p>
 <ul>
-<li>Tile 位置：<code>dst</code>、<code>src</code>、<code>tmp</code> 必须是 <code>TileType::Vec</code>。</li>
-<li>Tile 布局：所有 Tile 必须是 ND 分形（<code>isRowMajor</code> 且 <code>SLayout::NoneBox</code>）。</li>
-<li>数据类型一致性：<ul>
-<li>A2A3：<code>src.DType</code> 必须是 <code>half</code>、<code>float</code>、<code>int16_t</code>、<code>int32_t</code> 之一，且 <code>dst.DType == tmp.DType == src.DType</code>。</li>
-<li>A5：<code>TColReduceCheck</code> 要求 <code>dst.DType == src.DType</code>；确切支持的 <code>src.DType</code> 集合由目标定义（参见 <code>include/pto/npu/a5/TColReduceOps.hpp</code>）。</li>
+<li>Tile location: <code>dst</code>, <code>src</code>, <code>tmp</code> must be <code>TileType::Vec</code>.</li>
+<li>Tile 布局: all tiles must be ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
+<li>数据类型一致性:<ul>
+<li>A2A3: <code>src.DType</code> must be one of <code>half</code>, <code>float</code>, <code>int16_t</code>, <code>int32_t</code>, and <code>dst.DType == tmp.DType == src.DType</code>.</li>
+<li>A5: <code>dst.DType == src.DType</code> is required by <code>TColReduceCheck</code>; the exact supported <code>src.DType</code> set is target-defined (see <code>include/pto/npu/a5/TColReduceOps.hpp</code>).</li>
 </ul>
 </li>
-<li>运行期有效区域检查：<ul>
-<li>A2A3：<code>src.GetValidCol() == dst.GetValidCol()</code>；若 <code>src.GetValidRow() == 0</code> 或 <code>src.GetValidCol() == 0</code> 则提前返回。</li>
-<li>A5：<code>srcValidRow</code> 和 <code>srcValidCol</code> 必须非零；<code>TColReduceCheck</code> 断言 <code>srcValidCol == dstValidCol</code>。</li>
+<li>运行期有效区域检查:<ul>
+<li>A2A3: <code>src.GetValidCol() == dst.GetValidCol()</code>; returns early if <code>src.GetValidRow() == 0</code> or <code>src.GetValidCol() == 0</code>.</li>
+<li>A5: <code>srcValidRow</code> and <code>srcValidCol</code> must be non-zero; <code>srcValidCol == dstValidCol</code> is asserted by <code>TColReduceCheck</code>.</li>
 </ul>
 </li>
 </ul>
@@ -613,23 +645,6 @@ void example_manual() {
   TASSIGN(tmp, 0x3000);
   TCOLSUM(dst, src, tmp, /*isBinary=*/false);
 }
-</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.tcolsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.tcolsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tcolsum %src {isBinary = false} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tcolsum ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
             </div>

@@ -175,6 +175,10 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -254,6 +258,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMINS/">TMINS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TAXPY/">TAXPY</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSUBS/">TSUBS</a>
                 </li>
@@ -395,7 +401,15 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TRESHAPE/">TRESHAPE</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TCONCAT/">TCONCAT</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
@@ -426,6 +440,16 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMRGSORT/">TMRGSORT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../THISTOGRAM/">THISTOGRAM</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
                 </li>
@@ -539,21 +563,37 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>带额外缩放 Tile 的矩阵乘法 (GEMM)，用于支持目标上的混合精度/量化矩阵乘法。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>设：</p>
+<p>Let:</p>
 <ul>
 <li><code>M = aMatrix.GetValidRow()</code></li>
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>概念上，结果对应于有效矩阵乘法域（<code>0 &lt;= i &lt; M</code>，<code>0 &lt;= j &lt; N</code>）上的矩阵乘法，缩放 tile <code>aScaleMatrix</code> / <code>bScaleMatrix</code> 配置实现定义的混合精度行为：</p>
+<p>Conceptually, the result corresponds to a matrix multiply over the effective matmul domain (<code>0 &lt;= i &lt; M</code>, <code>0 &lt;= j &lt; N</code>), with the scaling tiles <code>aScaleMatrix</code> / <code>bScaleMatrix</code> configuring implementation-defined mixed-precision behavior:</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p><code>aScaleMatrix</code> / <code>bScaleMatrix</code> 的确切作用（以及任何反量化/量化语义）由目标定义。</p>
+<p>The exact role of <code>aScaleMatrix</code> / <code>bScaleMatrix</code> (and any dequant/quant semantics) is target-defined.</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>同步形式（概念性）：</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
+<p>Synchronous forms (conceptual):</p>
 <pre><code class="language-text">%c = tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c_out = tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c = tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
+-&gt; !pto.tile&lt;...&gt;
+%c_out = pto.tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;,
+!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)  -&gt; !pto.tile&lt;...&gt;
+%c = pto.tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;,
+!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)  -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
+outs(%c :  !pto.tile_buf&lt;...&gt;)
+pto.tmatmul.mx.acc ins(%c_in, %a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;,
+!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
+pto.tmatmul.mx.bias ins(%a, %a_scale, %b, %b_scale, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;,
+!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
@@ -572,7 +612,7 @@ pto.tmatmul.mx.bias ins(%a, %a_scale, %b, %b_scale, %bias : !pto.tile_buf&lt;...
 !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
@@ -600,12 +640,12 @@ PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A5)</strong>:<ul>
-<li><code>m/k/n</code> 取自 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code>、<code>bMatrix.GetValidCol()</code>。</li>
-<li>静态合法性检查通过 <code>CheckMadMxValid&lt;...&gt;()</code>（类型、形状、分形和缩放 tile 合法性）。</li>
+<li><code>m/k/n</code> are taken from <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, <code>bMatrix.GetValidCol()</code>.</li>
+<li>Static legality checks are enforced via <code>CheckMadMxValid&lt;...&gt;()</code> (types, shapes, fractals, and scaling tile legality).</li>
 </ul>
 </li>
-<li><strong>偏置形式</strong>:<ul>
-<li><code>TileBias::DType</code> 必须是 <code>float</code> 且 <code>TileBias::Loc == TileType::Bias</code>，<code>TileBias::Rows == 1</code>（A5 通过 <code>static_assert</code> 检查）。</li>
+<li><strong>Bias form</strong>:<ul>
+<li><code>TileBias::DType</code> must be <code>float</code> and <code>TileBias::Loc == TileType::Bias</code> with <code>TileBias::Rows == 1</code> (A5 checks via <code>static_assert</code>).</li>
 </ul>
 </li>
 </ul>
@@ -657,23 +697,6 @@ void example_manual() {
   TASSIGN(c, 0x4000);
   TMATMUL_MX(c, a, scaleA, b, scaleB, bias);
 }
-</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
-# AS Level 2 (DPS)
-pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
             </div>

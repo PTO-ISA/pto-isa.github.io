@@ -175,6 +175,10 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -254,6 +258,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMINS/">TMINS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TAXPY/">TAXPY</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSUBS/">TSUBS</a>
                 </li>
@@ -395,7 +401,15 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TRESHAPE/">TRESHAPE</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TCONCAT/">TCONCAT</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
@@ -426,6 +440,16 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMRGSORT/">TMRGSORT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../THISTOGRAM/">THISTOGRAM</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
                 </li>
@@ -539,22 +563,30 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>与标量的逐元素除法（Tile/标量 或 标量/Tile）。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对有效区域内的每个元素 <code>(i, j)</code>：</p>
+<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
 <ul>
-<li>Tile/标量形式：</li>
+<li>Tile/scalar:</li>
 </ul>
 <p>$$ \mathrm{dst}<em>{i,j} = \frac{\mathrm{src}</em>{i,j}}{\mathrm{scalar}} $$</p>
 <ul>
-<li>标量/Tile 形式：</li>
+<li>Scalar/tile:</li>
 </ul>
 <p>$$ \mathrm{dst}<em>{i,j} = \frac{\mathrm{scalar}}{\mathrm{src}</em>{i,j}} $$</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>Tile/标量形式：</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
+<p>Tile/scalar form:</p>
 <pre><code class="language-text">%dst = tdivs %src, %scalar : !pto.tile&lt;...&gt;, f32
 </code></pre>
-<p>标量/Tile 形式：</p>
+<p>Scalar/tile form:</p>
 <pre><code class="language-text">%dst = tdivs %scalar, %src : f32, !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.tdivs %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
+%dst = pto.tdivs %scalar, %src : (dtype, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tdivs ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
+pto.tdivs ins(%scalar, %src : dtype, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tdivs %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
@@ -565,7 +597,7 @@
 pto.tdivs ins(%scalar, %src : dtype, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
 PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, TileDataSrc &amp;src0, typename TileDataSrc::DType scalar, WaitEvents &amp;... events);
 
@@ -574,37 +606,28 @@ PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, typename TileDataDst::DType sca
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>（两个重载）:<ul>
-<li><code>TileData::DType</code> 必须是以下之一：<code>int32_t</code>、<code>int</code>、<code>int16_t</code>、<code>half</code>、<code>float16_t</code>、<code>float</code>、<code>float32_t</code>。</li>
-<li>Tile 位置必须是向量（<code>TileData::Loc == TileType::Vec</code>）。</li>
-<li>静态有效边界：<code>TileData::ValidRow &lt;= TileData::Rows</code> 且 <code>TileData::ValidCol &lt;= TileData::Cols</code>。</li>
-<li>运行时：<code>src0.GetValidRow() == dst.GetValidRow()</code> 且 <code>src0.GetValidCol() == dst.GetValidCol()</code>。</li>
-<li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
+<li><strong>实现检查 (A2A3)</strong> (both overloads):<ul>
+<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>int</code>, <code>int16_t</code>, <code>half</code>, <code>float16_t</code>, <code>float</code>, <code>float32_t</code>.</li>
+<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
+<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
+<li>Runtime: <code>src0.GetValidRow() == dst.GetValidRow()</code> and <code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
+<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
 </ul>
 </li>
-<li><strong>实现检查 (A5)</strong>（两个重载）:<ul>
-<li><code>TileData::DType</code> 必须是以下之一：<code>uint8_t</code>、<code>int8_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint32_t</code>、<code>int32_t</code>、<code>half</code>、<code>float</code>。</li>
-<li>Tile 位置必须是向量（<code>TileData::Loc == TileType::Vec</code>）。</li>
-<li>静态有效边界：<code>TileData::ValidRow &lt;= TileData::Rows</code> 且 <code>TileData::ValidCol &lt;= TileData::Cols</code>。</li>
-<li>运行时：<code>src0.GetValidRow() == dst.GetValidRow()</code> 且 <code>src0.GetValidCol() == dst.GetValidCol()</code>。</li>
-<li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
-</ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>该操作使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域。</li>
-</ul>
-</li>
-<li><strong>除零</strong>:<ul>
-<li>行为由目标定义；在 A5 上，Tile/标量形式映射到乘以倒数，并对 <code>scalar == 0</code> 使用 <code>1/0 -&gt; +inf</code>。dst.GetValidRow()<code>且</code>src0.GetValidCol() == dst.GetValidCol()`.</li>
-<li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
+<li><strong>实现检查 (A5)</strong> (both overloads):<ul>
+<li><code>TileData::DType</code> must be one of: <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
+<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
+<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
+<li>Runtime: <code>src0.GetValidRow() == dst.GetValidRow()</code> and <code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
+<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
 </ul>
 </li>
 <li><strong>有效区域</strong>:<ul>
-<li>该操作使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域.</li>
+<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
 </ul>
 </li>
-<li><strong>除零</strong>:<ul>
-<li>行为由目标定义；在 A5 上，tile/标量形式映射到乘以倒数，并对 <code>scalar == 0</code> 使用 <code>1/0 -&gt; +inf</code>。</li>
+<li><strong>Division-by-zero</strong>:<ul>
+<li>Behavior is target-defined; on A5 the tile/scalar form maps to multiply-by-reciprocal and uses <code>1/0 -&gt; +inf</code> for <code>scalar == 0</code>.</li>
 </ul>
 </li>
 </ul>
@@ -632,23 +655,6 @@ void example_manual() {
   TASSIGN(dst, 0x2000);
   TDIVS(dst, 2.0f, src);
 }
-</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.tdivs %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.tdivs %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tdivs %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tdivs ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
             </div>

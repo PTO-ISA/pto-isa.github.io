@@ -175,6 +175,10 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -254,6 +258,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMINS/">TMINS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TAXPY/">TAXPY</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSUBS/">TSUBS</a>
                 </li>
@@ -395,7 +401,15 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TRESHAPE/">TRESHAPE</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TCONCAT/">TCONCAT</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
@@ -426,6 +440,16 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMRGSORT/">TMRGSORT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../THISTOGRAM/">THISTOGRAM</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
                 </li>
@@ -539,13 +563,19 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>对固定大小的 32 元素块进行排序并生成索引映射。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>将 <code>src</code> 中的值排序后写入 <code>dst</code>，并在 <code>idx</code> 中生成索引映射。概念上，对每一行 <code>i</code>：</p>
+<p>Sorts values from <code>src</code> into <code>dst</code> and produces an index mapping in <code>idx</code>. Conceptually, for each row <code>i</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,k} = \mathrm{src}_{i,\pi_i(k)} \]</div>
-<p>其中 <span class="arithmatex">\(\pi_i\)</span> 是该行索引的一个排列。排序顺序和稳定性由目标定义。</p>
+<p>where <span class="arithmatex">\(\pi_i\)</span> is a permutation of the indices in the row. Sort order and stability are target-defined.</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst, %idx = tsort32 %src : !pto.tile&lt;...&gt; -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst, %idx = pto.tsort32 %src : !pto.tile&lt;...&gt; -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
+</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tsort32 ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst, %idx = pto.tsort32 %src : !pto.tile&lt;...&gt; -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
@@ -554,7 +584,7 @@
 <pre><code class="language-text">pto.tsort32 ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData&gt;
 PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx);
 
@@ -563,16 +593,16 @@ PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTile
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>TSORT32</code> 不接受 <code>WaitEvents&amp;...</code> 参数，也不在内部调用 <code>TSYNC(...)</code>；如有需要请显式同步。</li>
+<li><code>TSORT32</code> does not take <code>WaitEvents&amp;...</code> and does not call <code>TSYNC(...)</code> internally; synchronize explicitly if needed.</li>
 <li><strong>实现检查 (A2A3/A5)</strong>:<ul>
-<li><code>DstTileData::DType</code> 必须是 <code>half</code> 或 <code>float</code>。</li>
-<li><code>SrcTileData::DType</code> 必须与 <code>DstTileData::DType</code> 匹配。</li>
-<li><code>IdxTileData::DType</code> 必须是 <code>uint32_t</code>。</li>
-<li><code>dst</code>/<code>src</code>/<code>idx</code> Tile 位置必须是 <code>TileType::Vec</code>，且都必须是行主序（<code>isRowMajor</code>）。</li>
+<li><code>DstTileData::DType</code> must be <code>half</code> or <code>float</code>.</li>
+<li><code>SrcTileData::DType</code> must match <code>DstTileData::DType</code>.</li>
+<li><code>IdxTileData::DType</code> must be <code>uint32_t</code>.</li>
+<li><code>dst/src/idx</code> tile location must be <code>TileType::Vec</code>, and all must be row-major (<code>isRowMajor</code>).</li>
 </ul>
 </li>
 <li><strong>有效区域</strong>:<ul>
-<li>实现使用 <code>dst.GetValidRow()</code> 作为行数，并使用 <code>src.GetValidCol()</code> 确定每行需要排序的 32 元素块的数量。</li>
+<li>The implementation uses <code>dst.GetValidRow()</code> as the number of rows and uses <code>src.GetValidCol()</code> to determine how many 32-element blocks to sort per row.</li>
 </ul>
 </li>
 </ul>
@@ -609,23 +639,6 @@ void example_manual() {
   TASSIGN(idx, 0x3000);
   TSORT32(dst, src, idx);
 }
-</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst, %idx = pto.tsort32 %src : !pto.tile&lt;...&gt; -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst, %idx = pto.tsort32 %src : !pto.tile&lt;...&gt; -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst, %idx = tsort32 %src : !pto.tile&lt;...&gt; -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
-# AS Level 2 (DPS)
-pto.tsort32 ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
             </div>

@@ -175,6 +175,10 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -254,6 +258,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMINS/">TMINS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TAXPY/">TAXPY</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSUBS/">TSUBS</a>
                 </li>
@@ -395,7 +401,15 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TRESHAPE/">TRESHAPE</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TCONCAT/">TCONCAT</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
@@ -426,6 +440,16 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMRGSORT/">TMRGSORT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../THISTOGRAM/">THISTOGRAM</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
                 </li>
@@ -542,9 +566,15 @@
 <p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src0}_{i,j} + \mathrm{src1}_{i,j} + \mathrm{src2}_{i,j} \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = taddc %src0, %src1, %src2 : !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.taddc %src0, %src1, %src2 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.taddc ins(%src0, %src1, %src2 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.taddc %src0, %src1, %src2 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
@@ -553,13 +583,13 @@
 <pre><code class="language-text">pto.taddc ins(%src0, %src1, %src2 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TADDC(TileData &amp;dst, TileData &amp;src0, TileData &amp;src1, TileData &amp;src2, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>该操作在 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 上迭代。</li>
+<li>The op iterates over <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code>.</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -571,23 +601,6 @@ void example() {
   TileT a, b, c, out;
   TADDC(out, a, b, c);
 }
-</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.taddc %src0, %src1, %src2 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.taddc %src0, %src1, %src2 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = taddc %src0, %src1, %src2 : !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.taddc ins(%src0, %src1, %src2 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
             </div>

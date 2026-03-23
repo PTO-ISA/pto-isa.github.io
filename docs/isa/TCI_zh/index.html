@@ -175,6 +175,10 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -254,6 +258,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMINS/">TMINS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TAXPY/">TAXPY</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSUBS/">TSUBS</a>
                 </li>
@@ -395,7 +401,15 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TRESHAPE/">TRESHAPE</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TCONCAT/">TCONCAT</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
@@ -426,6 +440,16 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMRGSORT/">TMRGSORT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../THISTOGRAM/">THISTOGRAM</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
                 </li>
@@ -539,20 +563,26 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>生成连续整数序列到目标 Tile 中。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对于有效元素上的线性化索引 <code>k</code>：</p>
+<p>For a linearized index <code>k</code> over the valid elements:</p>
 <ul>
-<li>升序：</li>
+<li>Ascending:</li>
 </ul>
 <p>$$ \mathrm{dst}_{k} = S + k $$</p>
 <ul>
-<li>降序：</li>
+<li>Descending:</li>
 </ul>
 <p>$$ \mathrm{dst}_{k} = S - k $$</p>
-<p>线性化顺序取决于 Tile 布局（实现定义）。</p>
+<p>The linearization order depends on the tile layout (implementation-defined).</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = tci %S {descending = false} : !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.tci %scalar {descending = false} : dtype -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tci ins(%scalar {descending = false} : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tci %scalar {descending = false} : dtype -&gt; !pto.tile&lt;...&gt;
@@ -561,20 +591,20 @@
 <pre><code class="language-text">pto.tci ins(%scalar {descending = false} : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename T, int descending, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3/A5)</strong>:<ul>
-<li><code>TileData::DType</code> 必须与标量模板参数 <code>T</code> 的类型完全相同。</li>
-<li><code>dst</code>/<code>scalar</code> 元素类型必须相同，且必须是以下之一：<code>int32_t</code>、<code>uint32_t</code>、<code>int16_t</code>、<code>uint16_t</code>。</li>
-<li><code>TileData::Cols != 1</code>（此为实现强制执行的条件）。</li>
+<li><code>TileData::DType</code> must be exactly the same type as the scalar template parameter <code>T</code>.</li>
+<li><code>dst/scalar</code> element types must be identical, and must be one of: <code>int32_t</code>, <code>uint32_t</code>, <code>int16_t</code>, <code>uint16_t</code>.</li>
+<li><code>TileData::Cols != 1</code> (this is the condition enforced by the implementation).</li>
 </ul>
 </li>
 <li><strong>有效区域</strong>:<ul>
-<li>实现使用 <code>dst.GetValidCol()</code> 作为序列长度，不参考 <code>dst.GetValidRow()</code>。</li>
+<li>The implementation uses <code>dst.GetValidCol()</code> as the sequence length and does not consult <code>dst.GetValidRow()</code>.</li>
 </ul>
 </li>
 </ul>
@@ -601,23 +631,6 @@ void example_manual() {
   TASSIGN(dst, 0x1000);
   TCI&lt;TileT, int32_t, /*descending=*/1&gt;(dst, /*S=*/100);
 }
-</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.tci %scalar {descending = false} : dtype -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.tci %scalar {descending = false} : dtype -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tci %S {descending = false} : !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tci ins(%scalar {descending = false} : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
             </div>

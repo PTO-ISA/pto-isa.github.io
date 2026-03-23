@@ -175,6 +175,10 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -254,6 +258,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMINS/">TMINS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TAXPY/">TAXPY</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSUBS/">TSUBS</a>
                 </li>
@@ -395,7 +401,15 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TRESHAPE/">TRESHAPE</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TCONCAT/">TCONCAT</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
@@ -426,6 +440,16 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMRGSORT/">TMRGSORT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../THISTOGRAM/">THISTOGRAM</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
                 </li>
@@ -539,12 +563,19 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>从 GlobalTensor (GM) 加载数据到 Tile。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>符号表示取决于 <code>GlobalTensor</code> 的形状/步长和 <code>Tile</code> 的布局。概念上（二维视图，带基础偏移量）：</p>
+<p>Notation depends on the <code>GlobalTensor</code> shape/stride and the <code>Tile</code> layout. Conceptually (2D view, with a base offset):</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{r_0 + i,\; c_0 + j} \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
+!pto.tile&lt;loc, dtype, rows, cols, blayout, slayout, fractal, pad&gt;
+</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
@@ -554,45 +585,45 @@
 <pre><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:<ul>
-<li><code>TileData::DType</code> 必须是以下之一：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>int64_t</code>、<code>uint64_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
-<li>目标 tile 位置必须是 <code>TileType::Vec</code> 或 <code>TileType::Mat</code>。</li>
-<li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>。</li>
-<li>运行时：所有 <code>src.GetShape(dim)</code> 值和 <code>dst.GetValidRow()/GetValidCol()</code> 必须 <code>&gt; 0</code>。</li>
-<li><code>TileType::Vec</code> 加载仅支持匹配的布局：ND-&gt;ND、DN-&gt;DN、NZ-&gt;NZ。</li>
-<li><code>TileType::Mat</code> 加载支持：ND-&gt;ND、DN-&gt;DN、NZ-&gt;NZ，以及 ND-&gt;NZ 和 DN-&gt;ZN。</li>
-<li>对于 ND-&gt;NZ 或 DN-&gt;ZN：<code>GlobalData::staticShape[0..2] == 1</code> 且 <code>TileData::SFractalSize == 512</code>。</li>
-<li>对于 <code>int64_t/uint64_t</code>，仅支持 ND-&gt;ND 或 DN-&gt;DN。</li>
+<li><code>TileData::DType</code> must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>int64_t</code>, <code>uint64_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
+<li>Destination tile location must be <code>TileType::Vec</code> or <code>TileType::Mat</code>.</li>
+<li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>.</li>
+<li>Runtime: all <code>src.GetShape(dim)</code> values and <code>dst.GetValidRow()/GetValidCol()</code> must be <code>&gt; 0</code>.</li>
+<li><code>TileType::Vec</code> loads only support matching layouts: ND-&gt;ND, DN-&gt;DN, NZ-&gt;NZ.</li>
+<li><code>TileType::Mat</code> loads support: ND-&gt;ND, DN-&gt;DN, NZ-&gt;NZ, plus ND-&gt;NZ and DN-&gt;ZN.</li>
+<li>For ND-&gt;NZ or DN-&gt;ZN: <code>GlobalData::staticShape[0..2] == 1</code> and <code>TileData::SFractalSize == 512</code>.</li>
+<li>For <code>int64_t/uint64_t</code>, only ND-&gt;ND or DN-&gt;DN are supported.</li>
 </ul>
 </li>
 <li>
 <p><strong>实现检查 (A5)</strong>:</p>
 <ul>
-<li><code>sizeof(TileData::DType)</code> 必须是 <code>1</code>、<code>2</code>、<code>4</code> 或 <code>8</code> 字节，且必须匹配 <code>sizeof(GlobalData::DType)</code>。</li>
-<li>对于 <code>int64_t/uint64_t</code>，<code>TileData::PadVal</code> 必须是 <code>PadValue::Null</code> 或 <code>PadValue::Zero</code>。</li>
-<li><code>TileType::Vec</code> 加载需要以下布局对之一：</li>
-<li>ND 使用行主序 + <code>SLayout::NoneBox</code>（ND-&gt;ND），</li>
-<li>DN 使用列主序 + <code>SLayout::NoneBox</code>（DN-&gt;DN），</li>
-<li>NZ 使用 <code>SLayout::RowMajor</code>（NZ-&gt;NZ）。</li>
-<li>对于使用编译时已知形状的行主序 ND-&gt;ND，<code>TileData::ValidCol</code> 必须等于 <code>GlobalData::staticShape[4]</code>，且 <code>TileData::ValidRow</code> 必须等于 <code>GlobalData::staticShape[0..3]</code> 的乘积。</li>
-<li><code>TileType::Mat</code> 加载还受到 <code>TLoadCubeCheck</code> 的约束（例如，仅特定的 ND/DN/NZ 转换和 L1 大小限制）。</li>
-<li><code>TileType::Mat</code> 加载还处理 mx 格式的加载，包括 <code>MX_A_ZZ/MX_A_ND/MX_A_DN</code> 到 ZZ（用于 scalarA）和 <code>MX_B_NN/MX_B_ND/MX_B_DN</code> 到 NN（用于 scalarB）。</li>
-<li>对于 <code>MX_A_ZZ/MX_B_NN</code>：<code>GlobalData::staticShape[3] == 16</code> 且 <code>GlobalData::staticShape[4] == 2</code>。</li>
-<li>对于 <code>MX_A_ND/MX_ADN/MX_B_ND/MX_B_DN</code>：<code>GlobalData::staticShape[0] == 1</code> 且 <code>GlobalData::staticShape[1] == 1</code> 且 <code>GlobalData::staticShape[4] == 2</code>。</li>
-<li>对于 scaleA，<code>dst.GetValidCol() % 2 == 0</code>。</li>
-<li>对于 scaleB，<code>dst.GetValidRow() % 2 == 0</code>。</li>
+<li><code>sizeof(TileData::DType)</code> must be <code>1</code>, <code>2</code>, <code>4</code>, or <code>8</code> bytes, and must match <code>sizeof(GlobalData::DType)</code>.</li>
+<li>For <code>int64_t/uint64_t</code>, <code>TileData::PadVal</code> must be <code>PadValue::Null</code> or <code>PadValue::Zero</code>.</li>
+<li><code>TileType::Vec</code> loads require one of the following layout pairs:</li>
+<li>ND with row-major + <code>SLayout::NoneBox</code> (ND-&gt;ND),</li>
+<li>DN with col-major + <code>SLayout::NoneBox</code> (DN-&gt;DN),</li>
+<li>NZ with <code>SLayout::RowMajor</code> (NZ-&gt;NZ).</li>
+<li>For row-major ND-&gt;ND with compile-time-known shapes, <code>TileData::ValidCol</code> must equal <code>GlobalData::staticShape[4]</code>, and <code>TileData::ValidRow</code> must equal the product of <code>GlobalData::staticShape[0..3]</code>.</li>
+<li><code>TileType::Mat</code> loads are additionally constrained by <code>TLoadCubeCheck</code> (e.g., only specific ND/DN/NZ conversions and L1-size limits).</li>
+<li><code>TileType::Mat</code> loads also handle loads for mx format, which include <code>MX_A_ZZ/MX_A_ND/MX_A_DN</code> to ZZ for scalarA and <code>MX_B_NN/MX_B_ND/MX_B_DN</code> to NN for scalarB.</li>
+<li>for <code>MX_A_ZZ/MX_B_NN</code>: <code>GlobalData::staticShape[3] == 16</code> and <code>GlobalData::staticShape[4] == 2</code>.</li>
+<li>for <code>MX_A_ND/MX_ADN/MX_B_ND/MX_B_DN</code>: <code>GlobalData::staticShape[0] == 1</code> and <code>GlobalData::staticShape[1] == 1</code> and <code>GlobalData::staticShape[4] == 2</code>.</li>
+<li>for scaleA, <code>dst.GetValidCol() % 2 == 0</code>.</li>
+<li>for scaleB, <code>dst.GetValidRow() % 2 == 0</code></li>
 </ul>
 </li>
 <li>
 <p><strong>有效区域</strong>:</p>
 <ul>
-<li>实现使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为传输大小。</li>
+<li>The implementation uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the transfer size.</li>
 </ul>
 </li>
 </ul>
@@ -631,23 +662,6 @@ void example_manual(__gm__ T* in) {
   TASSIGN(t, 0x1000);
   TLOAD(t, gin);
 }
-</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
             </div>

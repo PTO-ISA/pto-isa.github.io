@@ -147,8 +147,6 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#complex">Complex</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#communication">Communication</a>
-    </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="conventions/">ISA Conventions</a>
@@ -196,6 +194,10 @@
                   <li class="toctree-l1"><a class="reference internal" >Manual / Resource Binding</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="TASSIGN/">TASSIGN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TSETTF32MODE/">TSETTF32MODE</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
@@ -276,6 +278,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="TMINS/">TMINS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TAXPY/">TAXPY</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TSUBS/">TSUBS</a>
                 </li>
@@ -417,7 +421,15 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TRESHAPE/">TRESHAPE</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TCONCAT/">TCONCAT</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TIMG2COL/">TIMG2COL</a>
                 </li>
@@ -448,6 +460,16 @@
                 <li class="toctree-l2"><a class="reference internal" href="TMRGSORT/">TMRGSORT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="THISTOGRAM/">THISTOGRAM</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TPRINT/">TPRINT</a>
                 </li>
@@ -564,7 +586,7 @@
 <p>This directory contains the per-instruction reference for the PTO Tile Lib ISA.</p>
 <ul>
 <li>Source of truth (C++ intrinsics): <code>include/pto/common/pto_instr.hpp</code></li>
-<li><a href="conventions/">Common conventions (operands, events, modifiers)</a></li>
+<li>Common conventions (operands, events, modifiers): <code>docs/isa/conventions.md</code></li>
 </ul>
 <h2 id="synchronization">Synchronization<a class="headerlink" href="#synchronization" title="Permanent link">&para;</a></h2>
 <ul>
@@ -573,6 +595,8 @@
 <h2 id="manual-resource-binding">Manual / Resource Binding<a class="headerlink" href="#manual-resource-binding" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="TASSIGN/">TASSIGN</a> - Bind a Tile object to an implementation-defined on-chip address (manual placement).</li>
+<li><a href="TSETHF32MODE/">TSETHF32MODE</a> - Configure HF32 transform mode (implementation-defined).</li>
+<li><a href="TSETTF32MODE/">TSETTF32MODE</a> - Configure TF32 transform mode (implementation-defined).</li>
 <li><a href="TSETFMATRIX/">TSETFMATRIX</a> - Set FMATRIX register(s) for IMG2COL-like ops.</li>
 <li><a href="TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a> - Set IMG2COL repeat metadata from an IMG2COL configuration tile.</li>
 <li><a href="TSET_IMG2COL_PADDING/">TSET_IMG2COL_PADDING</a> - Set IMG2COL padding metadata from an IMG2COL configuration tile.</li>
@@ -612,9 +636,10 @@
 <ul>
 <li><a href="TEXPANDS/">TEXPANDS</a> - Broadcast a scalar into a destination tile.</li>
 <li><a href="TCMPS/">TCMPS</a> - Compare a tile against a scalar and write per-element comparison results.</li>
-<li><a href="TSELS/">TSELS</a> - Select between source tile and scalar using a mask tile (per-element selection for source tile).</li>
+<li><a href="TSELS/">TSELS</a> - Select one of two source tiles using a scalar <code>selectMode</code> (global select).</li>
 <li><a href="TMINS/">TMINS</a> - Elementwise minimum of a tile and a scalar.</li>
 <li><a href="TADDS/">TADDS</a> - Elementwise add a scalar to a tile.</li>
+<li><a href="TAXPY/">TAXPY</a> - AXPY-style fused update: multiply a tile by a scalar and accumulate into the destination tile.</li>
 <li><a href="TSUBS/">TSUBS</a> - Elementwise subtract a scalar from a tile.</li>
 <li><a href="TDIVS/">TDIVS</a> - Elementwise division with a scalar (tile/scalar or scalar/tile).</li>
 <li><a href="TMULS/">TMULS</a> - Elementwise multiply a tile by a scalar.</li>
@@ -690,7 +715,11 @@
 <li><a href="TMOV/">TMOV</a> - Move/copy between tiles, optionally applying implementation-defined conversion modes.</li>
 <li><a href="TMOV_FP/">TMOV_FP</a> - Move/convert from an accumulator tile into a destination tile, using a scaling (<code>fp</code>) tile for vector quantization parameters.</li>
 <li><a href="TRESHAPE/">TRESHAPE</a> - Reinterpret a tile as another tile type/shape while preserving the underlying bytes.</li>
+<li><a href="TALIAS/">TALIAS</a> - Create an alias tile view that shares the original tile storage.</li>
+<li><a href="TSUBVIEW/">TSUBVIEW</a> - Create a sub-tile view at a row/column offset without copying data.</li>
+<li><a href="TCONCAT/">TCONCAT</a> - Concatenate two source tiles along the column dimension into a destination tile.</li>
 <li><a href="TTRANS/">TTRANS</a> - Transpose with an implementation-defined temporary tile.</li>
+<li><a href="TPACK/">TPACK</a> - Pack or convert tile elements into a narrower destination representation.</li>
 </ul>
 <h2 id="complex">Complex<a class="headerlink" href="#complex" title="Permanent link">&para;</a></h2>
 <ul>
@@ -705,11 +734,14 @@
 <li><a href="TPARTMAX/">TPARTMAX</a> - Partial elementwise max with implementation-defined handling of mismatched valid regions.</li>
 <li><a href="TPARTMIN/">TPARTMIN</a> - Partial elementwise min with implementation-defined handling of mismatched valid regions.</li>
 <li><a href="TGATHERB/">TGATHERB</a> - Gather elements using byte offsets.</li>
-<li><a href="TSCATTER/">TSCATTER</a> - Scatter source elements into a destination tile using per-element flattened destination offsets.</li>
+<li><a href="TSCATTER/">TSCATTER</a> - Scatter rows of a source tile into a destination tile using per-element row indices.</li>
 <li><a href="TQUANT/">TQUANT</a> - Quantize a tile (e.g. FP32 to FP8) producing exponent/scaling/max outputs.</li>
+<li><a href="TDEQUANT/">TDEQUANT</a> - Dequantize an integer tile into a floating-point tile using scale and offset tiles.</li>
+<li><a href="TPUSH/">TPUSH</a> - Push a tile into a pipe or FIFO producer endpoint.</li>
+<li><a href="TPOP/">TPOP</a> - Pop a tile from a pipe or FIFO consumer endpoint.</li>
+<li><a href="TFREE/">TFREE</a> - Release the currently held pipe or FIFO slot back to the producer.</li>
+<li><a href="THISTOGRAM/">THISTOGRAM</a> - Accumulate histogram bin counts from source values using an index tile.</li>
 </ul>
-<h2 id="communication">Communication<a class="headerlink" href="#communication" title="Permanent link">&para;</a></h2>
-<p>See <a href="comm/">comm/README.md</a> for the full per-instruction communication ISA reference (point-to-point, async, synchronization, and collective operations).</p>
               
             </div>
           </div><footer>

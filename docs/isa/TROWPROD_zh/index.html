@@ -175,6 +175,10 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../TASSIGN/">TASSIGN</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSETFMATRIX/">TSETFMATRIX</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
@@ -254,6 +258,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMINS/">TMINS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TAXPY/">TAXPY</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TSUBS/">TSUBS</a>
                 </li>
@@ -395,7 +401,15 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TRESHAPE/">TRESHAPE</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TCONCAT/">TCONCAT</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
@@ -426,6 +440,16 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TMRGSORT/">TMRGSORT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../THISTOGRAM/">THISTOGRAM</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRINT/">TPRINT</a>
                 </li>
@@ -534,57 +558,54 @@
                 <!-- Generated from `docs/isa/TROWPROD_zh.md` -->
 
 <h1 id="trowprod">TROWPROD<a class="headerlink" href="#trowprod" title="Permanent link">&para;</a></h1>
-<h2 id="tile">Tile 操作图示<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h2>
+<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TROWPROD tile operation" src="../../figures/isa/TROWPROD.svg" /></p>
-<h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>对每行元素进行乘积归约。</p>
-<h2 id="_2">数学定义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>设 <code>R = src.GetValidRow()</code> 且 <code>C = src.GetValidCol()</code>。对于 <code>0 &lt;= i &lt; R</code>：</p>
+<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对每一行沿列方向连乘归约。</p>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,0} = \prod_{j=0}^{C-1} \mathrm{src}_{i,j} \]</div>
-<h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>降级可能引入内部临时 tile；C++ 内建函数需要显式的 <code>tmp</code> 操作数。</p>
+<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.trowprod %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.trowprod ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h2 id="c">C++ 内建函数<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.trowprod ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWPROD(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_4">约束条件<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>NPU 实现检查：</p>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>实现检查 (NPU):</p>
 <ul>
 <li>A2A3:<ul>
-<li>Tile 位置：<code>dst</code> 和 <code>src</code> 必须为 <code>TileType::Vec</code>。</li>
-<li><code>src</code> 的 Tile 布局：ND 分形（<code>isRowMajor</code> 且 <code>SLayout::NoneBox</code>）。</li>
-<li><code>dst</code> 的 Tile 布局：</li>
-<li><strong>推荐</strong>：一维 DN 布局 Tile，例如 <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code></li>
-<li><strong>将被移除</strong>：二维 ND 布局 Tile，例如 <code>Tile&lt;TileType::Vec, T, ROWS, COLS, BLayout::RowMajor, ValidRows, 1&gt;</code></li>
-<li>数据类型：<code>half</code>、<code>float</code>。</li>
-<li>DType 一致性：<code>dst.DType == src.DType</code>。</li>
-<li>运行时有效性检查：</li>
-<li><code>srcValidCol != 0</code> 且 <code>srcValidRow != 0</code>。</li>
-<li><code>srcValidRow == dstValidRow</code>（输出有效行数必须与输入有效行数匹配）。</li>
-<li><code>tmp</code> 必须与 <code>src</code> 具有相同的形状。</li>
+<li>Tile location: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
+<li>Tile 布局 of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
+<li>Tile 布局 of <code>dst</code>: DN layout Tile of 1D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code></li>
+<li>数据类型: <code>half</code>, <code>float</code>.</li>
+<li>数据类型一致性: <code>dst.DType == src.DType</code>.</li>
+<li>运行期有效区域检查:</li>
+<li><code>srcValidCol != 0</code> and <code>srcValidRow != 0</code>.</li>
+<li><code>srcValidRow == dstValidRow</code> (the output valid row must match the input valid row).</li>
+<li><code>tmp</code> must have the same shape as <code>src</code>.</li>
 </ul>
 </li>
 </ul>
-<h2 id="_5">实现说明<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>与使用 <code>vcadd</code>/<code>vcgadd</code> 指令的 TROWSUM 不同，TROWPROD 使用 <code>vmul</code> 进行二分归约，因为 A2A3 没有 <code>vcmul</code> 指令。实现步骤：</p>
-<ol>
-<li>将相邻的重复对相乘，结果存入 <code>tmp</code></li>
-<li>对 <code>tmp</code> 迭代执行二分乘法归约</li>
-<li>持续归约直到每行只剩一个元素</li>
-</ol>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto 模式<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -599,7 +620,7 @@ void example_auto() {
   TROWPROD(dst, src, tmp);
 }
 </code></pre>
-<h3 id="manual">Manual 模式<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -616,23 +637,6 @@ void example_manual() {
   TASSIGN(tmp, 0x3000);
   TROWPROD(dst, src, tmp);
 }
-</code></pre>
-<h2 id="asm">ASM 形式示例<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="auto_1">Auto 模式<a class="headerlink" href="#auto_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Auto 模式：编译器/运行时管理的放置和调度。
-%dst = pto.trowprod %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="manual_1">Manual 模式<a class="headerlink" href="#manual_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Manual 模式：在发出指令前显式绑定资源。
-# Tile 操作数可选：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.trowprod %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.trowprod ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
             </div>
