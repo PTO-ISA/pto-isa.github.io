@@ -395,10 +395,6 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
@@ -454,6 +450,10 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
                 </li>
     </ul>
                   </li>
@@ -632,12 +632,6 @@
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tmov ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tmov.s2d %src  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmov ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
@@ -665,23 +659,35 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t p
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Implementation checks (A2A3)</strong>:<ul>
+<li>Shape rules:<ul>
 <li>Shapes must match: <code>SrcTileData::Rows == DstTileData::Rows</code> and <code>SrcTileData::Cols == DstTileData::Cols</code>.</li>
-<li>Supported location pairs (compile-time checked):</li>
+</ul>
+</li>
+<li>Supported location pairs (compile-time checked):<ul>
 <li><code>Mat -&gt; Left/Right/Bias/Scaling</code></li>
 <li><code>Vec -&gt; Vec</code></li>
-<li><code>Acc -&gt; Mat</code> (including optional pre-quant / relu / fp variants via overloads)</li>
-<li>For <code>Acc -&gt; Mat</code>, additional fractal/type constraints are enforced (e.g., <code>Acc</code> uses NZ-like fractal, <code>Mat</code> uses 512B fractal, and only specific dtype conversions are allowed).</li>
+<li><code>Acc -&gt; Mat</code></li>
+</ul>
+</li>
+<li>Additional checks by path:<ul>
+<li><code>Acc -&gt; Mat</code>: additional fractal and dtype constraints are enforced (for example, <code>Acc</code> uses an NZ-like fractal, <code>Mat</code> uses a 512B fractal, and only specific dtype conversions are allowed).</li>
+</ul>
+</li>
 </ul>
 </li>
 <li><strong>Implementation checks (A5)</strong>:<ul>
-<li>For <code>Mat -&gt; *</code>, shapes must match; for some <code>Vec</code> moves, the effective copy size is the min of src/dst valid rows/cols.</li>
-<li>Supported location pairs include (target-dependent):</li>
+<li>Shape rules:<ul>
+<li>For <code>Mat -&gt; Left/Right/Bias/Scaling/Scale</code>, shapes must match.</li>
+<li>For <code>Vec -&gt; Vec</code> and <code>Vec -&gt; Mat</code>, the effective copy region may be determined by the valid rows/cols of source and destination.</li>
+</ul>
+</li>
+<li>Supported location pairs include (target-dependent):<ul>
 <li><code>Mat -&gt; Left/Right/Bias/Scaling/Scale</code></li>
-<li><code>Vec -&gt; Vec</code> and <code>Vec -&gt; Mat</code></li>
-<li><code>Acc -&gt; Vec</code> and <code>Acc -&gt; Mat</code> (including optional pre-quant / relu / fp variants via overloads)</li>
-<li>For <code>Mat -&gt; Left/Right</code>, additional fractal and dtype constraints are enforced via <code>CommonCheck</code> (source fractal must be compatible and element types must match).</li>
-<li>For <code>Acc -&gt; Vec/Mat</code>, additional fractal/type/alignment constraints are enforced via <code>CheckTMovAccValid</code>.</li>
-<li>For <code>Mat -&gt; Scale</code>, additional fractal and dtype constraints are enforced via <code>CommonCheckMX</code> (source fractal must be compatible and element types must match).</li>
+<li><code>Vec -&gt; Vec/Mat</code></li>
+<li><code>Acc -&gt; Vec/Mat</code></li>
+</ul>
+</li>
+<li><code>Acc -&gt; Vec</code> supports additional <code>AccToVecMode</code> forms; some forms also take <code>FpTileData</code> or <code>preQuantScalar</code>.</li>
 </ul>
 </li>
 </ul>

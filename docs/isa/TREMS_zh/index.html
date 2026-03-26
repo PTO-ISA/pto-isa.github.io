@@ -413,6 +413,10 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
@@ -566,15 +570,9 @@
 <p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
 <div class="arithmatex">\[\mathrm{dst}_{i,j} = \mathrm{src}_{i,j} \bmod \mathrm{scalar}\]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = trems %src, %scalar : !pto.tile&lt;...&gt;, f32
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trems %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trems ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.trems %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
@@ -583,14 +581,43 @@
 <pre><code class="language-text">pto.trems ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TREMS(TileDataDst &amp;dst, TileDataSrc &amp;src, typename TileDataSrc::DType scalar, WaitEvents &amp;... events);
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataTmp, typename... WaitEvents&gt;
+PTO_INST RecordEvent TREMS(TileDataDst &amp;dst, TileDataSrc &amp;src, typename TileDataSrc::DType scalar,
+                           TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Division-by-zero behavior is target-defined; the CPU simulator asserts in debug builds.</li>
-<li>The op iterates over <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code>.</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
+<li><code>dst</code> 和 <code>src</code> 必须使用相同的元素类型。</li>
+<li>支持的元素类型：<code>float</code> 和 <code>int32_t</code>。</li>
+<li><code>dst</code> 和 <code>src</code> 必须是向量 Tile。</li>
+<li><code>dst</code> 和 <code>src</code> 必须是行主序。</li>
+<li>运行时：<code>dst.GetValidRow() == src.GetValidRow() &gt; 0</code> 且 <code>dst.GetValidCol() == src.GetValidCol() &gt; 0</code>。</li>
+<li><strong>tmp 缓冲区要求</strong>：</li>
+<li><code>tmp.GetValidCol() &gt;= dst.GetValidCol()</code>（至少与 dst 相同的列数）</li>
+<li><code>tmp.GetValidRow() &gt;= 1</code>（至少 1 行）</li>
+<li>数据类型必须与 <code>TileDataDst::DType</code> 匹配。</li>
+</ul>
+</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
+<li><code>dst</code> 和 <code>src</code> 必须使用相同的元素类型。</li>
+<li>支持的元素类型：<code>float</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>int16_t</code> 和 <code>uint16_t</code>。</li>
+<li><code>dst</code> 和 <code>src</code> 必须是向量 Tile。</li>
+<li>两个 Tile 的静态有效边界都必须满足 <code>ValidRow &lt;= Rows</code> 且 <code>ValidCol &lt;= Cols</code>。</li>
+<li>运行时：<code>dst.GetValidRow() == src.GetValidRow()</code> 且 <code>dst.GetValidCol() == src.GetValidCol()</code>。</li>
+<li>注意：tmp 参数在 A5 上被接受但不进行验证或使用。</li>
+</ul>
+</li>
+<li><strong>除零</strong>:<ul>
+<li>行为由目标定义；CPU 模拟器在调试构建中会断言。</li>
+</ul>
+</li>
+<li><strong>有效区域</strong>:<ul>
+<li>该操作使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域。</li>
+</ul>
+</li>
+<li><strong>对于 <code>int32_t</code> 输入（仅 A2A3）</strong>：<code>src</code> 的元素和 <code>scalar</code> 必须在 <code>[-2^24, 2^24]</code> 范围内（即 <code>[-16777216, 16777216]</code>），以确保在计算过程中能精确转换为 float32。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -600,8 +627,26 @@ using namespace pto;
 void example() {
   using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   TileT x, out;
-  TREMS(out, x, 3.0f);
+  Tile&lt;TileType::Vec, float, 16, 16&gt; tmp;
+  TREMS(out, x, 3.0f, tmp);
 }
+</code></pre>
+<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
+%dst = pto.trems %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
+# 可选（当该指令包含 tile 操作数时）：
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+%dst = pto.trems %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = trems %src, %scalar : !pto.tile&lt;...&gt;, f32
+# AS Level 2 (DPS)
+pto.trems ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
             </div>

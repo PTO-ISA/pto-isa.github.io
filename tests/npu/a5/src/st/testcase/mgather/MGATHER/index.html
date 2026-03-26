@@ -413,6 +413,10 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TIMG2COL/">TIMG2COL</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
@@ -581,9 +585,14 @@
 <pre><code class="language-text">%dst = mgather.elem %table, %idx : (!pto.memref&lt;...&gt;, !pto.tile&lt;NxMxi32&gt;) -&gt; !pto.tile&lt;NxMxT&gt;
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/npu/a5/MGather.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;GatherOOB Mode = GatherOOB::Undefined, typename TileDst, typename GlobalTable, typename TileIdx&gt;
-PTO_INTERNAL void MGATHER(TileDst&amp; dst, GlobalTable&amp; table, TileIdx&amp; indices);
+<p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/npu/a5/MGather.hpp</code>:</p>
+<pre><code class="language-cpp">// Default mode (GatherOOB::Undefined)
+template &lt;typename TileDst, typename GlobalData, typename TileInd, typename... WaitEvents&gt;
+PTO_INST RecordEvent MGATHER(TileDst&amp; dst, GlobalData&amp; src, TileInd&amp; indexes, WaitEvents&amp;... events);
+
+// Explicit OOB mode
+template &lt;GatherOOB Mode, typename TileDst, typename GlobalData, typename TileInd, typename... WaitEvents&gt;
+PTO_INST RecordEvent MGATHER(TileDst&amp; dst, GlobalData&amp; src, TileInd&amp; indexes, WaitEvents&amp;... events);
 </code></pre>
 <p><strong>Parameters:</strong>
 - <code>dst</code>: Destination tile in UB with shape <code>[NumRows, NumCols]</code>
@@ -718,6 +727,157 @@ void example_manual() {
 <li><a href="../../../../../../../../docs/isa/TGATHER/"><code>TGATHER</code></a>: Index-based gather within tiles (UB-to-UB)</li>
 <li><a href="../../mscatter/MSCATTER/"><code>MSCATTER</code></a>: Indexed scatter from Tile to GM (inverse operation)</li>
 </ul>
+<h2 id="test-cases">Test Cases<a class="headerlink" href="#test-cases" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Data Type</th>
+<th>Table Size</th>
+<th>Output Size</th>
+<th>Mode</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>case_half_16x64_8x32</td>
+<td>half</td>
+<td>16×64</td>
+<td>8×32</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_half_16x128_8x64</td>
+<td>half</td>
+<td>16×128</td>
+<td>8×64</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_half_32x128_16x64</td>
+<td>half</td>
+<td>32×128</td>
+<td>16×64</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_half_16x256_8x128</td>
+<td>half</td>
+<td>16×256</td>
+<td>8×128</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_half_64x64_32x32</td>
+<td>half</td>
+<td>64×64</td>
+<td>32×32</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_8x64_4x32</td>
+<td>float</td>
+<td>8×64</td>
+<td>4×32</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_16x64_8x32</td>
+<td>float</td>
+<td>16×64</td>
+<td>8×32</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_32x64_16x32</td>
+<td>float</td>
+<td>32×64</td>
+<td>16×32</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_16x16_8x8</td>
+<td>float</td>
+<td>16×16</td>
+<td>8×8</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_int32_8x32_4x16</td>
+<td>int32</td>
+<td>8×32</td>
+<td>4×16</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_int32_16x64_8x32</td>
+<td>int32</td>
+<td>16×64</td>
+<td>8×32</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_int32_32x32_16x16</td>
+<td>int32</td>
+<td>32×32</td>
+<td>16×16</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_uint8_16x64_8x32</td>
+<td>uint8</td>
+<td>16×64</td>
+<td>8×32</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_uint8_32x64_16x32</td>
+<td>uint8</td>
+<td>32×64</td>
+<td>16×32</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_clamp_16x64_8x32</td>
+<td>float</td>
+<td>16×64</td>
+<td>8×32</td>
+<td>Clamp</td>
+<td>OOB indices clamped to table bounds</td>
+</tr>
+<tr>
+<td>case_int32_wrap_16x64_8x32</td>
+<td>int32</td>
+<td>16×64</td>
+<td>8×32</td>
+<td>Wrap</td>
+<td>OOB indices wrapped via modulo</td>
+</tr>
+<tr>
+<td>case_half_zero_16x64_8x32</td>
+<td>half</td>
+<td>16×64</td>
+<td>8×32</td>
+<td>Zero</td>
+<td>OOB indices return zero</td>
+</tr>
+</tbody>
+</table>
               
             </div>
           </div><footer>

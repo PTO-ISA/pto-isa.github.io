@@ -391,15 +391,19 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#common-shape-and-location-constraints">Common shape and location constraints</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tgemv-tgemv_acc-datatype-constraints">TGEMV / TGEMV_ACC datatype constraints</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tgemv_bias-additional-constraints">TGEMV_BIAS additional constraints</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
@@ -462,6 +466,10 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
                 </li>
     </ul>
                   </li>
@@ -650,16 +658,6 @@
 pto.tgemv.acc ins(%c_in, %a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
 pto.tgemv.bias ins(%a, %b, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tgemv %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-%c_out = pto.tgemv.acc %c_in, %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-%c = pto.tgemv.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tgemv ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-pto.tgemv.acc ins(%c_in, %a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
-pto.tgemv.bias ins(%a, %b, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
@@ -672,37 +670,59 @@ template &lt;typename TileRes, typename TileLeft, typename TileRight, typename T
 PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData, WaitEvents&amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<h3 id="common-shape-and-location-constraints">Common shape and location constraints<a class="headerlink" href="#common-shape-and-location-constraints" title="Permanent link">&para;</a></h3>
+<p>These constraints apply to <code>TGEMV</code>, <code>TGEMV_ACC</code>, and <code>TGEMV_BIAS</code> unless otherwise noted.</p>
+<ul>
+<li>Static shape constraints:<ul>
+<li><code>TileLeft::Rows == TileRes::Rows</code></li>
+<li><code>TileLeft::Cols == TileRight::Rows</code></li>
+<li><code>TileRight::Cols == TileRes::Cols</code></li>
+</ul>
+</li>
+<li>Tile locations:<ul>
+<li><code>TileLeft::Loc == Left</code></li>
+<li><code>TileRight::Loc == Right</code></li>
+<li><code>TileRes::Loc == Acc</code></li>
+</ul>
+</li>
+<li>Runtime valid-size constraints:<ul>
+<li><code>m</code> must be <code>1</code></li>
+<li><code>k</code> and <code>n</code> (taken from <code>bMatrix.GetValidRow()</code> and <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="tgemv-tgemv_acc-datatype-constraints">TGEMV / TGEMV_ACC datatype constraints<a class="headerlink" href="#tgemv-tgemv_acc-datatype-constraints" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Implementation checks (A2A3)</strong>:<ul>
-<li>Supported <code>(CType, AType, BType)</code> triples:</li>
+<li>Supported <code>(CType, AType, BType)</code> triples:<ul>
 <li><code>(int32_t, int8_t, int8_t)</code></li>
 <li><code>(float, half, half)</code></li>
 <li><code>(float, float, float)</code></li>
 <li><code>(float, bfloat16_t, bfloat16_t)</code></li>
-<li>Static shape constraints: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</li>
-<li>Tile locations: <code>TileLeft::Loc == Left</code>, <code>TileRight::Loc == Right</code>, <code>TileRes::Loc == Acc</code>.</li>
-<li>Runtime: <code>m</code> must be 1 ; <code>k/n</code> (taken from <code>bMatrix.GetValidRow()</code>, <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code>.</li>
-<li>Bias checks:</li>
-<li>The data type of the bias tile <code>TileBias::DType</code> must exactly match the data type of the result tile <code>(TileRes::DType)</code>.</li>
-<li>The bias tile must be configured as a single row.</li>
-<li>The bias tile's location must be <code>TileBias::Loc == TileType::Bias</code>.</li>
+</ul>
+</li>
 </ul>
 </li>
 <li><strong>Implementation checks (A5)</strong>:<ul>
 <li>Accumulator type must be <code>int32_t</code> or <code>float</code>.</li>
 <li>If <code>int32_t</code>: <code>AType == int8_t</code> and <code>BType == int8_t</code>.</li>
-<li>If <code>float</code>: supports <code>half/bfloat16_t/float</code> and selected fp8 pairs (target-defined).</li>
-<li>Static shape constraints: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</li>
-<li>Fractal/layout constraints are enforced:</li>
+<li>If <code>float</code>: supports <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, and selected fp8 pairs (target-defined).</li>
+<li>Fractal/layout constraints are enforced:<ul>
 <li>Left: <code>Loc == Left</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></li>
 <li>Right: <code>Loc == Right</code>, <code>isRowMajor</code>, <code>SFractal == ColMajor</code></li>
 <li>Acc: <code>Loc == Acc</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></li>
-<li>No explicit runtime range checks on <code>m/k/n</code> are enforced in <code>TMATMUL_IMPL</code> on this target.</li>
-<li>Runtime: <code>m</code> must be 1 ; <code>k/n</code> (taken from <code>bMatrix.GetValidRow()</code>, <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code>.</li>
-<li>Bias checks:</li>
-<li>The data type of the bias tile <code>TileBias::DType</code> must exactly match the data type of the result tile <code>(TileRes::DType)</code>.</li>
-<li>The bias tile must be configured as a single row.</li>
-<li>The bias tile's location must be <code>TileBias::Loc == TileType::Bias</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="tgemv_bias-additional-constraints">TGEMV_BIAS additional constraints<a class="headerlink" href="#tgemv_bias-additional-constraints" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Bias tile datatype must exactly match <code>TileRes::DType</code>.</li>
+<li>Bias tile must be configured as a single row.</li>
+<li>Bias tile location must be <code>TileType::Bias</code>.</li>
+<li><strong>Additional A5 note</strong>:<ul>
+<li>No separate explicit <code>m/k/n</code> runtime assertions are enforced in the underlying A5 matmul implementation beyond the GEMV contract described above.</li>
 </ul>
 </li>
 </ul>
@@ -735,7 +755,7 @@ void example_auto() {
   A a;
   B b;
   C c0, c1;
-  TGEMV_ACC(c, a, b);
+  TGEMV_ACC(c1, c0, a, b);
 }
 </code></pre>
 <h4 id="3-tgemv_bias">3. TGEMV_BIAS<a class="headerlink" href="#3-tgemv_bias" title="Permanent link">&para;</a></h4>

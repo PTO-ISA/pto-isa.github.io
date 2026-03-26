@@ -419,6 +419,10 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../isa/TIMG2COL/">TIMG2COL</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
@@ -606,6 +610,11 @@
 <td><a href="../reference/pto-intrinsics-header/"><code>include/pto/common/pto_instr.hpp</code></a></td>
 <td>C++ intrinsic API (authoritative).</td>
 </tr>
+<tr>
+<td>PTO Auto Mode</td>
+<td><a href="../"><code>docs/auto_mode/README.md</code></a></td>
+<td>PTO auto mode guide entry point.</td>
+</tr>
 </tbody>
 </table>
 <h2 id="instruction-index-all-pto-instructions">Instruction Index (All PTO Instructions)<a class="headerlink" href="#instruction-index-all-pto-instructions" title="Permanent link">&para;</a></h2>
@@ -627,16 +636,6 @@
 <td>Manual / Resource Binding</td>
 <td><a href="../isa/TASSIGN/"><code>TASSIGN</code></a></td>
 <td>Bind a Tile object to an implementation-defined on-chip address (manual placement).</td>
-</tr>
-<tr>
-<td>Manual / Resource Binding</td>
-<td><a href="../isa/TSETHF32MODE/"><code>TSETHF32MODE</code></a></td>
-<td>Configure HF32 transform mode (implementation-defined).</td>
-</tr>
-<tr>
-<td>Manual / Resource Binding</td>
-<td><a href="../isa/TSETTF32MODE/"><code>TSETTF32MODE</code></a></td>
-<td>Configure TF32 transform mode (implementation-defined).</td>
 </tr>
 <tr>
 <td>Manual / Resource Binding</td>
@@ -806,7 +805,7 @@
 <tr>
 <td>Tile-Scalar / Tile-Immediate</td>
 <td><a href="../isa/TSELS/"><code>TSELS</code></a></td>
-<td>Select one of two source tiles using a scalar <code>selectMode</code> (global select).</td>
+<td>Select between source tile and scalar using a mask tile (per-element selection for source tile).</td>
 </tr>
 <tr>
 <td>Tile-Scalar / Tile-Immediate</td>
@@ -817,11 +816,6 @@
 <td>Tile-Scalar / Tile-Immediate</td>
 <td><a href="../isa/TADDS/"><code>TADDS</code></a></td>
 <td>Elementwise add a scalar to a tile.</td>
-</tr>
-<tr>
-<td>Tile-Scalar / Tile-Immediate</td>
-<td><a href="../isa/TAXPY/"><code>TAXPY</code></a></td>
-<td>AXPY-style fused update: multiply a tile by a scalar and accumulate into the destination tile.</td>
 </tr>
 <tr>
 <td>Tile-Scalar / Tile-Immediate</td>
@@ -927,6 +921,16 @@
 <td>Axis Reduce / Expand</td>
 <td><a href="../isa/TROWMIN/"><code>TROWMIN</code></a></td>
 <td>Reduce each row by taking the minimum across columns.</td>
+</tr>
+<tr>
+<td>Axis Reduce / Expand</td>
+<td><a href="../isa/TROWARGMAX/"><code>TROWARGMAX</code></a></td>
+<td>Get the column index of the maximum element for each row.</td>
+</tr>
+<tr>
+<td>Axis Reduce / Expand</td>
+<td><a href="../isa/TROWARGMIN/"><code>TROWARGMIN</code></a></td>
+<td>Get the column index of the minimum element for each row.</td>
 </tr>
 <tr>
 <td>Axis Reduce / Expand</td>
@@ -1140,28 +1144,18 @@
 </tr>
 <tr>
 <td>Data Movement / Layout</td>
-<td><a href="../isa/TALIAS/"><code>TALIAS</code></a></td>
-<td>Create an alias tile view that shares the original tile storage.</td>
-</tr>
-<tr>
-<td>Data Movement / Layout</td>
-<td><a href="../isa/TSUBVIEW/"><code>TSUBVIEW</code></a></td>
-<td>Create a sub-tile view at a row/column offset without copying data.</td>
-</tr>
-<tr>
-<td>Data Movement / Layout</td>
-<td><a href="../isa/TCONCAT/"><code>TCONCAT</code></a></td>
-<td>Concatenate two source tiles along the column dimension into a destination tile.</td>
-</tr>
-<tr>
-<td>Data Movement / Layout</td>
 <td><a href="../isa/TTRANS/"><code>TTRANS</code></a></td>
 <td>Transpose with an implementation-defined temporary tile.</td>
 </tr>
 <tr>
 <td>Data Movement / Layout</td>
-<td><a href="../isa/TPACK/"><code>TPACK</code></a></td>
-<td>Pack or convert tile elements into a narrower destination representation.</td>
+<td><a href="../isa/TSUBVIEW/"><code>TSUBVIEW</code></a></td>
+<td>Reinterpret a tile as a subtile of another tile.</td>
+</tr>
+<tr>
+<td>Data Movement / Layout</td>
+<td><a href="../isa/TGET_SCALE_ADDR/"><code>TGET_SCALE_ADDR</code></a></td>
+<td>Bind the on-chip address of output tile to a scaled factor of that of input tile.</td>
 </tr>
 <tr>
 <td>Complex</td>
@@ -1176,7 +1170,7 @@
 <tr>
 <td>Complex</td>
 <td><a href="../isa/TSORT32/"><code>TSORT32</code></a></td>
-<td>Sort a fixed-size 32-element block and produce an index mapping.</td>
+<td>Sort 32-element blocks of <code>src</code> with accompanying <code>idx</code> entries and output sorted value-index pairs.</td>
 </tr>
 <tr>
 <td>Complex</td>
@@ -1229,29 +1223,59 @@
 <td>Quantize a tile (e.g. FP32 to FP8) producing exponent/scaling/max outputs.</td>
 </tr>
 <tr>
-<td>Complex</td>
-<td><a href="../isa/TDEQUANT/"><code>TDEQUANT</code></a></td>
-<td>Dequantize an integer tile into a floating-point tile using scale and offset tiles.</td>
+<td>Communication</td>
+<td><a href="../isa/comm/TPUT/"><code>TPUT</code></a></td>
+<td>Remote write: transfer local data to remote NPU memory (GM → UB → GM).</td>
 </tr>
 <tr>
-<td>Complex</td>
-<td><a href="../isa/TPUSH/"><code>TPUSH</code></a></td>
-<td>Push a tile into a pipe or FIFO producer endpoint.</td>
+<td>Communication</td>
+<td><a href="../isa/comm/TGET/"><code>TGET</code></a></td>
+<td>Remote read: read remote NPU data to local memory (GM → UB → GM).</td>
 </tr>
 <tr>
-<td>Complex</td>
-<td><a href="../isa/TPOP/"><code>TPOP</code></a></td>
-<td>Pop a tile from a pipe or FIFO consumer endpoint.</td>
+<td>Communication</td>
+<td><a href="../isa/comm/TPUT_ASYNC/"><code>TPUT_ASYNC</code></a></td>
+<td>Asynchronous remote write (local GM → DMA engine → remote GM).</td>
 </tr>
 <tr>
-<td>Complex</td>
-<td><a href="../isa/TFREE/"><code>TFREE</code></a></td>
-<td>Release the currently held pipe or FIFO slot back to the producer.</td>
+<td>Communication</td>
+<td><a href="../isa/comm/TGET_ASYNC/"><code>TGET_ASYNC</code></a></td>
+<td>Asynchronous remote read (remote GM → DMA engine → local GM).</td>
 </tr>
 <tr>
-<td>Complex</td>
-<td><a href="../isa/THISTOGRAM/"><code>THISTOGRAM</code></a></td>
-<td>Accumulate histogram bin counts from source values using an index tile.</td>
+<td>Communication</td>
+<td><a href="../isa/comm/TNOTIFY/"><code>TNOTIFY</code></a></td>
+<td>Send flag notification to remote NPU.</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td><a href="../isa/comm/TWAIT/"><code>TWAIT</code></a></td>
+<td>Blocking wait until signal(s) meet comparison condition.</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td><a href="../isa/comm/TTEST/"><code>TTEST</code></a></td>
+<td>Non-blocking test if signal(s) meet comparison condition.</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td><a href="../isa/comm/TGATHER/"><code>TGATHER</code></a></td>
+<td>Gather data from all ranks and concatenate along DIM_3.</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td><a href="../isa/comm/TSCATTER/"><code>TSCATTER</code></a></td>
+<td>Scatter data to all ranks by splitting along DIM_3.</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td><a href="../isa/comm/TREDUCE/"><code>TREDUCE</code></a></td>
+<td>Gather and reduce data from all ranks element-wise to local.</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td><a href="../isa/comm/TBROADCAST/"><code>TBROADCAST</code></a></td>
+<td>Broadcast data from current NPU to all ranks.</td>
 </tr>
 </tbody>
 </table>

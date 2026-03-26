@@ -455,6 +455,10 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
@@ -640,19 +644,19 @@ PTO_INST RecordEvent TSELS(TileDataDst &amp;dst, TileDataMask &amp;mask, TileDat
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Implementation checks (A2A3)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>half</code>, <code>float16_t</code>, <code>float</code>, <code>float32_t</code>.</li>
+<li><code>sizeof(TileDataDst::DType)</code> must be <code>2</code> or <code>4</code> bytes.</li>
+<li>Supported data types are <code>half</code>, <code>float16_t</code>, <code>float</code>, and <code>float32_t</code>.</li>
+<li><code>dst</code> and <code>src</code> must use the same element type.</li>
+<li><code>dst</code> and <code>src</code> must be row-major.</li>
+<li>Runtime: <code>src.GetValidRow()/GetValidCol()</code> must match <code>dst.GetValidRow()/GetValidCol()</code>.</li>
 </ul>
 </li>
 <li><strong>Implementation checks (A5)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
-</ul>
-</li>
-<li><strong>Common constraints</strong>:<ul>
-<li>Tile layout must be row-major (<code>TileData::isRowMajor</code>).</li>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>Runtime: <code>dst</code>, <code>src0</code> and <code>src1</code> must have the same valid row/col.</li>
-<li>Scalar type must match the Tile data type.</li>
+<li><code>sizeof(TileDataDst::DType)</code> may be <code>1</code>, <code>2</code>, or <code>4</code> bytes.</li>
+<li>Supported data types are <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, and <code>float</code>.</li>
+<li><code>dst</code> and <code>src</code> must use the same element type.</li>
+<li><code>dst</code>, <code>mask</code>, and <code>src</code> must be row-major.</li>
+<li>Runtime: <code>src.GetValidRow()/GetValidCol()</code> must match <code>dst.GetValidRow()/GetValidCol()</code>.</li>
 </ul>
 </li>
 <li><strong>Valid region</strong>:<ul>

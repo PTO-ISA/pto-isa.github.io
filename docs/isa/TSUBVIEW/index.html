@@ -425,6 +425,16 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+        </ul>
+    </li>
     </ul>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TCONCAT/">TCONCAT</a>
@@ -434,6 +444,42 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">TSUBVIEW</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
                 </li>
     </ul>
                   </li>
@@ -585,29 +631,68 @@
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
 <p><img alt="TSUBVIEW tile operation" src="../../figures/isa/TSUBVIEW.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Create a sub-tile view at a row/column offset without copying data.</p>
+<p>Reinterpret a tile as a subtile of another tile.</p>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
-<p>Semantics are instruction-specific. Unless stated otherwise, behavior is defined over the destination valid region.</p>
+<ul>
+<li><code>rowIdx</code>: in the valid region of <code>src</code>, the starting row index of the <code>dst</code> subtile.</li>
+<li><code>colIdx</code>: in the valid region of <code>src</code>, the starting column index of the <code>dst</code> subtile.</li>
+</ul>
+<p>For each element <code>(i, j)</code> in the valid region of <code>dst</code>:</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{\mathrm{rowIdx} + i,\mathrm{colIdx} + j} \]</div>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
-<p>PTO-AS form: see <code>docs/assembly/PTO-AS.md</code>.</p>
+<p>PTO-AS form: see <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tsubview ...
-</code></pre>
+<p>TODO</p>
 <h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tsubview ins(...) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<p>TODO</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>.</p>
+<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
+<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
+PTO_INST RecordEvent TSUBVIEW(TileDataDst &amp;dst, TileDataSrc &amp;src, uint16_t rowIdx, uint16_t colIdx, WaitEvents&amp;... events);
+</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Refer to backend-specific legality checks for data type/layout/location/shape constraints.</p>
+<p>Enforced by <code>TSUBVIEW_IMPL</code>:</p>
+<ul>
+<li><strong>Tile type must match</strong>: <code>TileDataSrc::Loc == TileDataDst::Loc</code>.</li>
+<li><strong>Both tiles must have the same static capacity</strong>: <code>TileDataSrc::Rows == TileDataDst::Rows</code> and <code>TileDataSrc::Cols == TileDataDst::Cols</code>.</li>
+<li><strong>Both tiles must have the same BLayout</strong>: <code>TileDataSrc::BFractal == TileDataDst::BFractal</code>.</li>
+<li><strong>The source tile's validRow (validCol) is at least as big as the destination tile's validRow (validCol)</strong></li>
+</ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<p>See related instruction pages in <code>docs/isa/</code> for concrete Auto/Manual usage patterns.</p>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example() {
+  using Src = Tile&lt;TileType::Vec, float, 4, 64, BLayout::RowMajor, 4, 64&gt;;
+  using Dst = Tile&lt;TileType::Vec, float, 4, 64, BLayout::RowMajor, 2, 32&gt;;
+
+  Src src;
+  Dst dst0;
+  Dst dst1;
+  Dst dst2;
+  Dst dst3;
+
+  // e.g. split into four 2x32 subtiles
+  TSUBVIEW(dst0, src, 0, 0);
+  TSUBVIEW(dst1, src, 0, 32);
+  TSUBVIEW(dst2, src, 2, 0);
+  TSUBVIEW(dst3, src, 2, 32);
+}
+</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
+<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
+<p>TODO</p>
+<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
+<p>TODO</p>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<p>TODO</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../TALIAS/" class="btn btn-neutral float-left" title="TALIAS"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../TCONCAT/" class="btn btn-neutral float-right" title="TCONCAT">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../TIMG2COL/" class="btn btn-neutral float-left" title="TIMG2COL"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../TGET_SCALE_ADDR/" class="btn btn-neutral float-right" title="TGET_SCALE_ADDR">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -634,10 +719,10 @@
         </span>
     
     
-      <span><a href="../TALIAS/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../TIMG2COL/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../TCONCAT/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../TGET_SCALE_ADDR/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

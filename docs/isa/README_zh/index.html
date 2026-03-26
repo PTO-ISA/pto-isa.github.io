@@ -413,6 +413,10 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
@@ -564,8 +568,8 @@
 <h1 id="pto-isa">PTO ISA 参考<a class="headerlink" href="#pto-isa" title="Permanent link">&para;</a></h1>
 <p>本目录是 PTO Tile Lib ISA 的指令参考（每条指令一页）。</p>
 <ul>
-<li>权威来源：<code>include/pto/common/pto_instr.hpp</code></li>
-<li>通用约定（操作数、事件、修饰符）：<code>docs/isa/conventions_zh.md</code></li>
+<li>权威来源（C++ 内建函数）：<code>include/pto/common/pto_instr.hpp</code></li>
+<li><a href="../conventions_zh/">通用约定（操作数、事件、修饰符）</a></li>
 </ul>
 <h2 id="_1">同步<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <ul>
@@ -574,8 +578,6 @@
 <h2 id="_2">手动 / 资源绑定<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../TASSIGN_zh/">TASSIGN</a> - 将 Tile 对象绑定到实现定义的片上地址（手动放置）。</li>
-<li><a href="../TSETHF32MODE_zh/">TSETHF32MODE</a> - 设置 HF32 变换模式（实现定义）。</li>
-<li><a href="../TSETTF32MODE_zh/">TSETTF32MODE</a> - 设置 TF32 变换模式（实现定义）。</li>
 <li><a href="../TSETFMATRIX_zh/">TSETFMATRIX</a> - 为类 IMG2COL 操作设置 FMATRIX 寄存器。</li>
 <li><a href="../TSET_IMG2COL_RPT_zh/">TSET_IMG2COL_RPT</a> - 从 IMG2COL 配置 Tile 设置 IMG2COL 重复次数元数据。</li>
 <li><a href="../TSET_IMG2COL_PADDING_zh/">TSET_IMG2COL_PADDING</a> - 从 IMG2COL 配置 Tile 设置 IMG2COL 填充元数据。</li>
@@ -615,10 +617,9 @@
 <ul>
 <li><a href="../TEXPANDS_zh/">TEXPANDS</a> - 将标量广播到目标 Tile 中。</li>
 <li><a href="../TCMPS_zh/">TCMPS</a> - 将 Tile 与标量比较并写入逐元素比较结果。</li>
-<li><a href="../TSELS_zh/">TSELS</a> - 使用标量 <code>selectMode</code> 在两个源 Tile 中选择一个（全局选择）。</li>
+<li><a href="../TSELS_zh/">TSELS</a> - 使用掩码 Tile 在源 Tile 和标量之间进行选择（源 Tile 逐元素选择）。</li>
 <li><a href="../TMINS_zh/">TMINS</a> - Tile 与标量的逐元素最小值。</li>
 <li><a href="../TADDS_zh/">TADDS</a> - Tile 与标量的逐元素加法。</li>
-<li><a href="../TAXPY_zh/">TAXPY</a> - AXPY 风格融合更新：将 Tile 乘以标量并累加到目标 Tile。</li>
 <li><a href="../TSUBS_zh/">TSUBS</a> - 从 Tile 中逐元素减去一个标量。</li>
 <li><a href="../TDIVS_zh/">TDIVS</a> - 与标量的逐元素除法（Tile/标量 或 标量/Tile）。</li>
 <li><a href="../TMULS_zh/">TMULS</a> - Tile 与标量的逐元素乘法。</li>
@@ -637,12 +638,14 @@
 <h2 id="_3">轴归约 / 扩展<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../TROWSUM_zh/">TROWSUM</a> - 通过对列求和来归约每一行。</li>
-<li><a href="../TROWPROD_zh/">TROWPROD</a> - 对每一行沿列方向连乘归约。</li>
+<li><a href="../TROWPROD_zh/">TROWPROD</a> - 通过跨列乘积来归约每一行。</li>
 <li><a href="../TCOLSUM_zh/">TCOLSUM</a> - 通过对行求和来归约每一列。</li>
 <li><a href="../TCOLPROD_zh/">TCOLPROD</a> - 通过跨行乘积来归约每一列。</li>
 <li><a href="../TCOLMAX_zh/">TCOLMAX</a> - 通过取行间最大值来归约每一列。</li>
 <li><a href="../TROWMAX_zh/">TROWMAX</a> - 通过取列间最大值来归约每一行。</li>
 <li><a href="../TROWMIN_zh/">TROWMIN</a> - 通过取列间最小值来归约每一行。</li>
+<li><a href="../TROWARGMAX_zh/">TROWARGMAX</a> - 获取每行最大值对应列索引。</li>
+<li><a href="../TROWARGMIN_zh/">TROWARGMIN</a> - 获取每行最小值对应列索引。</li>
 <li><a href="../TROWEXPAND_zh/">TROWEXPAND</a> - 将每个源行的第一个元素广播到目标行中。</li>
 <li><a href="../TROWEXPANDDIV_zh/">TROWEXPANDDIV</a> - 行广播除法：将 <code>src0</code> 的每一行除以一个每行标量向量 <code>src1</code>。</li>
 <li><a href="../TROWEXPANDMUL_zh/">TROWEXPANDMUL</a> - 行广播乘法：将 <code>src0</code> 的每一行乘以一个每行标量向量 <code>src1</code>。</li>
@@ -694,17 +697,15 @@
 <li><a href="../TMOV_zh/">TMOV</a> - 在 Tile 之间移动/复制，可选应用实现定义的转换模式。</li>
 <li><a href="../TMOV_FP_zh/">TMOV_FP</a> - 使用缩放 (<code>fp</code>) Tile 作为向量量化参数，将累加器 Tile 移动/转换到目标 Tile。</li>
 <li><a href="../TRESHAPE_zh/">TRESHAPE</a> - 将 Tile 重新解释为另一种 Tile 类型/形状，同时保留底层字节。</li>
-<li><a href="../TALIAS_zh/">TALIAS</a> - 创建一个与原始 Tile 共享底层存储的别名视图。</li>
-<li><a href="../TSUBVIEW_zh/">TSUBVIEW</a> - 在给定行列偏移处创建子 Tile 视图而不复制数据。</li>
-<li><a href="../TCONCAT_zh/">TCONCAT</a> - 沿列维将两个源 Tile 拼接到目标 Tile。</li>
 <li><a href="../TTRANS_zh/">TTRANS</a> - 使用实现定义的临时 Tile 进行转置。</li>
-<li><a href="../TPACK_zh/">TPACK</a> - 将 Tile 元素打包或转换为更窄的目标表示。</li>
+<li><a href="../TSUBVIEW_zh/">TSUBVIEW</a> - 表达一个tile是另一个tile的subview。</li>
+<li><a href="../TGET_SCALE_ADDR_zh/">TGET_SCALE_ADDR</a> - 将输出tile的片上内存值绑定为扩展后的输入tile内存的值。</li>
 </ul>
 <h2 id="_6">复杂指令<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../TPRINT_zh/">TPRINT</a> - 调试/打印 Tile 中的元素（实现定义）。</li>
 <li><a href="../TMRGSORT_zh/">TMRGSORT</a> - 用于多个已排序列表的归并排序（实现定义的元素格式和布局）。</li>
-<li><a href="../TSORT32_zh/">TSORT32</a> - 对固定大小的 32 元素块进行排序并生成索引映射。</li>
+<li><a href="../TSORT32_zh/">TSORT32</a> - 对 <code>src</code> 的每个 32 元素块，与 <code>idx</code> 中对应的索引一起进行排序，并将排序后的值-索引对写入 <code>dst</code>。</li>
 <li><a href="../TGATHER_zh/">TGATHER</a> - 使用索引 Tile 或编译时掩码模式来收集/选择元素。</li>
 <li><a href="../TCI_zh/">TCI</a> - 生成连续整数序列到目标 Tile 中。</li>
 <li><a href="../TTRI_zh/">TTRI</a> - 生成三角（下/上）掩码 Tile。</li>
@@ -715,12 +716,9 @@
 <li><a href="../TGATHERB_zh/">TGATHERB</a> - 使用字节偏移量收集元素。</li>
 <li><a href="../TSCATTER_zh/">TSCATTER</a> - 使用逐元素行索引将源 Tile 的行散播到目标 Tile 中。</li>
 <li><a href="../TQUANT_zh/">TQUANT</a> - 量化 Tile（例如 FP32 到 FP8），生成指数/缩放/最大值输出。</li>
-<li><a href="../TDEQUANT_zh/">TDEQUANT</a> - 使用 scale 与 offset Tile 将整数量化 Tile 反量化为浮点 Tile。</li>
-<li><a href="../TPUSH_zh/">TPUSH</a> - 将 Tile 推入 pipe 或 FIFO 的生产者端。</li>
-<li><a href="../TPOP_zh/">TPOP</a> - 从 pipe 或 FIFO 的消费者端弹出一个 Tile。</li>
-<li><a href="../TFREE_zh/">TFREE</a> - 将当前占用的 pipe 或 FIFO 槽位释放回生产者。</li>
-<li><a href="../THISTOGRAM_zh/">THISTOGRAM</a> - 使用索引 Tile 从源值中累计直方图 bin 计数。</li>
 </ul>
+<h2 id="_7">通信<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p>完整的通信 ISA 指令参考（点对点、异步、同步原语及集合通信）见 <a href="../comm/README_zh/">comm/README_zh.md</a>。</p>
               
             </div>
           </div><footer>

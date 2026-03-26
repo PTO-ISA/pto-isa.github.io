@@ -413,6 +413,10 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../isa/TIMG2COL/">TIMG2COL</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../isa/TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
@@ -599,6 +603,11 @@
 <td><a href="../reference/pto-intrinsics-header_zh/"><code>include/pto/common/pto_instr.hpp</code></a></td>
 <td>C++ intrinsic API（权威来源）。</td>
 </tr>
+<tr>
+<td>PTO auto 模式</td>
+<td><a href="../README_zh/"><code>docs/auto_mode/README_zh.md</code></a></td>
+<td>PTO auto模式文档入口</td>
+</tr>
 </tbody>
 </table>
 <h2 id="pto">指令索引（全部 PTO 指令）<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h2>
@@ -620,16 +629,6 @@
 <td>手动 / 资源绑定</td>
 <td><a href="../isa/TASSIGN_zh/"><code>TASSIGN</code></a></td>
 <td>将 Tile 对象绑定到实现定义的片上地址（手动放置）。</td>
-</tr>
-<tr>
-<td>手动 / 资源绑定</td>
-<td><a href="../isa/TSETHF32MODE_zh/"><code>TSETHF32MODE</code></a></td>
-<td>设置 HF32 变换模式（实现定义）。</td>
-</tr>
-<tr>
-<td>手动 / 资源绑定</td>
-<td><a href="../isa/TSETTF32MODE_zh/"><code>TSETTF32MODE</code></a></td>
-<td>设置 TF32 变换模式（实现定义）。</td>
 </tr>
 <tr>
 <td>手动 / 资源绑定</td>
@@ -799,7 +798,7 @@
 <tr>
 <td>Tile-标量 / Tile-立即数</td>
 <td><a href="../isa/TSELS_zh/"><code>TSELS</code></a></td>
-<td>使用标量 <code>selectMode</code> 在两个源 Tile 中选择一个（全局选择）。</td>
+<td>使用掩码 Tile 在源 Tile 和标量之间进行选择（源 Tile 逐元素选择）。</td>
 </tr>
 <tr>
 <td>Tile-标量 / Tile-立即数</td>
@@ -810,11 +809,6 @@
 <td>Tile-标量 / Tile-立即数</td>
 <td><a href="../isa/TADDS_zh/"><code>TADDS</code></a></td>
 <td>Tile 与标量的逐元素加法。</td>
-</tr>
-<tr>
-<td>Tile-标量 / Tile-立即数</td>
-<td><a href="../isa/TAXPY_zh/"><code>TAXPY</code></a></td>
-<td>AXPY 风格融合更新：将 Tile 乘以标量并累加到目标 Tile。</td>
 </tr>
 <tr>
 <td>Tile-标量 / Tile-立即数</td>
@@ -894,7 +888,7 @@
 <tr>
 <td>轴归约 / 扩展</td>
 <td><a href="../isa/TROWPROD_zh/"><code>TROWPROD</code></a></td>
-<td>对每一行沿列方向连乘归约。</td>
+<td>通过跨列乘积来归约每一行。</td>
 </tr>
 <tr>
 <td>轴归约 / 扩展</td>
@@ -920,6 +914,16 @@
 <td>轴归约 / 扩展</td>
 <td><a href="../isa/TROWMIN_zh/"><code>TROWMIN</code></a></td>
 <td>通过取列间最小值来归约每一行。</td>
+</tr>
+<tr>
+<td>轴归约 / 扩展</td>
+<td><a href="../isa/TROWARGMAX_zh/"><code>TROWARGMAX</code></a></td>
+<td>获取每行最大值对应列索引。</td>
+</tr>
+<tr>
+<td>轴归约 / 扩展</td>
+<td><a href="../isa/TROWARGMIN_zh/"><code>TROWARGMIN</code></a></td>
+<td>获取每行最小值对应列索引。</td>
 </tr>
 <tr>
 <td>轴归约 / 扩展</td>
@@ -1133,28 +1137,18 @@
 </tr>
 <tr>
 <td>数据搬运 / 布局</td>
-<td><a href="../isa/TALIAS_zh/"><code>TALIAS</code></a></td>
-<td>创建一个与原始 Tile 共享底层存储的别名视图。</td>
-</tr>
-<tr>
-<td>数据搬运 / 布局</td>
-<td><a href="../isa/TSUBVIEW_zh/"><code>TSUBVIEW</code></a></td>
-<td>在给定行列偏移处创建子 Tile 视图而不复制数据。</td>
-</tr>
-<tr>
-<td>数据搬运 / 布局</td>
-<td><a href="../isa/TCONCAT_zh/"><code>TCONCAT</code></a></td>
-<td>沿列维将两个源 Tile 拼接到目标 Tile。</td>
-</tr>
-<tr>
-<td>数据搬运 / 布局</td>
 <td><a href="../isa/TTRANS_zh/"><code>TTRANS</code></a></td>
 <td>使用实现定义的临时 Tile 进行转置。</td>
 </tr>
 <tr>
 <td>数据搬运 / 布局</td>
-<td><a href="../isa/TPACK_zh/"><code>TPACK</code></a></td>
-<td>将 Tile 元素打包或转换为更窄的目标表示。</td>
+<td><a href="../isa/TSUBVIEW_zh/"><code>TSUBVIEW</code></a></td>
+<td>表达一个tile是另一个tile的subview</td>
+</tr>
+<tr>
+<td>数据搬运 / 布局</td>
+<td><a href="../isa/TGET_SCALE_ADDR_zh/"><code>TGET_SCALE_ADDR</code></a></td>
+<td>将输出tile的片上内存值绑定为扩展后的输入tile内存的值。</td>
 </tr>
 <tr>
 <td>复杂指令</td>
@@ -1169,7 +1163,7 @@
 <tr>
 <td>复杂指令</td>
 <td><a href="../isa/TSORT32_zh/"><code>TSORT32</code></a></td>
-<td>对固定大小的 32 元素块进行排序并生成索引映射。</td>
+<td>对 <code>src</code> 的每个 32 元素块连同对应的 <code>idx</code> 条目一起排序，并输出排序后的 value-index 对。</td>
 </tr>
 <tr>
 <td>复杂指令</td>
@@ -1222,29 +1216,59 @@
 <td>量化 Tile（例如 FP32 到 FP8），生成指数/缩放/最大值输出。</td>
 </tr>
 <tr>
-<td>复杂指令</td>
-<td><a href="../isa/TDEQUANT_zh/"><code>TDEQUANT</code></a></td>
-<td>使用 scale 与 offset Tile 将整数量化 Tile 反量化为浮点 Tile。</td>
+<td>通信</td>
+<td><a href="../isa/comm/TPUT_zh/"><code>TPUT</code></a></td>
+<td>远程写：将本地数据传输到远端 NPU 内存（GM → UB → GM）。</td>
 </tr>
 <tr>
-<td>复杂指令</td>
-<td><a href="../isa/TPUSH_zh/"><code>TPUSH</code></a></td>
-<td>将 Tile 推入 pipe 或 FIFO 的生产者端。</td>
+<td>通信</td>
+<td><a href="../isa/comm/TGET_zh/"><code>TGET</code></a></td>
+<td>远程读：将远端 NPU 数据读取到本地内存（GM → UB → GM）。</td>
 </tr>
 <tr>
-<td>复杂指令</td>
-<td><a href="../isa/TPOP_zh/"><code>TPOP</code></a></td>
-<td>从 pipe 或 FIFO 的消费者端弹出一个 Tile。</td>
+<td>通信</td>
+<td><a href="../isa/comm/TPUT_ASYNC_zh/"><code>TPUT_ASYNC</code></a></td>
+<td>异步远程写（本地 GM → DMA 引擎 → 远端 GM）。</td>
 </tr>
 <tr>
-<td>复杂指令</td>
-<td><a href="../isa/TFREE_zh/"><code>TFREE</code></a></td>
-<td>将当前占用的 pipe 或 FIFO 槽位释放回生产者。</td>
+<td>通信</td>
+<td><a href="../isa/comm/TGET_ASYNC_zh/"><code>TGET_ASYNC</code></a></td>
+<td>异步远程读（远端 GM → DMA 引擎 → 本地 GM）。</td>
 </tr>
 <tr>
-<td>复杂指令</td>
-<td><a href="../isa/THISTOGRAM_zh/"><code>THISTOGRAM</code></a></td>
-<td>使用索引 Tile 从源值中累计直方图 bin 计数。</td>
+<td>通信</td>
+<td><a href="../isa/comm/TNOTIFY_zh/"><code>TNOTIFY</code></a></td>
+<td>向远端 NPU 发送标志通知。</td>
+</tr>
+<tr>
+<td>通信</td>
+<td><a href="../isa/comm/TWAIT_zh/"><code>TWAIT</code></a></td>
+<td>阻塞等待，直到信号满足比较条件。</td>
+</tr>
+<tr>
+<td>通信</td>
+<td><a href="../isa/comm/TTEST_zh/"><code>TTEST</code></a></td>
+<td>非阻塞检测信号是否满足比较条件。</td>
+</tr>
+<tr>
+<td>通信</td>
+<td><a href="../isa/comm/TGATHER_zh/"><code>TGATHER</code></a></td>
+<td>从所有 rank 收集数据并沿 DIM_3 拼接。</td>
+</tr>
+<tr>
+<td>通信</td>
+<td><a href="../isa/comm/TSCATTER_zh/"><code>TSCATTER</code></a></td>
+<td>将数据沿 DIM_3 拆分并分发到所有 rank。</td>
+</tr>
+<tr>
+<td>通信</td>
+<td><a href="../isa/comm/TREDUCE_zh/"><code>TREDUCE</code></a></td>
+<td>从所有 rank 收集数据并逐元素归约到本地。</td>
+</tr>
+<tr>
+<td>通信</td>
+<td><a href="../isa/comm/TBROADCAST_zh/"><code>TBROADCAST</code></a></td>
+<td>将当前 NPU 的数据广播到所有 rank。</td>
 </tr>
 </tbody>
 </table>

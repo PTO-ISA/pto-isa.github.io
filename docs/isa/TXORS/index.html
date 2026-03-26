@@ -295,10 +295,6 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
@@ -448,6 +444,10 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
                 </li>
     </ul>
                   </li>
@@ -614,12 +614,6 @@
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.txors ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.txors %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.txors ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataTmp, typename... WaitEvents&gt;
@@ -627,11 +621,22 @@ PTO_INST RecordEvent TXORS(TileDataDst &amp;dst, TileDataSrc &amp;src0, typename
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Intended for integral element types.</li>
-<li>The op iterates over <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code>.</li>
-<li>Individual temporary space is required by A3 for calculation, while not used by A5.</li>
-<li>Setting the source Tile and destination Tile to the same memory is <strong>Unsupported</strong>.</li>
-<li>For A3, do not set temporary space to the same memory as source Tile or destination Tile.</li>
+<li><strong>Implementation checks (A2A3)</strong>:<ul>
+<li>Supported element types are <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, and <code>int16_t</code>.</li>
+<li><code>dst</code>, <code>src</code>, and <code>tmp</code> must use the same element type.</li>
+<li>In manual mode, source, destination, and temporary storage must not overlap in memory.</li>
+</ul>
+</li>
+<li><strong>Implementation checks (A5)</strong>:<ul>
+<li>Supported element types are <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, and <code>int32_t</code>.</li>
+<li><code>dst</code> and <code>src</code> element types must match.</li>
+<li><code>src.GetValidRow()/GetValidCol()</code> must match <code>dst</code>.</li>
+</ul>
+</li>
+<li><strong>Valid region</strong>:<ul>
+<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;

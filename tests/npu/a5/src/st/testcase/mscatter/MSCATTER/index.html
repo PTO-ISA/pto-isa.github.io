@@ -413,6 +413,10 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TIMG2COL/">TIMG2COL</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
@@ -587,10 +591,19 @@
 <pre><code class="language-text">mscatter.row.atomic_add %table, %src, %idx : (!pto.memref&lt;...&gt;, !pto.tile&lt;NxMxT&gt;, !pto.tile&lt;Nx1xi32&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/npu/a5/MScatter.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;ScatterAtomicOp Atomic = ScatterAtomicOp::None, ScatterOOB Mode = ScatterOOB::Undefined,
-          typename GlobalTable, typename TileSrc, typename TileIdx&gt;
-PTO_INTERNAL void MSCATTER(GlobalTable&amp; table, TileSrc&amp; src, TileIdx&amp; indices);
+<p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/npu/a5/MScatter.hpp</code>:</p>
+<pre><code class="language-cpp">// Default mode (ScatterAtomicOp::None, ScatterOOB::Undefined)
+template &lt;typename GlobalData, typename TileSrc, typename TileInd, typename... WaitEvents&gt;
+PTO_INST RecordEvent MSCATTER(GlobalData&amp; dst, TileSrc&amp; src, TileInd&amp; indexes, WaitEvents&amp;... events);
+
+// Explicit atomic mode
+template &lt;ScatterAtomicOp Atomic, typename GlobalData, typename TileSrc, typename TileInd, typename... WaitEvents&gt;
+PTO_INST RecordEvent MSCATTER(GlobalData&amp; dst, TileSrc&amp; src, TileInd&amp; indexes, WaitEvents&amp;... events);
+
+// Explicit atomic + OOB mode
+template &lt;ScatterAtomicOp Atomic, ScatterOOB Mode, typename GlobalData, typename TileSrc, typename TileInd,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent MSCATTER(GlobalData&amp; dst, TileSrc&amp; src, TileInd&amp; indexes, WaitEvents&amp;... events);
 </code></pre>
 <p><strong>Parameters:</strong>
 - <code>table</code>: Destination GlobalTensor in GM
@@ -764,6 +777,166 @@ void example_manual() {
 <li><a href="../../../../../../../../docs/isa/TSCATTER/"><code>TSCATTER</code></a>: Index-based scatter within tiles (UB-to-UB)</li>
 <li><a href="../../mgather/MGATHER/"><code>MGATHER</code></a>: Indexed gather from GM to Tile (inverse operation)</li>
 </ul>
+<h2 id="test-cases">Test Cases<a class="headerlink" href="#test-cases" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Data Type</th>
+<th>Src Size</th>
+<th>Out Size</th>
+<th>Atomic</th>
+<th>OOB Mode</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>case_half_8x32_1024</td>
+<td>half</td>
+<td>8×32</td>
+<td>1024</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_half_16x64_2048</td>
+<td>half</td>
+<td>16×64</td>
+<td>2048</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_8x32_512</td>
+<td>float</td>
+<td>8×32</td>
+<td>512</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_16x32_1024</td>
+<td>float</td>
+<td>16×32</td>
+<td>1024</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_16x64_2048</td>
+<td>float</td>
+<td>16×64</td>
+<td>2048</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_8x8_128</td>
+<td>float</td>
+<td>8×8</td>
+<td>128</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_int32_8x16_256</td>
+<td>int32</td>
+<td>8×16</td>
+<td>256</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_int32_16x32_1024</td>
+<td>int32</td>
+<td>16×32</td>
+<td>1024</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_int32_16x16_512</td>
+<td>int32</td>
+<td>16×16</td>
+<td>512</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_uint8_16x32_1024</td>
+<td>uint8</td>
+<td>16×32</td>
+<td>1024</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_uint8_16x64_2048</td>
+<td>uint8</td>
+<td>16×64</td>
+<td>2048</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_skip_8x32_512</td>
+<td>float</td>
+<td>8×32</td>
+<td>512</td>
+<td>None</td>
+<td>Skip</td>
+<td>OOB writes skipped</td>
+</tr>
+<tr>
+<td>case_int32_clamp_8x16_256</td>
+<td>int32</td>
+<td>8×16</td>
+<td>256</td>
+<td>None</td>
+<td>Clamp</td>
+<td>OOB indices clamped</td>
+</tr>
+<tr>
+<td>case_half_wrap_8x32_1024</td>
+<td>half</td>
+<td>8×32</td>
+<td>1024</td>
+<td>None</td>
+<td>Wrap</td>
+<td>OOB indices wrapped via modulo</td>
+</tr>
+<tr>
+<td>case_float_atomicadd_8x32_512</td>
+<td>float</td>
+<td>8×32</td>
+<td>512</td>
+<td>Add</td>
+<td>Undefined</td>
+<td>Atomic addition</td>
+</tr>
+<tr>
+<td>case_int32_atomicadd_skip_8x16_256</td>
+<td>int32</td>
+<td>8×16</td>
+<td>256</td>
+<td>Add</td>
+<td>Skip</td>
+<td>Atomic add with OOB skip</td>
+</tr>
+</tbody>
+</table>
               
             </div>
           </div><footer>

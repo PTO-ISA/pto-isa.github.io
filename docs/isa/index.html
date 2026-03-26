@@ -147,6 +147,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#complex">Complex</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#communication">Communication</a>
+    </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="conventions/">ISA Conventions</a>
@@ -433,6 +435,10 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TIMG2COL/">TIMG2COL</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
@@ -586,7 +592,7 @@
 <p>This directory contains the per-instruction reference for the PTO Tile Lib ISA.</p>
 <ul>
 <li>Source of truth (C++ intrinsics): <code>include/pto/common/pto_instr.hpp</code></li>
-<li>Common conventions (operands, events, modifiers): <code>docs/isa/conventions.md</code></li>
+<li><a href="conventions/">Common conventions (operands, events, modifiers)</a></li>
 </ul>
 <h2 id="synchronization">Synchronization<a class="headerlink" href="#synchronization" title="Permanent link">&para;</a></h2>
 <ul>
@@ -595,8 +601,6 @@
 <h2 id="manual-resource-binding">Manual / Resource Binding<a class="headerlink" href="#manual-resource-binding" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="TASSIGN/">TASSIGN</a> - Bind a Tile object to an implementation-defined on-chip address (manual placement).</li>
-<li><a href="TSETHF32MODE/">TSETHF32MODE</a> - Configure HF32 transform mode (implementation-defined).</li>
-<li><a href="TSETTF32MODE/">TSETTF32MODE</a> - Configure TF32 transform mode (implementation-defined).</li>
 <li><a href="TSETFMATRIX/">TSETFMATRIX</a> - Set FMATRIX register(s) for IMG2COL-like ops.</li>
 <li><a href="TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a> - Set IMG2COL repeat metadata from an IMG2COL configuration tile.</li>
 <li><a href="TSET_IMG2COL_PADDING/">TSET_IMG2COL_PADDING</a> - Set IMG2COL padding metadata from an IMG2COL configuration tile.</li>
@@ -636,10 +640,9 @@
 <ul>
 <li><a href="TEXPANDS/">TEXPANDS</a> - Broadcast a scalar into a destination tile.</li>
 <li><a href="TCMPS/">TCMPS</a> - Compare a tile against a scalar and write per-element comparison results.</li>
-<li><a href="TSELS/">TSELS</a> - Select one of two source tiles using a scalar <code>selectMode</code> (global select).</li>
+<li><a href="TSELS/">TSELS</a> - Select between source tile and scalar using a mask tile (per-element selection for source tile).</li>
 <li><a href="TMINS/">TMINS</a> - Elementwise minimum of a tile and a scalar.</li>
 <li><a href="TADDS/">TADDS</a> - Elementwise add a scalar to a tile.</li>
-<li><a href="TAXPY/">TAXPY</a> - AXPY-style fused update: multiply a tile by a scalar and accumulate into the destination tile.</li>
 <li><a href="TSUBS/">TSUBS</a> - Elementwise subtract a scalar from a tile.</li>
 <li><a href="TDIVS/">TDIVS</a> - Elementwise division with a scalar (tile/scalar or scalar/tile).</li>
 <li><a href="TMULS/">TMULS</a> - Elementwise multiply a tile by a scalar.</li>
@@ -664,6 +667,8 @@
 <li><a href="TCOLMAX/">TCOLMAX</a> - Reduce each column by taking the maximum across rows.</li>
 <li><a href="TROWMAX/">TROWMAX</a> - Reduce each row by taking the maximum across columns.</li>
 <li><a href="TROWMIN/">TROWMIN</a> - Reduce each row by taking the minimum across columns.</li>
+<li><a href="TROWARGMAX/">TROWARGMAX</a> - Get the column index of the maximum element for each row.</li>
+<li><a href="TROWARGMIN/">TROWARGMIN</a> - Get the column index of the minimum element for each row.</li>
 <li><a href="TROWEXPAND/">TROWEXPAND</a> - Broadcast the first element of each source row across the destination row.</li>
 <li><a href="TROWEXPANDDIV/">TROWEXPANDDIV</a> - Row-wise broadcast divide: divide each row of <code>src0</code> by a per-row scalar vector <code>src1</code>.</li>
 <li><a href="TROWEXPANDMUL/">TROWEXPANDMUL</a> - Row-wise broadcast multiply: multiply each row of <code>src0</code> by a per-row scalar vector <code>src1</code>.</li>
@@ -715,17 +720,15 @@
 <li><a href="TMOV/">TMOV</a> - Move/copy between tiles, optionally applying implementation-defined conversion modes.</li>
 <li><a href="TMOV_FP/">TMOV_FP</a> - Move/convert from an accumulator tile into a destination tile, using a scaling (<code>fp</code>) tile for vector quantization parameters.</li>
 <li><a href="TRESHAPE/">TRESHAPE</a> - Reinterpret a tile as another tile type/shape while preserving the underlying bytes.</li>
-<li><a href="TALIAS/">TALIAS</a> - Create an alias tile view that shares the original tile storage.</li>
-<li><a href="TSUBVIEW/">TSUBVIEW</a> - Create a sub-tile view at a row/column offset without copying data.</li>
-<li><a href="TCONCAT/">TCONCAT</a> - Concatenate two source tiles along the column dimension into a destination tile.</li>
 <li><a href="TTRANS/">TTRANS</a> - Transpose with an implementation-defined temporary tile.</li>
-<li><a href="TPACK/">TPACK</a> - Pack or convert tile elements into a narrower destination representation.</li>
+<li><a href="TSUBVIEW/">TSUBVIEW</a> - Reinterpret a tile as a subtile of another tile.</li>
+<li><a href="TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a> - Bind the on-chip address of output tile to a scaled factor of that of input tile.</li>
 </ul>
 <h2 id="complex">Complex<a class="headerlink" href="#complex" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="TPRINT/">TPRINT</a> - Debug/print elements from a tile (implementation-defined).</li>
 <li><a href="TMRGSORT/">TMRGSORT</a> - Merge sort for multiple sorted lists (implementation-defined element format and layout).</li>
-<li><a href="TSORT32/">TSORT32</a> - Sort a fixed-size 32-element block and produce an index mapping.</li>
+<li><a href="TSORT32/">TSORT32</a> - Sort each 32-element block of <code>src</code> together with the corresponding indices from <code>idx</code>, and write the sorted value-index pairs into <code>dst</code>.</li>
 <li><a href="TGATHER/">TGATHER</a> - Gather/select elements using either an index tile or a compile-time mask pattern.</li>
 <li><a href="TCI/">TCI</a> - Generate a contiguous integer sequence into a destination tile.</li>
 <li><a href="TTRI/">TTRI</a> - Generate a triangular (lower/upper) mask tile.</li>
@@ -736,12 +739,9 @@
 <li><a href="TGATHERB/">TGATHERB</a> - Gather elements using byte offsets.</li>
 <li><a href="TSCATTER/">TSCATTER</a> - Scatter rows of a source tile into a destination tile using per-element row indices.</li>
 <li><a href="TQUANT/">TQUANT</a> - Quantize a tile (e.g. FP32 to FP8) producing exponent/scaling/max outputs.</li>
-<li><a href="TDEQUANT/">TDEQUANT</a> - Dequantize an integer tile into a floating-point tile using scale and offset tiles.</li>
-<li><a href="TPUSH/">TPUSH</a> - Push a tile into a pipe or FIFO producer endpoint.</li>
-<li><a href="TPOP/">TPOP</a> - Pop a tile from a pipe or FIFO consumer endpoint.</li>
-<li><a href="TFREE/">TFREE</a> - Release the currently held pipe or FIFO slot back to the producer.</li>
-<li><a href="THISTOGRAM/">THISTOGRAM</a> - Accumulate histogram bin counts from source values using an index tile.</li>
 </ul>
+<h2 id="communication">Communication<a class="headerlink" href="#communication" title="Permanent link">&para;</a></h2>
+<p>See <a href="comm/">comm/README.md</a> for the full per-instruction communication ISA reference (point-to-point, async, synchronization, and collective operations).</p>
               
             </div>
           </div><footer>

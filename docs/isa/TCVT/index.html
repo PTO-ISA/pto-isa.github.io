@@ -239,10 +239,6 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
@@ -455,6 +451,10 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
@@ -621,12 +621,6 @@
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tcvt ins(%src{rmode = #pto&lt;round_mode xx&gt;}: !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcvt %src{rmode = #pto&lt;round_mode xx&gt;}: !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcvt ins(%src{rmode = #pto&lt;round_mode xx&gt;}: !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename... WaitEvents&gt;
@@ -640,7 +634,9 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode
 <li><code>dst</code> and <code>src</code> must be compatible in shape/valid region as required by the implementation.</li>
 <li>The conversion <code>(src element type) -&gt; (dst element type)</code> must be supported by the target for the given <code>RoundMode</code>.</li>
 <li><strong>Implementation notes (A2A3/A5)</strong>:<ul>
-<li><code>TCVT_IMPL</code> does not enforce additional <code>static_assert</code>/<code>PTO_ASSERT</code> checks on the type pair; unsupported conversions are target-defined.</li>
+<li>One form accepts an explicit <code>SaturationMode</code>, and the specified saturation behavior is forwarded directly to the implementation.</li>
+<li>The other form omits <code>SaturationMode</code>; in that case, the implementation chooses a target-defined default saturation behavior for the specific type pair.</li>
+<li>On CPU, only the form without explicit <code>SaturationMode</code> is currently implemented.</li>
 </ul>
 </li>
 </ul>

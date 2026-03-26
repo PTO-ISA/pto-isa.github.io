@@ -399,10 +399,6 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
@@ -454,6 +450,10 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TPACK/">TPACK</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TIMG2COL/">TIMG2COL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
                 </li>
     </ul>
                   </li>
@@ -621,12 +621,6 @@
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.textract ins(%src, %idxrow, %idxcol : !pto.tile_buf&lt;...&gt;, dtype, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.textract %src, %idxrow, %idxcol : (!pto.tile&lt;...&gt;, dtype, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.textract ins(%src, %idxrow, %idxcol : !pto.tile_buf&lt;...&gt;, dtype, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
@@ -638,6 +632,10 @@ PTO_INST RecordEvent TEXTRACT(DstTileData &amp;dst, SrcTileData &amp;src, uint16
 template &lt;typename DstTileData, typename SrcTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TEXTRACT(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TEXTRACT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
@@ -653,7 +651,8 @@ PTO_INST RecordEvent TEXTRACT(DstTileData &amp;dst, SrcTileData &amp;src, uint64
 <li><strong>Implementation checks (A5)</strong>:<ul>
 <li><code>DstTileData::DType</code> must equal <code>SrcTileData::DType</code> and must be one of: <code>int8_t</code>, <code>hifloat8_t</code>, <code>float8_e5m2_t</code>, <code>float8_e4m3_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, <code>float4_e2m1x2_t</code>, <code>float4_e1m2x2_t</code>, <code>float8_e8m0_t</code>.</li>
 <li>Source fractal must satisfy: <code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> or <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code> for Left/Right,  In GEMV scenarios, the source fractal satisfies <code>(SrcTileData::Rows == 1 &amp;&amp; SrcTileData::isRowMajor)</code> for Left. <code>(SFractal == RowMajor &amp;&amp; isRowMajor)</code> for ScaleLeft, <code>(SFractal == ColMajor &amp;&amp; !isRowMajor)</code> for ScaleRight.</li>
-<li>Destination supports <code>Mat -&gt; Left/Right/Scale</code> and also supports <code>Vec -&gt; Mat</code> for specific tile locations (no explicit runtime bounds assertions are enforced in <code>TEXTRACT_IMPL</code> on this target).</li>
+<li>Destination supports <code>Mat -&gt; Left/Right/Scale</code>, <code>Acc -&gt; Mat</code> (including relu/scalar-quant/vector-quant forms), and also supports specific <code>Vec -&gt; Mat</code> extraction paths.</li>
+<li>The vector-quantized form additionally requires an <code>FpTileData</code> scaling operand, matching the <code>TEXTRACT_FP(...)</code> interface shown above.</li>
 </ul>
 </li>
 </ul>
