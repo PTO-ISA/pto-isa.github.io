@@ -79,6 +79,8 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#option-2-manual-installation">Option 2: Manual Installation</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#option-3-one-step-environment-setup-script">Option 3: One-Step Environment Setup Script</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#environment-variables">Environment Variables</a>
@@ -625,7 +627,7 @@
   - macOS: Xcode/AppleClang (or Homebrew LLVM)
   - Windows: Visual Studio 2022 Build Tools (MSVC)
 - Python package: <code>numpy</code></p>
-<p><code>run_cpu.py</code> can install <code>numpy</code> automatically (unless you pass <code>--no-install</code>).</p>
+<p><code>tests/run_cpu.py</code> can install <code>numpy</code> automatically (unless you pass <code>--no-install</code>).</p>
 <p><strong>Optional (for faster builds):</strong>
 - Ninja (CMake generator)
 - Internet connection (CMake may fetch GoogleTest if not installed system-wide)</p>
@@ -661,7 +663,7 @@ winget install --id Microsoft.VisualStudio.2022.BuildTools -e
 - <a href="https://www.msys2.org">MSYS2</a></p>
 <p>After installation, add <code>path_to_compiler/bin</code> to <code>PATH</code> (verify with <code>gcc -v</code> in PowerShell).</p>
 <h3 id="get-the-code">Get The Code<a class="headerlink" href="#get-the-code" title="Permanent link">&para;</a></h3>
-<pre><code class="language-bash">git clone &lt;YOUR_REPO_URL&gt;
+<pre><code class="language-bash">git clone https://gitcode.com/cann/pto-isa.git
 cd pto-isa
 </code></pre>
 <h3 id="python-environment-setup">Python Environment Setup<a class="headerlink" href="#python-environment-setup" title="Permanent link">&para;</a></h3>
@@ -719,13 +721,7 @@ cd pto-isa
 - Linux (Ubuntu 20.04+ recommended)
 - Python &gt;= 3.8.0
 - GCC &gt;= 7.3.0
-- CMake &gt;= 3.16.0
-- Ascend NPU driver and firmware (for hardware execution)
-- CANN toolkit &gt;= 8.5.0</p>
-<blockquote>
-<p><strong>Note:</strong> Please make sure that the GCC version shown by bisheng -v is compatible with or matches the version shown by gcc -v.</p>
-<p>If they are dififerent, you can install a version of GCC that matches the version shown by gcc -v at the gcc path indicated by bisheng -v,or replace the default gcc with the version that matches what bisheng -v shows.</p>
-</blockquote>
+- CMake &gt;= 3.16.0</p>
 <p><strong>GoogleTest (required for unit tests):</strong></p>
 <p>Download <a href="https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz">GoogleTest 1.14.0</a> and install:</p>
 <pre><code class="language-bash">tar -xf googletest-1.14.0.tar.gz
@@ -739,6 +735,21 @@ sudo make install
 <p><strong>Note:</strong> Python requires packages: os, numpy, ctypes, struct, copy, math, enum, ml_dtypes, en_dtypes, etc.</p>
 <p>If you installed GoogleTest with different flags (e.g., <code>-D_GLIBCXX_USE_CXX11_ABI=0</code>), you must update <code>tests/npu/[a2a3|a5]/src/st/CMakeLists.txt</code> accordingly by adding <code>add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)</code>.</p>
 </blockquote>
+<p><strong>CANN Toolkit Installation</strong></p>
+<ul>
+<li>Ascend NPU driver and firmware (for hardware execution)</li>
+<li>CANN toolkit &gt;= 8.5.0</li>
+</ul>
+<blockquote>
+<p><strong>Important:</strong> After installing the CANN toolkit, set up the environment variables by running:</p>
+<p><code>bash
+source /usr/local/Ascend/cann/bin/setenv.bash</code></p>
+<p>Then verify that the GCC version shown by bisheng is compatible with or matches the version shown by gcc:</p>
+<p><code>bash
+bisheng -v
+gcc -v</code></p>
+<p>If they differ, you can install a version of GCC that matches the version shown by gcc -v at the gcc path indicated by bisheng -v, or replace the default gcc with the version that matches what bisheng -v shows.</p>
+</blockquote>
 <h3 id="installation-options">Installation Options<a class="headerlink" href="#installation-options" title="Permanent link">&para;</a></h3>
 <h4 id="option-1-quick-installation-recommended">Option 1: Quick Installation (Recommended)<a class="headerlink" href="#option-1-quick-installation-recommended" title="Permanent link">&para;</a></h4>
 <p>For complete installation guidance including driver, firmware, and toolkit:</p>
@@ -747,7 +758,7 @@ sudo make install
 <h4 id="option-2-manual-installation">Option 2: Manual Installation<a class="headerlink" href="#option-2-manual-installation" title="Permanent link">&para;</a></h4>
 <p><strong>Step 1: Install Driver and Firmware</strong></p>
 <p>Required for running on actual NPU hardware (skip if only building or using simulator).</p>
-<p>Installation guide: <a href="https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/softwareinst/instg/instg_0001.html?Mode=VmIns&amp;OS=Ubuntu&amp;Software=cannToolKit">NPU Driver and Firmware Installation Guide</a></p>
+<p>Installation guide: <a href="https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/softwareinst/instg/instg_0005.html?Mode=PmIns&amp;InstallType=local&amp;OS=openEuler&amp;Software=cannToolKit">NPU Driver and Firmware Installation Guide</a></p>
 <p><strong>Step 2: Install CANN Toolkit</strong></p>
 <p>Download the appropriate <code>Ascend-cann-toolkit_${cann_version}_linux-${arch}.run</code> installer from <a href="https://www.hiascend.com/developer/download/community/result?module=cann">CANN Downloads</a>.</p>
 <p>Required version: CANN &gt;= 8.5.0</p>
@@ -764,6 +775,14 @@ chmod +x Ascend-cann-toolkit_${cann_version}_linux-${arch}.run
 <p>Default paths:
 - Root installation: <code>/usr/local/Ascend/cann</code>
 - Non-root installation: <code>$HOME/Ascend/cann</code></p>
+<h4 id="option-3-one-step-environment-setup-script">Option 3: One-Step Environment Setup Script<a class="headerlink" href="#option-3-one-step-environment-setup-script" title="Permanent link">&para;</a></h4>
+<p>If you want to install the CANN toolkit, PTO ISA package, and GoogleTest all at once, use the project's built-in <code>install_pto.sh</code> script. It automatically detects whether the CANN toolkit is already installed: if it is, the PTO ISA package is installed directly; if not, provide the CANN toolkit installer path via the second argument.</p>
+<pre><code class="language-bash">chmod +x ./scripts/install_pto.sh
+./scripts/install_pto.sh &lt;cann_toolkit_install_path&gt; [cann_toolkit_package_path]
+</code></pre>
+<p>Parameters:
+- <code>&lt;cann_toolkit_install_path&gt;</code>: The installation path of the CANN toolkit (used to detect whether it is already installed)
+- <code>[cann_toolkit_package_path]</code>: Path to the CANN toolkit installer package (optional; only required if the CANN toolkit is not yet installed)</p>
 <h3 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h3>
 <p>Set up the CANN environment before running NPU tests:</p>
 <p><strong>Root installation (default path):</strong></p>
@@ -809,11 +828,6 @@ cd pto-isa
 <p><code>bash
   chmod +x build.sh
   ./build.sh --pkg</code></p>
-<p><strong>Environment Setup Script:</strong></p>
-<p>If you haven't installed the toolkit yet, download the toolkit package first, then:</p>
-<p><code>bash
-  chmod +x ./scripts/install_pto.sh
-  ./scripts/install_pto.sh &lt;toolkit_install_path&gt; [toolkit_package_path]</code></p>
 <hr />
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
