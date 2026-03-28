@@ -593,19 +593,19 @@ PTO_INST RecordEvent TROWARGMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileD
 <li>Tile location: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
 <li>Tile layout of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
 <li>Tile layout of <code>dst</code>:<ul>
-<li>Only support DN layout Tile of 1D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code></li>
-<li>ROWS muse be 32b aligned.</li>
+<li><strong>Compact Mode</strong>: DN layout Tile of 1D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code>, ROWS must be 32b aligned.</li>
+<li><strong>Traditional Mode</strong>: ND layout Tile of 2D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, COLS, BLayout::RowMajor, ValidRows, 1&gt;</code>.</li>
 </ul>
 </li>
 <li>Source data types: <code>half</code> or <code>float</code>.</li>
-<li>Destination data types: <code>uint32_t</code>.</li>
+<li>Destination data types: <code>uint32_t</code> or <code>int32_t</code>.</li>
 <li>Runtime valid checks:<ul>
 <li><code>srcValidCol != 0</code> and <code>srcValidRow != 0</code>.</li>
 </ul>
 </li>
 <li>A5:</li>
 <li>Source data types: <code>half</code> or <code>float</code>.</li>
-<li>Destination data types: <code>uint32_t</code>.</li>
+<li>Destination data types: <code>uint32_t</code> or <code>int32_t</code>.</li>
 <li>No explicit runtime assertions on <code>validRow/validCol</code> in the implementation; the loops use <code>src.GetValidRow()</code> and <code>src.GetValidCol()</code>.</li>
 <li><code>tmp</code> temporary tile is not used, only for compatibility use.</li>
 </ul>
@@ -614,9 +614,11 @@ PTO_INST RecordEvent TROWARGMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileD
 <li>Temporary tile is not used when <code>srcValidCol &lt;= ElementPerRepeat</code>, used when <code>srcValidCol &gt; ElementPerRepeat</code>.</li>
 <li><code>tmp</code> tile's rows is the same as <code>src</code>.</li>
 <li>Simply set <code>tmp</code> tile size the same as <code>src</code> when <code>src</code> is small.</li>
-<li>Use the following equation to get the minimum stride required by <code>tmp</code> tile, so as to save UB space:</li>
+<li><code>tmp</code> tile's stride can be calculated out based on <code>src</code>'s <code>validCol</code> using the following formula:</li>
 </ul>
-<div class="arithmatex">\[ stride = \frac{validCol / elementPerRepeat * 2 + elementPerBlock - 1}{elementPerBlock} * elementPerBlock + \frac{validCol / elementPerRepeat + elementPerBlock - 1}{elementPerBlock} * elementPerBlock \]</div>
+<pre><code class="language-text">repeats = ceil(validCol / elementPerRepeat)
+stride = ceil(repeats * 2 / elementPerBlock) * elementPerBlock + ceil(repeats / elementPerBlock) * elementPerBlock
+</code></pre>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;

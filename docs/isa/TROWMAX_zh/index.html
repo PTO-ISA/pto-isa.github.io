@@ -598,9 +598,11 @@ PTO_INST RecordEvent TROWMAX(TileDataOut &amp;dst, TileDataIn &amp;src, TileData
 <li>A2A3:<ul>
 <li>Tile location: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
 <li>Tile 布局 of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>Tile 布局 of <code>dst</code>:</li>
-<li><strong>推荐</strong>: DN layout Tile of 1D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code></li>
-<li><strong>将移除</strong>: ND layout Tile of 2D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, COLS, BLayout::RowMajor, ValidRows, 1&gt;</code></li>
+<li>Tile 布局 of <code>dst</code>:<ul>
+<li><strong>紧凑模式</strong>：DN 布局的一维 Tile，例如 <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code>，此时ROWS要做到32b对齐。</li>
+<li><strong>传统模式</strong>：ND 布局的二维 Tile，例如 <code>Tile&lt;TileType::Vec, T, ROWS, COLS, BLayout::RowMajor, ValidRows, 1&gt;</code>。</li>
+</ul>
+</li>
 <li>数据类型: <code>half</code> or <code>float</code>.</li>
 <li>数据类型一致性: <code>dst.DType == src.DType</code>.</li>
 <li>运行期有效区域检查:</li>
