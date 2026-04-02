@@ -565,19 +565,19 @@
 <p>本文档详细介绍 PTO 算子的编译流程，帮助开发者理解从源代码到可执行文件的完整过程，掌握编译优化技巧。</p>
 <h2 id="_2">目录<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="#1-编译流程概述">1. 编译流程概述</a></li>
-<li><a href="#2-构建系统配置">2. 构建系统配置</a></li>
-<li><a href="#3-编译步骤详解">3. 编译步骤详解</a></li>
-<li><a href="#4-编译选项说明">4. 编译选项说明</a></li>
-<li><a href="#5-交叉编译">5. 交叉编译</a></li>
-<li><a href="#6-编译优化">6. 编译优化</a></li>
-<li><a href="#7-常见问题排查">7. 常见问题排查</a></li>
-<li><a href="#8-高级主题">8. 高级主题</a></li>
+<li><a href="#1-%E7%BC%96%E8%AF%91%E6%B5%81%E7%A8%8B%E6%A6%82%E8%BF%B0">1. 编译流程概述</a></li>
+<li><a href="#2-%E6%9E%84%E5%BB%BA%E7%B3%BB%E7%BB%9F%E9%85%8D%E7%BD%AE">2. 构建系统配置</a></li>
+<li><a href="#3-%E7%BC%96%E8%AF%91%E6%AD%A5%E9%AA%A4%E8%AF%A6%E8%A7%A3">3. 编译步骤详解</a></li>
+<li><a href="#4-%E7%BC%96%E8%AF%91%E9%80%89%E9%A1%B9%E8%AF%B4%E6%98%8E">4. 编译选项说明</a></li>
+<li><a href="#5-%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91">5. 交叉编译</a></li>
+<li><a href="#6-%E7%BC%96%E8%AF%91%E4%BC%98%E5%8C%96">6. 编译优化</a></li>
+<li><a href="#7-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5">7. 常见问题排查</a></li>
+<li><a href="#8-%E9%AB%98%E7%BA%A7%E4%B8%BB%E9%A2%98">8. 高级主题</a></li>
 </ul>
 <hr />
 <h2 id="1">1. 编译流程概述<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
 <h3 id="11">1.1 完整编译流程图<a class="headerlink" href="#11" title="Permanent link">&para;</a></h3>
-<pre><code>┌─────────────────────────────────────────────────────────────┐
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────┐
 │                    PTO C++ 源码 (.cpp)                       │
 └────────────────────────┬────────────────────────────────────┘
                          │
@@ -638,11 +638,13 @@
 </code></pre>
 <h3 id="12">1.2 编译工具链<a class="headerlink" href="#12" title="Permanent link">&para;</a></h3>
 <h4 id="_3">必需工具<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
-<p><strong>CMake</strong>：
-- 版本要求：&gt;= 3.16
-- 用途：构建系统生成器
-- 安装：
-  ```bash
+<p><strong>CMake</strong>：</p>
+<ul>
+<li>版本要求：&gt;= 3.16</li>
+<li>用途：构建系统生成器</li>
+<li>安装：</li>
+</ul>
+<p>```bash
   # Ubuntu/Debian
   sudo apt install cmake</p>
 <p># CentOS/RHEL
@@ -652,16 +654,18 @@
 <p># Windows
   # 从 https://cmake.org/download/ 下载安装
   ```</p>
-<p><strong>C++ 编译器</strong>：
-- 要求：支持 C++20 标准
-- Linux 选项：
-  - GCC &gt;= 13.0
-  - Clang &gt;= 15.0
-- Windows 选项：
-  - MSVC 2022 (Visual Studio 17.0+)
-  - MinGW-w64 (GCC 13+)
-- 安装：
-  ```bash
+<p><strong>C++ 编译器</strong>：</p>
+<ul>
+<li>要求：支持 C++20 标准</li>
+<li>Linux 选项：</li>
+<li>GCC &gt;= 13.0</li>
+<li>Clang &gt;= 15.0</li>
+<li>Windows 选项：</li>
+<li>MSVC 2022 (Visual Studio 17.0+)</li>
+<li>MinGW-w64 (GCC 13+)</li>
+<li>安装：</li>
+</ul>
+<p>```bash
   # Ubuntu/Debian - GCC
   sudo apt install g++-13</p>
 <p># Ubuntu/Debian - Clang
@@ -669,21 +673,25 @@
 <p># CentOS/RHEL
   sudo yum install gcc-toolset-13
   ```</p>
-<p><strong>Python</strong>：
-- 版本要求：&gt;= 3.8
-- 用途：构建脚本、测试工具
-- 安装：
-  ```bash
+<p><strong>Python</strong>：</p>
+<ul>
+<li>版本要求：&gt;= 3.8</li>
+<li>用途：构建脚本、测试工具</li>
+<li>安装：</li>
+</ul>
+<p>```bash
   # Ubuntu/Debian
   sudo apt install python3 python3-pip</p>
 <p># CentOS/RHEL
   sudo yum install python3 python3-pip
   ```</p>
 <h4 id="_4">可选工具<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h4>
-<p><strong>Ninja</strong>：
-- 用途：加速构建（比 Make 快 2-3×）
-- 安装：
-  ```bash
+<p><strong>Ninja</strong>：</p>
+<ul>
+<li>用途：加速构建（比 Make 快 2-3×）</li>
+<li>安装：</li>
+</ul>
+<p>```bash
   # Ubuntu/Debian
   sudo apt install ninja-build</p>
 <p># CentOS/RHEL
@@ -691,20 +699,24 @@
 <p># macOS
   brew install ninja
   ```</p>
-<p><strong>ccache</strong>：
-- 用途：编译缓存（加速重复编译）
-- 安装：
-  ```bash
+<p><strong>ccache</strong>：</p>
+<ul>
+<li>用途：编译缓存（加速重复编译）</li>
+<li>安装：</li>
+</ul>
+<p>```bash
   # Ubuntu/Debian
   sudo apt install ccache</p>
 <p># 配置
   export CC="ccache gcc"
   export CXX="ccache g++"
   ```</p>
-<p><strong>clang-tidy</strong>：
-- 用途：静态代码分析
-- 安装：
-  <code>bash
+<p><strong>clang-tidy</strong>：</p>
+<ul>
+<li>用途：静态代码分析</li>
+<li>安装：</li>
+</ul>
+<p><code>bash
   sudo apt install clang-tidy</code></p>
 <hr />
 <h2 id="2">2. 构建系统配置<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
@@ -962,7 +974,7 @@ RPAREN
 SEMICOLON
 </code></pre>
 <p><strong>语法分析</strong>：</p>
-<pre><code>FunctionCall
+<pre><code class="language-text">FunctionCall
 ├─ Function: TLOAD
 └─ Arguments
     ├─ tile
@@ -1000,7 +1012,7 @@ g++ -std=c++20 -O3 -S src/my_operator.cpp -o build/my_operator.s
 </code></pre>
 <h3 id="33">3.3 链接阶段<a class="headerlink" href="#33" title="Permanent link">&para;</a></h3>
 <p><strong>符号解析</strong>：</p>
-<pre><code>my_operator.o:
+<pre><code class="language-text">my_operator.o:
   - 定义: main, my_kernel
   - 引用: TLOAD, TSTORE, TADD
 
@@ -1013,7 +1025,7 @@ libpto.a:
   my_operator.o::TADD → libpto.a::TADD ✓
 </code></pre>
 <p><strong>重定位</strong>：</p>
-<pre><code>my_operator.o 中的调用:
+<pre><code class="language-text">my_operator.o 中的调用:
   call TLOAD  // 地址未知
 
 链接后:
@@ -1035,45 +1047,57 @@ ldd build/my_operator
 <hr />
 <h2 id="4">4. 编译选项说明<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
 <h3 id="41">4.1 优化级别<a class="headerlink" href="#41" title="Permanent link">&para;</a></h3>
-<p><strong>-O0（无优化）</strong>：
-- 用途：调试
-- 特点：
-  - 编译最快
-  - 代码与源码一一对应
-  - 便于调试
-- 性能：最慢</p>
-<p><strong>-O1（基本优化）</strong>：
-- 用途：快速编译 + 基本优化
-- 特点：
-  - 编译较快
-  - 基本优化（常量折叠、死代码消除）
-- 性能：中等</p>
-<p><strong>-O2（标准优化）</strong>：
-- 用途：生产环境（推荐）
-- 特点：
-  - 编译时间适中
-  - 大部分优化（内联、循环优化）
-  - 不影响调试
-- 性能：快</p>
-<p><strong>-O3（激进优化）</strong>：
-- 用途：性能关键代码
-- 特点：
-  - 编译最慢
-  - 所有优化（向量化、循环展开）
-  - 可能增加代码大小
-- 性能：最快</p>
-<p><strong>-Os（优化代码大小）</strong>：
-- 用途：嵌入式系统
-- 特点：
-  - 最小化代码大小
-  - 牺牲部分性能
-- 性能：中等</p>
-<p><strong>-Ofast（超激进优化）</strong>：
-- 用途：不严格遵守标准的代码
-- 特点：
-  - 包含 -O3
-  - 启用 -ffast-math（可能违反 IEEE 754）
-- 性能：最快（但可能不正确）</p>
+<p><strong>-O0（无优化）</strong>：</p>
+<ul>
+<li>用途：调试</li>
+<li>特点：</li>
+<li>编译最快</li>
+<li>代码与源码一一对应</li>
+<li>便于调试</li>
+<li>性能：最慢</li>
+</ul>
+<p><strong>-O1（基本优化）</strong>：</p>
+<ul>
+<li>用途：快速编译 + 基本优化</li>
+<li>特点：</li>
+<li>编译较快</li>
+<li>基本优化（常量折叠、死代码消除）</li>
+<li>性能：中等</li>
+</ul>
+<p><strong>-O2（标准优化）</strong>：</p>
+<ul>
+<li>用途：生产环境（推荐）</li>
+<li>特点：</li>
+<li>编译时间适中</li>
+<li>大部分优化（内联、循环优化）</li>
+<li>不影响调试</li>
+<li>性能：快</li>
+</ul>
+<p><strong>-O3（激进优化）</strong>：</p>
+<ul>
+<li>用途：性能关键代码</li>
+<li>特点：</li>
+<li>编译最慢</li>
+<li>所有优化（向量化、循环展开）</li>
+<li>可能增加代码大小</li>
+<li>性能：最快</li>
+</ul>
+<p><strong>-Os（优化代码大小）</strong>：</p>
+<ul>
+<li>用途：嵌入式系统</li>
+<li>特点：</li>
+<li>最小化代码大小</li>
+<li>牺牲部分性能</li>
+<li>性能：中等</li>
+</ul>
+<p><strong>-Ofast（超激进优化）</strong>：</p>
+<ul>
+<li>用途：不严格遵守标准的代码</li>
+<li>特点：</li>
+<li>包含 -O3</li>
+<li>启用 -ffast-math（可能违反 IEEE 754）</li>
+<li>性能：最快（但可能不正确）</li>
+</ul>
 <p><strong>性能对比</strong>：</p>
 <pre><code class="language-bash"># 测试不同优化级别
 for opt in O0 O1 O2 O3 Ofast; do
@@ -1089,18 +1113,22 @@ done
 # -Ofast: 140 ms
 </code></pre>
 <h3 id="42">4.2 架构特定选项<a class="headerlink" href="#42" title="Permanent link">&para;</a></h3>
-<p><strong>-march=native</strong>：
-- 用途：针对当前 CPU 优化
-- 特点：
-  - 使用 CPU 特定指令（AVX2, AVX-512）
-  - 性能提升 10-30%
-  - 不可移植</p>
-<p><strong>-march=x86-64</strong>：
-- 用途：通用 x86-64 代码
-- 特点：
-  - 兼容所有 x86-64 CPU
-  - 不使用高级指令
-  - 可移植</p>
+<p><strong>-march=native</strong>：</p>
+<ul>
+<li>用途：针对当前 CPU 优化</li>
+<li>特点：</li>
+<li>使用 CPU 特定指令（AVX2, AVX-512）</li>
+<li>性能提升 10-30%</li>
+<li>不可移植</li>
+</ul>
+<p><strong>-march=x86-64</strong>：</p>
+<ul>
+<li>用途：通用 x86-64 代码</li>
+<li>特点：</li>
+<li>兼容所有 x86-64 CPU</li>
+<li>不使用高级指令</li>
+<li>可移植</li>
+</ul>
 <p><strong>示例</strong>：</p>
 <pre><code class="language-bash"># 针对当前 CPU 优化
 g++ -O3 -march=native src/my_operator.cpp
@@ -1245,8 +1273,8 @@ target_link_options(my_operator PRIVATE -flto)
 <hr />
 <h2 id="7">7. 常见问题排查<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
 <h3 id="71">7.1 编译错误<a class="headerlink" href="#71" title="Permanent link">&para;</a></h3>
-<p><strong>问题1：找不到头文件</strong></p>
-<pre><code>error: pto/pto-inst.hpp: No such file or directory
+<h4 id="1_1">问题1：找不到头文件<a class="headerlink" href="#1_1" title="Permanent link">&para;</a></h4>
+<pre><code class="language-text">error: pto/pto-inst.hpp: No such file or directory
 </code></pre>
 <p><strong>原因</strong>：PTO 库路径未设置</p>
 <p><strong>解决方案</strong>：</p>
@@ -1259,8 +1287,8 @@ cmake -B build -DPTO_ROOT=/path/to/pto-isa
 # 方法3：手动指定包含路径
 g++ -I/path/to/pto-isa/include src/my_operator.cpp
 </code></pre>
-<p><strong>问题2：静态断言失败</strong></p>
-<pre><code>static_assert failed: &quot;Tile shape not aligned&quot;
+<h4 id="2_1">问题2：静态断言失败<a class="headerlink" href="#2_1" title="Permanent link">&para;</a></h4>
+<pre><code class="language-text">static_assert failed: &quot;Tile shape not aligned&quot;
 </code></pre>
 <p><strong>原因</strong>：Tile 尺寸不满足对齐要求</p>
 <p><strong>解决方案</strong>：</p>
@@ -1270,8 +1298,8 @@ using TileT = Tile&lt;TileType::Vec, float, 16, 250&gt;;
 // 正确：宽度 256 是 16 的倍数
 using TileT = Tile&lt;TileType::Vec, float, 16, 256&gt;;
 </code></pre>
-<p><strong>问题3：链接错误</strong></p>
-<pre><code>undefined reference to `pto::TLOAD(...)`
+<h4 id="3_1">问题3：链接错误<a class="headerlink" href="#3_1" title="Permanent link">&para;</a></h4>
+<pre><code class="language-text">undefined reference to `pto::TLOAD(...)`
 </code></pre>
 <p><strong>原因</strong>：未链接 PTO 库</p>
 <p><strong>解决方案</strong>：</p>
@@ -1282,7 +1310,7 @@ target_link_libraries(my_operator PRIVATE PTO::pto)
 g++ build/my_operator.o -L/path/to/pto/lib -lpto -o build/my_operator
 </code></pre>
 <h3 id="72">7.2 性能问题<a class="headerlink" href="#72" title="Permanent link">&para;</a></h3>
-<p><strong>问题：Release 构建性能差</strong></p>
+<h4 id="release">问题：Release 构建性能差<a class="headerlink" href="#release" title="Permanent link">&para;</a></h4>
 <p><strong>诊断</strong>：</p>
 <pre><code class="language-bash"># 检查优化级别
 cmake --build build --verbose | grep &quot;\-O&quot;
@@ -1297,8 +1325,8 @@ set(CMAKE_CXX_FLAGS_RELEASE &quot;-O3 -DNDEBUG -march=native&quot;)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 </code></pre>
 <h3 id="73">7.3 运行时错误<a class="headerlink" href="#73" title="Permanent link">&para;</a></h3>
-<p><strong>问题：找不到共享库</strong></p>
-<pre><code>error while loading shared libraries: libpto.so: cannot open shared object file
+<h4 id="_5">问题：找不到共享库<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h4>
+<pre><code class="language-text">error while loading shared libraries: libpto.so: cannot open shared object file
 </code></pre>
 <p><strong>解决方案</strong>：</p>
 <pre><code class="language-bash"># 方法1：设置 LD_LIBRARY_PATH
@@ -1314,7 +1342,7 @@ cmake -B build -DCMAKE_INSTALL_RPATH=/path/to/pto/lib
 <hr />
 <h2 id="8">8. 高级主题<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
 <h3 id="81-pass">8.1 自定义编译 Pass<a class="headerlink" href="#81-pass" title="Permanent link">&para;</a></h3>
-<p><strong>示例：添加自定义优化</strong></p>
+<h4 id="_6">示例：添加自定义优化<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h4>
 <pre><code class="language-cmake"># CMakeLists.txt
 target_compile_options(my_operator
   PRIVATE
@@ -1339,7 +1367,7 @@ target_compile_options(my_operator
 # 用于 clangd, clang-tidy 等工具
 </code></pre>
 <hr />
-<h2 id="_5">参考资源<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_7">参考资源<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../getting-started_zh/">快速入门</a></li>
 <li><a href="../debug_zh/">算子调试指南</a></li>

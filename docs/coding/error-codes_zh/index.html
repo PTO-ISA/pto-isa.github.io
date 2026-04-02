@@ -565,19 +565,19 @@
 <p>本文档详细列出 PTO 开发中常见的错误码、错误信息及其解决方案，帮助开发者快速定位和解决问题。</p>
 <h2 id="_2">目录<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="#1-编译错误-e001-e099">1. 编译错误 (E001-E099)</a></li>
-<li><a href="#2-链接错误-l001-l099">2. 链接错误 (L001-L099)</a></li>
-<li><a href="#3-运行时错误-r001-r099">3. 运行时错误 (R001-R099)</a></li>
-<li><a href="#4-内存错误-m001-m099">4. 内存错误 (M001-M099)</a></li>
-<li><a href="#5-数值错误-n001-n099">5. 数值错误 (N001-N099)</a></li>
-<li><a href="#6-性能问题-p001-p099">6. 性能问题 (P001-P099)</a></li>
-<li><a href="#7-框架集成错误-f001-f099">7. 框架集成错误 (F001-F099)</a></li>
+<li><a href="#1-%E7%BC%96%E8%AF%91%E9%94%99%E8%AF%AF-e001-e099">1. 编译错误 (E001-E099)</a></li>
+<li><a href="#2-%E9%93%BE%E6%8E%A5%E9%94%99%E8%AF%AF-l001-l099">2. 链接错误 (L001-L099)</a></li>
+<li><a href="#3-%E8%BF%90%E8%A1%8C%E6%97%B6%E9%94%99%E8%AF%AF-r001-r099">3. 运行时错误 (R001-R099)</a></li>
+<li><a href="#4-%E5%86%85%E5%AD%98%E9%94%99%E8%AF%AF-m001-m099">4. 内存错误 (M001-M099)</a></li>
+<li><a href="#5-%E6%95%B0%E5%80%BC%E9%94%99%E8%AF%AF-n001-n099">5. 数值错误 (N001-N099)</a></li>
+<li><a href="#6-%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98-p001-p099">6. 性能问题 (P001-P099)</a></li>
+<li><a href="#7-%E6%A1%86%E6%9E%B6%E9%9B%86%E6%88%90%E9%94%99%E8%AF%AF-f001-f099">7. 框架集成错误 (F001-F099)</a></li>
 </ul>
 <hr />
 <h2 id="1-e001-e099">1. 编译错误 (E001-E099)<a class="headerlink" href="#1-e001-e099" title="Permanent link">&para;</a></h2>
 <h3 id="e001">E001: 头文件未找到<a class="headerlink" href="#e001" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>error: pto/pto-inst.hpp: No such file or directory
+<pre><code class="language-text">error: pto/pto-inst.hpp: No such file or directory
 </code></pre>
 <p><strong>原因</strong>：PTO 库路径未正确设置</p>
 <p><strong>解决方案</strong>：</p>
@@ -592,7 +592,7 @@ g++ -I/path/to/pto-isa/include src/my_operator.cpp
 </code></pre>
 <h3 id="e002-tile">E002: 静态断言失败 - Tile 对齐<a class="headerlink" href="#e002-tile" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>static_assert failed: &quot;Tile shape not aligned&quot;
+<pre><code class="language-text">static_assert failed: &quot;Tile shape not aligned&quot;
 static_assert failed: &quot;Tile width must be multiple of 16&quot;
 </code></pre>
 <p><strong>原因</strong>：Tile 尺寸不满足对齐要求</p>
@@ -610,7 +610,7 @@ using TileT = Tile&lt;TileType::Vec, float, 16, 256&gt;;
 </code></pre>
 <h3 id="e003">E003: 类型不匹配<a class="headerlink" href="#e003" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>error: no matching function for call to 'TADD(Tile&lt;float&gt;&amp;, Tile&lt;half&gt;&amp;)'
+<pre><code class="language-text">error: no matching function for call to 'TADD(Tile&lt;float&gt;&amp;, Tile&lt;half&gt;&amp;)'
 </code></pre>
 <p><strong>原因</strong>：Tile 类型不一致</p>
 <p><strong>解决方案</strong>：</p>
@@ -629,7 +629,7 @@ TADD(tile_c, tile_a, tile_b_float);
 </code></pre>
 <h3 id="e004-c">E004: C++ 标准版本不支持<a class="headerlink" href="#e004-c" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>error: 'concept' does not name a type
+<pre><code class="language-text">error: 'concept' does not name a type
 error: expected ';' before 'requires'
 </code></pre>
 <p><strong>原因</strong>：编译器不支持 C++20</p>
@@ -647,7 +647,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 </code></pre>
 <h3 id="e005">E005: 模板参数错误<a class="headerlink" href="#e005" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>error: template argument 3 is invalid
+<pre><code class="language-text">error: template argument 3 is invalid
 </code></pre>
 <p><strong>原因</strong>：Tile 模板参数不正确</p>
 <p><strong>解决方案</strong>：</p>
@@ -668,7 +668,7 @@ Tile&lt;TileType::Vec, float, 16, 256&gt; tile;
 </code></pre>
 <h3 id="e006">E006: 宏定义冲突<a class="headerlink" href="#e006" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>error: 'TILE_SIZE' was not declared in this scope
+<pre><code class="language-text">error: 'TILE_SIZE' was not declared in this scope
 warning: 'TILE_SIZE' macro redefined
 </code></pre>
 <p><strong>原因</strong>：宏定义冲突或未定义</p>
@@ -690,7 +690,7 @@ namespace my_op {
 <h2 id="2-l001-l099">2. 链接错误 (L001-L099)<a class="headerlink" href="#2-l001-l099" title="Permanent link">&para;</a></h2>
 <h3 id="l001">L001: 未定义的引用<a class="headerlink" href="#l001" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>undefined reference to `pto::TLOAD(...)`
+<pre><code class="language-text">undefined reference to `pto::TLOAD(...)`
 undefined reference to `pto::TSTORE(...)`
 </code></pre>
 <p><strong>原因</strong>：未链接 PTO 库</p>
@@ -703,7 +703,7 @@ target_link_libraries(my_operator PRIVATE PTO::pto)
 </code></pre>
 <h3 id="l002">L002: 找不到共享库<a class="headerlink" href="#l002" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>error while loading shared libraries: libpto.so: cannot open shared object file
+<pre><code class="language-text">error while loading shared libraries: libpto.so: cannot open shared object file
 </code></pre>
 <p><strong>原因</strong>：运行时找不到共享库</p>
 <p><strong>解决方案</strong>：</p>
@@ -722,7 +722,7 @@ ldd ./my_operator
 </code></pre>
 <h3 id="l003">L003: 符号版本不匹配<a class="headerlink" href="#l003" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>version `GLIBCXX_3.4.30' not found
+<pre><code class="language-text">version `GLIBCXX_3.4.30' not found
 </code></pre>
 <p><strong>原因</strong>：编译器版本与运行时库版本不匹配</p>
 <p><strong>解决方案</strong>：</p>
@@ -739,7 +739,7 @@ g++ -static-libstdc++ src/my_operator.cpp
 <h2 id="3-r001-r099">3. 运行时错误 (R001-R099)<a class="headerlink" href="#3-r001-r099" title="Permanent link">&para;</a></h2>
 <h3 id="r001-kernel">R001: Kernel 启动失败<a class="headerlink" href="#r001-kernel" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>PTO_ERROR: Failed to launch kernel
+<pre><code class="language-text">PTO_ERROR: Failed to launch kernel
 Error code: -1
 </code></pre>
 <p><strong>原因</strong>：Kernel 参数错误或资源不足</p>
@@ -757,7 +757,7 @@ EXEC_KERNEL_CMD(MyKernel, 24, float_ptr, ...);
 </code></pre>
 <h3 id="r002">R002: 断言失败<a class="headerlink" href="#r002" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>PTO_ASSERT failed: condition 'size &lt;= MAX_SIZE'
+<pre><code class="language-text">PTO_ASSERT failed: condition 'size &lt;= MAX_SIZE'
 File: my_operator.cpp, Line: 42
 </code></pre>
 <p><strong>原因</strong>：运行时条件检查失败</p>
@@ -776,7 +776,7 @@ void my_kernel(..., uint32_t size) {
 </code></pre>
 <h3 id="r003">R003: 空指针解引用<a class="headerlink" href="#r003" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>Segmentation fault (core dumped)
+<pre><code class="language-text">Segmentation fault (core dumped)
 </code></pre>
 <p><strong>原因</strong>：访问了空指针或无效内存</p>
 <p><strong>解决方案</strong>：</p>
@@ -796,7 +796,7 @@ g++ -fsanitize=address src/my_operator.cpp
 </code></pre>
 <h3 id="r004">R004: 数组越界<a class="headerlink" href="#r004" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>AddressSanitizer: heap-buffer-overflow
+<pre><code class="language-text">AddressSanitizer: heap-buffer-overflow
 </code></pre>
 <p><strong>原因</strong>：访问了数组边界之外的内存</p>
 <p><strong>解决方案</strong>：</p>
@@ -812,7 +812,7 @@ for (int i = start; i &lt; end; i += TILE_SIZE) {
 <h2 id="4-m001-m099">4. 内存错误 (M001-M099)<a class="headerlink" href="#4-m001-m099" title="Permanent link">&para;</a></h2>
 <h3 id="m001-l1">M001: L1 内存溢出<a class="headerlink" href="#m001-l1" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>PTO_ASSERT: L1 memory overflow
+<pre><code class="language-text">PTO_ASSERT: L1 memory overflow
 Required: 600 KB, Available: 512 KB
 </code></pre>
 <p><strong>原因</strong>：Tile 占用的 L1 内存超过容量</p>
@@ -841,7 +841,7 @@ for (int i = 1; i &lt; N; i++) {
 </code></pre>
 <h3 id="m002-gm">M002: GM 内存不足<a class="headerlink" href="#m002-gm" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>Failed to allocate GM memory: size = 4 GB
+<pre><code class="language-text">Failed to allocate GM memory: size = 4 GB
 </code></pre>
 <p><strong>原因</strong>：全局内存不足</p>
 <p><strong>解决方案</strong>：</p>
@@ -854,7 +854,7 @@ for (int offset = 0; offset &lt; total_size; offset += CHUNK_SIZE) {
 </code></pre>
 <h3 id="m003">M003: 内存泄漏<a class="headerlink" href="#m003" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>Memory leak detected: 1024 KB not freed
+<pre><code class="language-text">Memory leak detected: 1024 KB not freed
 </code></pre>
 <p><strong>原因</strong>：动态分配的内存未释放</p>
 <p><strong>解决方案</strong>：</p>
@@ -878,7 +878,7 @@ std::unique_ptr&lt;float[]&gt; buffer(new float[size]);
 </code></pre>
 <h3 id="m004">M004: 内存对齐错误<a class="headerlink" href="#m004" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>PTO_ASSERT: Memory address not aligned
+<pre><code class="language-text">PTO_ASSERT: Memory address not aligned
 Address: 0x12345678, Required alignment: 64
 </code></pre>
 <p><strong>原因</strong>：内存地址不满足对齐要求</p>
@@ -896,7 +896,7 @@ assert(reinterpret_cast&lt;uintptr_t&gt;(ptr) % 64 == 0);
 <h2 id="5-n001-n099">5. 数值错误 (N001-N099)<a class="headerlink" href="#5-n001-n099" title="Permanent link">&para;</a></h2>
 <h3 id="n001">N001: 数值精度误差<a class="headerlink" href="#n001" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>Numerical error: max_diff = 1e-2
+<pre><code class="language-text">Numerical error: max_diff = 1e-2
 Expected: 1.0, Got: 1.01
 </code></pre>
 <p><strong>原因</strong>：浮点精度问题或算法误差</p>
@@ -923,7 +923,7 @@ for (int i = 0; i &lt; n; i++) {
 </code></pre>
 <h3 id="n002-nan-inf">N002: NaN 或 Inf<a class="headerlink" href="#n002-nan-inf" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>Numerical error: NaN detected
+<pre><code class="language-text">Numerical error: NaN detected
 Numerical error: Inf detected
 </code></pre>
 <p><strong>原因</strong>：除零、溢出或无效操作</p>
@@ -950,7 +950,7 @@ TCLIP(tile, tile, -1e10f, 1e10f);  // 限制范围
 </code></pre>
 <h3 id="n003">N003: 数值溢出<a class="headerlink" href="#n003" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>Numerical overflow: value exceeds float32 range
+<pre><code class="language-text">Numerical overflow: value exceeds float32 range
 </code></pre>
 <p><strong>原因</strong>：计算结果超出数据类型范围</p>
 <p><strong>解决方案</strong>：</p>
@@ -1060,7 +1060,7 @@ for (int i = 0; i &lt; rows; i++) {
 <h2 id="7-f001-f099">7. 框架集成错误 (F001-F099)<a class="headerlink" href="#7-f001-f099" title="Permanent link">&para;</a></h2>
 <h3 id="f001-pytorch">F001: PyTorch 算子注册失败<a class="headerlink" href="#f001-pytorch" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>RuntimeError: No such operator npu::my_add
+<pre><code class="language-text">RuntimeError: No such operator npu::my_add
 </code></pre>
 <p><strong>原因</strong>：算子未正确注册</p>
 <p><strong>解决方案</strong>：</p>
@@ -1079,7 +1079,7 @@ print(torch.ops.npu.my_add)  # 应该显示算子信息
 </code></pre>
 <h3 id="f002">F002: 设备类型不匹配<a class="headerlink" href="#f002" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>RuntimeError: Expected all tensors to be on the same device, but found at least two devices, npu:0 and cpu!
+<pre><code class="language-text">RuntimeError: Expected all tensors to be on the same device, but found at least two devices, npu:0 and cpu!
 </code></pre>
 <p><strong>原因</strong>：输入张量在不同设备上</p>
 <p><strong>解决方案</strong>：</p>
@@ -1090,14 +1090,14 @@ z = torch.ops.npu.my_add(x, y)
 
 # 或在算子内部检查
 at::Tensor my_add_impl(const at::Tensor&amp; x, const at::Tensor&amp; y) {
-  TORCH_CHECK(x.device() == y.device(), 
+  TORCH_CHECK(x.device() == y.device(),
               &quot;Inputs must be on same device&quot;);
   // ...
 }
 </code></pre>
 <h3 id="f003">F003: 梯度计算错误<a class="headerlink" href="#f003" title="Permanent link">&para;</a></h3>
 <p><strong>错误信息</strong>：</p>
-<pre><code>RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn
+<pre><code class="language-text">RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn
 </code></pre>
 <p><strong>原因</strong>：未正确实现反向传播</p>
 <p><strong>解决方案</strong>：</p>

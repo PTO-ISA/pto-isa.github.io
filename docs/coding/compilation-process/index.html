@@ -576,7 +576,7 @@
 <hr />
 <h2 id="1-compilation-overview">1. Compilation Overview<a class="headerlink" href="#1-compilation-overview" title="Permanent link">&para;</a></h2>
 <h3 id="11-compilation-pipeline">1.1 Compilation Pipeline<a class="headerlink" href="#11-compilation-pipeline" title="Permanent link">&para;</a></h3>
-<pre><code>PTO C++ Source (.cpp)
+<pre><code class="language-text">PTO C++ Source (.cpp)
     ↓
 Preprocessor (macro expansion, #include, #ifdef)
     ↓
@@ -600,10 +600,12 @@ sudo apt install cmake
 # macOS
 brew install cmake
 </code></pre>
-<p><strong>C++ Compiler</strong> (C++20 support):
-- GCC &gt;= 13.0
-- Clang &gt;= 15.0
-- MSVC 2022 (Windows)</p>
+<p><strong>C++ Compiler</strong> (C++20 support):</p>
+<ul>
+<li>GCC &gt;= 13.0</li>
+<li>Clang &gt;= 15.0</li>
+<li>MSVC 2022 (Windows)</li>
+</ul>
 <p><strong>Python</strong> (&gt;= 3.8):</p>
 <pre><code class="language-bash">sudo apt install python3 python3-pip
 </code></pre>
@@ -691,7 +693,7 @@ __builtin_pto_load(tile.data(), input.data(), tile.size(), tile.alignment());
 </code></pre>
 <h3 id="33-linking">3.3 Linking<a class="headerlink" href="#33-linking" title="Permanent link">&para;</a></h3>
 <p><strong>Symbol Resolution</strong>:</p>
-<pre><code>my_operator.o:
+<pre><code class="language-text">my_operator.o:
   - Defines: main, my_kernel
   - References: TLOAD, TSTORE, TADD
 
@@ -823,15 +825,15 @@ cmake --build build
 <hr />
 <h2 id="7-troubleshooting">7. Troubleshooting<a class="headerlink" href="#7-troubleshooting" title="Permanent link">&para;</a></h2>
 <h3 id="71-common-compilation-errors">7.1 Common Compilation Errors<a class="headerlink" href="#71-common-compilation-errors" title="Permanent link">&para;</a></h3>
-<p><strong>Error: Header not found</strong></p>
-<pre><code>error: pto/pto-inst.hpp: No such file or directory
+<h4 id="error-header-not-found">Error: Header not found<a class="headerlink" href="#error-header-not-found" title="Permanent link">&para;</a></h4>
+<pre><code class="language-text">error: pto/pto-inst.hpp: No such file or directory
 </code></pre>
 <p><strong>Solution</strong>:</p>
 <pre><code class="language-bash">export PTO_LIB_PATH=/path/to/pto-isa
 cmake -B build -DPTO_ROOT=/path/to/pto-isa
 </code></pre>
-<p><strong>Error: Static assertion failed</strong></p>
-<pre><code>static_assert failed: &quot;Tile shape not aligned&quot;
+<h4 id="error-static-assertion-failed">Error: Static assertion failed<a class="headerlink" href="#error-static-assertion-failed" title="Permanent link">&para;</a></h4>
+<pre><code class="language-text">static_assert failed: &quot;Tile shape not aligned&quot;
 </code></pre>
 <p><strong>Solution</strong>:</p>
 <pre><code class="language-cpp">// Wrong: width 250 is not multiple of 16
@@ -840,15 +842,15 @@ using TileT = Tile&lt;TileType::Vec, float, 16, 250&gt;;
 // Correct: width 256 is multiple of 16
 using TileT = Tile&lt;TileType::Vec, float, 16, 256&gt;;
 </code></pre>
-<p><strong>Error: Undefined reference</strong></p>
-<pre><code>undefined reference to `pto::TLOAD(...)`
+<h4 id="error-undefined-reference">Error: Undefined reference<a class="headerlink" href="#error-undefined-reference" title="Permanent link">&para;</a></h4>
+<pre><code class="language-text">undefined reference to `pto::TLOAD(...)`
 </code></pre>
 <p><strong>Solution</strong>:</p>
 <pre><code class="language-cmake">target_link_libraries(my_operator PRIVATE PTO::pto)
 </code></pre>
 <h3 id="72-runtime-errors">7.2 Runtime Errors<a class="headerlink" href="#72-runtime-errors" title="Permanent link">&para;</a></h3>
-<p><strong>Error: Shared library not found</strong></p>
-<pre><code>error while loading shared libraries: libpto.so
+<h4 id="error-shared-library-not-found">Error: Shared library not found<a class="headerlink" href="#error-shared-library-not-found" title="Permanent link">&para;</a></h4>
+<pre><code class="language-text">error while loading shared libraries: libpto.so
 </code></pre>
 <p><strong>Solution</strong>:</p>
 <pre><code class="language-bash">export LD_LIBRARY_PATH=/path/to/pto/lib:$LD_LIBRARY_PATH
