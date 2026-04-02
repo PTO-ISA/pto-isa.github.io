@@ -623,7 +623,7 @@
   // loop body
 }
 
-scf.for %iv = %lb to %ub step %step 
+scf.for %iv = %lb to %ub step %step
     iter_args(%arg = %init) -&gt; (type) {
   // loop body with loop-carried variable
   scf.yield %new_value : type
@@ -633,13 +633,17 @@ scf.for unsigned %iv = %lb to %ub step %step : i32 {
   // unsigned comparison
 }
 </code></pre>
-<p><strong>Operands:</strong>
-- <code>lb</code>: Lower bound (index or integer)
-- <code>ub</code>: Upper bound (exclusive)
-- <code>step</code>: Step value (must be positive)
-- <code>iter_args</code>: Initial values for loop-carried variables (optional)</p>
-<p><strong>Results:</strong>
-- Final values of loop-carried variables (if any)</p>
+<p><strong>Operands:</strong></p>
+<ul>
+<li><code>lb</code>: Lower bound (index or integer)</li>
+<li><code>ub</code>: Upper bound (exclusive)</li>
+<li><code>step</code>: Step value (must be positive)</li>
+<li><code>iter_args</code>: Initial values for loop-carried variables (optional)</li>
+</ul>
+<p><strong>Results:</strong></p>
+<ul>
+<li>Final values of loop-carried variables (if any)</li>
+</ul>
 <p><strong>Example:</strong></p>
 <pre><code class="language-mlir">// Simple loop
 scf.for %i = %c0 to %c100 step %c1 {
@@ -647,7 +651,7 @@ scf.for %i = %c0 to %c100 step %c1 {
 }
 
 // Loop with accumulator
-%sum = scf.for %i = %c0 to %c100 step %c1 
+%sum = scf.for %i = %c0 to %c100 step %c1
     iter_args(%acc = %c0_i32) -&gt; (i32) {
   %val = memref.load %array[%i] : memref&lt;?xi32&gt;
   %new_acc = arith.addi %acc, %val : i32
@@ -674,9 +678,11 @@ scf.for unsigned %i = %lb to %ub step %step : i32 {
   scf.yield %next : type
 }
 </code></pre>
-<p><strong>Regions:</strong>
-- <code>before</code>: Condition check region (terminates with <code>scf.condition</code>)
-- <code>after</code>: Loop body region (terminates with <code>scf.yield</code>)</p>
+<p><strong>Regions:</strong></p>
+<ul>
+<li><code>before</code>: Condition check region (terminates with <code>scf.condition</code>)</li>
+<li><code>after</code>: Loop body region (terminates with <code>scf.yield</code>)</li>
+</ul>
 <p><strong>Example:</strong></p>
 <pre><code class="language-mlir">%result = scf.while (%arg = %init) : (i32) -&gt; i32 {
   %condition = arith.cmpi slt, %arg, %limit : i32
@@ -710,10 +716,14 @@ scf.if %condition {
   scf.yield %other : type
 }
 </code></pre>
-<p><strong>Operands:</strong>
-- <code>condition</code>: Boolean condition (i1)</p>
-<p><strong>Results:</strong>
-- Values yielded from branches (if any)</p>
+<p><strong>Operands:</strong></p>
+<ul>
+<li><code>condition</code>: Boolean condition (i1)</li>
+</ul>
+<p><strong>Results:</strong></p>
+<ul>
+<li>Values yielded from branches (if any)</li>
+</ul>
 <p><strong>Example:</strong></p>
 <pre><code class="language-mlir">// Simple if
 scf.if %condition {
@@ -754,10 +764,14 @@ scf.if %condition {
     scf.yield %default_value : type
   }
 </code></pre>
-<p><strong>Operands:</strong>
-- <code>arg</code>: Index value to switch on</p>
-<p><strong>Attributes:</strong>
-- <code>cases</code>: Array of case values</p>
+<p><strong>Operands:</strong></p>
+<ul>
+<li><code>arg</code>: Index value to switch on</li>
+</ul>
+<p><strong>Attributes:</strong></p>
+<ul>
+<li><code>cases</code>: Array of case values</li>
+</ul>
 <p><strong>Example:</strong></p>
 <pre><code class="language-mlir">%result = scf.index_switch %idx -&gt; i32
   case 0 {
@@ -792,8 +806,10 @@ scf.if %condition {
   scf.yield %value : type
 }
 </code></pre>
-<p><strong>Attributes:</strong>
-- <code>no_inline</code>: Optional flag to prevent inlining</p>
+<p><strong>Attributes:</strong></p>
+<ul>
+<li><code>no_inline</code>: Optional flag to prevent inlining</li>
+</ul>
 <p><strong>Semantics:</strong>
 Executes the region exactly once. Useful for creating multi-block regions within operations that normally allow only single blocks.</p>
 <p><strong>Example:</strong></p>
@@ -863,12 +879,16 @@ scf.yield
 <p><strong>Syntax:</strong></p>
 <pre><code class="language-mlir">scf.condition(%condition) %args... : types...
 </code></pre>
-<p><strong>Operands:</strong>
-- <code>condition</code>: Boolean condition (i1)
-- <code>args</code>: Values to pass to "after" region or return from loop</p>
-<p><strong>Semantics:</strong>
-- If <code>condition</code> is true: execute "after" region with <code>args</code>
-- If <code>condition</code> is false: exit loop and return <code>args</code></p>
+<p><strong>Operands:</strong></p>
+<ul>
+<li><code>condition</code>: Boolean condition (i1)</li>
+<li><code>args</code>: Values to pass to "after" region or return from loop</li>
+</ul>
+<p><strong>Semantics:</strong></p>
+<ul>
+<li>If <code>condition</code> is true: execute "after" region with <code>args</code></li>
+<li>If <code>condition</code> is false: exit loop and return <code>args</code></li>
+</ul>
 <p><strong>Example:</strong></p>
 <pre><code class="language-mlir">// In scf.while before region
 %keep_going = arith.cmpi slt, %i, %limit : i32
@@ -886,7 +906,7 @@ scf.condition(%cond) %i, %sum : i32, i32
 }
 </code></pre>
 <h3 id="pattern-2-loop-with-accumulator">Pattern 2: Loop with Accumulator<a class="headerlink" href="#pattern-2-loop-with-accumulator" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%sum = scf.for %i = %c0 to %c100 step %c1 
+<pre><code class="language-mlir">%sum = scf.for %i = %c0 to %c100 step %c1
     iter_args(%acc = %c0) -&gt; (i32) {
   %val = memref.load %array[%i] : memref&lt;?xi32&gt;
   %new_acc = arith.addi %acc, %val : i32
@@ -918,7 +938,7 @@ scf.condition(%cond) %i, %sum : i32, i32
 }
 </code></pre>
 <h3 id="pattern-6-loop-with-multiple-accumulators">Pattern 6: Loop with Multiple Accumulators<a class="headerlink" href="#pattern-6-loop-with-multiple-accumulators" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%sum, %prod = scf.for %i = %c0 to %c100 step %c1 
+<pre><code class="language-mlir">%sum, %prod = scf.for %i = %c0 to %c100 step %c1
     iter_args(%acc_sum = %c0, %acc_prod = %c1) -&gt; (i32, i32) {
   %val = memref.load %array[%i] : memref&lt;?xi32&gt;
   %new_sum = arith.addi %acc_sum, %val : i32

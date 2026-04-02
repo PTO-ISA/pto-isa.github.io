@@ -573,7 +573,7 @@
   // 循环体
 }
 
-scf.for %iv = %lb to %ub step %step 
+scf.for %iv = %lb to %ub step %step
     iter_args(%arg = %init) -&gt; (type) {
   // 带循环携带变量的循环体
   scf.yield %new_value : type
@@ -583,13 +583,17 @@ scf.for unsigned %iv = %lb to %ub step %step : i32 {
   // 无符号比较
 }
 </code></pre>
-<p><strong>操作数：</strong>
-- <code>lb</code>: 下界（索引或整数）
-- <code>ub</code>: 上界（不包含）
-- <code>step</code>: 步长值（必须为正）
-- <code>iter_args</code>: 循环携带变量的初始值（可选）</p>
-<p><strong>结果：</strong>
-- 循环携带变量的最终值（如果有）</p>
+<p><strong>操作数：</strong></p>
+<ul>
+<li><code>lb</code>: 下界（索引或整数）</li>
+<li><code>ub</code>: 上界（不包含）</li>
+<li><code>step</code>: 步长值（必须为正）</li>
+<li><code>iter_args</code>: 循环携带变量的初始值（可选）</li>
+</ul>
+<p><strong>结果：</strong></p>
+<ul>
+<li>循环携带变量的最终值（如果有）</li>
+</ul>
 <p><strong>示例：</strong></p>
 <pre><code class="language-mlir">// 简单循环
 scf.for %i = %c0 to %c100 step %c1 {
@@ -597,7 +601,7 @@ scf.for %i = %c0 to %c100 step %c1 {
 }
 
 // 带累加器的循环
-%sum = scf.for %i = %c0 to %c100 step %c1 
+%sum = scf.for %i = %c0 to %c100 step %c1
     iter_args(%acc = %c0_i32) -&gt; (i32) {
   %val = memref.load %array[%i] : memref&lt;?xi32&gt;
   %new_acc = arith.addi %acc, %val : i32
@@ -624,9 +628,11 @@ scf.for unsigned %i = %lb to %ub step %step : i32 {
   scf.yield %next : type
 }
 </code></pre>
-<p><strong>区域：</strong>
-- <code>before</code>: 条件检查区域（以 <code>scf.condition</code> 终止）
-- <code>after</code>: 循环体区域（以 <code>scf.yield</code> 终止）</p>
+<p><strong>区域：</strong></p>
+<ul>
+<li><code>before</code>: 条件检查区域（以 <code>scf.condition</code> 终止）</li>
+<li><code>after</code>: 循环体区域（以 <code>scf.yield</code> 终止）</li>
+</ul>
 <p><strong>示例：</strong></p>
 <pre><code class="language-mlir">%result = scf.while (%arg = %init) : (i32) -&gt; i32 {
   %condition = arith.cmpi slt, %arg, %limit : i32
@@ -660,10 +666,14 @@ scf.if %condition {
   scf.yield %other : type
 }
 </code></pre>
-<p><strong>操作数：</strong>
-- <code>condition</code>: 布尔条件（i1）</p>
-<p><strong>结果：</strong>
-- 从分支产生的值（如果有）</p>
+<p><strong>操作数：</strong></p>
+<ul>
+<li><code>condition</code>: 布尔条件（i1）</li>
+</ul>
+<p><strong>结果：</strong></p>
+<ul>
+<li>从分支产生的值（如果有）</li>
+</ul>
 <p><strong>示例：</strong></p>
 <pre><code class="language-mlir">// 简单 if
 scf.if %condition {
@@ -704,10 +714,14 @@ scf.if %condition {
     scf.yield %default_value : type
   }
 </code></pre>
-<p><strong>操作数：</strong>
-- <code>arg</code>: 要切换的索引值</p>
-<p><strong>属性：</strong>
-- <code>cases</code>: case 值数组</p>
+<p><strong>操作数：</strong></p>
+<ul>
+<li><code>arg</code>: 要切换的索引值</li>
+</ul>
+<p><strong>属性：</strong></p>
+<ul>
+<li><code>cases</code>: case 值数组</li>
+</ul>
 <p><strong>示例：</strong></p>
 <pre><code class="language-mlir">%result = scf.index_switch %idx -&gt; i32
   case 0 {
@@ -742,8 +756,10 @@ scf.if %condition {
   scf.yield %value : type
 }
 </code></pre>
-<p><strong>属性：</strong>
-- <code>no_inline</code>: 可选标志，防止内联</p>
+<p><strong>属性：</strong></p>
+<ul>
+<li><code>no_inline</code>: 可选标志，防止内联</li>
+</ul>
 <p><strong>语义：</strong>
 恰好执行区域一次。用于在通常只允许单个块的操作中创建多块区域。</p>
 <p><strong>示例：</strong></p>
@@ -813,12 +829,16 @@ scf.yield
 <p><strong>语法：</strong></p>
 <pre><code class="language-mlir">scf.condition(%condition) %args... : types...
 </code></pre>
-<p><strong>操作数：</strong>
-- <code>condition</code>: 布尔条件（i1）
-- <code>args</code>: 要传递给"after"区域或从循环返回的值</p>
-<p><strong>语义：</strong>
-- 如果 <code>condition</code> 为真：使用 <code>args</code> 执行"after"区域
-- 如果 <code>condition</code> 为假：退出循环并返回 <code>args</code></p>
+<p><strong>操作数：</strong></p>
+<ul>
+<li><code>condition</code>: 布尔条件（i1）</li>
+<li><code>args</code>: 要传递给"after"区域或从循环返回的值</li>
+</ul>
+<p><strong>语义：</strong></p>
+<ul>
+<li>如果 <code>condition</code> 为真：使用 <code>args</code> 执行"after"区域</li>
+<li>如果 <code>condition</code> 为假：退出循环并返回 <code>args</code></li>
+</ul>
 <p><strong>示例：</strong></p>
 <pre><code class="language-mlir">// 在 scf.while before 区域中
 %keep_going = arith.cmpi slt, %i, %limit : i32
@@ -836,7 +856,7 @@ scf.condition(%cond) %i, %sum : i32, i32
 }
 </code></pre>
 <h3 id="2">模式 2：带累加器的循环<a class="headerlink" href="#2" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%sum = scf.for %i = %c0 to %c100 step %c1 
+<pre><code class="language-mlir">%sum = scf.for %i = %c0 to %c100 step %c1
     iter_args(%acc = %c0) -&gt; (i32) {
   %val = memref.load %array[%i] : memref&lt;?xi32&gt;
   %new_acc = arith.addi %acc, %val : i32
@@ -868,7 +888,7 @@ scf.condition(%cond) %i, %sum : i32, i32
 }
 </code></pre>
 <h3 id="6">模式 6：带多个累加器的循环<a class="headerlink" href="#6" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%sum, %prod = scf.for %i = %c0 to %c100 step %c1 
+<pre><code class="language-mlir">%sum, %prod = scf.for %i = %c0 to %c100 step %c1
     iter_args(%acc_sum = %c0, %acc_prod = %c1) -&gt; (i32, i32) {
   %val = memref.load %array[%i] : memref&lt;?xi32&gt;
   %new_sum = arith.addi %acc_sum, %val : i32
