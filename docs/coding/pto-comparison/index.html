@@ -629,28 +629,36 @@
 <hr />
 <h2 id="1-pto-vs-ascendc">1. PTO vs AscendC<a class="headerlink" href="#1-pto-vs-ascendc" title="Permanent link">&para;</a></h2>
 <h3 id="pto-advantages">PTO Advantages<a class="headerlink" href="#pto-advantages" title="Permanent link">&para;</a></h3>
-<p><strong>Higher Abstraction Level</strong>
-- PTO operates on Tiles (2D data blocks), while AscendC requires manual register management
-- Automatic handling of data alignment and layout conversion
-- Easier to understand and maintain</p>
-<p><strong>Cross-generation Compatibility</strong></p>
+<h4 id="higher-abstraction-level">Higher Abstraction Level<a class="headerlink" href="#higher-abstraction-level" title="Permanent link">&para;</a></h4>
+<ul>
+<li>PTO operates on Tiles (2D data blocks), while AscendC requires manual register management</li>
+<li>Automatic handling of data alignment and layout conversion</li>
+<li>Easier to understand and maintain</li>
+</ul>
+<h4 id="cross-generation-compatibility">Cross-generation Compatibility<a class="headerlink" href="#cross-generation-compatibility" title="Permanent link">&para;</a></h4>
 <pre><code class="language-cpp">// PTO code runs on A2/A3/A5 without modification
 using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
 TLOAD(tile, globalTensor);
 TADD(result, tile1, tile2);
 </code></pre>
-<p><strong>Development Efficiency</strong>
-- Fewer lines of code (typically 30-50% reduction)
-- Faster development cycle
-- Easier performance tuning</p>
+<h4 id="development-efficiency">Development Efficiency<a class="headerlink" href="#development-efficiency" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Fewer lines of code (typically 30-50% reduction)</li>
+<li>Faster development cycle</li>
+<li>Easier performance tuning</li>
+</ul>
 <h3 id="ascendc-advantages">AscendC Advantages<a class="headerlink" href="#ascendc-advantages" title="Permanent link">&para;</a></h3>
-<p><strong>Ultimate Performance Control</strong>
-- Direct control of hardware registers
-- Can achieve optimal instruction scheduling
-- Suitable for scenarios requiring extreme performance</p>
-<p><strong>Lower-level Hardware Access</strong>
-- Can use all hardware features
-- Finer-grained pipeline control</p>
+<h4 id="ultimate-performance-control">Ultimate Performance Control<a class="headerlink" href="#ultimate-performance-control" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Direct control of hardware registers</li>
+<li>Can achieve optimal instruction scheduling</li>
+<li>Suitable for scenarios requiring extreme performance</li>
+</ul>
+<h4 id="lower-level-hardware-access">Lower-level Hardware Access<a class="headerlink" href="#lower-level-hardware-access" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Can use all hardware features</li>
+<li>Finer-grained pipeline control</li>
+</ul>
 <h3 id="selection-recommendation">Selection Recommendation<a class="headerlink" href="#selection-recommendation" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Choose PTO</strong>: Most custom operator development, need cross-generation compatibility</li>
@@ -659,7 +667,7 @@ TADD(result, tile1, tile2);
 <hr />
 <h2 id="2-pto-vs-tbe">2. PTO vs TBE<a class="headerlink" href="#2-pto-vs-tbe" title="Permanent link">&para;</a></h2>
 <h3 id="pto-advantages_1">PTO Advantages<a class="headerlink" href="#pto-advantages_1" title="Permanent link">&para;</a></h3>
-<p><strong>Better Performance Control</strong></p>
+<h4 id="better-performance-control">Better Performance Control<a class="headerlink" href="#better-performance-control" title="Permanent link">&para;</a></h4>
 <pre><code class="language-cpp">// PTO allows precise control of tiling and pipeline
 for (int k = 0; k &lt; K; k += tileK) {
   TLOAD(tileA, ...);  // Explicit data transfer control
@@ -667,19 +675,25 @@ for (int k = 0; k &lt; K; k += tileK) {
   TMATMUL(acc, tileA, tileB);  // Explicit compute control
 }
 </code></pre>
-<p><strong>More Flexible Operator Implementation</strong>
-- Can implement complex custom logic
-- Supports dynamic shapes and masks
-- Easier to implement operator fusion</p>
+<h4 id="more-flexible-operator-implementation">More Flexible Operator Implementation<a class="headerlink" href="#more-flexible-operator-implementation" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Can implement complex custom logic</li>
+<li>Supports dynamic shapes and masks</li>
+<li>Easier to implement operator fusion</li>
+</ul>
 <h3 id="tbe-advantages">TBE Advantages<a class="headerlink" href="#tbe-advantages" title="Permanent link">&para;</a></h3>
-<p><strong>Higher Development Efficiency</strong>
-- Based on TensorFlow/PyTorch high-level APIs
-- Automatic optimization and scheduling
-- Faster prototyping</p>
-<p><strong>Simpler Learning Curve</strong>
-- Python-like programming model
-- Rich operator library
-- Comprehensive documentation and examples</p>
+<h4 id="higher-development-efficiency">Higher Development Efficiency<a class="headerlink" href="#higher-development-efficiency" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Based on TensorFlow/PyTorch high-level APIs</li>
+<li>Automatic optimization and scheduling</li>
+<li>Faster prototyping</li>
+</ul>
+<h4 id="simpler-learning-curve">Simpler Learning Curve<a class="headerlink" href="#simpler-learning-curve" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Python-like programming model</li>
+<li>Rich operator library</li>
+<li>Comprehensive documentation and examples</li>
+</ul>
 <h3 id="selection-recommendation_1">Selection Recommendation<a class="headerlink" href="#selection-recommendation_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Choose PTO</strong>: Need high-performance custom operators with clear performance requirements</li>
@@ -688,33 +702,43 @@ for (int k = 0; k &lt; K; k += tileK) {
 <hr />
 <h2 id="3-pto-vs-cuda">3. PTO vs CUDA<a class="headerlink" href="#3-pto-vs-cuda" title="Permanent link">&para;</a></h2>
 <h3 id="pto-advantages_2">PTO Advantages<a class="headerlink" href="#pto-advantages_2" title="Permanent link">&para;</a></h3>
-<p><strong>Cross-platform Portability</strong></p>
+<h4 id="cross-platform-portability">Cross-platform Portability<a class="headerlink" href="#cross-platform-portability" title="Permanent link">&para;</a></h4>
 <pre><code class="language-cpp">// PTO code runs on different Ascend generations
 // A2/A3/A5 without modification
 
 // CUDA code is NVIDIA-specific
 // Needs rewrite for AMD/Intel GPUs
 </code></pre>
-<p><strong>Higher Abstraction Level</strong>
-- Tile-based programming vs thread-based
-- Automatic memory hierarchy management
-- Less boilerplate code</p>
-<p><strong>Better Compiler Optimization</strong>
-- Compiler understands high-level semantics
-- Automatic pipeline optimization
-- Better instruction scheduling</p>
+<h4 id="higher-abstraction-level_1">Higher Abstraction Level<a class="headerlink" href="#higher-abstraction-level_1" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Tile-based programming vs thread-based</li>
+<li>Automatic memory hierarchy management</li>
+<li>Less boilerplate code</li>
+</ul>
+<h4 id="better-compiler-optimization">Better Compiler Optimization<a class="headerlink" href="#better-compiler-optimization" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Compiler understands high-level semantics</li>
+<li>Automatic pipeline optimization</li>
+<li>Better instruction scheduling</li>
+</ul>
 <h3 id="cuda-advantages">CUDA Advantages<a class="headerlink" href="#cuda-advantages" title="Permanent link">&para;</a></h3>
-<p><strong>Mature Ecosystem</strong>
-- Extensive libraries (cuBLAS, cuDNN, Thrust)
-- Rich community resources
-- Comprehensive tooling (Nsight, nvprof)</p>
-<p><strong>Fine-grained Control</strong>
-- Thread-level control
-- Shared memory management
-- Warp-level primitives</p>
-<p><strong>Wider Hardware Support</strong>
-- Runs on all NVIDIA GPUs
-- Large installed base</p>
+<h4 id="mature-ecosystem">Mature Ecosystem<a class="headerlink" href="#mature-ecosystem" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Extensive libraries (cuBLAS, cuDNN, Thrust)</li>
+<li>Rich community resources</li>
+<li>Comprehensive tooling (Nsight, nvprof)</li>
+</ul>
+<h4 id="fine-grained-control">Fine-grained Control<a class="headerlink" href="#fine-grained-control" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Thread-level control</li>
+<li>Shared memory management</li>
+<li>Warp-level primitives</li>
+</ul>
+<h4 id="wider-hardware-support">Wider Hardware Support<a class="headerlink" href="#wider-hardware-support" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Runs on all NVIDIA GPUs</li>
+<li>Large installed base</li>
+</ul>
 <h3 id="selection-recommendation_2">Selection Recommendation<a class="headerlink" href="#selection-recommendation_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Choose PTO</strong>: Developing for Ascend NPU, need portability across generations</li>
@@ -755,11 +779,13 @@ for (int k = 0; k &lt; K; k += tileK) {
   }
 }
 </code></pre>
-<p><strong>Comparison</strong>:
-- PTO: Tile-based, processes 4096 elements per iteration
-- CUDA: Thread-based, processes 1 element per thread
-- PTO: Fewer memory transactions, better bandwidth utilization
-- CUDA: More flexible thread organization</p>
+<p><strong>Comparison</strong>:</p>
+<ul>
+<li>PTO: Tile-based, processes 4096 elements per iteration</li>
+<li>CUDA: Thread-based, processes 1 element per thread</li>
+<li>PTO: Fewer memory transactions, better bandwidth utilization</li>
+<li>CUDA: More flexible thread organization</li>
+</ul>
 <h3 id="42-matrix-multiplication">4.2 Matrix Multiplication<a class="headerlink" href="#42-matrix-multiplication" title="Permanent link">&para;</a></h3>
 <p><strong>PTO</strong>:</p>
 <pre><code class="language-cpp">__global__ __aicore__ void MatMul(
@@ -818,11 +844,13 @@ for (int k = 0; k &lt; K; k += tileK) {
   C[row * N + col] = sum;
 }
 </code></pre>
-<p><strong>Comparison</strong>:
-- PTO: Hardware matrix multiply instruction (TMATMUL)
-- CUDA: Manual loop-based multiplication
-- PTO: Simpler code, better performance
-- CUDA: More explicit memory management</p>
+<p><strong>Comparison</strong>:</p>
+<ul>
+<li>PTO: Hardware matrix multiply instruction (TMATMUL)</li>
+<li>CUDA: Manual loop-based multiplication</li>
+<li>PTO: Simpler code, better performance</li>
+<li>CUDA: More explicit memory management</li>
+</ul>
 <hr />
 <h2 id="5-performance-comparison">5. Performance Comparison<a class="headerlink" href="#5-performance-comparison" title="Permanent link">&para;</a></h2>
 <h3 id="51-development-time">5.1 Development Time<a class="headerlink" href="#51-development-time" title="Permanent link">&para;</a></h3>
@@ -903,13 +931,15 @@ for (int k = 0; k &lt; K; k += tileK) {
 </tr>
 </tbody>
 </table>
-<p><strong>Notes</strong>:
-- AscendC can achieve 5-15% better performance with expert optimization
-- TBE has 20-40% overhead due to abstraction
-- CUDA performance on different hardware (not directly comparable)</p>
+<p><strong>Notes</strong>:</p>
+<ul>
+<li>AscendC can achieve 5-15% better performance with expert optimization</li>
+<li>TBE has 20-40% overhead due to abstraction</li>
+<li>CUDA performance on different hardware (not directly comparable)</li>
+</ul>
 <hr />
 <h2 id="6-selection-decision-tree">6. Selection Decision Tree<a class="headerlink" href="#6-selection-decision-tree" title="Permanent link">&para;</a></h2>
-<pre><code>Start
+<pre><code class="language-text">Start
   │
   ├─ Need cross-generation compatibility?
   │   ├─ Yes → PTO ✅
@@ -932,11 +962,13 @@ for (int k = 0; k &lt; K; k += tileK) {
 <hr />
 <h2 id="7-migration-guide">7. Migration Guide<a class="headerlink" href="#7-migration-guide" title="Permanent link">&para;</a></h2>
 <h3 id="71-cuda-to-pto">7.1 CUDA to PTO<a class="headerlink" href="#71-cuda-to-pto" title="Permanent link">&para;</a></h3>
-<p><strong>Key Differences</strong>:
-- Thread → Tile
-- <code>__shared__</code> memory → L1 Tile
-- <code>__syncthreads()</code> → Event-based sync
-- Manual loops → Tile operations</p>
+<p><strong>Key Differences</strong>:</p>
+<ul>
+<li>Thread → Tile</li>
+<li><code>__shared__</code> memory → L1 Tile</li>
+<li><code>__syncthreads()</code> → Event-based sync</li>
+<li>Manual loops → Tile operations</li>
+</ul>
 <p><strong>Example</strong>:</p>
 <pre><code class="language-cpp">// CUDA
 __global__ void kernel() {
@@ -957,10 +989,12 @@ __global__ __aicore__ void kernel() {
 }
 </code></pre>
 <h3 id="72-tbe-to-pto">7.2 TBE to PTO<a class="headerlink" href="#72-tbe-to-pto" title="Permanent link">&para;</a></h3>
-<p><strong>Key Differences</strong>:
-- High-level ops → Low-level Tile ops
-- Automatic scheduling → Manual pipeline
-- Python → C++</p>
+<p><strong>Key Differences</strong>:</p>
+<ul>
+<li>High-level ops → Low-level Tile ops</li>
+<li>Automatic scheduling → Manual pipeline</li>
+<li>Python → C++</li>
+</ul>
 <hr />
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>

@@ -629,29 +629,37 @@
 <hr />
 <h2 id="1-pto-vs-ascendc">1. PTO vs AscendC<a class="headerlink" href="#1-pto-vs-ascendc" title="Permanent link">&para;</a></h2>
 <h3 id="pto_1">PTO 的优势<a class="headerlink" href="#pto_1" title="Permanent link">&para;</a></h3>
-<p><strong>更高的抽象层级</strong>
-- PTO 以 Tile（二维数据块）为单位操作，而 AscendC 需要手动管理寄存器
-- 自动处理数据对齐和布局转换
-- 更容易理解和维护</p>
-<p><strong>跨代际兼容性</strong></p>
+<h4 id="_2">更高的抽象层级<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
+<ul>
+<li>PTO 以 Tile（二维数据块）为单位操作，而 AscendC 需要手动管理寄存器</li>
+<li>自动处理数据对齐和布局转换</li>
+<li>更容易理解和维护</li>
+</ul>
+<h4 id="_3">跨代际兼容性<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
 <pre><code class="language-cpp">// PTO 代码在 A2/A3/A5 上无需修改
 using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
 TLOAD(tile, globalTensor);
 TADD(result, tile1, tile2);
 </code></pre>
-<p><strong>开发效率</strong>
-- 更少的代码行数（通常减少 30-50%）
-- 更快的开发周期
-- 更容易进行性能调优</p>
+<h4 id="_4">开发效率<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h4>
+<ul>
+<li>更少的代码行数（通常减少 30-50%）</li>
+<li>更快的开发周期</li>
+<li>更容易进行性能调优</li>
+</ul>
 <h3 id="ascendc">AscendC 的优势<a class="headerlink" href="#ascendc" title="Permanent link">&para;</a></h3>
-<p><strong>极致性能控制</strong>
-- 直接控制硬件寄存器
-- 可以实现最优的指令调度
-- 适合对性能要求极高的场景</p>
-<p><strong>更底层的硬件访问</strong>
-- 可以使用所有硬件特性
-- 更精细的流水线控制</p>
-<h3 id="_2">选择建议<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<h4 id="_5">极致性能控制<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h4>
+<ul>
+<li>直接控制硬件寄存器</li>
+<li>可以实现最优的指令调度</li>
+<li>适合对性能要求极高的场景</li>
+</ul>
+<h4 id="_6">更底层的硬件访问<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h4>
+<ul>
+<li>可以使用所有硬件特性</li>
+<li>更精细的流水线控制</li>
+</ul>
+<h3 id="_7">选择建议<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>选择 PTO</strong>：大多数自定义算子开发，需要跨代际兼容</li>
 <li><strong>选择 AscendC</strong>：需要榨取最后 5-10% 性能，且只针对特定硬件</li>
@@ -659,7 +667,7 @@ TADD(result, tile1, tile2);
 <hr />
 <h2 id="2-pto-vs-tbe">2. PTO vs TBE<a class="headerlink" href="#2-pto-vs-tbe" title="Permanent link">&para;</a></h2>
 <h3 id="pto_2">PTO 的优势<a class="headerlink" href="#pto_2" title="Permanent link">&para;</a></h3>
-<p><strong>更好的性能可控性</strong></p>
+<h4 id="_8">更好的性能可控性<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h4>
 <pre><code class="language-cpp">// PTO 可以精确控制 tiling 和流水线
 for (int k = 0; k &lt; K; k += tileK) {
   TLOAD(tileA, ...);  // 显式控制数据搬运
@@ -667,20 +675,26 @@ for (int k = 0; k &lt; K; k += tileK) {
   TMATMUL(acc, tileA, tileB);  // 显式控制计算
 }
 </code></pre>
-<p><strong>更灵活的算子实现</strong>
-- 可以实现复杂的自定义逻辑
-- 支持动态 shape 和 mask
-- 更容易实现算子融合</p>
+<h4 id="_9">更灵活的算子实现<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h4>
+<ul>
+<li>可以实现复杂的自定义逻辑</li>
+<li>支持动态 shape 和 mask</li>
+<li>更容易实现算子融合</li>
+</ul>
 <h3 id="tbe">TBE 的优势<a class="headerlink" href="#tbe" title="Permanent link">&para;</a></h3>
-<p><strong>更高的开发效率</strong>
-- 基于 TensorFlow/PyTorch 的高层 API
-- 自动优化和调度
-- 更快的原型开发</p>
-<p><strong>更简单的学习曲线</strong>
-- 类似 Python 的编程模型
-- 丰富的算子库
-- 完善的文档和示例</p>
-<h3 id="_3">选择建议<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<h4 id="_10">更高的开发效率<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h4>
+<ul>
+<li>基于 TensorFlow/PyTorch 的高层 API</li>
+<li>自动优化和调度</li>
+<li>更快的原型开发</li>
+</ul>
+<h4 id="_11">更简单的学习曲线<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h4>
+<ul>
+<li>类似 Python 的编程模型</li>
+<li>丰富的算子库</li>
+<li>完善的文档和示例</li>
+</ul>
+<h3 id="_12">选择建议<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>选择 PTO</strong>：需要高性能自定义算子，对性能有明确要求</li>
 <li><strong>选择 TBE</strong>：快速原型开发，标准算子实现</li>
@@ -688,10 +702,12 @@ for (int k = 0; k &lt; K; k += tileK) {
 <hr />
 <h2 id="3-pto-vs-cuda">3. PTO vs CUDA<a class="headerlink" href="#3-pto-vs-cuda" title="Permanent link">&para;</a></h2>
 <h3 id="pto_3">PTO 的优势<a class="headerlink" href="#pto_3" title="Permanent link">&para;</a></h3>
-<p><strong>跨平台兼容</strong>
-- PTO 代码可以在 Ascend 全系列硬件上运行
-- 一次编写，多平台部署</p>
-<p><strong>更高层的抽象</strong></p>
+<h4 id="_13">跨平台兼容<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h4>
+<ul>
+<li>PTO 代码可以在 Ascend 全系列硬件上运行</li>
+<li>一次编写，多平台部署</li>
+</ul>
+<h4 id="_14">更高层的抽象<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h4>
 <pre><code class="language-cpp">// PTO: Tile 级操作
 TLOAD(tile, globalTensor);
 TADD(result, tile1, tile2);
@@ -702,18 +718,24 @@ int tid = threadIdx.x;
 shared[tid] = input[tid];
 __syncthreads();
 </code></pre>
-<p><strong>自动化的内存管理</strong>
-- 自动处理 GM ↔ L1 ↔ L0 的数据搬运
-- 自动对齐和布局转换</p>
+<h4 id="_15">自动化的内存管理<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h4>
+<ul>
+<li>自动处理 GM ↔ L1 ↔ L0 的数据搬运</li>
+<li>自动对齐和布局转换</li>
+</ul>
 <h3 id="cuda">CUDA 的优势<a class="headerlink" href="#cuda" title="Permanent link">&para;</a></h3>
-<p><strong>成熟的生态系统</strong>
-- 丰富的库和工具
-- 大量的学习资源
-- 活跃的社区</p>
-<p><strong>广泛的硬件支持</strong>
-- 支持所有 NVIDIA GPU
-- 从消费级到数据中心级</p>
-<h3 id="_4">选择建议<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h4 id="_16">成熟的生态系统<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h4>
+<ul>
+<li>丰富的库和工具</li>
+<li>大量的学习资源</li>
+<li>活跃的社区</li>
+</ul>
+<h4 id="_17">广泛的硬件支持<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h4>
+<ul>
+<li>支持所有 NVIDIA GPU</li>
+<li>从消费级到数据中心级</li>
+</ul>
+<h3 id="_18">选择建议<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>选择 PTO</strong>：在 Ascend 硬件上开发</li>
 <li><strong>选择 CUDA</strong>：在 NVIDIA GPU 上开发</li>
@@ -787,8 +809,8 @@ __syncthreads();
 <p><strong>结论</strong>：PTO 用更少的代码实现了接近的性能。</p>
 <hr />
 <h2 id="5">5. 开发体验对比<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
-<h3 id="_5">代码复杂度<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<p><strong>向量加法示例（简化）</strong></p>
+<h3 id="_19">代码复杂度<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h3>
+<h4 id="_20">向量加法示例（简化）<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h4>
 <pre><code class="language-cpp">// PTO (约20行)
 __global__ __aicore__ void VecAdd(__gm__ float* out,
                                   __gm__ const float* in0,
@@ -805,7 +827,7 @@ __global__ __aicore__ void VecAdd(__gm__ float* out,
 // TBE (约10行，但性能和灵活性受限)
 // CUDA (约30行，需要管理线程和共享内存)
 </code></pre>
-<h3 id="_6">调试体验<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h3 id="_21">调试体验<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -850,36 +872,52 @@ __global__ __aicore__ void VecAdd(__gm__ float* out,
 <hr />
 <h2 id="6">6. 适用场景建议<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
 <h3 id="pto_4">选择 PTO 的场景<a class="headerlink" href="#pto_4" title="Permanent link">&para;</a></h3>
-<p>✅ <strong>高性能自定义算子</strong>
-- 需要接近硬件极限的性能
-- 需要精确控制数据搬运和计算</p>
-<p>✅ <strong>跨代际兼容需求</strong>
-- 代码需要在 A2/A3/A5 上运行
-- 希望一次开发，长期使用</p>
-<p>✅ <strong>复杂算子实现</strong>
-- Flash Attention、TopK、自定义融合算子
-- 需要灵活的控制流和数据流</p>
-<p>✅ <strong>性能调优空间</strong>
-- 需要通过 tiling、流水线等手段优化
-- 对性能有明确的优化目标</p>
+<p>✅ <strong>高性能自定义算子</strong></p>
+<ul>
+<li>需要接近硬件极限的性能</li>
+<li>需要精确控制数据搬运和计算</li>
+</ul>
+<p>✅ <strong>跨代际兼容需求</strong></p>
+<ul>
+<li>代码需要在 A2/A3/A5 上运行</li>
+<li>希望一次开发，长期使用</li>
+</ul>
+<p>✅ <strong>复杂算子实现</strong></p>
+<ul>
+<li>Flash Attention、TopK、自定义融合算子</li>
+<li>需要灵活的控制流和数据流</li>
+</ul>
+<p>✅ <strong>性能调优空间</strong></p>
+<ul>
+<li>需要通过 tiling、流水线等手段优化</li>
+<li>对性能有明确的优化目标</li>
+</ul>
 <h3 id="ascendc_1">选择 AscendC 的场景<a class="headerlink" href="#ascendc_1" title="Permanent link">&para;</a></h3>
-<p>✅ <strong>极致性能要求</strong>
-- 需要榨取最后的性能
-- 愿意投入更多开发时间</p>
-<p>✅ <strong>特定硬件优化</strong>
-- 只针对单一硬件平台
-- 需要使用特定硬件特性</p>
+<p>✅ <strong>极致性能要求</strong></p>
+<ul>
+<li>需要榨取最后的性能</li>
+<li>愿意投入更多开发时间</li>
+</ul>
+<p>✅ <strong>特定硬件优化</strong></p>
+<ul>
+<li>只针对单一硬件平台</li>
+<li>需要使用特定硬件特性</li>
+</ul>
 <h3 id="tbe_1">选择 TBE 的场景<a class="headerlink" href="#tbe_1" title="Permanent link">&para;</a></h3>
-<p>✅ <strong>快速原型开发</strong>
-- 需要快速验证算法
-- 标准算子实现</p>
-<p>✅ <strong>学习和教学</strong>
-- 初学者入门
-- 算法验证</p>
+<p>✅ <strong>快速原型开发</strong></p>
+<ul>
+<li>需要快速验证算法</li>
+<li>标准算子实现</li>
+</ul>
+<p>✅ <strong>学习和教学</strong></p>
+<ul>
+<li>初学者入门</li>
+<li>算法验证</li>
+</ul>
 <hr />
 <h2 id="7">7. 迁移指南<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
 <h3 id="cuda-pto">从 CUDA 迁移到 PTO<a class="headerlink" href="#cuda-pto" title="Permanent link">&para;</a></h3>
-<p><strong>概念映射</strong></p>
+<h4 id="_22">概念映射<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -910,7 +948,7 @@ __global__ __aicore__ void VecAdd(__gm__ float* out,
 </tr>
 </tbody>
 </table>
-<p><strong>代码迁移步骤</strong></p>
+<h4 id="_23">代码迁移步骤<a class="headerlink" href="#_23" title="Permanent link">&para;</a></h4>
 <ol>
 <li>识别 CUDA kernel 的 tiling 策略</li>
 <li>将线程级操作转换为 Tile 级操作</li>
@@ -919,10 +957,12 @@ __global__ __aicore__ void VecAdd(__gm__ float* out,
 <li>在 NPU 上进行性能调优</li>
 </ol>
 <h3 id="tbe-pto">从 TBE 迁移到 PTO<a class="headerlink" href="#tbe-pto" title="Permanent link">&para;</a></h3>
-<p><strong>迁移动机</strong>
-- 需要更好的性能
-- 需要更灵活的控制</p>
-<p><strong>迁移步骤</strong></p>
+<h4 id="_24">迁移动机<a class="headerlink" href="#_24" title="Permanent link">&para;</a></h4>
+<ul>
+<li>需要更好的性能</li>
+<li>需要更灵活的控制</li>
+</ul>
+<h4 id="_25">迁移步骤<a class="headerlink" href="#_25" title="Permanent link">&para;</a></h4>
 <ol>
 <li>理解 TBE 算子的计算逻辑</li>
 <li>设计 PTO 的 tiling 策略</li>
@@ -938,17 +978,21 @@ __global__ __aicore__ void VecAdd(__gm__ float* out,
 <li>比 AscendC 更高的开发效率和可维护性</li>
 <li>跨代际兼容，一次开发长期使用</li>
 </ul>
-<h3 id="_7">推荐使用场景<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<p><strong>强烈推荐 PTO</strong>：
-- 高性能自定义算子开发
-- 需要跨 Ascend 代际兼容
-- 复杂算子实现（Flash Attention、TopK 等）</p>
-<p><strong>考虑其他方案</strong>：
-- 快速原型 → TBE
-- 极致性能 → AscendC
-- NVIDIA GPU → CUDA</p>
+<h3 id="_26">推荐使用场景<a class="headerlink" href="#_26" title="Permanent link">&para;</a></h3>
+<p><strong>强烈推荐 PTO</strong>：</p>
+<ul>
+<li>高性能自定义算子开发</li>
+<li>需要跨 Ascend 代际兼容</li>
+<li>复杂算子实现（Flash Attention、TopK 等）</li>
+</ul>
+<p><strong>考虑其他方案</strong>：</p>
+<ul>
+<li>快速原型 → TBE</li>
+<li>极致性能 → AscendC</li>
+<li>NVIDIA GPU → CUDA</li>
+</ul>
 <hr />
-<h2 id="_8">参考资源<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_27">参考资源<a class="headerlink" href="#_27" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../ProgrammingModel_zh/">PTO 编程模型</a></li>
 <li><a href="../opt_zh/">PTO 性能优化</a></li>
