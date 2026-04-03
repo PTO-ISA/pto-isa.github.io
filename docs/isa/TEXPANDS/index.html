@@ -637,35 +637,41 @@ PTO_INST RecordEvent TEXPANDS(TileData &amp;dst, typename TileData::DType scalar
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Implementation checks (A2A3)</strong>:<ul>
-<li>For <code>TileType::Vec</code> :</li>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>Tile layout must be row-major (<code>TileData::isRowMajor</code>).</li>
+<li><strong>Implementation checks (A2A3)</strong>:</li>
+<li>For <code>TileType::Vec</code>:<ul>
+<li><code>TileData::DType</code> must be one of: <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
+<li>Row-major and col-major vector tiles are both supported.</li>
 <li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>For  <code>TileType::Mat</code> :</li>
-<li><code>TileData::DType</code> must be one of: <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>Static valid bounds: <code>The range of  TileData::Rows * TileData::Cols * sizeof(T) / 32 is [1, 32767]</code>.</li>
 </ul>
 </li>
-<li><strong>Implementation checks (A5)</strong>:<ul>
-<li>For <code>TileType::Vec</code> :</li>
-<li><code>TileData::DType</code> must be one of: <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>Tile layout must be row-major (<code>TileData::isRowMajor</code>).</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>For  <code>TileType::Mat</code> :</li>
-<li><code>TileData::DType</code> must be one of: <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>For<code>TileDataDst::layout == pto::Layout::NC1HWC0 || TileDataDst::layout == pto::Layout::FRACTAL_Z</code>:</li>
-<li><code>The range of convtile's (shape0 * shape1 * shape2 * shape3) is [1, 32767]</code>.</li>
-<li>For<code>TileDataDst::layout == pto::Layout::NDC1HWC0 || TileDataDst::layout == pto::Layout::FRACTAL_Z_3D</code>:</li>
-<li><code>The range of convtile's (shape0 * shape1 * shape2 * shape3 * shape4) is [1, 32767]</code>.</li>
+<li>For <code>TileType::Mat</code>:<ul>
+<li><code>TileData::DType</code> must be one of: <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
+<li>Static valid bounds: <code>TileData::Rows * TileData::Cols * sizeof(T) / 32</code> must be in <code>[1, 32767]</code>.</li>
 </ul>
 </li>
-<li><strong>Valid region</strong>:<ul>
-<li>For <code>TileType::Vec</code> :</li>
+<li><strong>Implementation checks (A5)</strong>:</li>
+<li>For <code>TileType::Vec</code>:<ul>
+<li><code>TileData::DType</code> must be one of: <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
+<li>Row-major and col-major vector tiles are both supported.</li>
+<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
+</ul>
+</li>
+<li>For <code>TileType::Mat</code>:<ul>
+<li><code>TileData::DType</code> must be one of: <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
+<li>For <code>TileData::layout == pto::Layout::NC1HWC0 || TileData::layout == pto::Layout::FRACTAL_Z</code>:</li>
+<li><code>shape0 * shape1 * shape2 * shape3</code> must be in <code>[1, 32767]</code>.</li>
+<li>For <code>TileData::layout == pto::Layout::NDC1HWC0 || TileData::layout == pto::Layout::FRACTAL_Z_3D</code>:</li>
+<li><code>shape0 * shape1 * shape2 * shape3 * shape4</code> must be in <code>[1, 32767]</code>.</li>
+</ul>
+</li>
+<li><strong>Valid region</strong>:</li>
+<li>For <code>TileType::Vec</code>:<ul>
 <li>The op fills <code>dst</code> over <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code>.</li>
-<li>For  <code>TileType::Mat</code> :</li>
-<li>For Tile : The op fills <code>dst</code> over <code>TileData::Rows</code> / <code>TileData::Cols</code>.</li>
-<li>For ConvTile : The op fills <code>dst</code> over <code>ConvTileData</code>'s shape.</li>
+</ul>
+</li>
+<li>For <code>TileType::Mat</code>:<ul>
+<li>For tile operands, the op fills <code>dst</code> over <code>TileData::Rows</code> / <code>TileData::Cols</code>.</li>
+<li>For conv tiles, the op fills <code>dst</code> over the conv-tile shape.</li>
 </ul>
 </li>
 </ul>
@@ -675,10 +681,11 @@ PTO_INST RecordEvent TEXPANDS(TileData &amp;dst, typename TileData::DType scalar
 
 using namespace pto;
 
-void example_auto() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT dst;
-  TEXPANDS(dst, 0.0f);
+void example_auto()
+{
+    using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+    TileT dst;
+    TEXPANDS(dst, 0.0f);
 }
 </code></pre>
 <h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
@@ -686,11 +693,12 @@ void example_auto() {
 
 using namespace pto;
 
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT dst;
-  TASSIGN(dst, 0x1000);
-  TEXPANDS(dst, 0.0f);
+void example_manual()
+{
+    using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+    TileT dst;
+    TASSIGN(dst, 0x1000);
+    TEXPANDS(dst, 0.0f);
 }
 </code></pre>
 <h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>

@@ -169,6 +169,8 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#ttri">TTRI</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#trandom">TRANDOM</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#tpartadd">TPARTADD</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#tpartmul">TPARTMUL</a>
@@ -596,8 +598,8 @@
                 <!-- Generated from `docs/assembly/complex-ops.md` -->
 
 <h1 id="complex">Complex<a class="headerlink" href="#complex" title="Permanent link">&para;</a></h1>
-<p>This document describes complex operations including sorting, gathering, and quantization.</p>
-<p><strong>Total Operations:</strong> 15</p>
+<p>This document describes complex operations including sorting, gathering, quantization, and random number generation.</p>
+<p><strong>Total Operations:</strong> 16</p>
 <hr />
 <h2 id="operations">Operations<a class="headerlink" href="#operations" title="Permanent link">&para;</a></h2>
 <h3 id="tprint">TPRINT<a class="headerlink" href="#tprint" title="Permanent link">&para;</a></h3>
@@ -658,6 +660,15 @@ pto.tgather ins(%src, {maskPattern = #pto.mask_pattern&lt;P0101&gt;} : !pto.tile
 </code></pre>
 <p><strong>AS Level 2 (DPS):</strong></p>
 <pre><code class="language-text">pto.ttri ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<hr />
+<h3 id="trandom">TRANDOM<a class="headerlink" href="#trandom" title="Permanent link">&para;</a></h3>
+<p>For detailed instruction documentation, see <a href="../../isa/TRANDOM/">isa/TRANDOM</a></p>
+<p><strong>AS Level 1 (SSA):</strong></p>
+<pre><code class="language-text">%dst = pto.trandom %key, %counter : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p><strong>AS Level 2 (DPS):</strong></p>
+<pre><code class="language-text">pto.trandom ins(%key, %counter : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <hr />
 <h3 id="tpartadd">TPARTADD<a class="headerlink" href="#tpartadd" title="Permanent link">&para;</a></h3>
