@@ -587,41 +587,33 @@ PTO_INST RecordEvent TEXPANDS(TileData &amp;dst, typename TileData::DType scalar
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查（A2A3）</strong>：</li>
-<li>对于 <code>TileType::Vec</code>：<ul>
-<li><code>TileData::DType</code> 必须是以下之一：<code>uint8_t</code>、<code>int8_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint32_t</code>、<code>int32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
-<li>支持行优先和列优先向量 Tile。</li>
-<li>静态有效边界：<code>TileData::ValidRow &lt;= TileData::Rows</code> 且 <code>TileData::ValidCol &lt;= TileData::Cols</code>。</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
+<li>对于Tile位置是向量（<code>TileData::Loc == TileType::Vec</code>）:</li>
+<li><code>TileData::DType</code> 必须是以下之一：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
+<li>静态有效边界： <code>TileData::ValidRow &lt;= TileData::Rows</code>且<code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
+<li>对于Tile位置是Mat（<code>TileData::Loc == TileType::Mat</code>）:</li>
+<li><code>TileData::DType</code> 必须是以下之一：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
+<li>有效边界：<code>TileData::Rows * TileData::Cols * sizeof(T) / 32</code> 必须在<code>[1, 32767]</code>范围内。</li>
 </ul>
 </li>
-<li>对于 <code>TileType::Mat</code>：<ul>
-<li><code>TileData::DType</code> 必须是以下之一：<code>uint8_t</code>、<code>int8_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint32_t</code>、<code>int32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
-<li>静态有效边界：<code>TileData::Rows * TileData::Cols * sizeof(T) / 32</code> 必须在 <code>[1, 32767]</code> 范围内。</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
+<li>对于Tile位置是向量（<code>TileData::Loc == TileType::Vec</code>）:</li>
+<li>静态有效边界： <code>TileData::ValidRow &lt;= TileData::Rows</code>且<code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
+<li><code>TileData::DType</code> 必须是以下之一： <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
+<li>对于Tile位置是Mat（<code>TileData::Loc == TileType::Mat</code>）:</li>
+<li><code>TileData::DType</code> 必须是以下之一： <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
+<li>对于<code>TileDataDst::layout == pto::Layout::NC1HWC0 || TileDataDst::layout == pto::Layout::FRACTAL_Z</code>:</li>
+<li><code>TileData::shape0 * TileData::shape1 * TileData::shape2 * TileData::shape3</code> 必须在<code>[1, 32767]</code>范围内。</li>
+<li>对于<code>TileDataDst::layout == pto::Layout::NDC1HWC0 || TileDataDst::layout == pto::Layout::FRACTAL_Z_3D</code>:</li>
+<li><code>TileData::shape0 * TileData::shape1 * TileData::shape2 * TileData::shape3 * TileData::shape4</code> 必须在<code>[1, 32767]</code>范围内。</li>
 </ul>
 </li>
-<li><strong>实现检查（A5）</strong>：</li>
-<li>对于 <code>TileType::Vec</code>：<ul>
-<li><code>TileData::DType</code> 必须是以下之一：<code>uint8_t</code>、<code>int8_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint32_t</code>、<code>int32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
-<li>支持行优先和列优先向量 Tile。</li>
-<li>静态有效边界：<code>TileData::ValidRow &lt;= TileData::Rows</code> 且 <code>TileData::ValidCol &lt;= TileData::Cols</code>。</li>
-</ul>
-</li>
-<li>对于 <code>TileType::Mat</code>：<ul>
-<li><code>TileData::DType</code> 必须是以下之一：<code>uint8_t</code>、<code>int8_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint32_t</code>、<code>int32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
-<li>对于 <code>TileData::layout == pto::Layout::NC1HWC0 || TileData::layout == pto::Layout::FRACTAL_Z</code>：</li>
-<li><code>shape0 * shape1 * shape2 * shape3</code> 必须在 <code>[1, 32767]</code> 范围内。</li>
-<li>对于 <code>TileData::layout == pto::Layout::NDC1HWC0 || TileData::layout == pto::Layout::FRACTAL_Z_3D</code>：</li>
-<li><code>shape0 * shape1 * shape2 * shape3 * shape4</code> 必须在 <code>[1, 32767]</code> 范围内。</li>
-</ul>
-</li>
-<li><strong>有效区域</strong>：</li>
-<li>对于 <code>TileType::Vec</code>：<ul>
+<li><strong>有效区域</strong>:<ul>
+<li>对于Tile位置是向量（<code>TileData::Loc == TileType::Vec</code>）:</li>
 <li>该操作在 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 上填充 <code>dst</code>。</li>
-</ul>
-</li>
-<li>对于 <code>TileType::Mat</code>：<ul>
-<li>对于普通 Tile，该操作在 <code>TileData::Rows</code> / <code>TileData::Cols</code> 上填充 <code>dst</code>。</li>
-<li>对于 ConvTile，该操作在 conv-tile 的 shape 范围内填充 <code>dst</code>。</li>
+<li>对于Tile位置是Mat（<code>TileData::Loc == TileType::Mat</code>）:</li>
+<li>对于Tile，该操作在 <code>TileData::Rows</code> / <code>TileData::Cols</code> 上填充 <code>dst</code>。</li>
+<li>对于convTile，该操作在<code>ConvTileData</code>的<code>shape</code>内填充<code>dst</code>。</li>
 </ul>
 </li>
 </ul>
@@ -631,11 +623,10 @@ PTO_INST RecordEvent TEXPANDS(TileData &amp;dst, typename TileData::DType scalar
 
 using namespace pto;
 
-void example_auto()
-{
-    using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-    TileT dst;
-    TEXPANDS(dst, 0.0f);
+void example_auto() {
+  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  TileT dst;
+  TEXPANDS(dst, 0.0f);
 }
 </code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
@@ -643,12 +634,11 @@ void example_auto()
 
 using namespace pto;
 
-void example_manual()
-{
-    using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-    TileT dst;
-    TASSIGN(dst, 0x1000);
-    TEXPANDS(dst, 0.0f);
+void example_manual() {
+  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  TileT dst;
+  TASSIGN(dst, 0x1000);
+  TEXPANDS(dst, 0.0f);
 }
 </code></pre>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>

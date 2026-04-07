@@ -567,14 +567,11 @@
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>Generates random numbers in the destination tile using a counter-based cipher algorithm.</p>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
-<p>This instruction implements a counter-based random number generator. For each element in the valid region, it generates
-pseudo-random values based on a key and counter state using a cipher-like transformation with configurable rounds.</p>
-<p>The algorithm uses:</p>
-<ul>
-<li>128-bit state (4 × 32-bit counters)</li>
-<li>64-bit key (2 × 32-bit words)</li>
-<li>ChaCha-like quarter-round operations with vector instructions</li>
-</ul>
+<p>This instruction implements a counter-based random number generator. For each element in the valid region, it generates pseudo-random values based on a key and counter state using a cipher-like transformation with configurable rounds.</p>
+<p>The algorithm uses:
+- 128-bit state (4 × 32-bit counters)
+- 64-bit key (2 × 32-bit words)
+- ChaCha-like quarter-round operations with vector instructions</p>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>PTO-AS form: see <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <p>Synchronous form:</p>
@@ -593,13 +590,17 @@ PTO_INST void TRANDOM_IMPL(DstTile &amp;dst, TRandomKey &amp;key, TRandomCounter
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Implementation checks (A5)</strong>:</li>
+<li><strong>Implementation checks (A5)</strong>:<ul>
 <li><code>DstTile::DType</code> must be one of: <code>int32_t</code>, <code>uint32_t</code>.</li>
 <li>Tile layout must be row-major (<code>DstTile::isRowMajor</code>).</li>
 <li><code>Rounds</code> must be either 7 or 10 (default: 10).</li>
 <li><code>key</code> and <code>counter</code> must not be null.</li>
-<li><strong>Valid region</strong>:</li>
+</ul>
+</li>
+<li><strong>Valid region</strong>:<ul>
 <li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

@@ -567,14 +567,11 @@
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>使用基于计数器的密码算法在目标 Tile 中生成随机数。</p>
 <h2 id="_2">数学解释<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>该指令实现了一个基于计数器的随机数生成器。对于有效区域中的每个元素，它基于密钥和计数器状态，使用可配置轮数的密码类变换生成
-伪随机值。</p>
-<p>该算法使用：</p>
-<ul>
-<li>128 位状态（4 × 32 位计数器）</li>
-<li>64 位密钥（2 × 32 位字）</li>
-<li>类似 ChaCha 的四分之一轮操作，使用向量指令</li>
-</ul>
+<p>该指令实现了一个基于计数器的随机数生成器。对于有效区域中的每个元素，它基于密钥和计数器状态，使用可配置轮数的密码类变换生成伪随机值。</p>
+<p>该算法使用：
+- 128 位状态（4 × 32 位计数器）
+- 64 位密钥（2 × 32 位字）
+- 类似 ChaCha 的四分之一轮操作，使用向量指令</p>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
@@ -593,13 +590,17 @@ PTO_INST void TRANDOM_IMPL(DstTile &amp;dst, TRandomKey &amp;key, TRandomCounter
 </code></pre>
 <h2 id="_4">约束条件<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查（A5）</strong>：</li>
+<li><strong>实现检查（A5）</strong>：<ul>
 <li><code>DstTile::DType</code> 必须为以下类型之一：<code>int32_t</code>、<code>uint32_t</code>。</li>
 <li>Tile 布局必须为行主序（<code>DstTile::isRowMajor</code>）。</li>
 <li><code>Rounds</code> 必须为 7 或 10（默认为 10）。</li>
 <li><code>key</code> 和 <code>counter</code> 不能为空。</li>
-<li><strong>有效区域</strong>：</li>
+</ul>
+</li>
+<li><strong>有效区域</strong>：<ul>
 <li>该操作使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域。</li>
+</ul>
+</li>
 </ul>
 <h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto 模式<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

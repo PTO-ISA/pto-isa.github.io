@@ -566,26 +566,20 @@
 <p><img alt="TPRINT tile operation" src="../../figures/isa/TPRINT.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>调试/打印 Tile 中的元素（实现定义）。</p>
-<p>Print the contents of a Tile or GlobalTensor for debugging purposes directly from device code.</p>
-<p>The <code>TPRINT</code> instruction outputs the logical view of data stored in a Tile or GlobalTensor. It supports common data types (e.g., <code>float</code>, <code>half</code>, <code>int8</code>, <code>uint32</code>) and multiple memory layouts (<code>ND</code>, <code>DN</code>, <code>NZ</code> for GlobalTensor; vector tiles for on-chip buffers).</p>
+<p>从设备代码直接打印 Tile 或 GlobalTensor 的内容以用于调试目的。</p>
+<p><code>TPRINT</code> 指令输出存储在 Tile 或 GlobalTensor 中的数据的逻辑视图。它支持常见的数据类型（例如 <code>float</code>、<code>half</code>、<code>int8</code>、<code>uint32</code>）和多种内存布局（GlobalTensor 的 <code>ND</code>、<code>DN</code>、<code>NZ</code>；片上缓冲区的向量 tiles）。</p>
 <blockquote>
-<p><strong>Important</strong>:
-- This instruction is <strong>for development and debugging ONLY</strong>.
-- It incurs <strong>significant runtime overhead</strong> and <strong>must not be used in production kernels</strong>.
-- Output may be <strong>truncated</strong> if it exceeds the internal print buffer.
-- <strong>Requires CCE compilation option <code>-D_DEBUG --cce-enable-print</code></strong> (see <a href="#behavior">Behavior</a>).</p>
+<p><strong>重要</strong>:
+- 此指令<strong>仅用于开发和调试</strong>。
+- 它会产生<strong>显著的运行时开销</strong>，<strong>不得在生产 kernel 中使用</strong>。
+- 如果输出超过内部打印缓冲区，可能会被<strong>截断</strong>。可以通过在编译选项中添加<code>-DCCEBlockMaxSize=16384</code>来修改打印缓冲区，默认为16KB。
+- <strong>需要 CCE 编译选项 <code>-D_DEBUG --cce-enable-print</code></strong>（参见 <a href="#behavior">行为</a>）。</p>
 </blockquote>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>除非另有说明, semantics are defined over the valid region and target-dependent behavior is marked as implementation-defined.</p>
+<p>除非另有说明，语义在有效区域上定义，目标相关的行为标记为实现定义。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <pre><code class="language-text">tprint %src : !pto.tile&lt;...&gt; | !pto.global&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
@@ -594,25 +588,32 @@
 <pre><code class="language-text">pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPRINT(TileData &amp;src, WaitEvents &amp;... events);
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">// 适用于打印GlobalTensor或Vec类型Tile
+template &lt;typename TileData&gt;
+PTO_INST void TPRINT(TileData &amp;src);
+
+// 适用于打印Acc类型Tile和Mat类型Tile(Mat打印仅适用于A3，A5暂不支持)
+template &lt;typename TileData, typename GlobalData&gt;
+PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);
 </code></pre>
-<h3 id="supported-types-for-t">Supported Types for T<a class="headerlink" href="#supported-types-for-t" title="Permanent link">&para;</a></h3>
+<h3 id="t">支持的 T 类型<a class="headerlink" href="#t" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Tile</strong>: Must be a vector tile (<code>TileType::Vec</code>) with supported element type.</li>
-<li><strong>GlobalTensor</strong>: Must use layout <code>ND</code>, <code>DN</code>, or <code>NZ</code>, and have a supported element type.</li>
+<li><strong>Tile</strong>：TileType必须是<code>Vec</code>、<code>Acc</code>、<code>Mat(仅A3支持)</code>，具有支持的元素类型。</li>
+<li><strong>GlobalTensor</strong>：必须使用布局 <code>ND</code>、<code>DN</code> 或 <code>NZ</code>，并具有支持的元素类型。</li>
 </ul>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Supported element type</strong>:<ul>
-<li>Floating-point: <code>float</code>, <code>half</code></li>
-<li>Signed integers: <code>int8_t</code>, <code>int16_t</code>, <code>int32_t</code></li>
-<li>Unsigned integers: <code>uint8_t</code>, <code>uint16_t</code>, <code>uint32_t</code></li>
+<li><strong>支持的元素类型</strong>:<ul>
+<li>浮点数：<code>float</code>、<code>half</code></li>
+<li>有符号整数：<code>int8_t</code>、<code>int16_t</code>、<code>int32_t</code></li>
+<li>无符号整数：<code>uint8_t</code>、<code>uint16_t</code>、<code>uint32_t</code></li>
 </ul>
 </li>
-<li><strong>For Tiles</strong>: <code>TileData::Loc == TileType::Vec</code> (only vector tiles are printable).</li>
-<li><strong>For GlobalTensor</strong>: Layout must be one of <code>Layout::ND</code>, <code>Layout::DN</code>, or <code>Layout::NZ</code>.</li>
+<li><strong>对于 GlobalTensor</strong>：布局必须是 <code>Layout::ND</code>、<code>Layout::DN</code> 或 <code>Layout::NZ</code> 之一。</li>
+<li><strong>对于 临时空间</strong>：打印<code>TileType</code>为<code>Mat</code>或<code>Acc</code>的Tile时需要传入gm上的临时空间，临时空间不得小于<code>TileData::Numel * sizeof(T)</code>。</li>
+<li>A5暂不支持<code>TileType</code>为<code>Mat</code>的Tile打印。</li>
+<li><strong>回显信息</strong>: <code>TileType</code>为<code>Mat</code>时，布局将按照<code>Layout::ND</code>进行打印，其他布局可能会导致信息错位。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="print-a-tile">Print a Tile<a class="headerlink" href="#print-a-tile" title="Permanent link">&para;</a></h3>
@@ -643,6 +644,23 @@ PTO_INTERNAL void DebugGlobalTensor(__gm__ float *src) {
 
   TPRINT(srcGlobal);
 }
+</code></pre>
+<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
+pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
+</code></pre>
+<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
+# 可选（当该指令包含 tile 操作数时）：
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
+</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
+# AS Level 2 (DPS)
+pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)
 </code></pre>
               
             </div>

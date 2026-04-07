@@ -277,10 +277,6 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
@@ -636,22 +632,23 @@
 <pre><code class="language-text">pto.tdivs ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 pto.tdivs ins(%scalar, %src : dtype, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tdivs %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-%dst = pto.tdivs %scalar, %src : (dtype, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tdivs ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-pto.tdivs ins(%scalar, %src : dtype, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, TileDataSrc &amp;src0, typename TileDataSrc::DType scalar, WaitEvents &amp;... events);
+<pre><code class="language-cpp">template &lt;auto PrecisionType = DivAlgorithm::DEFAULT, typename TileDataDst, typename TileDataSrc,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, TileDataSrc &amp;src0, typename TileDataSrc::DType scalar,
+                           WaitEvents &amp;... events);
 
-template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, typename TileDataDst::DType scalar, TileDataSrc &amp;src0, WaitEvents &amp;... events);
+template &lt;auto PrecisionType = DivAlgorithm::DEFAULT, typename TileDataDst, typename TileDataSrc,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, typename TileDataDst::DType scalar, TileDataSrc &amp;src0,
+                           WaitEvents &amp;... events)
 </code></pre>
+<p><code>PrecisionType</code> has the following values available:</p>
+<ul>
+<li><code>DivAlgorithm::DEFAULT</code>: Normal algorithm, faster but with lower precision.</li>
+<li><code>DivAlgorithm::HIGH_PRECISION</code>: High precision algorithm, but slower.</li>
+</ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Implementation checks (A2A3)</strong> (both overloads):<ul>
@@ -678,6 +675,10 @@ PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, typename TileDataDst::DType sca
 <li>Behavior is target-defined; on A5 the tile/scalar form maps to multiply-by-reciprocal and uses <code>1/0 -&gt; +inf</code> for <code>scalar == 0</code>.</li>
 </ul>
 </li>
+<li><strong>High Precision Algorithm</strong><ul>
+<li>Only available on A5, <code>PrecisionType</code> option is ignored on A3.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -689,6 +690,7 @@ void example_auto() {
   using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   TileT src, dst;
   TDIVS(dst, src, 2.0f);
+  TDIVS&lt;DivAlgorithm::HIGH_PRECISION&gt;(dst, src, 2.0f);
 }
 </code></pre>
 <h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
@@ -702,6 +704,7 @@ void example_manual() {
   TASSIGN(src, 0x1000);
   TASSIGN(dst, 0x2000);
   TDIVS(dst, 2.0f, src);
+  TDIVS&lt;DivAlgorithm::HIGH_PRECISION&gt;(dst, 2.0f, src);
 }
 </code></pre>
 <h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>

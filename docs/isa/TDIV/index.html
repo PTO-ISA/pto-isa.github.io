@@ -221,10 +221,6 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
@@ -624,17 +620,17 @@
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tdiv ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tdiv %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tdiv ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename... WaitEvents&gt;
+<pre><code class="language-cpp">template &lt;auto PrecisionType = DivAlgorithm::DEFAULT, typename TileDataDst, typename TileDataSrc0,
+          typename TileDataSrc1, typename... WaitEvents&gt;
 PTO_INST RecordEvent TDIV(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, WaitEvents &amp;... events);
 </code></pre>
+<p><code>PrecisionType</code> has the following values available:</p>
+<ul>
+<li><code>DivAlgorithm::DEFAULT</code>: Normal algorithm, faster but with lower precision.</li>
+<li><code>DivAlgorithm::HIGH_PRECISION</code>: High precision algorithm, but slower.</li>
+</ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Implementation checks (A2A3)</strong>:<ul>
@@ -659,6 +655,10 @@ PTO_INST RecordEvent TDIV(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileData
 </li>
 <li><strong>Division-by-zero</strong>:<ul>
 <li>Behavior is target-defined.</li>
+</ul>
+</li>
+<li><strong>High Precision Algorithm</strong><ul>
+<li>Only available on A5, <code>PrecisionType</code> option is ignored on A3.</li>
 </ul>
 </li>
 </ul>
