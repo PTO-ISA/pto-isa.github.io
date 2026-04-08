@@ -626,6 +626,11 @@ else {
     TLOAD(srcTile, globalSrc0);
 }
 </code></pre>
+<h2 id="14-its-strongly-recommended-not-to-use-doublemulti-buffering-at-the-moment">1.4 - It's strongly recommended NOT to use double/multi buffering at the moment<a class="headerlink" href="#14-its-strongly-recommended-not-to-use-doublemulti-buffering-at-the-moment" title="Permanent link">&para;</a></h2>
+<p>For now, the double/multi buffering in auto mode isn't fully supported, because once the kernels becomes complicated, using double buffering always
+involves complex control flows, imposing huges challenges for compilers to do auto-sync.
+Auto mode compiler team is trying to design a dedicated abstraction/interface (with some constraints) to kernel developers, to enable double buffering,
+while the compiler can correctly analyze the code and do proper auto sync.</p>
 <h1 id="2-memory-allocation-rules">2 - Memory Allocation Rules<a class="headerlink" href="#2-memory-allocation-rules" title="Permanent link">&para;</a></h1>
 <h2 id="21-use-treshape-to-tell-compiler-that-2-tiles-have-the-same-base-address">2.1 Use <code>TRESHAPE</code> to tell compiler that 2 tiles have the same base address<a class="headerlink" href="#21-use-treshape-to-tell-compiler-that-2-tiles-have-the-same-base-address" title="Permanent link">&para;</a></h2>
 <p>If you want to express that tile B has the same base address as tile A (alias), you can use <code>TRESHAPE</code> which works for both manual and auto mode, instead of using <code>TASSIGN</code> directly. For instance:</p>

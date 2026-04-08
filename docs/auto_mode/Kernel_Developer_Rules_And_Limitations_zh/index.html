@@ -628,6 +628,9 @@ else {
     TLOAD(srcTile, globalSrc0);
 }
 </code></pre>
+<h2 id="14-doublemulti-buffering">1.4 - 目前非常不推荐使用double/multi buffering<a class="headerlink" href="#14-doublemulti-buffering" title="Permanent link">&para;</a></h2>
+<p>目前对于double/multi buffering没有完全支持，因为一旦kernel稍微变得复杂，那使用double buffering往往会涉及到很多动态控制流，让自动同步变得极其困难。
+编译器正在调研设计专门的抽象接口（带上一些约束）供程序员使用来使能double/multi buffering，从而能让编译器正确分析。</p>
 <h1 id="2-">2 - 内存分配相关规则<a class="headerlink" href="#2-" title="Permanent link">&para;</a></h1>
 <p>AUTO模式下由于不能使用<code>TASSIGN</code>，编译器无法自动得知两个tile之间的alias关系，因为无法得知程序员的意图，所以需要程序员显式告诉编译器两个tile的alias关系。</p>
 <h2 id="21-treshapetile">2.1 使用<code>TRESHAPE</code>来告诉编译器两个tile拥有相同的首地址<a class="headerlink" href="#21-treshapetile" title="Permanent link">&para;</a></h2>
