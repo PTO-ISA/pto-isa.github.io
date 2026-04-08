@@ -699,7 +699,7 @@
 <h2 id="pto-tile-library_1">如何使用 PTO Tile Library<a class="headerlink" href="#pto-tile-library_1" title="Permanent link">&para;</a></h2>
 <p>PTO 指令支持两种模式：<strong>Auto Mode（仅在 CPU 仿真中可用）</strong>（无需手动分配 buffer/管理流水线），以及 <strong>Manual Mode</strong>（需要显式管理 buffer 地址与流水线）。推荐按以下路径推进算子优化：</p>
 <ol>
-<li>基于 Auto Mode 开发算子，根据算法逻辑生成 PTO 指令序列。示例见 <a href="../demos/auto_mode/baseline/add/README_zh/">demos/auto_mode/baseline/add</a> </li>
+<li>基于 Auto Mode 开发算子，根据算法逻辑生成 PTO 指令序列。示例见 <a href="../demos/auto_mode/baseline/add/README_zh/">demos/auto_mode/baseline/add</a></li>
 <li>在 CPU 仿真中验证功能与正确性（见：<a href="#运行-cpu-simulator建议第一步">运行 CPU Simulator</a>）。</li>
 <li>将代码移植到昇腾硬件上验证正确性并采集性能数据。参见 <a href="https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/Profiling/atlasprofiling_16_0010.html">msprof工具</a>。</li>
 <li>定位性能瓶颈（CUBE Bound / MTE Bound / Vector Bound），开始优化与调参。参见 <a href="docs\coding\opt_zh.md">性能优化</a></li>
@@ -732,14 +732,16 @@
 <li>性能调优指南</li>
 <li>架构与设计文档</li>
 </ul>
-<p><strong>选项 1：访问在线文档（推荐）</strong></p>
+<h4 id="1">选项 1：访问在线文档（推荐）<a class="headerlink" href="#1" title="Permanent link">&para;</a></h4>
 <p>访问<a href="https://pto-isa.gitcode.com">文档中心</a>获取最新文档。</p>
-<p><strong>选项 2：本地构建文档</strong></p>
+<h4 id="2">选项 2：本地构建文档<a class="headerlink" href="#2" title="Permanent link">&para;</a></h4>
 <p>如果需要离线访问、正在修改文档或想查看未发布的功能，可以本地构建文档。</p>
-<p><strong>前置条件：</strong>
-- Python &gt;= 3.8
-- pip（Python 包管理器）</p>
-<p><strong>方法 1：使用 MkDocs CLI 快速开始</strong></p>
+<h4 id="_7">前置条件<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Python &gt;= 3.8</li>
+<li>pip（Python 包管理器）</li>
+</ul>
+<h4 id="1-mkdocs-cli">方法 1：使用 MkDocs CLI 快速开始<a class="headerlink" href="#1-mkdocs-cli" title="Permanent link">&para;</a></h4>
 <ol>
 <li>安装 MkDocs 及依赖：</li>
 </ol>
@@ -748,15 +750,15 @@
 <ol>
 <li>选择以下选项之一：</li>
 </ol>
-<p><strong>选项 A：本地运行文档服务器（用于开发/预览）</strong></p>
+<h5 id="a">选项 A：本地运行文档服务器（用于开发/预览）<a class="headerlink" href="#a" title="Permanent link">&para;</a></h5>
 <pre><code class="language-bash">python -m mkdocs serve -f docs/mkdocs/mkdocs.yml
 </code></pre>
 <p>文档将在 <code>http://127.0.0.1:8000</code> 可访问。服务器会监听文件变化并自动重新加载。按 <code>Ctrl+C</code> 停止服务器。</p>
-<p><strong>选项 B：构建静态 HTML 站点（用于离线使用/部署）</strong></p>
+<h5 id="b-html">选项 B：构建静态 HTML 站点（用于离线使用/部署）<a class="headerlink" href="#b-html" title="Permanent link">&para;</a></h5>
 <pre><code class="language-bash">python -m mkdocs build -f docs/mkdocs/mkdocs.yml
 </code></pre>
 <p>输出将位于 <code>docs/mkdocs/site/</code>。在浏览器中打开 <code>docs/mkdocs/site/index.html</code> 即可查看。</p>
-<p><strong>方法 2：通过 CMake 构建（高级）</strong></p>
+<h4 id="2-cmake">方法 2：通过 CMake 构建（高级）<a class="headerlink" href="#2-cmake" title="Permanent link">&para;</a></h4>
 <p>此方法适用于 CI/CD 流水线或将文档构建集成到开发工作流中。</p>
 <ol>
 <li>创建 Python 虚拟环境（推荐）：</li>
@@ -795,7 +797,7 @@ cmake --build build/docs --target pto_docs
 <pre><code class="language-bash">python3 tests/script/run_st.py -r npu -v a3 -t tmatmul -g TMATMULTest.case1
 python3 tests/script/run_st.py -r sim -v a5 -t tmatmul -g TMATMULTest.case1
 </code></pre>
-<h3 id="_7">运行推荐的测试集<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<h3 id="_8">运行推荐的测试集<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <pre><code class="language-bash"># 在项目根目录下执行：
 chmod +x ./tests/run_st.sh
 ./tests/run_st.sh a5 npu simple
@@ -808,7 +810,7 @@ chmod +x ./tests/run_cpu_tests.sh
 
 python3 tests/run_cpu.py --verbose
 </code></pre>
-<h2 id="_8">构建 / 运行说明<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_9">构建 / 运行说明<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="ascend-cann">配置环境变量（Ascend CANN）<a class="headerlink" href="#ascend-cann" title="Permanent link">&para;</a></h3>
 <p>例如使用 CANN 社区包并安装到默认路径：</p>
 <ul>
@@ -818,30 +820,34 @@ python3 tests/run_cpu.py --verbose
 source /usr/local/Ascend/cann/bin/setenv.bash</code></p>
 </li>
 <li>
-<p>默认路径（非 root 用户安装）
-    <code>bash
-    source $HOME/Ascend/cann/bin/setenv.bash</code></p>
+<p>默认路径（非 root 用户安装）</p>
 </li>
 </ul>
+<p><code>bash
+  source $HOME/Ascend/cann/bin/setenv.bash</code></p>
 <p>如果安装到 <code>install-path</code>，可使用：</p>
 <pre><code class="language-bash">source ${install-path}/cann/bin/setenv.bash
 </code></pre>
-<h3 id="_9">一键构建与运行<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<h3 id="_10">一键构建与运行<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
 <ul>
 <li>运行完整 ST 测试：</li>
 </ul>
 <p><code>bash
   chmod +x build.sh
-  ./build.sh --run_all --a3 --sim</code>
-* 运行精简 ST 测试：</p>
+  ./build.sh --run_all --a3 --sim</code></p>
+<ul>
+<li>运行精简 ST 测试：</li>
+</ul>
 <p><code>bash
   chmod +x build.sh
-  ./build.sh --run_simple --a5 --npu</code>
-* 打包：</p>
+  ./build.sh --run_simple --a5 --npu</code></p>
+<ul>
+<li>打包：</li>
+</ul>
 <p><code>bash
   chmod +x build.sh
   ./build.sh --pkg</code></p>
-<h2 id="_10">文档<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h2 id="_11">文档<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li>ISA 指南与导航：<a href="../docs/README_zh/">docs/README_zh.md</a></li>
 <li>ISA 指令索引：<a href="../docs/isa/README_zh/">docs/isa/README_zh.md</a></li>
@@ -860,7 +866,7 @@ source /usr/local/Ascend/cann/bin/setenv.bash</code></p>
 <li>测试与用例：<a href="../tests/README_zh/">tests/README_zh.md</a>、<a href="../tests/script/README_zh/">tests/script/README_zh.md</a></li>
 <li>打包脚本：<a href="../scripts/README_zh/">scripts/README_zh.md</a>、<a href="../scripts/package/README_zh/">scripts/package/README_zh.md</a></li>
 </ul>
-<h2 id="_11">仓库结构<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h2 id="_12">仓库结构<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>include/</code>：PTO C++ 头文件（见 <a href="../include/README_zh/">include/README_zh.md</a>）</li>
 <li><code>kernels/</code>：自定义算子与 kernel 实现（见 <a href="../kernels/README_zh/">kernels/README_zh.md</a>）</li>
@@ -869,7 +875,7 @@ source /usr/local/Ascend/cann/bin/setenv.bash</code></p>
 <li><code>scripts/</code>：打包与发布脚本（见 <a href="../scripts/README_zh/">scripts/README_zh.md</a>）</li>
 <li><code>build.sh</code>、<code>tests/run_st.sh</code>：构建、打包与示例运行入口</li>
 </ul>
-<h2 id="_12">许可证<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h2 id="_13">许可证<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <p>本项目基于 CANN Open Software License Agreement Version 2.0 进行许可。详情见根目录下的 <code>LICENSE</code> 文件。</p>
               
             </div>

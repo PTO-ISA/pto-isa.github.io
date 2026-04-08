@@ -564,7 +564,7 @@
 <h1 id="custom-pytorch-operator-kernel_launch-example">Custom PyTorch Operator (KERNEL_LAUNCH) Example<a class="headerlink" href="#custom-pytorch-operator-kernel_launch-example" title="Permanent link">&para;</a></h1>
 <p>This example shows how to implement a custom PTO-based kernel in auto mode and expose it as a PyTorch operator via <code>torch_npu</code>.</p>
 <h2 id="directory-layout">Directory Layout<a class="headerlink" href="#directory-layout" title="Permanent link">&para;</a></h2>
-<pre><code>demos/baseline/add/
+<pre><code class="language-text">demos/baseline/add/
 ├── op_extension/              # Python package entry (module loader)
 ├── csrc/
 │   ├── kernel/                # PTO kernel implementation in auto mode
@@ -583,11 +583,13 @@
 ascendc_compile_options(no_workspace_kernel PRIVATE --cce-enable-pto-passes -O2)
 </code></pre>
 <p>Unlike manual mode, you don't need to manually call <code>TASSIGN</code> and synchronization instructions in your kernel; the compiler will take care of them for you.</p>
-<p>NOTE:
-1. add <code>--cce-enable-pto-passes</code> to enable auto mode of compiler
-2. kernels must be compiled using -O2
-3. currently, this auto mode example doesn't use double buffering, and it's strongly recommended NOT to use buffer/multi-buffering in auto mode, because it's not fully supported yet.</p>
-<p>For build options and details, refer to the Ascend community documentation: https://www.hiascend.com/ascend-c</p>
+<p>NOTE:</p>
+<ol>
+<li>add <code>--cce-enable-pto-passes</code> to enable auto mode of compiler</li>
+<li>kernels must be compiled using -O2</li>
+<li>currently, this auto mode example doesn't use double buffering, and it's strongly recommended NOT to use buffer/multi-buffering in auto mode, because it's not fully supported yet.</li>
+</ol>
+<p>For build options and details, refer to the Ascend community documentation: <a href="https://www.hiascend.com/ascend-c">Ascend C</a></p>
 <h2 id="2-integrate-with-pytorch-torch_npu">2. Integrate with PyTorch (<code>torch_npu</code>)<a class="headerlink" href="#2-integrate-with-pytorch-torch_npu" title="Permanent link">&para;</a></h2>
 <p>The host-side implementation lives under <code>auto_mode/demos/baseline/add/csrc/host/</code>.</p>
 <h3 id="21-define-the-operator-schema-aten-ir">2.1 Define the operator schema (Aten IR)<a class="headerlink" href="#21-define-the-operator-schema-aten-ir" title="Permanent link">&para;</a></h3>
@@ -629,7 +631,7 @@ at::Tensor run_add_custom(const at::Tensor &amp;x, const at::Tensor &amp;y)
 </code></pre>
 <h2 id="3-build-and-run">3. Build and run<a class="headerlink" href="#3-build-and-run" title="Permanent link">&para;</a></h2>
 <p>This example requires PTO Tile Lib, PyTorch, <code>torch_npu</code>, and CANN. Follow the official <code>torch_npu</code> installation guide:</p>
-<p>https://gitcode.com/ascend/pytorch#%E5%AE%89%E8%A3%85</p>
+<p><a href="https://gitcode.com/ascend/pytorch#%E5%AE%89%E8%A3%85">torch_npu installation guide</a></p>
 <p>or</p>
 <pre><code class="language-bash">python3 -m pip install -r requirements.txt
 </code></pre>

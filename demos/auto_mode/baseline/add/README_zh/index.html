@@ -564,7 +564,7 @@
 <h1 id="pytorch-kernel_launch">自定义 PyTorch 算子（KERNEL_LAUNCH）示例<a class="headerlink" href="#pytorch-kernel_launch" title="Permanent link">&para;</a></h1>
 <p>本示例展示如何实现一个基于 PTO 的自定义的 auto模式的 kernel，并通过 <code>torch_npu</code> 将其暴露为 PyTorch 算子。</p>
 <h2 id="_1">目录结构<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<pre><code>demos/baseline/add/
+<pre><code class="language-text">demos/baseline/add/
 ├── op_extension/              # Python 包入口（模块加载）
 ├── csrc/
 │   ├── kernel/                # PTO kernel 实现（auto模式）
@@ -583,11 +583,13 @@
 ascendc_compile_options(no_workspace_kernel PRIVATE --cce-enable-pto-passes -O2)
 </code></pre>
 <p>不像manual模式，你不需要手动调用<code>TASSIGN</code>和同步指令，编译器会替你自动完成。</p>
-<p>注意:
-1. 你需要使用 <code>--cce-enable-pto-passes</code> 编译选项来使能编译器的auto模式
-2. 编译kernel时必须使用-O2
-3. 目前，这个用例没有使用双缓冲，而且非常不建议在目前的auto模式下使用双缓冲，因为并没有完全支持。</p>
-<p>构建选项与细节请参考昇腾社区文档：https://www.hiascend.com/ascend-c</p>
+<p>注意:</p>
+<ol>
+<li>你需要使用 <code>--cce-enable-pto-passes</code> 编译选项来使能编译器的auto模式</li>
+<li>编译kernel时必须使用-O2</li>
+<li>目前，这个用例没有使用双缓冲，而且非常不建议在目前的auto模式下使用双缓冲，因为并没有完全支持。</li>
+</ol>
+<p>构建选项与细节请参考昇腾社区文档：<a href="https://www.hiascend.com/ascend-c">Ascend C</a></p>
 <h2 id="2-pytorch-torch_npu">2. 与 PyTorch 集成（<code>torch_npu</code>）<a class="headerlink" href="#2-pytorch-torch_npu" title="Permanent link">&para;</a></h2>
 <p>Host 侧实现位于 <code>auto_mode/demos/baseline/add/csrc/host/</code>。</p>
 <h3 id="21-schemaaten-ir">2.1 定义算子 schema（Aten IR）<a class="headerlink" href="#21-schemaaten-ir" title="Permanent link">&para;</a></h3>
@@ -622,7 +624,7 @@ at::Tensor run_add_custom(const at::Tensor &amp;x, const at::Tensor &amp;y)
 </code></pre>
 <h3 id="23">2.3 注册实现<a class="headerlink" href="#23" title="Permanent link">&para;</a></h3>
 <p>使用 <code>TORCH_LIBRARY_IMPL</code> 注册实现。对 NPU 执行而言，<code>torch_npu</code> 使用 <code>PrivateUse1</code> dispatch key，关于 <code>PrivateUse1</code> 的详细介绍请参考 PyTorch 官方文档：
-https://docs.pytorch.org/tutorials/advanced/privateuseone.html</p>
+<a href="https://docs.pytorch.org/tutorials/advanced/privateuseone.html">PyTorch PrivateUse1 文档</a></p>
 <pre><code class="language-cpp">TORCH_LIBRARY_IMPL(npu, PrivateUse1, m)
 {
     m.impl(&quot;my_add&quot;, TORCH_FN(run_add_custom));
@@ -630,7 +632,7 @@ https://docs.pytorch.org/tutorials/advanced/privateuseone.html</p>
 </code></pre>
 <h2 id="3">3. 构建与运行<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
 <p>本示例依赖 PTO Tile Lib、PyTorch、<code>torch_npu</code> 与 CANN。请参考 <code>torch_npu</code> 官方安装指南：</p>
-<p>https://gitcode.com/ascend/pytorch#%E5%AE%89%E8%A3%85</p>
+<p><a href="https://gitcode.com/ascend/pytorch#%E5%AE%89%E8%A3%85">torch_npu 安装指南</a></p>
 <p>或执行：</p>
 <pre><code class="language-bash">python3 -m pip install -r requirements.txt
 </code></pre>

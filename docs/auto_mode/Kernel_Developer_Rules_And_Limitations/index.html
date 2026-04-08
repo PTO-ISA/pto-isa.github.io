@@ -569,7 +569,7 @@
 <li>Bad performance</li>
 </ol>
 <h1 id="1-control-flow-rules">1 - Control Flow Rules<a class="headerlink" href="#1-control-flow-rules" title="Permanent link">&para;</a></h1>
-<p>Complex control flow (especially inside loops) often makes it difficult to optimize the precise cross-pipe parallelization and double-buffering. Since PTO AUTO compiler is required to maintain program correctness, it may generate the sync operations more conservatively leading to performance degradation.  </p>
+<p>Complex control flow (especially inside loops) often makes it difficult to optimize the precise cross-pipe parallelization and double-buffering. Since PTO AUTO compiler is required to maintain program correctness, it may generate the sync operations more conservatively leading to performance degradation.</p>
 <h2 id="11-guards-for-first-and-last-iteraions">1.1 - Guards for First and Last Iteraions<a class="headerlink" href="#11-guards-for-first-and-last-iteraions" title="Permanent link">&para;</a></h2>
 <p>Any condition that guards the first and last iteraion of a loop should be expressed in a form that can be statically evaluated. That makes it possible for the PTO AUTO compiler to automatically peel peel the first and last iteration of the loop which results in simplifying the auto synchronization substantially.  Here is an example:</p>
 <pre><code class="language-cpp">for (int tile_id = 0; tile_id &lt; total_tiles; tile_id++) {
@@ -583,7 +583,7 @@
 }
 </code></pre>
 <h2 id="12-loop-invariant-control-flow-in-loop-nests">1.2 - Loop Invariant Control Flow in Loop Nests<a class="headerlink" href="#12-loop-invariant-control-flow-in-loop-nests" title="Permanent link">&para;</a></h2>
-<p>if-statements Nested in a Loop that do not depend on inner loop's induction variable should be left inside the inner loop.  </p>
+<p>if-statements Nested in a Loop that do not depend on inner loop's induction variable should be left inside the inner loop.</p>
 <p>For example, consider the if-statement inside the inner loop:</p>
 <pre><code class="language-cpp">for (int tile_id = 0; tile_id &lt; total_tiles; tile_id++) {
     int next_tile = tile_id &lt; total_tiles-1 ? tile_id + 1 : -1;
@@ -669,7 +669,7 @@ for (int i = 0; i &lt; N; i++) {
 }
 </code></pre>
 <p>Users in manual mode can use trick like this to change a tile' address at any point during runtime. Compiler can't handle such dynamic behavior to properly allocate memory; <em>In auto mode, each tile will be allocated memory once and for all.</em> Programmers should rewrite their code to bypass such limitation.</p>
-<p>Here's a crucial mindset for auto mode:<br />
+<p>Here's a crucial mindset for auto mode:
 <strong>think of a tile as a C++ reference, meaning that its memory address is already determined and cannot change once declared</strong>.</p>
 <h2 id="24-correctly-understand-the-semantics-of-treshape-and-tsubview">2.4 - Correctly understand the semantics of <code>TRESHAPE</code> and <code>TSUBVIEW</code><a class="headerlink" href="#24-correctly-understand-the-semantics-of-treshape-and-tsubview" title="Permanent link">&para;</a></h2>
 <p>In manual mode, they are both actual PTO instructions that (re)assign an address to a tile. However, their semantic is different in auto mode: <strong>they simply serve as a hint to the compiler about how 2 tiles alias with each other.</strong></p>
@@ -683,10 +683,10 @@ for (int i = 0; i &lt; N; i++) {
 <p>The <code>TSUBVIEW</code> instruction allows users obtain a subtile from a larger tile. In the AUTO mode, the compiler calculates the relative offset of the subtile and add it to the automatically allocated address of the base tile.</p>
 </li>
 </ul>
-<p>Note that since in the AUTO mode is that the address of a tile cannot change throughout its scope, a tile cannot be used as the destination for multiple <code>TRESHAPE</code> or <code>TSUBVIEW</code> instructions. For example, the following example is invalid in the AUTO mode and the actual behavior is undefined.  </p>
+<p>Note that since in the AUTO mode is that the address of a tile cannot change throughout its scope, a tile cannot be used as the destination for multiple <code>TRESHAPE</code> or <code>TSUBVIEW</code> instructions. For example, the following example is invalid in the AUTO mode and the actual behavior is undefined.</p>
 <pre><code class="language-cpp">TRESHAPE(tile0, tile1);
 foo(tile0);
-... 
+...
 TSUBVIEW(tile0, tile2, 0, 0);
 bar(tile0);
 </code></pre>
