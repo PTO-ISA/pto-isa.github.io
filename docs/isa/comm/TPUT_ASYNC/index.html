@@ -483,9 +483,15 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#scratchtile-type-and-size-constraints">scratchTile Type and Size Constraints</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#completion-semantics">Completion Semantics</a>
+    <li class="toctree-l3"><a class="reference internal" href="#completion-semantics-quiet-semantics">Completion Semantics (Quiet Semantics)</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#example">Example</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#single-transfer">Single Transfer</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#batch-transfer-quiet-semantics">Batch Transfer (Quiet Semantics)</a>
+    </li>
+        </ul>
     </li>
     </ul>
                 </li>
@@ -619,7 +625,7 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
                                     __gm__ uint8_t *workspace,
                                     AsyncSession &amp;session,
                                     uint32_t syncId = 0,
-                                    const sdma::SdmaBaseConfig &amp;baseConfig = {32 * 1024, 0, 1},
+                                    const sdma::SdmaBaseConfig &amp;baseConfig = {1024 * 1024, 0, 1},
                                     uint32_t channelGroupIdx = sdma::kAutoChannelGroupIdx);
 </code></pre>
 <p>The engine template parameter selects the backend (currently only SDMA).</p>
@@ -640,7 +646,7 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 </tr>
 <tr>
 <td><code>baseConfig</code></td>
-<td><code>{32*1024, 0, 1}</code></td>
+<td><code>{1024*1024, 0, 1}</code></td>
 <td><code>{block_bytes, comm_block_offset, queue_num}</code>. Suitable for most single-queue transfers.</td>
 </tr>
 <tr>
@@ -674,13 +680,15 @@ It is converted to <code>TmpBuffer</code> and used as temporary UB workspace for
 <li>available bytes must be at least <code>sizeof(uint64_t)</code> (8 bytes)</li>
 </ul>
 <p>Recommended: <code>Tile&lt;TileType::Vec, uint8_t, 1, comm::sdma::UB_ALIGN_SIZE&gt;</code> (256B).</p>
-<h2 id="completion-semantics">Completion Semantics<a class="headerlink" href="#completion-semantics" title="Permanent link">&para;</a></h2>
-<p>Use <code>AsyncEvent</code> to synchronize:</p>
+<h2 id="completion-semantics-quiet-semantics">Completion Semantics (Quiet Semantics)<a class="headerlink" href="#completion-semantics-quiet-semantics" title="Permanent link">&para;</a></h2>
+<p><code>TPUT_ASYNC</code> only submits data transfer SQEs without submitting a flag SQE. The flag SQE submission is deferred to the <code>Wait</code> call.</p>
 <ul>
-<li><code>event.Wait(session)</code> — blocks until the transfer is complete</li>
+<li><code>event.Wait(session)</code> — submits a flag SQE and blocks until <strong>all async operations issued since the last Wait</strong> are complete</li>
 </ul>
-<p>After wait succeeds, writes to <code>dstGlobalData</code> are complete.</p>
+<p>This means after multiple <code>TPUT_ASYNC</code> calls, a single <code>Wait</code> on the last returned <code>AsyncEvent</code> drains all pending operations (similar to shmem's quiet semantics).</p>
+<p>After wait succeeds, all issued writes to <code>dstGlobalData</code> are complete.</p>
 <h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
+<h3 id="single-transfer">Single Transfer<a class="headerlink" href="#single-transfer" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/common/pto_tile.hpp&gt;
 
@@ -710,6 +718,36 @@ __global__ AICORE void SimplePut(__gm__ T *remoteDst, __gm__ T *localSrc,
 
     auto event = comm::TPUT_ASYNC&lt;comm::DmaEngine::SDMA&gt;(dstG, srcG, session);
     (void)event.Wait(session);
+}
+</code></pre>
+<h3 id="batch-transfer-quiet-semantics">Batch Transfer (Quiet Semantics)<a class="headerlink" href="#batch-transfer-quiet-semantics" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">template &lt;typename T&gt;
+__global__ AICORE void BatchPut(__gm__ T *remoteDstBase, __gm__ T *localSrc,
+                                __gm__ uint8_t *sdmaWorkspace, int nranks)
+{
+    using ShapeDyn = Shape&lt;DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC&gt;;
+    using StrideDyn = Stride&lt;DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC&gt;;
+    using GT = GlobalTensor&lt;T, ShapeDyn, StrideDyn, Layout::ND&gt;;
+    using ScratchTile = Tile&lt;TileType::Vec, uint8_t, 1, comm::sdma::UB_ALIGN_SIZE&gt;;
+
+    ShapeDyn shape(1, 1, 1, 1, 1024);
+    StrideDyn stride(1024, 1024, 1024, 1024, 1);
+    GT srcG(localSrc, shape, stride);
+
+    ScratchTile scratchTile;
+    TASSIGN(scratchTile, 0x0);
+
+    comm::AsyncSession session;
+    if (!comm::BuildAsyncSession(scratchTile, sdmaWorkspace, session)) {
+        return;
+    }
+
+    comm::AsyncEvent lastEvent;
+    for (int rank = 0; rank &lt; nranks; ++rank) {
+        GT dstG(remoteDstBase + rank * 1024, shape, stride);
+        lastEvent = comm::TPUT_ASYNC(dstG, srcG, session);
+    }
+    (void)lastEvent.Wait(session);  // single Wait drains all pending ops
 }
 </code></pre>
               

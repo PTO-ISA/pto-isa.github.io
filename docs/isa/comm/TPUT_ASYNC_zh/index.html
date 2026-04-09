@@ -594,7 +594,7 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
                                     __gm__ uint8_t *workspace,
                                     AsyncSession &amp;session,
                                     uint32_t syncId = 0,
-                                    const sdma::SdmaBaseConfig &amp;baseConfig = {32 * 1024, 0, 1},
+                                    const sdma::SdmaBaseConfig &amp;baseConfig = {1024 * 1024, 0, 1},
                                     uint32_t channelGroupIdx = sdma::kAutoChannelGroupIdx);
 </code></pre>
 <p>带默认值的参数说明：</p>
@@ -614,7 +614,7 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 </tr>
 <tr>
 <td><code>baseConfig</code></td>
-<td><code>{32*1024, 0, 1}</code></td>
+<td><code>{1024*1024, 0, 1}</code></td>
 <td><code>{block_bytes, comm_block_offset, queue_num}</code>。适用于大多数单队列传输场景。</td>
 </tr>
 <tr>
@@ -648,13 +648,15 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 <li>可用字节数至少为 <code>sizeof(uint64_t)</code>（8 字节）</li>
 </ul>
 <p>推荐使用：<code>Tile&lt;TileType::Vec, uint8_t, 1, comm::sdma::UB_ALIGN_SIZE&gt;</code>（256B）。</p>
-<h2 id="_4">完成语义<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>使用 <code>AsyncEvent</code> 同步：</p>
+<h2 id="quiet">完成语义（Quiet 语义）<a class="headerlink" href="#quiet" title="Permanent link">&para;</a></h2>
+<p><code>TPUT_ASYNC</code> 仅提交数据传输 SQE，不提交 flag SQE。flag SQE 的提交延迟到 <code>Wait</code> 调用时进行。</p>
 <ul>
-<li><code>event.Wait(session)</code> — 阻塞直到传输完成</li>
+<li><code>event.Wait(session)</code> — 提交 flag SQE 并阻塞，直到<strong>自上次 Wait 以来所有已发出的异步操作</strong>全部完成</li>
 </ul>
-<p>wait 成功后，对 <code>dstGlobalData</code> 的写入已全部完成。</p>
-<h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>这意味着多次 <code>TPUT_ASYNC</code> 调用后，只需对最后一个返回的 <code>AsyncEvent</code> 调用一次 <code>Wait</code>，即可等待所有 pending 操作完成（类似 shmem 的 quiet 语义）。</p>
+<p>wait 成功后，所有已发出的 <code>dstGlobalData</code> 写入均已全部完成。</p>
+<h2 id="_4">示例<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">单次传输<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/common/pto_tile.hpp&gt;
 
@@ -684,6 +686,36 @@ __global__ AICORE void SimplePut(__gm__ T *remoteDst, __gm__ T *localSrc,
 
     auto event = comm::TPUT_ASYNC&lt;comm::DmaEngine::SDMA&gt;(dstG, srcG, session);
     (void)event.Wait(session);
+}
+</code></pre>
+<h3 id="quiet_1">批量传输（Quiet 语义）<a class="headerlink" href="#quiet_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">template &lt;typename T&gt;
+__global__ AICORE void BatchPut(__gm__ T *remoteDstBase, __gm__ T *localSrc,
+                                __gm__ uint8_t *sdmaWorkspace, int nranks)
+{
+    using ShapeDyn  = Shape&lt;DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC&gt;;
+    using StrideDyn = Stride&lt;DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC&gt;;
+    using GT        = GlobalTensor&lt;T, ShapeDyn, StrideDyn, Layout::ND&gt;;
+    using ScratchTile = Tile&lt;TileType::Vec, uint8_t, 1, comm::sdma::UB_ALIGN_SIZE&gt;;
+
+    ShapeDyn shape(1, 1, 1, 1, 1024);
+    StrideDyn stride(1024, 1024, 1024, 1024, 1);
+    GT srcG(localSrc, shape, stride);
+
+    ScratchTile scratchTile;
+    TASSIGN(scratchTile, 0x0);
+
+    comm::AsyncSession session;
+    if (!comm::BuildAsyncSession(scratchTile, sdmaWorkspace, session)) {
+        return;
+    }
+
+    comm::AsyncEvent lastEvent;
+    for (int rank = 0; rank &lt; nranks; ++rank) {
+        GT dstG(remoteDstBase + rank * 1024, shape, stride);
+        lastEvent = comm::TPUT_ASYNC(dstG, srcG, session);
+    }
+    (void)lastEvent.Wait(session);  // 一次 Wait 等待所有 pending 操作
 }
 </code></pre>
               
