@@ -404,6 +404,14 @@
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-implementation-checks">A2A3 implementation checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-implementation-checks">A5 implementation checks</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
@@ -605,9 +613,9 @@
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
 <p><img alt="TEXTRACT tile operation" src="../../figures/isa/TEXTRACT.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Extract a sub-tile from a source tile.</p>
+<p>Extract a smaller sub-tile from a larger source tile.</p>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
-<p>Conceptually copies a window starting at <code>(indexRow, indexCol)</code> from <code>src</code> into <code>dst</code>. Exact mapping depends on layouts.</p>
+<p>Conceptually copies a smaller window starting at <code>(indexRow, indexCol)</code> from the larger <code>src</code> tile into <code>dst</code>. Exact mapping depends on tile layouts.</p>
 <p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{\mathrm{indexRow}+i,\; \mathrm{indexCol}+j} \]</div>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
@@ -638,23 +646,32 @@ template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, Re
 PTO_INST RecordEvent TEXTRACT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Implementation checks (A2A3)</strong>:<ul>
-<li><code>DstTileData::DType</code> must equal <code>SrcTileData::DType</code> and must be one of: <code>int8_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
-<li>Source fractal must satisfy: <code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> or <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code>. In GEMV scenarios, the source fractal satisfies <code>(SrcTileData::Rows == 1 &amp;&amp; SrcTileData::isRowMajor)</code> for Left.</li>
+<li><code>DstTileData::DType</code> must equal <code>SrcTileData::DType</code>.</li>
 <li>Runtime bounds checks:</li>
 <li><code>indexRow + DstTileData::Rows &lt;= SrcTileData::Rows</code></li>
 <li><code>indexCol + DstTileData::Cols &lt;= SrcTileData::Cols</code></li>
+</ul>
+<h3 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>int8_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
+<li>Source layout must satisfy one of the checked A2A3 extraction layouts:</li>
+<li><code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code>, or</li>
+<li><code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code>.</li>
+<li>In GEMV scenarios targeting <code>TileType::Left</code>, the checked source layout also allows <code>(SrcTileData::Rows == 1 &amp;&amp; SrcTileData::isRowMajor)</code>.</li>
 <li>Destination must be <code>TileType::Left</code> or <code>TileType::Right</code> with a target-supported fractal configuration.</li>
 </ul>
-</li>
-<li><strong>Implementation checks (A5)</strong>:<ul>
-<li><code>DstTileData::DType</code> must equal <code>SrcTileData::DType</code> and must be one of: <code>int8_t</code>, <code>hifloat8_t</code>, <code>float8_e5m2_t</code>, <code>float8_e4m3_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, <code>float4_e2m1x2_t</code>, <code>float4_e1m2x2_t</code>, <code>float8_e8m0_t</code>.</li>
-<li>Source fractal must satisfy: <code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> or <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code> for Left/Right,  In GEMV scenarios, the source fractal satisfies <code>(SrcTileData::Rows == 1 &amp;&amp; SrcTileData::isRowMajor)</code> for Left. <code>(SFractal == RowMajor &amp;&amp; isRowMajor)</code> for ScaleLeft, <code>(SFractal == ColMajor &amp;&amp; !isRowMajor)</code> for ScaleRight.</li>
-<li>Destination supports <code>Mat -&gt; Left/Right/Scale</code>, <code>Acc -&gt; Mat</code> (including relu/scalar-quant/vector-quant forms), and also supports specific <code>Vec -&gt; Mat</code> extraction paths.</li>
-<li>The vector-quantized form additionally requires an <code>FpTileData</code> scaling operand, matching the <code>TEXTRACT_FP(...)</code> interface shown above.</li>
-</ul>
-</li>
+<h3 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>int8_t</code>, <code>hifloat8_t</code>, <code>float8_e5m2_t</code>, <code>float8_e4m3_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, <code>float4_e2m1x2_t</code>, <code>float4_e1m2x2_t</code>, <code>float8_e8m0_t</code>.</li>
+<li>Source layout must satisfy one of the checked A5 extraction layouts:</li>
+<li>for <code>Left</code> / <code>Right</code>: <code>(SFractal == ColMajor &amp;&amp; isRowMajor)</code> or <code>(SFractal == RowMajor &amp;&amp; !isRowMajor)</code></li>
+<li>for <code>ScaleLeft</code>: <code>(SFractal == RowMajor &amp;&amp; isRowMajor)</code></li>
+<li>for <code>ScaleRight</code>: <code>(SFractal == ColMajor &amp;&amp; !isRowMajor)</code></li>
+<li>In GEMV scenarios targeting <code>Left</code>, the checked source layout also allows <code>(SrcTileData::Rows == 1 &amp;&amp; SrcTileData::isRowMajor)</code>.</li>
+<li>Destination supports <code>TileType::Mat -&gt; TileType::Left/Right/Scale</code>, <code>TileType::Acc -&gt; TileType::Mat</code> (including relu, scalar-quant, and vector-quantized forms), and specific <code>TileType::Vec -&gt; TileType::Mat</code> extraction paths.</li>
+<li>The vector-quantized form additionally requires an <code>FpTileData</code> scaling operand, matching the <code>TEXTRACT_FP(...)</code> interface.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

@@ -587,36 +587,29 @@
 PTO_INST RecordEvent TCOLARGMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>实现检查 (NPU):</p>
+<h3 id="_6">通用约束或检查<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li>A2A3:</li>
-<li>Tile location: <code>dst</code> 和 <code>src</code> 必须为 <code>TileType::Vec</code>。</li>
-<li>Tile 布局 of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>)。</li>
-<li>Tile 布局 of <code>dst</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>)。</li>
-<li>源数据类型: <code>half</code>、<code>float</code>、<code>uint16_t</code>、<code>uint32_t</code>。</li>
-<li>目标数据类型: <code>uint32_t</code> 或 <code>int32_t</code>。</li>
-<li><code>tmp</code> 数据类型必须与 <code>src</code> 数据类型一致。</li>
-<li>编译期检查: <code>src.ValidCol</code> 必须为 <code>1</code> 或 <code>-1</code>（动态）。</li>
-<li>运行期有效区域检查:<ul>
-<li><code>srcValidCol != 0</code> 且 <code>srcValidRow != 0</code>。</li>
-<li><code>dstValidRow == 1</code>。</li>
-<li><code>srcValidCol == dstValidCol</code>。</li>
+<li><code>dst</code> 和 <code>src</code> 必须为 <code>TileType::Vec</code>。</li>
+<li>由于已检查到的辅助检查仅要求 <code>SLayout::NoneBox</code>，因此 <code>src</code> 可使用 ND 或 DN 的非分形布局。</li>
+<li><code>dst</code> 必须使用标准 ND 布局：行主且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
+<li>支持的目标元素类型：<code>uint32_t</code>、<code>int32_t</code>。</li>
+<li>编译时检查：<code>TileDataIn::ValidCol == 1 || TileDataIn::ValidCol == -1</code>。</li>
+<li>运行时检查：</li>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>dst.GetValidRow() == 1</code></li>
+<li><code>src.GetValidCol() == dst.GetValidCol()</code></li>
 </ul>
-</li>
-<li>A5:</li>
-<li>Tile location: <code>dst</code> 和 <code>src</code> 必须为 <code>TileType::Vec</code>。</li>
-<li>Tile 布局 of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>)。</li>
-<li>Tile 布局 of <code>dst</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>)。</li>
-<li>源数据类型: <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>float</code>。</li>
-<li>目标数据类型: <code>uint32_t</code> 或 <code>int32_t</code>。</li>
-<li>编译期检查: <code>src.ValidCol</code> 必须为 <code>1</code> 或 <code>-1</code>（动态）。</li>
-<li>运行期有效区域检查:<ul>
-<li><code>srcValidCol != 0</code> 且 <code>srcValidRow != 0</code>。</li>
-<li><code>dstValidRow == 1</code>。</li>
-<li><code>srcValidCol == dstValidCol</code>。</li>
+<h3 id="a2a3">A2A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持的源元素类型：<code>half</code>、<code>float</code>、<code>uint16_t</code>、<code>uint32_t</code>。</li>
+<li><code>tmp</code> 的元素类型必须与 <code>src</code> 一致。</li>
+<li>在已检查到的 A2A3 实现路径中，<code>tmp</code> 用作索引跟踪和当前比较值的临时存储。</li>
 </ul>
-</li>
-<li><code>tmp</code> 临时 Tile 不使用，仅做兼容。</li>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持的源元素宽度为 8 位、16 位或 32 位，因此已检查到的实现覆盖 <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>float</code>。</li>
+<li>在已检查到的 A5 实现路径中，接口仍接收 <code>tmp</code>，但 <code>TCOLARGMIN_IMPL</code> 实际并不使用它。</li>
 </ul>
 <h3 id="a2a3-tmp-tile">A2A3 <code>tmp</code> 临时 Tile 相关说明<a class="headerlink" href="#a2a3-tmp-tile" title="Permanent link">&para;</a></h3>
 <ul>
@@ -639,7 +632,7 @@ stride = ceil(repeats * 2 / elementPerBlock) * elementPerBlock + ceil(repeats / 
 <li>A5 实现中 <code>tmp</code> 临时 Tile <strong>不使用</strong>。A5 使用基于向量寄存器的计算方式（<code>__VEC_SCOPE__</code>），不需要临时 Tile 存储。</li>
 <li><code>tmp</code> 在 C++ 内建接口签名中保留，仅为了与 A2A3 的 API 兼容。</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -674,11 +667,11 @@ void example_manual() {
 }
 </code></pre>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<h3 id="_8">自动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
 %dst = pto.tcolargmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<h3 id="_9">手动模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
 # 可选（当该指令包含 tile 操作数时）：
 # pto.tassign %arg0, @tile(0x1000)
@@ -690,11 +683,6 @@ void example_manual() {
 # IR Level 2 (DPS)
 pto.tcolargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<p></task_progress>
-- [x] Write tcolargmin English documentation (docs/isa/TCOLARGMIN.md)
-- [x] Write tcolargmin Chinese documentation (docs/isa/TCOLARGMIN_zh.md)
-</task_progress>
-</write_to_file></p>
               
             </div>
           </div><footer>

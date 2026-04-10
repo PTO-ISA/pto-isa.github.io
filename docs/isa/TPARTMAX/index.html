@@ -449,15 +449,19 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-implementation-checks">A2A3 implementation checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-implementation-checks">A5 implementation checks</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
@@ -609,7 +613,7 @@
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
 <p><img alt="TPARTMAX tile operation" src="../../figures/isa/TPARTMAX.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Partial elementwise max with implementation-defined handling of mismatched valid regions.</p>
+<p>Performs elementwise maximum selection over the destination valid region. When both <code>src0</code> and <code>src1</code> are valid at an element, the result is <code>max(src0, src1)</code>; when only one input is valid there, the result copies that input value. Handling of other mismatched-validity cases is implementation-defined.</p>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
 <p>For each element <code>(i, j)</code> in the destination valid region:</p>
 <div class="arithmatex">\[
@@ -631,32 +635,31 @@
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tpartmax ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tpartmax %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tpartmax ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename... WaitEvents&gt;
 PTO_INST RecordEvent TPARTMAX(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Implementation checks (A2A3)</strong>:<ul>
-<li><code>dst/src0/src1</code> element types must be identical, and must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>All three tiles must be row-major (<code>isRowMajor</code>).</li>
-<li>Runtime: if <code>dst.GetValidRow() == 0</code> or <code>dst.GetValidCol() == 0</code>, the op returns early.</li>
-<li>Runtime: the implementation requires at least one input's valid region to match <code>dst</code>'s valid region, and the onther's valid region not greater than <code>dst</code>'s valid region (otherwise it asserts).</li>
+<li><code>dst</code>, <code>src0</code>, and <code>src1</code> must use the same element type.</li>
+<li>The destination valid region defines the result domain.</li>
+<li>For each element in the destination valid region:</li>
+<li>if both inputs are valid, the instruction applies the elementwise maximum;</li>
+<li>if only one input is valid, the result copies that input value.</li>
+<li>If <code>dst</code> has a zero valid region, the instruction returns early.</li>
+<li>Supported partial-validity patterns require at least one source tile to have a valid region exactly equal to <code>dst</code>, while the other source tile's valid region must not exceed <code>dst</code> in either dimension.</li>
+<li>Handling of any validity pattern not explicitly listed above is implementation-defined.</li>
 </ul>
-</li>
-<li><strong>Implementation checks (A5)</strong>:<ul>
-<li><code>dst/src0/src1</code> element types must be identical and must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
-<li>Runtime: if any of <code>src0/src1/dst</code> has a zero valid region, the op returns early.</li>
-<li>Requires <code>src0</code> and <code>src1</code> valid region to be <code>&lt;= dst</code> valid region in both dimensions; other patterns are not supported (target-defined behavior).</li>
+<h3 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>int32_t</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
+<li><code>dst</code>, <code>src0</code>, and <code>src1</code> must all be row-major (<code>isRowMajor</code>).</li>
 </ul>
-</li>
+<h3 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

@@ -567,8 +567,8 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>获取每行最小值对应列索引。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code>:</p>
-<div class="arithmatex">\[ \mathrm{dst}_{i,0} = \min_{0 \le j &lt; C} j_{i} \]</div>
+<p>设 <code>R = src.GetValidRow()</code>，<code>C = src.GetValidCol()</code>。对 <code>0 &lt;= i &lt; R</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,0} = \underset{0 \le j &lt; C}{\operatorname{argmin}} \; \mathrm{src}_{i,j} \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <code>docs/grammar/PTO-AS.md</code>.</p>
 <p>同步形式：</p>
@@ -587,27 +587,27 @@
 PTO_INST RecordEvent TROWARGMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>实现检查 (NPU):</p>
+<h3 id="_6">通用约束或检查<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li>A2A3:</li>
-<li>Tile location: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile 布局 of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>Tile 布局 of <code>dst</code>:<ul>
-<li><strong>紧凑模式</strong>：DN 布局的一维 Tile，例如 <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code>，此时ROWS要做到32b对齐。</li>
-<li><strong>传统模式</strong>：ND 布局的二维 Tile，例如 <code>Tile&lt;TileType::Vec, T, ROWS, COLS, BLayout::RowMajor, ValidRows, 1&gt;</code>。</li>
+<li><code>dst</code> 和 <code>src</code> 必须为 <code>TileType::Vec</code>。</li>
+<li>支持的源元素类型：<code>half</code>、<code>float</code>。</li>
+<li>支持的目标元素类型：<code>uint32_t</code>、<code>int32_t</code>。</li>
+<li>运行时检查遵循共享的行归约检查路径：</li>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
 </ul>
-</li>
-<li>源数据类型: <code>half</code> or <code>float</code>.</li>
-<li>目标数据类型：<code>uint32_t</code> or <code>int32_t</code>.</li>
-<li>运行期有效区域检查:<ul>
-<li><code>srcValidCol != 0</code> and <code>srcValidRow != 0</code>.</li>
+<h3 id="a2a3">A2A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>src</code> 必须使用标准 ND 布局：行主且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
+<li><code>dst</code> 通过共享的行归约索引检查路径约束，可使用以下任一非分形布局：</li>
+<li>单列 DN 布局（<code>BLayout::ColMajor</code>、<code>Cols == 1</code>），或</li>
+<li>有效列数为 1 的 ND 布局。</li>
 </ul>
-</li>
-<li>A5:</li>
-<li>源数据类型: <code>half</code> or <code>float</code>.</li>
-<li>目标数据类型：<code>uint32_t</code> or <code>int32_t</code>.</li>
-<li>No explicit runtime assertions on <code>validRow/validCol</code> in the implementation; the loops use <code>src.GetValidRow()</code> and <code>src.GetValidCol()</code>.</li>
-<li><code>tmp</code>临时Tile不使用，仅做兼容。</li>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>dst</code> 和 <code>src</code> 必须满足 <code>TRowArgMin</code> 使用的共享行归约索引检查路径。</li>
+<li>在已检查到的 A5 实现路径中，接口仍接收 <code>tmp</code>，但 <code>TROWARGMIN_IMPL</code> 实际并不使用它。</li>
 </ul>
 <h3 id="a3-tmptile">A3 <code>tmp</code>临时Tile相关说明<a class="headerlink" href="#a3-tmptile" title="Permanent link">&para;</a></h3>
 <ul>
@@ -618,7 +618,7 @@ PTO_INST RecordEvent TROWARGMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileD
 <pre><code class="language-text">repeats = ceil(validCol / elementPerRepeat)
 stride = ceil(repeats * 2 / elementPerBlock) * elementPerBlock + ceil(repeats / elementPerBlock) * elementPerBlock
 </code></pre>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -653,11 +653,11 @@ void example_manual() {
 }
 </code></pre>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<h3 id="_8">自动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
 %dst = pto.trowargmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<h3 id="_9">手动模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
 # 可选（当该指令包含 tile 操作数时）：
 # pto.tassign %arg0, @tile(0x1000)

@@ -587,36 +587,29 @@
 PTO_INST RecordEvent TCOLARGMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Implementation checks (NPU):</p>
+<h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
-<li>A2A3:</li>
-<li>Tile location: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile layout of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>Tile layout of <code>dst</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>Source data types: <code>half</code>, <code>float</code>, <code>uint16_t</code>, <code>uint32_t</code>.</li>
-<li>Destination data types: <code>uint32_t</code> or <code>int32_t</code>.</li>
-<li><code>tmp</code> data type must be consistent with <code>src</code> data type.</li>
-<li>Compile-time check: <code>src.ValidCol</code> must be <code>1</code> or <code>-1</code> (dynamic).</li>
-<li>Runtime valid checks:<ul>
-<li><code>srcValidCol != 0</code> and <code>srcValidRow != 0</code>.</li>
-<li><code>dstValidRow == 1</code>.</li>
-<li><code>srcValidCol == dstValidCol</code>.</li>
+<li><code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
+<li><code>src</code> may use ND or DN non-fractal layout because the checked helper only requires <code>SLayout::NoneBox</code>.</li>
+<li><code>dst</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</li>
+<li>Supported destination element types: <code>uint32_t</code>, <code>int32_t</code>.</li>
+<li>Compile-time check: <code>TileDataIn::ValidCol == 1 || TileDataIn::ValidCol == -1</code>.</li>
+<li>Runtime checks:</li>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>dst.GetValidRow() == 1</code></li>
+<li><code>src.GetValidCol() == dst.GetValidCol()</code></li>
 </ul>
-</li>
-<li>A5:</li>
-<li>Tile location: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile layout of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>Tile layout of <code>dst</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>Source data types: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>Destination data types: <code>uint32_t</code> or <code>int32_t</code>.</li>
-<li>Compile-time check: <code>src.ValidCol</code> must be <code>1</code> or <code>-1</code> (dynamic).</li>
-<li>Runtime valid checks:<ul>
-<li><code>srcValidCol != 0</code> and <code>srcValidRow != 0</code>.</li>
-<li><code>dstValidRow == 1</code>.</li>
-<li><code>srcValidCol == dstValidCol</code>.</li>
+<h3 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported source element types: <code>half</code>, <code>float</code>, <code>uint16_t</code>, <code>uint32_t</code>.</li>
+<li><code>tmp</code> must use the same element type as <code>src</code>.</li>
+<li>In the checked A2A3 implementation path, <code>tmp</code> is used as scratch storage for index tracking and current comparison values.</li>
 </ul>
-</li>
-<li><code>tmp</code> temporary tile is not used, only for compatibility.</li>
+<h3 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported source element sizes are 8-bit, 16-bit, or 32-bit; the checked implementation therefore covers <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
+<li>In the checked A5 implementation path, <code>tmp</code> is accepted by the interface but not used by <code>TCOLARGMIN_IMPL</code>.</li>
 </ul>
 <h3 id="about-temporary-tile-tmp-for-a2a3">About temporary tile <code>tmp</code> for A2A3<a class="headerlink" href="#about-temporary-tile-tmp-for-a2a3" title="Permanent link">&para;</a></h3>
 <ul>
@@ -690,11 +683,6 @@ void example_manual() {
 # IR Level 2 (DPS)
 pto.tcolargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<p></task_progress>
-- [x] Write tcolargmin English documentation (docs/isa/TCOLARGMIN.md)
-- [ ] Write tcolargmin Chinese documentation (docs/isa/TCOLARGMIN_zh.md)
-</task_progress>
-</write_to_file></p>
               
             </div>
           </div><footer>

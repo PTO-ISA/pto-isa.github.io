@@ -309,15 +309,17 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-implementation-checks">A5 implementation checks</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#implementation-notes">Implementation Notes</a>
     </li>
@@ -627,39 +629,39 @@
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.trowprod ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trowprod ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWPROD(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Implementation checks (NPU):</p>
+<h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
-<li>A2A3:<ul>
-<li>Tile location: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile layout of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>Tile layout of <code>dst</code>: DN layout Tile of 1D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code></li>
-<li>Data types: <code>half</code>, <code>float</code>.</li>
-<li>DType consistency: <code>dst.DType == src.DType</code>.</li>
-<li>Runtime valid checks:</li>
-<li><code>srcValidCol != 0</code> and <code>srcValidRow != 0</code>.</li>
-<li><code>srcValidRow == dstValidRow</code> (the output valid row must match the input valid row).</li>
-<li><code>tmp</code> must have the same shape as <code>src</code>.</li>
+<li><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code>.</li>
+<li><code>src</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</li>
+<li><code>dst</code> must use one of the following non-fractal layouts:</li>
+<li>ND layout (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>), or</li>
+<li>DN layout with exactly one column (<code>BLayout::ColMajor</code>, <code>SLayout::NoneBox</code>, <code>Cols == 1</code>).</li>
+<li><code>dst</code> and <code>src</code> must use the same element type.</li>
+<li>Runtime valid-region checks:</li>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
+<li>The intrinsic signature requires an explicit <code>tmp</code> operand.</li>
 </ul>
-</li>
+<h3 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>half</code>, <code>float</code>, <code>int32_t</code>, <code>int16_t</code>.</li>
+<li>In the currently inspected implementation path, the enforced constraints are on <code>src</code> and <code>dst</code>.</li>
+<li>No extra shape/layout assertions on <code>tmp</code> are enforced in the current implementation path.</li>
 </ul>
 <h2 id="implementation-notes">Implementation Notes<a class="headerlink" href="#implementation-notes" title="Permanent link">&para;</a></h2>
-<p>Unlike TROWSUM which uses <code>vcadd</code>/<code>vcgadd</code> instructions, TROWPROD uses binary reduction with <code>vmul</code> since there is no <code>vcmul</code> instruction available on A2A3. The implementation:</p>
+<p><code>TROWPROD</code> follows the currently implemented A5 backend path in this codebase. It performs row-wise multiplication reduction directly from <code>src</code> to <code>dst</code> after validating <code>src</code>/<code>dst</code> constraints.</p>
+<p>The C++ intrinsic still takes a <code>tmp</code> operand for interface consistency:</p>
 <ol>
-<li>Multiplies adjacent repeat pairs and stores results in <code>tmp</code></li>
-<li>Iteratively performs binary multiplication reduction on <code>tmp</code></li>
-<li>Continues until each row has only one element</li>
+<li><code>tmp</code> remains part of the intrinsic signature and AS lowering form.</li>
+<li>The currently inspected implementation-enforced constraints are on <code>src</code> and <code>dst</code>.</li>
+<li>If another backend introduces additional <code>tmp</code> requirements later, the documentation should be updated to match that backend implementation exactly.</li>
 </ol>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

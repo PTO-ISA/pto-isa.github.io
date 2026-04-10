@@ -565,51 +565,58 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TROWPROD tile operation" src="../../figures/isa/TROWPROD.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>对每一行沿列方向连乘归约。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code>:</p>
+<p>对每行元素进行乘积归约。</p>
+<h2 id="_3">数学定义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>设 <code>R = src.GetValidRow()</code> 且 <code>C = src.GetValidCol()</code>。对于 <code>0 &lt;= i &lt; R</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,0} = \prod_{j=0}^{C-1} \mathrm{src}_{i,j} \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
+<p>降级可能引入内部临时 tile；C++ 内建函数需要显式的 <code>tmp</code> 操作数。</p>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.trowprod %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.trowprod ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trowprod ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<h2 id="c">C++ 内建函数<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWPROD(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>实现检查 (NPU):</p>
+<h2 id="_5">约束条件<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束或检查<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li>A2A3:<ul>
-<li>Tile location: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile 布局 of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>Tile 布局 of <code>dst</code>: DN layout Tile of 1D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code></li>
-<li>数据类型: <code>half</code>, <code>float</code>.</li>
-<li>数据类型一致性: <code>dst.DType == src.DType</code>.</li>
-<li>运行期有效区域检查:</li>
-<li><code>srcValidCol != 0</code> and <code>srcValidRow != 0</code>.</li>
-<li><code>srcValidRow == dstValidRow</code> (the output valid row must match the input valid row).</li>
-<li><code>tmp</code> must have the same shape as <code>src</code>.</li>
+<li><code>dst</code> 和 <code>src</code> 必须均为 <code>TileType::Vec</code>。</li>
+<li><code>src</code> 必须使用标准 ND 布局：行主且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
+<li><code>dst</code> 必须使用以下两种非分形布局之一：</li>
+<li>ND 布局（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>），或</li>
+<li>列数严格为 1 的 DN 布局（<code>BLayout::ColMajor</code>、<code>SLayout::NoneBox</code>、<code>Cols == 1</code>）。</li>
+<li><code>dst</code> 和 <code>src</code> 的元素类型必须一致。</li>
+<li>运行时有效区域检查：</li>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
+<li>内建接口签名要求显式传入 <code>tmp</code> 操作数。</li>
 </ul>
-</li>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持的元素类型：<code>half</code>、<code>float</code>、<code>int32_t</code>、<code>int16_t</code>。</li>
+<li>当前检查到的实现路径中，实际受约束的是 <code>src</code> 和 <code>dst</code>。</li>
+<li>当前实现路径中，没有额外要求 <code>tmp</code> 必须满足特定 shape/layout 约束。</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="_7">实现说明<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p><code>TROWPROD</code> 在当前代码库中遵循已实现的 A5 后端路径。该实现会在校验 <code>src</code> / <code>dst</code> 约束后，直接完成按行乘积归约。</p>
+<p>C++ 内建接口中仍然保留 <code>tmp</code> 参数，以保持接口形式一致：</p>
+<ol>
+<li><code>tmp</code> 仍然保留在内建接口签名和 AS lowering 形式中。</li>
+<li>当前检查到的实现路径中，实际被约束的是 <code>src</code> 和 <code>dst</code>。</li>
+<li>如果后续该指令的其他后端实现对 <code>tmp</code> 引入额外要求，文档应再按对应实现同步更新。</li>
+</ol>
+<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h3 id="auto">Auto 模式<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -624,7 +631,7 @@ void example_auto() {
   TROWPROD(dst, src, tmp);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<h3 id="manual">Manual 模式<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -641,6 +648,23 @@ void example_manual() {
   TASSIGN(tmp, 0x3000);
   TROWPROD(dst, src, tmp);
 }
+</code></pre>
+<h2 id="asm">ASM 形式示例<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="auto_1">Auto 模式<a class="headerlink" href="#auto_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># Auto 模式：编译器/运行时管理的放置和调度。
+%dst = pto.trowprod %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="manual_1">Manual 模式<a class="headerlink" href="#manual_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># Manual 模式：在发出指令前显式绑定资源。
+# Tile 操作数可选：
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+%dst = pto.trowprod %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+# AS Level 2 (DPS)
+pto.trowprod ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
               
             </div>

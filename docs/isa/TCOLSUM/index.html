@@ -311,15 +311,19 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-implementation-checks">A2A3 implementation checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-implementation-checks">A5 implementation checks</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
@@ -628,14 +632,6 @@
 <pre><code class="language-text">pto.tcolsum ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 pto.tcolsum ins(%src, %tmp {isBinary = false} : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcolsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-%dst = pto.tcolsum %src, %tmp {isBinary = false} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcolsum ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-pto.tcolsum ins(%src, %tmp {isBinary = false} : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename... WaitEvents&gt;
@@ -645,20 +641,31 @@ template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, ty
 PTO_INST RecordEvent TCOLSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, bool isBinary, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Implementation checks (NPU):</p>
+<h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Tile location: <code>dst</code>, <code>src</code>, <code>tmp</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile layout: all tiles must be ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>DType consistency:<ul>
-<li>A2A3: <code>src.DType</code> must be one of <code>half</code>, <code>float</code>, <code>int16_t</code>, <code>int32_t</code>, and <code>dst.DType == tmp.DType == src.DType</code>.</li>
-<li>A5: <code>dst.DType == src.DType</code> is required by <code>TColReduceCheck</code>; the exact supported <code>src.DType</code> set is target-defined (see <code>include/pto/npu/a5/TColReduceOps.hpp</code>).</li>
+<li><code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
+<li><code>dst</code> and <code>src</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</li>
+<li><code>dst</code> and <code>src</code> must use the same element type.</li>
+<li>Runtime checks:</li>
+<li><code>src.GetValidCol() == dst.GetValidCol()</code></li>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidCol() &lt;= tmp</code> row stride measured in <code>src</code> elements</li>
+<li><code>isBinary</code> selects the checked backend path:</li>
+<li><code>true</code>: binary-tree accumulation using <code>tmp</code></li>
+<li><code>false</code>: sequential accumulation into <code>dst</code></li>
 </ul>
-</li>
-<li>Runtime valid checks:<ul>
-<li>A2A3: <code>src.GetValidCol() == dst.GetValidCol()</code>; returns early if <code>src.GetValidRow() == 0</code> or <code>src.GetValidCol() == 0</code>.</li>
-<li>A5: <code>srcValidRow</code> and <code>srcValidCol</code> must be non-zero; <code>srcValidCol == dstValidCol</code> is asserted by <code>TColReduceCheck</code>.</li>
+<h3 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>half</code>, <code>float</code>, <code>int16_t</code>, <code>int32_t</code>.</li>
+<li><code>tmp</code> must be <code>TileType::Vec</code> and use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</li>
+<li><code>tmp</code> must use the same element type as <code>src</code> and <code>dst</code>.</li>
+<li>If <code>src.GetValidRow() == 0</code> or <code>src.GetValidCol() == 0</code>, the implementation returns early.</li>
 </ul>
-</li>
+<h3 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Shared A5 column-reduce checks allow <code>half</code>, <code>float</code>, <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>bfloat16_t</code>.</li>
+<li>The checked A5 <code>TCOLSUM</code> path still takes <code>tmp</code> only for the binary accumulation path; no extra compile-time <code>tmp</code> type/layout assertions are explicitly enforced in <code>TCOLSUM_IMPL</code>.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

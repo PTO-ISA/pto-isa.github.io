@@ -456,6 +456,14 @@
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-implementation-checks">A2A3 implementation checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-implementation-checks">A5 implementation checks</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
@@ -609,15 +617,15 @@
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
 <p><img alt="TPARTMUL tile operation" src="../../figures/isa/TPARTMUL.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Partial elementwise multiply with implementation-defined handling of mismatched valid regions.</p>
+<p>Performs elementwise multiplication over the destination valid region. When both <code>src0</code> and <code>src1</code> are valid at an element, the result is their product; when only one input is valid there, the result copies that input value. Handling of other mismatched-validity cases is implementation-defined.</p>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
 <p>For each element <code>(i, j)</code> in the destination valid region:</p>
 <div class="arithmatex">\[
 \mathrm{dst}_{i,j} =
-egin{cases}
-\mathrm{src0}_{i,j} \cdot \mathrm{src1}_{i,j} &amp;     ext{if both inputs are defined at } (i,j) \
-\mathrm{src0}_{i,j} &amp;   ext{if only src0 is defined at } (i,j) \
-\mathrm{src1}_{i,j} &amp;   ext{if only src1 is defined at } (i,j)
+\begin{cases}
+\mathrm{src0}_{i,j} \cdot \mathrm{src1}_{i,j} &amp; \text{if both inputs are defined at } (i,j) \\
+\mathrm{src0}_{i,j} &amp; \text{if only src0 is defined at } (i,j) \\
+\mathrm{src1}_{i,j} &amp; \text{if only src1 is defined at } (i,j)
 \end{cases}
 \]</div>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
@@ -643,10 +651,25 @@
 PTO_INST RecordEvent TPARTMUL(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Element type/layout legality follows backend checks and is analogous to <code>TPARTADD</code> / <code>TPARTMAX</code> / <code>TPARTMIN</code>.</li>
-<li>Destination valid region defines the result domain.</li>
-<li>Partial-validity handling is implementation-defined for unsupported shape combinations.</li>
+<li><code>dst</code>, <code>src0</code>, and <code>src1</code> must use the same element type.</li>
+<li>The destination valid region defines the result domain.</li>
+<li>For each element in the destination valid region:</li>
+<li>if both inputs are valid, the instruction applies its elementwise operator;</li>
+<li>if only one input is valid, the result copies that input value.</li>
+<li>If <code>dst</code> has a zero valid region, the instruction returns early.</li>
+<li>Supported partial-validity patterns require at least one source tile to have a valid region exactly equal to <code>dst</code>, while the other source tile's valid region must not exceed <code>dst</code> in either dimension.</li>
+<li>Handling of any validity pattern not explicitly listed above is implementation-defined.</li>
+</ul>
+<h3 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>int32_t</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
+<li><code>dst</code>, <code>src0</code>, and <code>src1</code> must all be row-major (<code>isRowMajor</code>).</li>
+</ul>
+<h3 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>, <code>bfloat16_t</code>.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

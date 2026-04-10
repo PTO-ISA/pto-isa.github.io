@@ -570,7 +570,7 @@
 <ul>
 <li>Vec -&gt; Vec 移动</li>
 <li>Mat -&gt; Left/Right/Bias/Scaling/Scale（微缩放）移动（取决于目标）</li>
-<li>Acc -&gt; Vec 移动（取决于目标）</li>
+<li>Acc -&gt; Mat/Vec 移动（取决于目标）</li>
 </ul>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>概念上在有效区域上将元素从 <code>src</code> 复制或转换到 <code>dst</code>。确切的转换取决于所选模式和目标。</p>
@@ -617,41 +617,74 @@ template &lt;typename DstTileData, typename SrcTileData, AccToVecMode mode, Relu
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束或检查<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li>形状规则：<ul>
+<li><code>TMOV</code> 包含以下重载族：</li>
+<li>普通移动：<code>TMOV(dst, src)</code></li>
+<li>relu 形式：<code>TMOV&lt;..., reluMode&gt;(dst, src)</code></li>
+<li>累加器到向量形式：<code>TMOV&lt;..., mode, reluMode&gt;(dst, src)</code></li>
+<li>向量量化形式：<code>TMOV&lt;..., FpTileData, mode, reluMode&gt;(dst, src, fp)</code></li>
+<li>标量量化形式：<code>TMOV&lt;..., reluMode&gt;(dst, src, preQuantScalar)</code> 和 <code>TMOV&lt;..., mode, reluMode&gt;(dst, src, preQuantScalar)</code></li>
+<li><code>reluMode</code> 取值为 <code>ReluPreMode::{NoRelu, NormalRelu}</code>。</li>
+<li><code>mode</code> 取值为 <code>AccToVecMode::{SingleModeVec0, SingleModeVec1, DualModeSplitM, DualModeSplitN}</code>。</li>
+</ul>
+<h3 id="a2a3">A2A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
 <li>形状必须匹配：<code>SrcTileData::Rows == DstTileData::Rows</code> 且 <code>SrcTileData::Cols == DstTileData::Cols</code>。</li>
+<li>支持的 Tile 类型对在编译期限制为：</li>
+<li><code>TileType::Mat -&gt; TileType::Left/Right/Bias/Scaling</code></li>
+<li><code>TileType::Vec -&gt; TileType::Vec</code></li>
+<li><code>TileType::Acc -&gt; TileType::Mat</code></li>
+<li>对于 <code>TileType::Mat -&gt; TileType::Bias</code>：</li>
+<li>支持的源/目标 dtype 对为 <code>int32_t -&gt; int32_t</code>、<code>float -&gt; float</code>、<code>half -&gt; float</code></li>
+<li>源行数必须为 <code>1</code></li>
+<li><code>SrcTileData::Cols * sizeof(SrcType)</code> 必须按 <code>64</code> 字节对齐</li>
+<li>对于 <code>TileType::Mat -&gt; TileType::Scaling</code>：</li>
+<li>目标 dtype 必须与源 dtype 相同，且必须为 <code>uint64_t</code></li>
+<li>源行数必须为 <code>1</code></li>
+<li><code>SrcTileData::Cols * sizeof(SrcType)</code> 必须按 <code>128</code> 字节对齐</li>
+<li>对于 <code>TileType::Acc -&gt; TileType::Mat</code>：</li>
+<li>额外执行 <code>CheckTMovAccToMat&lt;...&gt;</code> 编译期检查</li>
+<li>普通/relu 形式使用 <code>GetCastPreQuantMode&lt;SrcDType, DstDType&gt;()</code> 推导的 cast pre-quant 模式</li>
+<li>标量量化形式使用 <code>GetScalarPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
+<li>向量量化形式要求提供 <code>FpTileData</code> 操作数，且 <code>FpTileData::Loc == TileType::Scaling</code>，并使用 <code>GetVectorPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
+</ul>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>CommonCheck()</code> 要求：</li>
+<li>目标/源 dtype 必须相同</li>
+<li>支持的元素类型为 <code>int8_t</code>、<code>hifloat8_t</code>、<code>float8_e5m2_t</code>、<code>float8_e4m3_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>、<code>float4_e2m1x2_t</code>、<code>float4_e1m2x2_t</code></li>
+<li>源布局必须满足以下之一：<ul>
+<li><code>(SrcTileData::SFractal == SLayout::ColMajor &amp;&amp; SrcTileData::isRowMajor)</code></li>
+<li><code>(SrcTileData::SFractal == SLayout::RowMajor &amp;&amp; !SrcTileData::isRowMajor)</code></li>
+<li><code>SrcTileData::isRowMajor</code></li>
 </ul>
 </li>
-<li>支持的位置对（编译时检查）：<ul>
-<li><code>Mat -&gt; Left/Right/Bias/Scaling</code></li>
-<li><code>Vec -&gt; Vec</code></li>
-<li><code>Acc -&gt; Mat</code></li>
+<li><code>CommonCheckMX()</code> 用于 MX 路径时要求源/目标 dtype 相同，并支持 <code>float8_e8m0_t</code>。</li>
+<li>支持的路径包括：</li>
+<li><code>TileType::Mat -&gt; TileType::Left/Right/Bias/Scaling/ScaleLeft/ScaleRight</code></li>
+<li><code>TileType::Vec -&gt; TileType::Vec/TileType::Mat</code></li>
+<li><code>TileType::Acc -&gt; TileType::Vec/TileType::Mat</code></li>
+<li>A5 实现中处理的特定 <code>ND -&gt; ZZ</code> 及相关内部路径变体</li>
+<li>对于 <code>TileType::Mat -&gt; TileType::Bias</code>：</li>
+<li>支持的 dtype 对为 <code>int32_t -&gt; int32_t</code>、<code>float -&gt; float</code>、<code>half -&gt; float</code>、<code>bfloat16_t -&gt; float</code></li>
+<li>源行数必须为 <code>1</code></li>
+<li><code>DstTileData::Cols * sizeof(DstType)</code> 必须按 <code>64</code> 字节对齐</li>
+<li>bias table 占用 <code>DstTileData::Cols * sizeof(DstType)</code> 不得超过 <code>4096</code> 字节</li>
+<li>对于 <code>TileType::Mat -&gt; TileType::Scaling</code>：</li>
+<li>源行数必须为 <code>1</code></li>
+<li><code>DstTileData::Cols * sizeof(DstType)</code> 必须按 <code>128</code> 字节对齐</li>
+<li>fixpipe buffer 占用 <code>DstTileData::Cols * sizeof(DstType)</code> 不得超过 <code>4096</code> 字节</li>
+<li>对于 <code>TileType::Acc -&gt; TileType::Vec</code>：</li>
+<li><code>mode</code> 用于选择 <code>SingleModeVec0</code>、<code>SingleModeVec1</code>、<code>DualModeSplitM</code> 或 <code>DualModeSplitN</code></li>
+<li>双目标模式要求 <code>QuantMode_t::NoQuant</code></li>
+<li>双目标模式不支持 <code>nz2dn</code> 路径</li>
+<li>目标 stride 必须非零，且 <code>dstStride * sizeof(dstType)</code> 必须是 <code>32</code> 字节的整数倍</li>
+<li>对于 <code>TileType::Acc -&gt; TileType::Mat</code>：</li>
+<li>目标 stride 必须非零，且 <code>dstStride * sizeof(dstType)</code> 必须是 <code>32</code> 字节的整数倍</li>
+<li>支持通过对应重载启用 relu/标量量化/向量量化形式</li>
 </ul>
-</li>
-<li>按路径附加检查如下：<ul>
-<li><code>Acc -&gt; Mat</code>：会额外检查分形与数据类型约束（例如 <code>Acc</code> 使用类 NZ 分形，<code>Mat</code> 使用 512B 分形，且仅允许特定的数据类型转换）。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li>形状规则：<ul>
-<li>对于 <code>Mat -&gt; Left/Right/Bias/Scaling/Scale</code>，形状必须匹配。</li>
-<li>对于 <code>Vec -&gt; Vec</code> 和 <code>Vec -&gt; Mat</code>，实际复制区域可能由源和目的的有效行/列共同决定。</li>
-</ul>
-</li>
-<li>支持的位置对包括（取决于目标）：<ul>
-<li><code>Mat -&gt; Left/Right/Bias/Scaling/Scale</code></li>
-<li><code>Vec -&gt; Vec/Mat</code></li>
-<li><code>Acc -&gt; Vec/Mat</code></li>
-</ul>
-</li>
-<li><code>Acc -&gt; Vec</code> 还支持额外的 <code>AccToVecMode</code> 形式；其中部分形式还会结合 <code>FpTileData</code> 或 <code>preQuantScalar</code> 使用。</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -679,11 +712,11 @@ void example_manual() {
 }
 </code></pre>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<h3 id="_8">自动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
 %dst = pto.tmov.s2d %src  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<h3 id="_9">手动模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
 # 可选（当该指令包含 tile 操作数时）：
 # pto.tassign %arg0, @tile(0x1000)

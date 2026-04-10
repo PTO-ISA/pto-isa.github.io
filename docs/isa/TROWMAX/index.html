@@ -322,6 +322,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-implementation-checks">A2A3 implementation checks</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
@@ -627,29 +633,29 @@
 PTO_INST RecordEvent TROWMAX(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Implementation checks (NPU):</p>
+<h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
-<li>A2A3:<ul>
-<li>Tile location: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile layout of <code>src</code>: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>).</li>
-<li>Tile layout of <code>dst</code>:<ul>
-<li><strong>Compact Mode</strong>: DN layout Tile of 1D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, 1, BLayout::ColMajor, ValidRows, 1&gt;</code>, ROWS must be 32b aligned.</li>
-<li><strong>Traditional Mode</strong>: ND layout Tile of 2D, e.g., <code>Tile&lt;TileType::Vec, T, ROWS, COLS, BLayout::RowMajor, ValidRows, 1&gt;</code>.</li>
+<li><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code>.</li>
+<li><code>src</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</li>
+<li><code>dst</code> must use one of the following non-fractal layouts:</li>
+<li>ND layout (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>), or</li>
+<li>DN layout with exactly one column (<code>BLayout::ColMajor</code>, <code>SLayout::NoneBox</code>, <code>Cols == 1</code>).</li>
+<li><code>dst</code> and <code>src</code> must use the same element type.</li>
+<li>Runtime valid-region checks:</li>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
+<li>The intrinsic signature requires an explicit <code>tmp</code> operand.</li>
 </ul>
-</li>
-<li>Data types: <code>half</code> or <code>float</code>.</li>
-<li>DType consistency: <code>dst.DType == src.DType</code>.</li>
-<li>Runtime valid checks:</li>
-<li><code>srcValidCol != 0</code> and <code>srcValidRow != 0</code>.</li>
-<li><code>srcValidRow == dstValidRow</code> (the output valid row must match the input valid row).</li>
-</ul>
-</li>
-<li>A5:<ul>
-<li>Data types: <code>half</code> or <code>float</code>.</li>
-<li>DType consistency: <code>dst.DType == src.DType</code>.</li>
-<li>No explicit runtime assertions on <code>validRow/validCol</code> in the implementation; the loops use <code>src.GetValidRow()</code> and <code>src.GetValidCol()</code>.</li>
-</ul>
-</li>
+<h3 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>half</code>, <code>float</code>, <code>int32_t</code>, <code>int16_t</code>.</li>
+<li>The implementation accepts both ND output and DN output with <code>Cols == 1</code>.</li>
+<li>Runtime checks follow the shared row-reduce check path:</li>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
+<li>The current implementation path passes <code>tmp</code> into the backend call, but this document does not add extra <code>tmp</code> shape/layout constraints beyond what is explicitly enforced by the checked implementation.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
