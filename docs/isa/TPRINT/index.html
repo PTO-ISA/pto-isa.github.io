@@ -621,7 +621,7 @@
 <p><strong>Important</strong>:
 - This instruction is <strong>for development and debugging ONLY</strong>.
 - It incurs <strong>significant runtime overhead</strong> and <strong>must not be used in production kernels</strong>.
-- Output may be <strong>truncated</strong> if it exceeds the internal print buffer.
+- Output may be <strong>truncated</strong> if it exceeds the internal print buffer. The print buffer can be adjusted with <code>-DCCEBlockMaxSize=16384</code>; the default is 16 KiB.
 - <strong>Requires CCE compilation option <code>-D_DEBUG --cce-enable-print</code></strong> (see <a href="#behavior">Behavior</a>).</p>
 </blockquote>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
@@ -642,12 +642,17 @@
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPRINT(TileData &amp;src, WaitEvents &amp;... events);
+<pre><code class="language-cpp">// For printing GlobalTensor or Vec-type Tile
+template &lt;typename TileData&gt;
+PTO_INST void TPRINT(TileData &amp;src);
+
+// For printing Acc-type Tile and Mat-type Tile (Mat printing is currently A3-only)
+template &lt;typename TileData, typename GlobalData&gt;
+PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);
 </code></pre>
 <h3 id="supported-types-for-t">Supported Types for T<a class="headerlink" href="#supported-types-for-t" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Tile</strong>: Must be a vector tile (<code>TileType::Vec</code>) with supported element type.</li>
+<li><strong>Tile</strong>: <code>TileType</code> may be <code>Vec</code>, <code>Acc</code>, or <code>Mat</code> (Mat printing is currently supported on A3 only).</li>
 <li><strong>GlobalTensor</strong>: Must use layout <code>ND</code>, <code>DN</code>, or <code>NZ</code>, and have a supported element type.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
@@ -658,8 +663,10 @@ PTO_INST RecordEvent TPRINT(TileData &amp;src, WaitEvents &amp;... events);
 <li>Unsigned integers: <code>uint8_t</code>, <code>uint16_t</code>, <code>uint32_t</code></li>
 </ul>
 </li>
-<li><strong>For Tiles</strong>: <code>TileData::Loc == TileType::Vec</code> (only vector tiles are printable).</li>
 <li><strong>For GlobalTensor</strong>: Layout must be one of <code>Layout::ND</code>, <code>Layout::DN</code>, or <code>Layout::NZ</code>.</li>
+<li><strong>For temporary space</strong>: Printing a <code>Tile</code> with <code>TileType::Mat</code> or <code>TileType::Acc</code> requires GM temporary space. The temporary buffer must be at least <code>TileData::Numel * sizeof(T)</code>.</li>
+<li>A5 does not yet support printing <code>TileType::Mat</code>.</li>
+<li>When <code>TileType</code> is <code>Mat</code>, the output is formatted according to <code>Layout::ND</code>; other layouts may appear misaligned.</li>
 </ul>
 <h2 id="behavior">Behavior<a class="headerlink" href="#behavior" title="Permanent link">&para;</a></h2>
 <ul>
