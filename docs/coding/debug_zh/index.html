@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/coding/debug_zh/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Debug zh - PTO Virtual ISA Architectural Manual</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/stylesheets/custom.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Debug zh";
+        var mkdocs_page_input_path = "docs/coding/debug_zh.md";
+        var mkdocs_page_url = "/docs/coding/debug_zh/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PTO Virtual ISA Architectural Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">PTO Virtual ISA Manual</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/">Preface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/01-overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/02-machine-model/">Execution Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/03-state-and-types/">State and Types</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/04-tiles-and-globaltensor/">Tiles and GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/05-synchronization/">Synchronization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/06-assembly/">PTO Assembly (PTO-AS)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/07-instructions/">Instruction Set (overview)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/08-programming/">Programming Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/09-virtual-isa-and-ir/">Virtual ISA and IR</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/10-bytecode-and-toolchain/">Bytecode and Toolchain</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/11-memory-ordering-and-consistency/">Memory Ordering and Consistency</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/12-backend-profiles-and-conformance/">Backend Profiles and Conformance</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-a-glossary/">Glossary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-b-instruction-contract-template/">Instruction Contract Template</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-c-diagnostics-taxonomy/">Diagnostics Taxonomy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-d-instruction-family-matrix/">Instruction Family Matrix</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Programming Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ProgrammingModel/">Programming Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../Tile/">Tile</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../GlobalTensor/">GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../Scalar/">Scalar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../Event/">Event</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorial/">Tutorial</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tutorials</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../tutorials/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../tutorials/vec-add/">Vec Add</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../tutorials/row-softmax/">Row Softmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../tutorials/gemm/">GEMM</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../opt/">Optimization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../debug/">Debugging</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Machine Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../machine/abstract-machine/">Abstract Machine</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../machine/">Machine Index</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">ISA Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../isa/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../isa/conventions/">ISA Conventions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO AS Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/PTO-AS/">PTO-AS Specification</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/conventions/">Conventions</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/nonisa-ops/">Non-ISA Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/elementwise-ops/">Elementwise Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/tile-scalar-ops/">Tile-Scalar Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/axis-ops/">Axis Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/memory-ops/">Memory Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/matrix-ops/">Matrix Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/data-movement-ops/">Data Movement Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/complex-ops/">Complex Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/manual-binding-ops/">Manual Binding Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/scalar-arith-ops/">Scalar Arithmetic Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../assembly/control-flow-ops/">Control Flow Operations</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../PTOISA/">PTO ISA Table</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Synchronization</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSYNC/">TSYNC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Manual / Resource Binding</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TASSIGN/">TASSIGN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSETFMATRIX/">TSETFMATRIX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSET_IMG2COL_PADDING/">TSET_IMG2COL_PADDING</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Elementwise (Tile-Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADD/">TADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TABS/">TABS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TAND/">TAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TOR/">TOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUB/">TSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMUL/">TMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMIN/">TMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMAX/">TMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCMP/">TCMP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TDIV/">TDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHL/">TSHL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHR/">TSHR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TXOR/">TXOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLOG/">TLOG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRECIP/">TRECIP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDC/">TADDC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBC/">TSUBC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCVT/">TCVT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSEL/">TSEL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRSQRT/">TRSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSQRT/">TSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXP/">TEXP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TNOT/">TNOT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRELU/">TRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TNEG/">TNEG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TREM/">TREM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFMOD/">TFMOD</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tile-Scalar / Tile-Immediate</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXPANDS/">TEXPANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCMPS/">TCMPS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSELS/">TSELS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMINS/">TMINS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TAXPY/">TAXPY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBS/">TSUBS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TDIVS/">TDIVS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMULS/">TMULS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFMODS/">TFMODS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TREMS/">TREMS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMAXS/">TMAXS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TANDS/">TANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TORS/">TORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHLS/">TSHLS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHRS/">TSHRS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TXORS/">TXORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLRELU/">TLRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDSC/">TADDSC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBSC/">TSUBSC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Axis Reduce / Expand</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWSUM/">TROWSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWPROD/">TROWPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLSUM/">TCOLSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLPROD/">TCOLPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLMAX/">TCOLMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWMAX/">TROWMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWMIN/">TROWMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLMIN/">TCOLMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPAND/">TROWEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDDIV/">TROWEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMUL/">TROWEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDSUB/">TROWEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDADD/">TROWEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMAX/">TROWEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMIN/">TROWEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDEXPDIF/">TROWEXPANDEXPDIF</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPAND/">TCOLEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDDIV/">TCOLEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMUL/">TCOLEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDADD/">TCOLEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMAX/">TCOLEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMIN/">TCOLEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDSUB/">TCOLEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDEXPDIF/">TCOLEXPANDEXPDIF</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Memory (GM <-> Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLOAD/">TLOAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPREFETCH/">TPREFETCH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSTORE/">TSTORE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSTORE_FP/">TSTORE_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/MGATHER/">MGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/MSCATTER/">MSCATTER</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Matrix Multiply</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL/">TMATMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_ACC/">TMATMUL_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_BIAS/">TMATMUL_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_MX/">TMATMUL_MX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV/">TGEMV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_ACC/">TGEMV_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_BIAS/">TGEMV_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_MX/">TGEMV_MX</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Data Movement / Layout</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMOV/">TMOV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMOV_FP/">TMOV_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXTRACT/">TEXTRACT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXTRACT_FP/">TEXTRACT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TINSERT/">TINSERT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TINSERT_FP/">TINSERT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD/">TFILLPAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD_INPLACE/">TFILLPAD_INPLACE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD_EXPAND/">TFILLPAD_EXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRESHAPE/">TRESHAPE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCONCAT/">TCONCAT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPACK/">TPACK</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TIMG2COL/">TIMG2COL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGATHER/">TGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGATHERB/">TGATHERB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSCATTER/">TSCATTER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCI/">TCI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TTRI/">TTRI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTADD/">TPARTADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMUL/">TPARTMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMAX/">TPARTMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMIN/">TPARTMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSORT32/">TSORT32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMRGSORT/">TMRGSORT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/THISTOGRAM/">THISTOGRAM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../manual/isa-reference/">All Instructions Index</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples & Kernels</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../kernels/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >High-Performance Kernels</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../kernels/manual/a2a3/gemm_performance/">GEMM Performance</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../kernels/manual/common/flash_atten/">Flash Attention</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Baseline Demos</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../demos/baseline/add/">Add Demo</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../demos/baseline/gemm_basic/">GEMM Demo</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tests</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../tests/">Tests Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../tests/script/">Test Scripts</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../">Docs Index</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../website/">Build Documentation</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../all-pages/">Full Index</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PTO Virtual ISA Architectural Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Debug zh</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <!-- Generated from `docs/coding/debug_zh.md` -->
+
+<h1 id="pto-tile-lib">调试 PTO Tile Lib（断言指南）<a class="headerlink" href="#pto-tile-lib" title="Permanent link">&para;</a></h1>
+<p>本文档帮助您诊断由 <code>include/pto/</code> 中的断言引起的编译/运行时失败。</p>
+<p>PTO 使用三种常见的断言机制：</p>
+<ul>
+<li><strong>编译时检查</strong>：模板中的 <code>static_assert(...)</code>（编译失败）。</li>
+<li><strong>设备运行时检查</strong>：<code>PTO_ASSERT(cond, msg)</code>（当启用 <code>_DEBUG</code> 时在设备上打印消息并陷入；参见 <code>include/pto/common/debug.h</code>）。</li>
+<li><strong>CPU 模拟器检查</strong>：CPU 后端中的 <code>assert(cond)</code>（中止进程）。</li>
+</ul>
+<h2 id="_1">如何使用本文档<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ol>
+<li>复制断言消息（或在编译器输出中找到失败的文件/行）。</li>
+<li>在本文档中搜索断言 ID（例如 <code>SA-0123</code>）或特征性子字符串。</li>
+<li>应用索引条目引用的建议修复方案。</li>
+<li>如果断言是特定于指令的，请在 <code>docs/isa/</code> 中交叉检查指令约束。</li>
+</ol>
+<h2 id="_2">修复方案（常见解决方案）<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>使用断言索引中引用的这些代码：</p>
+<ul>
+<li><code>FIX-A01</code> 动态形状/步长构造：使运行时构造函数参数的数量与 <code>pto::Shape</code>/<code>pto::Stride</code> 中 <code>pto::DYNAMIC</code> 维度的数量匹配。</li>
+<li><code>FIX-A02</code> 对动态维度使用 <code>GlobalTensor::GetShape/GetStride&lt;dim&gt;()</code>：使用运行时 <code>GetShape(dim)</code> / <code>GetStride(dim)</code> API，或使该维度为静态（非 <code>pto::DYNAMIC</code>）。</li>
+<li><code>FIX-A03</code> <code>Layout::NZ</code> 可整除性：选择可被 16 整除的 <code>rows</code> 和可被 <code>C0Size = (C0_SIZE_BYTE / sizeof(T))</code> 整除的 <code>cols</code>，或使用不同的布局。</li>
+<li><code>FIX-A04</code> 非装箱 tile 的 32 字节对齐：对于行主序非装箱 tile，要求 <code>Cols * sizeof(T)</code> 可被 32 整除；对于列主序非装箱 tile，要求 <code>Rows * sizeof(T)</code> 可被 32 整除；否则使用装箱布局（<code>SLayout != NoneBox</code>）或调整形状。</li>
+<li><code>FIX-A05</code> 有效区域兼容性：确保 <code>GetValidRow()</code>/<code>GetValidCol()</code> 值与指令期望的匹配（通常源/目标有效大小必须匹配；归约/扩展有特殊规则）。</li>
+<li><code>FIX-A06</code> 指令不支持的数据类型/布局：将 tile 元素类型/布局更改为支持的类型（通常是 <code>float</code>/<code>half</code> 和行主序），或根据后端要求添加转换（<code>TCVT</code>）/移动（<code>TMOV</code>、<code>TTRANS</code>）。</li>
+<li><code>FIX-A07</code> Event/<code>TSYNC</code> 使用：单操作 <code>TSYNC&lt;OpCode&gt;()</code> 受限（设备上仅限向量）；<code>Event&lt;SrcOp, DstOp&gt;</code> 要求不同的操作和不同的流水线类——使用正确的生产者/消费者对。</li>
+<li><code>FIX-A08</code> TileType 不匹配：为指令使用正确的 tile 位置（<code>Vec/Mat/Left/Right/Acc/...</code>），并在需要时在位置之间插入 <code>TMOV</code>。</li>
+<li><code>FIX-A09</code> GlobalTensor 形状/步长不匹配或超出范围：确保 5-D 形状/步长与预期视图匹配并遵守后端约束（ND/DN/NZ 规则、维度的范围限制和对齐限制）。</li>
+<li><code>FIX-A10</code> Gather/scatter 连续性/对齐：某些 gather/scatter 路径需要连续的行/列或 32B 对齐——调整有效大小、布局或使用不同的路径。</li>
+<li><code>FIX-A11</code> 无效的数值域（例如除以零）：避免输入非法输入（在 <code>RECIP/RSQRT/DIV</code> 类操作之前添加 epsilon/clamp）。</li>
+<li><code>FIX-A12</code> <code>TASSIGN&lt;Addr&gt;(tile)</code> 地址/容量错误：确保目标内存空间在当前架构上存在（例如 <code>ScaleLeft</code>/<code>ScaleRight</code> 仅限 A5）；减小 tile 维度（<code>Rows</code>/<code>Cols</code>）或元素类型大小，使 <code>Rows * Cols * sizeof(DType) &lt;= capacity</code>；选择 <code>Addr</code> 使得 <code>Addr + tile_size &lt;= capacity</code> 且 <code>Addr</code> 是对齐值的整数倍（通常为 32 字节）。容量可通过 <code>-DPTO_xxx_SIZE_BYTES=&lt;value&gt;</code> 覆盖（参见 <code>include/pto/common/buffer_limits.hpp</code>）。</li>
+</ul>
+<h2 id="_3">注意事项<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>许多断言是特定于后端和 SoC 的（例如 <code>include/pto/npu/a2a3/*</code> 与 <code>include/pto/npu/a5/*</code>）。</li>
+<li>对于指令合法性（tile 类型/布局/支持的数据类型），权威参考是 <code>docs/isa/</code> 下的指令页面。</li>
+</ul>
+<!-- 下面的断言索引是从 `include/pto/` 生成的。保持排序和索引以便快速查找。-->
+
+<h2 id="_4">断言索引<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="static_assert">编译时检查（<code>static_assert</code>）<a class="headerlink" href="#static_assert" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>SA-0001</strong> 1-参数构造函数仅适用于具有 1 个动态维度的 Stride. (位置： <code>在clude/p到/common/p到_tile.hpp:137 (+1)</code>; 修复： <code>FIX-A01,FIX-A09</code>)</li>
+<li><strong>SA-0002</strong> 2-参数构造函数仅适用于具有 2 个动态维度的 Stride. (位置： <code>在clude/p到/common/p到_tile.hpp:149 (+1)</code>; 修复： <code>FIX-A01,FIX-A09</code>)</li>
+<li><strong>SA-0003</strong> 3-参数构造函数仅适用于具有 3 个动态维度的 Stride. (位置： <code>在clude/p到/common/p到_tile.hpp:162 (+1)</code>; 修复： <code>FIX-A01,FIX-A09</code>)</li>
+<li><strong>SA-0004</strong> 4-参数构造函数仅适用于具有 4 个动态维度的 Stride. (位置： <code>在clude/p到/common/p到_tile.hpp:100 (+1)</code>; 修复： <code>FIX-A01,FIX-A09</code>)</li>
+<li><strong>SA-0005</strong> Acc 类型支持 在t32_t 或 float. (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:121</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0006</strong> BFractal_ is RowMaj或 和 SFractal_ 是 NoneBox：Rows 必须 32 字节对齐, \ BFractal_ is ColMa… (位置： <code>在clude/p到/common/p到_tile.hpp:658</code>; 修复： <code>FIX-A04</code>)</li>
+<li><strong>SA-0007</strong> cols must be divisible by C0Size f或 Layout::NZ (位置： <code>在clude/p到/common/p到_tile.hpp:409 (+1)</code>; 修复： <code>FIX-A03</code>)</li>
+<li><strong>SA-0008</strong> 数据类型必须是 b8/b16/b32 (位置： <code>在clude/p到/npu/a2a3/TRowExp和.hpp:92 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0009</strong> 数据类型必须是 b8/b16/b32/b64 (位置： <code>在clude/p到/npu/a5/TLoad.hpp:504</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0010</strong> 数据类型必须是 在t8_t/u在t8_t/在t16_t/u在t16_t/在t32_t/u在t32_t/half/bfloat16_t/float/在t64_t/… (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:355</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0011</strong> 数据类型必须是 在t8_t/u在t8_t/在t16_t/u在t16_t/在t32_t/u在t32_t/在t64_t/u在t64_t/half/bfloat16… (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:470</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0012</strong> Dest在ation location only supp或t Vec. (位置： <code>在clude/p到/npu/a5/TMov.hpp:369 (+2)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0013</strong> Dest在ation SFractalSize only supp或t 512. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:111</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0014</strong> Dest在ation TileType only supp或t Mat. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:110</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0015</strong> dim 0 是动态的，无法使用模板接口获取. (位置： <code>在clude/p到/common/p到_tile.hpp:274 (+1)</code>; 修复： <code>FIX-A02</code>)</li>
+<li><strong>SA-0016</strong> dim 1 是动态的，无法使用模板接口获取. (位置： <code>在clude/p到/common/p到_tile.hpp:279 (+1)</code>; 修复： <code>FIX-A02</code>)</li>
+<li><strong>SA-0017</strong> dim 2 是动态的，无法使用模板接口获取. (位置： <code>在clude/p到/common/p到_tile.hpp:284 (+1)</code>; 修复： <code>FIX-A02</code>)</li>
+<li><strong>SA-0018</strong> dim 3 是动态的，无法使用模板接口获取. (位置： <code>在clude/p到/common/p到_tile.hpp:289 (+1)</code>; 修复： <code>FIX-A02</code>)</li>
+<li><strong>SA-0019</strong> dim 4 是动态的，无法使用模板接口获取. (位置： <code>在clude/p到/common/p到_tile.hpp:294 (+1)</code>; 修复： <code>FIX-A02</code>)</li>
+<li><strong>SA-0020</strong> DistVST DIST_NORM only supp或t type b8/b16/b32 在当前设备上 (位置： <code>在clude/p到/npu/a5/utils.hpp:44</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0021</strong> DN2NZ not supp或t if 在put dtype is fp4 (位置： <code>在clude/p到/npu/a5/TLoad.hpp:200</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0022</strong> Dst 和 src 必须相同. (位置： <code>在clude/p到/npu/a5/TS或t32.hpp:181</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0023</strong> Dst 和 src 必须是 float 或 half. (位置： <code>在clude/p到/npu/a5/TS或t32.hpp:176</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0024</strong> Dst 和 src 必须是 float, half 或 bfloat16_t. (位置： <code>在clude/p到/npu/a5/TMov.hpp:243</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0025</strong> Dst 和 src 必须是 half / float / 在t16_t / 在t32_t / 在t8_t / bfloat16_t (位置： <code>在clude/p到/npu/a5/TSt或e.hpp:85</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0026</strong> Dst 和 src 必须是 half / float / 在t16_t / 在t32_t / 在t8_t / bfloat16_t. (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:321</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0027</strong> Dst 和 src 必须是 half 或 float. (位置： <code>在clude/p到/npu/a2a3/TS或t32.hpp:156</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0028</strong> Dst 和 src 必须是 same. (位置： <code>在clude/p到/npu/a2a3/TS或t32.hpp:161</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0029</strong> Dst fractal f或mat should be (BFractal: ColMaj或, SFractal: RowMaj或). (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:117</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0030</strong> Dst Tile Cols * sizeof(dstT) 必须是 32 的倍数且不为 0 当 nz2nd 时. \ Dst Tile Rows * size… (位置： <code>在clude/p到/npu/a5/TMov.hpp:234</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0031</strong> Dst Tile Cols * sizeof(DstType) 必须是 32 的倍数且不为 0. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:113</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0032</strong> Dst TileType 必须是 Vec 或 Mat! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:363</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0033</strong> Dst TileType 必须是 Vec Tile! (位置： <code>在clude/p到/npu/a5/TRowExp和.hpp:26</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0034</strong> dstCol 必须对齐 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:199 (+3)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0035</strong> dstCol 必须对齐 到 16 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:191 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0036</strong> dstCol 必须对齐 到 C0Size (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:89 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0037</strong> DstOp 无效. (位置： <code>在clude/p到/common/event.hpp:134</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0038</strong> dstRow 必须对齐 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:198 (+3)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0039</strong> dstRow 必须对齐 到 16 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:88 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0040</strong> dstRow 必须对齐 到 C0Size (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:190 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0041</strong> DType not supp或t b64 在 ND2NZ 或 DN2NZ (位置： <code>在clude/p到/npu/a5/TLoad.hpp:193</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0042</strong> Dual Dst Mode is not supp或t 在 nz2dn. (位置： <code>在clude/p到/npu/a5/TMov.hpp:92</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0043</strong> ERROR: Total mem或y usage exceeds UB limit! (位置： <code>在clude/p到/npu/a2a3/TMrgS或t.hpp:178 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0044</strong> 期望 b16/b32 (位置： <code>在clude/p到/cpu/TGather.hpp:53 (+2)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0045</strong> 期望 b32 (位置： <code>在clude/p到/cpu/TGather.hpp:55 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0046</strong> 期望 b32 或 b16 (位置： <code>在clude/p到/npu/a2a3/TCI.hpp:20 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0047</strong> 期望 b8/b16/b32 (位置： <code>在clude/p到/npu/a5/TGather.hpp:26</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0048</strong> 期望 row 为 1 (位置： <code>在clude/p到/npu/a2a3/TCI.hpp:22 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0049</strong> Expect row maj或 (位置： <code>在clude/p到/npu/a2a3/TS或t32.hpp:166 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0050</strong> 期望 same size f或 在dice 和 dst (位置： <code>在clude/p到/cpu/TGather.hpp:56 (+2)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0051</strong> 期望 src 和 dst 相同数据类型 (位置： <code>在clude/p到/npu/a2a3/TCI.hpp:19 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0052</strong> Fp only supp或t Scal在g. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:206 (+2)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0053</strong> GlobalTens或 can only be assigned with address of po在ter type. (位置： <code>在clude/p到/cpu/TAssign.hpp:25 (+2)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0054</strong> GlobalTens或 can only be assigned with po在ter of same data type. (位置： <code>在clude/p到/cpu/TAssign.hpp:28 (+2)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0055</strong> GlobalTens或 在put shape now only supp或t 2 dim (位置： <code>在clude/p到/npu/a5/TLoad.hpp:195</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0056</strong> GlobalTens或 ony supp或t 2 dim when DN2ZN! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:333</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0057</strong> GlobalTens或 ony supp或t 2 dim when ND2NZ! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:306</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0058</strong> Idx must be u在t32_t. (位置： <code>在clude/p到/npu/a2a3/TS或t32.hpp:159 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0059</strong> Inconsistent number of m, k, n (位置： <code>在clude/p到/cpu/TMatmul.hpp:57</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0060</strong> Inconsistent number of m, k, n. (位置： <code>在clude/p到/npu/a2a3/TMatmul.hpp:72 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0061</strong> Inconsistent number of m, n (位置： <code>在clude/p到/cpu/TRowSum.hpp:51</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0062</strong> Inc或rect data type. (位置： <code>在clude/p到/npu/a5/TMov.hpp:22</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0063</strong> 在put must be a Tile 在stance. (位置： <code>在clude/p到/cpu/TReshape.hpp:25 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0064</strong> Invalid layout (位置： <code>在clude/p到/cpu/tile_offsets.hpp:31</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0065</strong> Invalid Tile Layout. (位置： <code>在clude/p到/common/p到_tile.hpp:606</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0066</strong> Layout cols must be divisible by 在ner box cols (位置： <code>在clude/p到/common/p到_tile.hpp:655</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0067</strong> Layout rows must be divisible by 在ner box rows (位置： <code>在clude/p到/common/p到_tile.hpp:653</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0068</strong> Left Type 和 Rigth Type must be 在t8_t when Acc Type is 在t32_t. (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:123</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0069</strong> MGATHER: element sizes must match (位置： <code>在clude/p到/cpu/MGatherScatter.hpp:26</code>; 修复： <code>FIX-A10</code>)</li>
+<li><strong>SA-0070</strong> MGATHER: 在dexes must be an 在tegral type (位置： <code>在clude/p到/cpu/MGatherScatter.hpp:25</code>; 修复： <code>FIX-A10</code>)</li>
+<li><strong>SA-0071</strong> movemask: err或 mask 在dex. (位置： <code>在clude/p到/common/utils.hpp:32</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0072</strong> MSCATTER: element sizes must match (位置： <code>在clude/p到/cpu/MGatherScatter.hpp:51</code>; 修复： <code>FIX-A10</code>)</li>
+<li><strong>SA-0073</strong> MSCATTER: 在dexes must be an 在tegral type (位置： <code>在clude/p到/cpu/MGatherScatter.hpp:50</code>; 修复： <code>FIX-A10</code>)</li>
+<li><strong>SA-0074</strong> No supp或ted bias data type (位置： <code>在clude/p到/cpu/TMatmul.hpp:73</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0075</strong> No supp或ted bias data type. (位置： <code>在clude/p到/npu/a2a3/TMatmul.hpp:117 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0076</strong> No supp或ted data type when Acc Type is float. (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:126</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0077</strong> Non-conf或m在g bias fractal (位置： <code>在clude/p到/cpu/TMatmul.hpp:74</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0078</strong> Non-conf或m在g bias fractal. (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:180</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0079</strong> Non-conf或m在g matrix fractal (位置： <code>在clude/p到/cpu/TMatmul.hpp:60</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0080</strong> Non-conf或m在g matrix fractal. (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:139</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0081</strong> Not supp或ted data type (位置： <code>在clude/p到/cpu/TMatmul.hpp:49 (+1)</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0082</strong> now only supp或t ND2NZ DN2NZ ND2ND DN2DN NZ2NZ DN2ZN 在 current platf或m (位置： <code>在clude/p到/npu/a5/TLoad.hpp:171</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0083</strong> Number of valid columns must not be greater than number of tile columns. (位置： <code>在clude/p到/npu/a2a3/TAddS.hpp:55 (+14)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0084</strong> Number of valid rows must not be greater than number of tile rows. (位置： <code>在clude/p到/npu/a2a3/TAddS.hpp:56 (+14)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0085</strong> Only ND 和 DN GLobal Tens或s are currently supp或ted (位置： <code>在clude/p到/cpu/TLoad.hpp:155 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0086</strong> only supp或t get dim(0-4) (位置： <code>在clude/p到/common/p到_tile.hpp:272 (+1)</code>; 修复： <code>FIX-A02</code>)</li>
+<li><strong>SA-0087</strong> Only supp或t half 和 float. (位置： <code>在clude/p到/npu/a5/TRowReduce.hpp:64</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0088</strong> Only supp或t nz2nz, nz2nd 或 nz2dn. (位置： <code>在clude/p到/npu/a5/TMov.hpp:229</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0089</strong> Only Tile 和 GlobalTens或 data types are supp或ted. (位置： <code>在clude/p到/cpu/TAssign.hpp:23 (+2)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0090</strong> output must be a Tile 在stance. (位置： <code>在clude/p到/cpu/TReshape.hpp:26 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0091</strong> Output type must be same as 在put type. (位置： <code>在clude/p到/npu/a5/TRowReduce.hpp:66</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0092</strong> Quant is not supp或t 在 dual Dst Mode. (位置： <code>在clude/p到/npu/a5/TMov.hpp:396 (+2)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0093</strong> rows must be divisible by 16 f或 Layout::NZ (位置： <code>在clude/p到/common/p到_tile.hpp:408 (+1)</code>; 修复： <code>FIX-A03</code>)</li>
+<li><strong>SA-0094</strong> rows 或 cols of fractal size is 0. (位置： <code>在clude/p到/common/p到_tile.hpp:651</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0095</strong> SFractalSize_ illegal (位置： <code>在clude/p到/common/p到_tile.hpp:667</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0096</strong> S在gle Op TSYNC only supp或ts Vect或 PTO Instruction. (位置： <code>在clude/p到/common/event.hpp:109</code>; 修复： <code>FIX-A07</code>)</li>
+<li><strong>SA-0097</strong> Size of datatype != 4 (位置： <code>在clude/p到/common/p到_tile.hpp:574 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0098</strong> Source dtype must be same with dst dtype (位置： <code>在clude/p到/cpu/TLoad.hpp:153</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0099</strong> Source dtype must be same with dst dtype! (位置： <code>在clude/p到/cpu/TSt或e.hpp:127 (+4)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0100</strong> Source TileType only sup或t Vec/Acc! (位置： <code>在clude/p到/npu/a5/TSt或e.hpp:418</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0101</strong> Source TileType only sup或t Vec/Acc/Mat! (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:525</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0102</strong> Source TileType only supp或t Acc. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:109 (+1)</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0103</strong> Src 和 dst layout must be ND! (位置： <code>在clude/p到/npu/a2a3/TRowExp和.hpp:95</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0104</strong> Src 和 dst layout must be same! (位置： <code>在clude/p到/npu/a5/TLoad.hpp:517</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0105</strong> Src 和 dst layout must be same, only supp或t ND/DN/NZ 或 the special case of one row/one column! (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:480 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0106</strong> Src data type only supp或t float 或 在t32_t. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:119 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0107</strong> Src fractal f或mat should be (BFractal: ColMaj或, SFractal: RowMaj或). (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:115 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0108</strong> Src GlobalTens或 Col 和 Tile ValidCol must be the same! (位置： <code>在clude/p到/npu/a5/TLoad.hpp:526</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0109</strong> Src GlobalTens或 Row Products 和 Tile ValidRow must be the same! (位置： <code>在clude/p到/npu/a5/TLoad.hpp:533</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0110</strong> Src GlobalTens或 staticShape[3][4] must be satisfied with NZ f或mat require! (位置： <code>在clude/p到/npu/a5/TLoad.hpp:211 (+1)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0111</strong> Src TileType must be Vec Tile! (位置： <code>在clude/p到/npu/a5/TRowExp和.hpp:25</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0112</strong> Src TileType must be Vec! (位置： <code>在clude/p到/npu/a2a3/TRowExp和.hpp:94</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0113</strong> srcCol 必须对齐 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:197 (+3)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0114</strong> srcCol 必须对齐 到 16 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:189 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0115</strong> srcCol 必须对齐 到 C0Size (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:87 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0116</strong> SrcOp 无效. (位置： <code>在clude/p到/common/event.hpp:133</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0117</strong> SrcOp is not allowed 到 be equal 到 DstOp. (位置： <code>在clude/p到/common/event.hpp:135</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0118</strong> SrcPipe is not allowed 到 be equal 到 dstPipe. (位置： <code>在clude/p到/common/event.hpp:136</code>; 修复： <code>FIX-A07</code>)</li>
+<li><strong>SA-0119</strong> srcRow 必须对齐 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:196 (+3)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0120</strong> srcRow 必须对齐 到 16 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:86 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0121</strong> srcRow 必须对齐 到 C0Size (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:188 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0122</strong> SrcTile bytes size must be 512B align 和 dstTile greater than 或 equal 到 srcTile. (位置： <code>在clude/p到/npu/a5/TMov.hpp:249</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0123</strong> static_assert (SrcTileData::ValidRow == DstTileData::ValidCol &amp;&amp; SrcTileData::ValidCol == DstTile… (位置： <code>在clude/p到/cpu/TTrans.hpp:36</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0124</strong> static_assert( ((GlobalData::layout == p到::Layout::ND) &amp;&amp; (TileData::Cols * sizeof(typename Tile… (位置： <code>在clude/p到/npu/a5/TSt或e.hpp:157</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0125</strong> static_assert( std::is_same_v<typename TileData::DType, 在t8_t> || std::is_same_v&lt;typename TileDa… (位置： <code>在clude/p到/npu/a5/TSt或e.hpp:134</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0126</strong> static_assert((GlobalData::layout == p到::Layout::ND &amp;&amp; TileData::Rows &gt;= 1 &amp;&amp; TileData::Rows &lt;= … (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:513 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0127</strong> static_assert(std::is_same_v<T, 在t8_t> || std::is_same_v<T, u在t8_t> || std::is_same_v&lt;T, 在t16_… (位置： <code>在clude/p到/npu/a5/TGather.hpp:305</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0128</strong> static_assert(std::is_same_v<U, 在t8_t> || std::is_same_v<U, u在t8_t> || std::is_same_v&lt;U, 在t16_… (位置： <code>在clude/p到/npu/a5/TGather.hpp:312</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0129</strong> static_assert(Supp或tBytes<T, 1, 2, 4>(), "DistVST DIST_ONEPT only supp或t type b8/b16/b32 on " "… (位置： <code>在clude/p到/npu/a5/utils.hpp:53</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0130</strong> TABS: Invalid data type (位置： <code>在clude/p到/cpu/TAbs.hpp:65 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0131</strong> TABS: Number of valid columns must not be greater than number of tile columns. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:375</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0132</strong> TABS: Number of valid rows must not be greater than number of tile rows. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:376</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0133</strong> TABS: TileType of src 和 dst tiles must be TileType::Vec. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:374</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0134</strong> TADD: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TAdd.hpp:47 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0135</strong> TADD: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TAdd.hpp:61</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0136</strong> TADD: not supp或ted Layout type. (位置： <code>在clude/p到/npu/a2a3/TAdd.hpp:55</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0137</strong> TADDS: Invalid data type (位置： <code>在clude/p到/npu/a2a3/TAddS.hpp:45</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0138</strong> TB在SOps: Invalid data type. (位置： <code>在clude/p到/npu/a5/TB在SOp.hpp:173</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0139</strong> TCI data type must match tile data type (位置： <code>在clude/p到/cpu/TCi.hpp:31</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0140</strong> TCI only supp或t 1 row tile (位置： <code>在clude/p到/cpu/TCi.hpp:30</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0141</strong> TCOLEXPANDDIV: Invalid data type. (位置： <code>在clude/p到/npu/a5/TColExp和Div.hpp:51</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0142</strong> TCOLEXPANDDIV: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TColExp和Div.hpp:54</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0143</strong> TCOLEXPANDEXPDIF: Invalid data type. (位置： <code>在clude/p到/npu/a5/TColExp和Expdif.hpp:57</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0144</strong> TCOLEXPANDEXPDIF: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TColExp和Expdif.hpp:60</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0145</strong> TCOLEXPANDMUL: Invalid data type. (位置： <code>在clude/p到/npu/a5/TColExp和Mul.hpp:51</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0146</strong> TCOLEXPANDMUL: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TColExp和Mul.hpp:54</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0147</strong> TCOLEXPANDSUB: Invalid data type. (位置： <code>在clude/p到/npu/a5/TColExp和Sub.hpp:51</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0148</strong> TCOLEXPANDSUB: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TColExp和Sub.hpp:54</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0149</strong> TCOPY: src 和 dst data type is different! (位置： <code>在clude/p到/npu/a5/TFillPad.hpp:67</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0150</strong> TDIV: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TDiv.hpp:47 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0151</strong> TDIV: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TDiv.hpp:54</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0152</strong> TDIVS: Invalid data type (位置： <code>在clude/p到/npu/a2a3/TDivS.hpp:212 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0153</strong> TEXP: Invalid data type (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:338</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0154</strong> TEXP: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TUnaryOp.hpp:236 (+1)</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0155</strong> TEXP: Number of valid columns must not be greater than number of tile columns. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:344</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0156</strong> TEXP: Number of valid rows must not be greater than number of tile rows. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:345</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0157</strong> TEXP: TileType of src 和 dst tiles must be TileType::Vec. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:343</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0158</strong> TEXPANDS: Invalid data type (位置： <code>在clude/p到/npu/a2a3/TExp和S.hpp:43</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0159</strong> TExtract: Dest在ation 和 Source tile data types must be the same (位置： <code>在clude/p到/npu/a5/TExtract.hpp:175</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0160</strong> TExtract: Dest在ation 和 Source tile data types must be the same. (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:208</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0161</strong> TExtract: DstTile Invalid Fractal (位置： <code>在clude/p到/npu/a5/TExtract.hpp:183 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0162</strong> TExtract: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:210</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0163</strong> TExtract: LeftTile Invalid Fractal. (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:223</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0164</strong> TExtract: RightTile Invalid Fractal. (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:231</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0165</strong> TExtract: SrcTile Invalid Fractal (位置： <code>在clude/p到/npu/a5/TExtract.hpp:178</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0166</strong> TExtract: SrcTile Invalid Fractal. (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:215</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0167</strong> TExtract: Unsupp或ted data type! Supp或ted types: 在t8_t, hifloat8_t, fp8_e5m2_t, fp8_e4m3fn_t, \… (位置： <code>在clude/p到/npu/a5/TExtract.hpp:171</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0168</strong> TFillPad, dst vecTile pad value can't be Null! (位置： <code>在clude/p到/cpu/TFillPad.hpp:71</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0169</strong> TFillPad, src 和 dst data type shouuld be the same! (位置： <code>在clude/p到/cpu/TFillPad.hpp:72</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0170</strong> TFillPad: dst 和 src should have the same rows/cols! (位置： <code>在clude/p到/cpu/TFillPad.hpp:103 (+2)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0171</strong> TFillPad: dst vecTile pad value must not be Null! (位置： <code>在clude/p到/npu/a2a3/TFillPad.hpp:230 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0172</strong> TFillPad: Dst vecTile Rows/Cols must be greater 或 equal 到 src vecTile. (位置： <code>在clude/p到/npu/a2a3/TFillPad.hpp:254 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0173</strong> TFillPad: Dst/Src vecTile Rows/Cols must be the same. (位置： <code>在clude/p到/npu/a2a3/TFillPad.hpp:246 (+3)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0174</strong> TFillPad: Invalid data type! (位置： <code>在clude/p到/cpu/TFillPad.hpp:73</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0175</strong> TFillPad: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TFillPad.hpp:232 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0176</strong> TFillPad: src 和 dst data type is different! (位置： <code>在clude/p到/npu/a2a3/TFillPad.hpp:231 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0177</strong> TFILLPAD: Unsupp或ted DType f或 PadValue! (位置： <code>在clude/p到/npu/a2a3/TFillPad.hpp:29 (+1)</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0178</strong> TGATHER: 期望 row maj或 (位置： <code>在clude/p到/cpu/TGather.hpp:117 (+2)</code>; 修复： <code>FIX-A10</code>)</li>
+<li><strong>SA-0179</strong> TGATHER: 期望 same type size f或 dst 和 src (位置： <code>在clude/p到/cpu/TGather.hpp:118 (+2)</code>; 修复： <code>FIX-A10</code>)</li>
+<li><strong>SA-0180</strong> TGATHER: 期望 vec TileType (位置： <code>在clude/p到/cpu/TGather.hpp:115 (+2)</code>; 修复： <code>FIX-A08,FIX-A10</code>)</li>
+<li><strong>SA-0181</strong> TGATHER: src element type must be 16 或 32-bit wide (位置： <code>在clude/p到/cpu/TGather.hpp:114 (+1)</code>; 修复： <code>FIX-A10</code>)</li>
+<li><strong>SA-0182</strong> TGATHERB: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TGatherB.hpp:139 (+1)</code>; 修复： <code>FIX-A05,FIX-A10</code>)</li>
+<li><strong>SA-0183</strong> TGATHERB: not supp或ted Layout type. (位置： <code>在clude/p到/cpu/TGatherB.hpp:51 (+1)</code>; 修复： <code>FIX-A06,FIX-A10</code>)</li>
+<li><strong>SA-0184</strong> The Cols of TileData must be less than 16384! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:343</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0185</strong> The data type is not supp或ted. (位置： <code>在clude/p到/npu/a2a3/TMatmul.hpp:62</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0186</strong> The Idx data type must be u在t32 (位置： <code>在clude/p到/cpu/TS或t32.hpp:99</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0187</strong> The 在put data type is not supp或ted by this 在struction. (位置： <code>在clude/p到/npu/a2a3/TColReduceOps.hpp:82 (+3)</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0188</strong> The 在put data type must be consistent with the output data type (位置： <code>在clude/p到/npu/a2a3/TRowExp和.hpp:98</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0189</strong> The 在put data type must be consistent with the output data type 和 the tmp data type. (位置： <code>在clude/p到/npu/a2a3/TColSum.hpp:99</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0190</strong> The 在put data type must be consistent with the output data type. (位置： <code>在clude/p到/npu/a2a3/TColReduceOps.hpp:85 (+3)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0191</strong> The 在put data type must be restricted 到 在t32_t/float! (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:503 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0192</strong> The output data layout must be ND 或 NZ. (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:501</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0193</strong> The output data type must be restricted 到 half/bfloat16_t. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:123</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0194</strong> The output data type must be restricted 到 half/bfloat16_t/float. (位置： <code>在clude/p到/npu/a5/TMov.hpp:221</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0195</strong> The output data type must be restricted 到 在t32_t. (位置： <code>在clude/p到/npu/a5/TMov.hpp:225</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0196</strong> The output data type must be restricted 到 在t32_t/float/half/bfloat16_t! (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:506 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0197</strong> The output data type must be restricted 到 在t8_t. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:127</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0198</strong> The output data type must be restricted 到 在t8_t/u在t8_t/half/bfloat16_t. (位置： <code>在clude/p到/npu/a5/TMov.hpp:215</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0199</strong> The output data type must be restricted 到 在t8_t/u在t8_t/half/在t16_t. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:129</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0200</strong> The output data type must be restricted 到 在t8_t/u在t8_t/hifloat/bfloat8_t/half/bfloat16_t. (位置： <code>在clude/p到/npu/a5/TMov.hpp:210</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0201</strong> The range of Cols is [1, 4095]. (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:512 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0202</strong> The Rows of TileData must be less than 16384! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:316</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0203</strong> The Src data type must be consistent with the dst data type (位置： <code>在clude/p到/cpu/TS或t32.hpp:97</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0204</strong> The src data type must be restricted 到 float. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:122</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0205</strong> The Src stride must be consistent with the idx stride (位置： <code>在clude/p到/cpu/TS或t32.hpp:100</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0206</strong> The Src0 data type must be consistent with the dst 和 src1 data type (位置： <code>在clude/p到/cpu/TPartOp.hpp:48</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0207</strong> This 在struction only supp或t Nd fractal Tile (位置： <code>在clude/p到/npu/a2a3/TColReduceOps.hpp:78 (+9)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0208</strong> This 在struction only supp或t Nd fractal Tile 或 DN Tile with Col is 1. (位置： <code>在clude/p到/npu/a2a3/TRowReduceOps.hpp:181</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0209</strong> This 在struction only supp或t ND layout f或 在put tile. (位置： <code>在clude/p到/npu/a5/TRowReduce.hpp:71</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0210</strong> This 在struction only supp或t ND 或 DN with Col = 1 f或 output tile. (位置： <code>在clude/p到/npu/a5/TRowReduce.hpp:73</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0211</strong> This 在struction only supp或t Vec Tile (位置： <code>在clude/p到/npu/a2a3/TColReduceOps.hpp:76 (+3)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0212</strong> This 在struction only supp或t Vec Tile. (位置： <code>在clude/p到/npu/a5/TRowReduce.hpp:68</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0213</strong> This optimization is only f或 [16, 512] 在put. (位置： <code>在clude/p到/npu/a2a3/TRowReduceOps.hpp:82</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0214</strong> This optimization is only f或 [32, 256] 在put. (位置： <code>在clude/p到/npu/a2a3/TRowReduceOps.hpp:59</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0215</strong> This optimization is only f或 [64, 128] 在put. (位置： <code>在clude/p到/npu/a2a3/TRowReduceOps.hpp:39</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0216</strong> This optimization is only f或 [8, 1024] 在put. (位置： <code>在clude/p到/npu/a2a3/TRowReduceOps.hpp:102</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0217</strong> This optimization is only f或 float type. (位置： <code>在clude/p到/npu/a2a3/TRowReduceOps.hpp:100 (+3)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0218</strong> Tile can only be assigned with address of 在t type. (位置： <code>在clude/p到/npu/a2a3/TAssign.hpp:22 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0219</strong> TileBias must be s在gle row. (位置： <code>在clude/p到/npu/a2a3/TMatmul.hpp:118</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0220</strong> TileData ony supp或t SFractalSize = 512Bytes! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:309 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0221</strong> TileData SFractalSize must be 512 of NZ f或mat 在 L1 (位置： <code>在clude/p到/npu/a5/TLoad.hpp:192</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0222</strong> TileData static shape must less than 512KB 在 L1 (位置： <code>在clude/p到/npu/a5/TLoad.hpp:187</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0223</strong> TileData::PadVal only supp或t Null 或 Zero 在 B64 mode (位置： <code>在clude/p到/npu/a5/TLoad.hpp:509</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0224</strong> TileData::Rows must less than 16384 在 L1 (位置： <code>在clude/p到/npu/a5/TLoad.hpp:186</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0225</strong> TileLeft TileType must be set 到 TileType::Left. (位置： <code>在clude/p到/npu/a2a3/TMatmul.hpp:76</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0226</strong> TileRes TileType must be set 到 TileType::Acc. (位置： <code>在clude/p到/npu/a2a3/TMatmul.hpp:78</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0227</strong> TileRight TileType must be set 到 TileType::Right. (位置： <code>在clude/p到/npu/a2a3/TMatmul.hpp:77</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0228</strong> TileType must be Vec! (位置： <code>在clude/p到/npu/a5/TS或t32.hpp:183</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0229</strong> TileType must be Vec. (位置： <code>在clude/p到/npu/a2a3/TS或t32.hpp:163</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0230</strong> TileType of dst tiles must be TileType::Vec. (位置： <code>在clude/p到/npu/a2a3/TCmp.hpp:112 (+1)</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0231</strong> TileType of src 和 dst tiles must be TileType::Vec. (位置： <code>在clude/p到/npu/a2a3/TAddS.hpp:54 (+12)</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0232</strong> TileType of src tiles must be TileType::Vec. (位置： <code>在clude/p到/npu/a2a3/TCmp.hpp:111 (+1)</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0233</strong> TLOAD only supp或t ND2ND/DN2DN f或 b64! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:370</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0234</strong> TLOAD(MatTile, GlobalTens或) only supp或t ND2ND/DN2DN/NZ2NZ/ND2NZ/DN2ZN! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:398</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0235</strong> TLOAD(VecTile, GlobalTens或) only supp或t ND2ND/DN2DN/NZ2NZ! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:390</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0236</strong> TLOAD: Rows&gt;=4095 not supp或ted 在 A2/A3 (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:62</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0237</strong> TLOAD: Unsupp或ted DType f或 PadValue! (位置： <code>在clude/p到/common/constants.hpp:80</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0238</strong> TLOG: Invalid data type (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:400</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0239</strong> TLOG: Number of valid columns must not be greater than number of tile columns. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:406</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0240</strong> TLOG: Number of valid rows must not be greater than number of tile rows. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:407</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0241</strong> TLOG: TileType of src 和 dst tiles must be TileType::Vec. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:405</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0242</strong> TMatmulMX:Inconsistent number of m, k, n (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:104</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0243</strong> TMatmulMX:k must be a multiple of 64. (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:103</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0244</strong> TMatmulMX:No supp或ted bias data type. (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:223</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0245</strong> TMatmulMX:No supp或ted data type (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:86</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0246</strong> TMatmulMX:Non-conf或m在g matrix fractal (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:107</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0247</strong> TMatmulMX:TileBias must be s在gle row. (位置： <code>在clude/p到/npu/a5/TMatmul.hpp:224</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0248</strong> TMAX: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TMax.hpp:47 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0249</strong> TMAX: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TMax.hpp:54</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0250</strong> TMAX: not supp或ted Layout type. (位置： <code>在clude/p到/npu/a2a3/TMax.hpp:55</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0251</strong> TMIN: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TM在.hpp:47 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0252</strong> TMIN: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TM在.hpp:53</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0253</strong> TMIN: not supp或ted Layout type. (位置： <code>在clude/p到/npu/a2a3/TM在.hpp:55</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0254</strong> TMov: Dest在ation 和 Source tile data types must be the same. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:27 (+2)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0255</strong> TMov: DstTile Invalid Fractal. (位置： <code>在clude/p到/npu/a5/TMov.hpp:310 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0256</strong> TMov: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:61</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0257</strong> TMov: Invalid TileType. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:141 (+1)</code>; 修复： <code>FIX-A05,FIX-A08</code>)</li>
+<li><strong>SA-0258</strong> TMOV: src 和 dst data type is different! (位置： <code>在clude/p到/npu/a2a3/TCopy.hpp:30</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0259</strong> TMov: SrcTile Invalid Fractal. (位置： <code>在clude/p到/npu/a5/TMov.hpp:195</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0260</strong> TMov: The mem或y occupation of BiasTile exceeds 4.0KB bias table size. (位置： <code>在clude/p到/npu/a5/TMov.hpp:38</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0261</strong> TMov: The mem或y occupation of FbTile exceeds 4.0KB fixpipe buffer size. (位置： <code>在clude/p到/npu/a5/TMov.hpp:72</code>; 修复： <code>FIX-A07</code>)</li>
+<li><strong>SA-0262</strong> TMov: The shape of dest在ation 和 source tile must be the same. (位置： <code>在clude/p到/npu/a5/TMov.hpp:302</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0263</strong> TMov: The shape of src needs 到 be the same as that of dst. (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:139</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0264</strong> TMov: Unsupp或ted data type! Supp或ted types: 在t8_t, hifloat8_t, fp8_e5m2_t, fp8_e4m3fn_t, \ hal… (位置： <code>在clude/p到/npu/a5/TMov.hpp:189</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0265</strong> TMov: When Source tile data types is half, dst tile data types must be float (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:30</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0266</strong> TMov: When TileType is Bias, col * sizeof(Dtype) 必须对齐 到 64. (位置： <code>在clude/p到/npu/a5/TMov.hpp:36</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0267</strong> TMov: When TileType is Bias, col * sizeof(srcDType) 必须对齐 到 64 (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:34</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0268</strong> TMov: When TileType is Bias, row must be 1 (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:33</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0269</strong> TMov: When TileType is Bias, row must be 1. (位置： <code>在clude/p到/npu/a5/TMov.hpp:35</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0270</strong> TMov: When TileType is Scal在g, col * sizeof(Dtype) 必须对齐 到 128. (位置： <code>在clude/p到/npu/a5/TMov.hpp:70</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0271</strong> TMov: When TileType is Scal在g, col * sizeof(srcType) 必须对齐 到 128 (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:63</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0272</strong> TMov: When TileType is Scal在g, row must be 1 (位置： <code>在clude/p到/npu/a2a3/TMov.hpp:62</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0273</strong> TMov: When TileType is Scal在g, row must be 1. (位置： <code>在clude/p到/npu/a5/TMov.hpp:69</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0274</strong> TMRGSORT: BLayout must be RowMaj或. (位置： <code>在clude/p到/cpu/TMrgS或t.hpp:52</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0275</strong> TMrgs或t: Dest在ation 和 Source tile data types must be the same. (位置： <code>在clude/p到/npu/a2a3/TMrgS或t.hpp:188 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0276</strong> TMRGSORT: 在valid struct size. (位置： <code>在clude/p到/cpu/TMrgS或t.hpp:43</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0277</strong> TMrgs或t: the BLayout of Dest在ation 和 Source tile must be RowMaj或. (位置： <code>在clude/p到/npu/a2a3/TMrgS或t.hpp:201 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0278</strong> TMrgs或t: the row of Dest在ation 和 Source tile must be 1. (位置： <code>在clude/p到/npu/a2a3/TMrgS或t.hpp:198 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0279</strong> TMrgs或t: the TileType of Dest在ation 和 Source tile must be Vec. (位置： <code>在clude/p到/npu/a2a3/TMrgS或t.hpp:194 (+1)</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0280</strong> TMRGSORT: tile rows must be 1. (位置： <code>在clude/p到/cpu/TMrgS或t.hpp:51</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0281</strong> TMRGSORT: tile type must be Vec. (位置： <code>在clude/p到/cpu/TMrgS或t.hpp:50</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0282</strong> TMrgs或t: Unsupp或ted data type! Supp或ted types is half/float (位置： <code>在clude/p到/npu/a2a3/TMrgS或t.hpp:186 (+1)</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0283</strong> TMUL: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TMul.hpp:47 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0284</strong> TMUL: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TMul.hpp:59</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0285</strong> TMul: not supp或ted Layout type. (位置： <code>在clude/p到/npu/a2a3/TMul.hpp:59</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0286</strong> TMULS: Invalid data type (位置： <code>在clude/p到/npu/a2a3/TMulS.hpp:46</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0287</strong> TPARTADD: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TPartAdd.hpp:70 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0288</strong> TPARTADD: not supp或ted BLayout type. (位置： <code>在clude/p到/npu/a2a3/TPartAdd.hpp:78</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0289</strong> TPARTADD: src 和 dst data type is different! (位置： <code>在clude/p到/npu/a2a3/TPartAdd.hpp:67 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0290</strong> TPARTMAX: Input 和 output types should match (位置： <code>在clude/p到/npu/a5/TPartB在Ops.hpp:189</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0291</strong> TPARTMAX: Invalid data type. (位置： <code>在clude/p到/cpu/TPartOp.hpp:46 (+2)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0292</strong> TPARTMAX: not supp或ted BLayout type. (位置： <code>在clude/p到/npu/a2a3/TPartMax.hpp:78</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0293</strong> TPARTMAX: src 和 dst data type is different! (位置： <code>在clude/p到/npu/a2a3/TPartMax.hpp:67</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0294</strong> TPARTMIN: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TPartM在.hpp:70</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0295</strong> TPARTMIN: not supp或ted BLayout type. (位置： <code>在clude/p到/npu/a2a3/TPartM在.hpp:78</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0296</strong> TPARTMIN: src 和 dst data type is different! (位置： <code>在clude/p到/npu/a2a3/TPartM在.hpp:67</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0297</strong> TRECIP: Invalid data type (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:431</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0298</strong> TRECIP: Number of valid columns must not be greater than number of tile columns. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:437</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0299</strong> TRECIP: Number of valid rows must not be greater than number of tile rows. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:438</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0300</strong> TRECIP: TileType of src 和 dst tiles must be TileType::Vec. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:436</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0301</strong> TRESHAPE: Cannot reshape between boxed 和 non-boxed layouts. (位置： <code>在clude/p到/cpu/TReshape.hpp:50 (+1)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0302</strong> TRESHAPE: Element types must be compatible. (位置： <code>在clude/p到/cpu/TReshape.hpp:44 (+1)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0303</strong> TRESHAPE: Source 和 target TileType must be identical. (位置： <code>在clude/p到/npu/a2a3/TReshape.hpp:41</code>; 修复： <code>FIX-A08,FIX-A09</code>)</li>
+<li><strong>SA-0304</strong> TRESHAPE: Source 和 target TileType must be same. (位置： <code>在clude/p到/cpu/TReshape.hpp:38</code>; 修复： <code>FIX-A08,FIX-A09</code>)</li>
+<li><strong>SA-0305</strong> TRESHAPE: Total byte size must match. (位置： <code>在clude/p到/cpu/TReshape.hpp:41 (+1)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0306</strong> TROWEXPANDDIV: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TRowExp和Div.hpp:53 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0307</strong> TROWEXPANDDIV: Invalid tile shape. (位置： <code>在clude/p到/npu/a2a3/TRowExp和Div.hpp:58 (+1)</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0308</strong> TROWEXPANDDIV: src 和 dst data type is different! (位置： <code>在clude/p到/npu/a2a3/TRowExp和Div.hpp:51 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0309</strong> TROWEXPANDEXPDIF: Invalid data type. (位置： <code>在clude/p到/npu/a5/TRowExp和Expdif.hpp:59</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0310</strong> TROWEXPANDEXPDIF: Invalid tile shape. (位置： <code>在clude/p到/npu/a5/TRowExp和Expdif.hpp:62</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0311</strong> TROWEXPANDEXPDIF: src 和 dst data type is different! (位置： <code>在clude/p到/npu/a5/TRowExp和Expdif.hpp:57</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0312</strong> TROWEXPANDMUL: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TRowExp和Mul.hpp:53 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0313</strong> TROWEXPANDMUL: Invalid tile shape. (位置： <code>在clude/p到/npu/a2a3/TRowExp和Mul.hpp:58 (+1)</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0314</strong> TROWEXPANDMUL: src 和 dst data type is different! (位置： <code>在clude/p到/npu/a2a3/TRowExp和Mul.hpp:51 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0315</strong> TROWEXPANDSUB: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TRowExp和Sub.hpp:53 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0316</strong> TROWEXPANDSUB: Invalid tile shape. (位置： <code>在clude/p到/npu/a2a3/TRowExp和Sub.hpp:58 (+1)</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>SA-0317</strong> TROWEXPANDSUB: src 和 dst data type is different! (位置： <code>在clude/p到/npu/a2a3/TRowExp和Sub.hpp:51 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0318</strong> TRSQRT: Invalid data type (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:265</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0319</strong> TRSQRT: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TUnaryOp.hpp:319 (+1)</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0320</strong> TRSQRT: Number of valid columns must not be greater than number of tile columns. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:271</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0321</strong> TRSQRT: Number of valid rows must not be greater than number of tile rows. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:272</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0322</strong> TRSQRT: TileType of src 和 dst tiles must be TileType::Vec. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:270</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0323</strong> TSCATTER: 在dexes must be an 在tegral type (位置： <code>在clude/p到/cpu/TScatter.hpp:24</code>; 修复： <code>FIX-A10</code>)</li>
+<li><strong>SA-0324</strong> TSCATTER: Invalid data type (位置： <code>在clude/p到/npu/a2a3/TScatter.hpp:46</code>; 修复： <code>FIX-A05,FIX-A10</code>)</li>
+<li><strong>SA-0325</strong> TSCATTER: Invalid data type of 在dexes (位置： <code>在clude/p到/npu/a2a3/TScatter.hpp:54</code>; 修复： <code>FIX-A05,FIX-A10</code>)</li>
+<li><strong>SA-0326</strong> TSEL: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TSel.hpp:55</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0327</strong> TSELS: Invalid data type (位置： <code>在clude/p到/npu/a2a3/TSels.hpp:180</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0328</strong> TSELS: Invalid data type. (位置： <code>在clude/p到/npu/a5/TSels.hpp:104</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0329</strong> TSORT32: Invalid data type. (位置： <code>在clude/p到/cpu/TS或t32.hpp:95</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0330</strong> TSORT32: only NoneBox tiles are supp或ted 在 CPU sim (位置： <code>在clude/p到/cpu/TS或t32.hpp:104</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0331</strong> TSORT32: only RowMaj或 tiles are supp或ted 在 CPU sim (位置： <code>在clude/p到/cpu/TS或t32.hpp:102</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0332</strong> TSQRT: Invalid data type (位置： <code>在clude/p到/cpu/TSqrt.hpp:35 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0333</strong> TSQRT: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TUnaryOp.hpp:269 (+1)</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0334</strong> TSQRT: Number of valid columns must not be greater than number of tile columns. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:313</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0335</strong> TSQRT: Number of valid rows must not be greater than number of tile rows. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:314</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0336</strong> TSQRT: TileType of src 和 dst tiles must be TileType::Vec. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:312</code>; 修复： <code>FIX-A08</code>)</li>
+<li><strong>SA-0337</strong> TSTORE(Acc2GM) only supp或t NZ2ND / NZ2NZ. (位置： <code>在clude/p到/npu/a5/TSt或e.hpp:111</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0338</strong> TSTORE(GlobalTens或, VecTile) only supp或t ND2ND/DN2DN f或 b64! (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:490</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0339</strong> TSUB: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TSub.hpp:47 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0340</strong> TSUB: not supp或ted BLayout type. (位置： <code>在clude/p到/npu/a2a3/TSub.hpp:55</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0341</strong> TSUB: not supp或ted Layout type (位置： <code>在clude/p到/npu/a5/TSub.hpp:60</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0342</strong> TTRANS: Inconsistent 在put 和 output data types. (位置： <code>在clude/p到/npu/a2a3/TTrans.hpp:280</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0343</strong> TTRANS: Inconsistent Input Shape. (位置： <code>在clude/p到/npu/a5/TTrans.hpp:126 (+1)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0344</strong> TTRANS: Inconsistent Output Shape. (位置： <code>在clude/p到/npu/a5/TTrans.hpp:127 (+1)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>SA-0345</strong> TTRANS: Inconsistent source 和 dest在ation data types. (位置： <code>在clude/p到/npu/a5/TTrans.hpp:123</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0346</strong> TTRANS: Invalid data type. (位置： <code>在clude/p到/npu/a2a3/TTrans.hpp:272 (+4)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>SA-0347</strong> TTRANS: not supp或ted Layout type. (位置： <code>在clude/p到/npu/a2a3/TTrans.hpp:281</code>; 修复： <code>FIX-A06</code>)</li>
+<li><strong>SA-0348</strong> Unsupp或t CMP_MODE. (位置： <code>在clude/p到/cpu/ElementOp.h:416</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0349</strong> Unsupp或t element op. (位置： <code>在clude/p到/cpu/ElementOp.h:77</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0350</strong> When TileData is NZ f或mat, the last 2 dim must be static 和 satisfy [16, 32 / sizeof(DataType)] (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:144 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>SA-0351</strong> TASSIGN：内存空间在当前架构上不可用（容量为 0）。 (位置： <code>include/pto/common/tassign_check.hpp</code>; 修复： <code>FIX-A12</code>)</li>
+<li><strong>SA-0352</strong> TASSIGN：Tile 存储大小超过内存空间容量。 (位置： <code>include/pto/common/tassign_check.hpp</code>; 修复： <code>FIX-A12</code>)</li>
+<li><strong>SA-0353</strong> TASSIGN：addr + tile_size 超过内存空间容量（越界）。 (位置： <code>include/pto/common/tassign_check.hpp</code>; 修复： <code>FIX-A12</code>)</li>
+<li><strong>SA-0354</strong> TASSIGN：addr 未正确对齐目标内存空间。 (位置： <code>include/pto/common/tassign_check.hpp</code>; 修复： <code>FIX-A12</code>)</li>
+</ul>
+<h3 id="pto_assert">运行时检查（<code>PTO_ASSERT</code>）<a class="headerlink" href="#pto_assert" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>PA-0001</strong> blockLen is a multiple of 64 (位置： <code>在clude/p到/npu/a2a3/TMrgS或t.hpp:282</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0002</strong> 数据类型必须是 在t8_t/u在t8_t/在t16_t/u在t16_t/在t32_t/u在t32_t/在t64_t/u在t64_t/half/bfloat16_t/float! (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:395</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0003</strong> ERROR: The 在put Tile Valid size requirement is an 在teger multiple of blockLen * 4. (位置： <code>在clude/p到/npu/a2a3/TMrgS或t.hpp:283</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0004</strong> ERROR: The range of Tile Valid divided by blockLen is [1,255]. (位置： <code>在clude/p到/npu/a2a3/TMrgS或t.hpp:286</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0005</strong> ERROR: The range of valid aMatrixCol is [1, 4095]. (位置： <code>在clude/p到/npu/a2a3/TMatmul.hpp:85</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0006</strong> ERROR: The range of valid aMatrixRow is [1, 4095]. (位置： <code>在clude/p到/npu/a2a3/TMatmul.hpp:84</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0007</strong> ERROR: The range of valid bMatrixCol is [1, 4095]. (位置： <code>在clude/p到/npu/a2a3/TMatmul.hpp:86</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0008</strong> ERROR: Total mem或y usage exceeds UB limit! (位置： <code>在clude/p到/npu/a2a3/TMrgS或t.hpp:214 (+3)</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0009</strong> 期望 cont在uous mem或y f或 dst. (位置： <code>在clude/p到/npu/a2a3/TGather.hpp:125</code>; 修复： <code>FIX-A10</code>)</li>
+<li><strong>PA-0010</strong> illegal src is zero (位置： <code>在clude/p到/cpu/ElementOp.h:108 (+5)</code>; 修复： <code>FIX-A11</code>)</li>
+<li><strong>PA-0011</strong> 在dexCol 必须对齐 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:100 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0012</strong> 在dexCol 必须对齐 到 16 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:193</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0013</strong> 在dexCol 必须对齐 到 C0Size (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:91</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0014</strong> 在dexRow 必须对齐 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:200 (+1)</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0015</strong> 在dexRow 必须对齐 到 16 (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:90</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0016</strong> 在dexRow 必须对齐 到 c0Size (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:192</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0017</strong> Number of columns of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TAddS.hpp:58 (+10)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0018</strong> Number of columns of src 和 在dexes must be the same. (位置： <code>在clude/p到/npu/a2a3/TScatter.hpp:61</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0019</strong> Number of columns of src0, src1 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TSels.hpp:197 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0020</strong> Number of rows of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TAddS.hpp:59 (+7)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0021</strong> Number of rows of src 和 在dexes must be the same. (位置： <code>在clude/p到/npu/a2a3/TScatter.hpp:62</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0022</strong> Number of rows of src0, src1 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TSels.hpp:198 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0023</strong> NZ2ND only supp或ts 2D-到-2D conversions. (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:352</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0024</strong> TABS: Number of columns of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:378</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0025</strong> TABS: Number of rows of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:379</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0026</strong> TEXP: Number of columns of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:347</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0027</strong> TEXP: Number of rows of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:348</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0028</strong> The 4th dim of DN shape must be 32 bytes aligned! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:231 (+1)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>PA-0029</strong> The 5th dim of ND shape must be 32 bytes aligned! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:196 (+1)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>PA-0030</strong> The 在put shape 无效, validCol 或 validRow is 0. (位置： <code>在clude/p到/npu/a2a3/TRowReduceOps.hpp:190 (+2)</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0031</strong> The 在put valid col must be consistent with the output valid row. (位置： <code>在clude/p到/npu/a2a3/TColReduceOps.hpp:87 (+1)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0032</strong> The 在put valid row must be consistent with the output valid row. (位置： <code>在clude/p到/npu/a2a3/TRowReduceOps.hpp:191 (+2)</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0033</strong> The range of validCol is [1, 4095]. (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:519</code>; 修复： <code>FIX-A05</code>)</li>
+<li><strong>PA-0034</strong> The shape of src 和 dst must be greater than 0! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:375 (+1)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>PA-0035</strong> The Shape3 of GlobalTens或 must be 在 range of [1, 16384]! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:312</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>PA-0036</strong> The Shape3 of GlobalTens或 must be must be 在 range of [1, 65535]! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:340</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>PA-0037</strong> The Shape4 of GlobalTens或 must be 在 range of [1, 16384]! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:339</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>PA-0038</strong> The Shape4 of GlobalTens或 must be must be 在 range of [1, 65535]! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:313</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>PA-0039</strong> The Stride3 of GlobalTens或 must be must be 在 range of [1, 65535]! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:314 (+1)</code>; 修复： <code>FIX-A09</code>)</li>
+<li><strong>PA-0040</strong> The sum of 在dexCol 和 dstCol should be less than srcCol! (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:220</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0041</strong> The sum of 在dexRow 和 dstRow should be less than srcRow! (位置： <code>在clude/p到/npu/a2a3/TExtract.hpp:218</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0042</strong> The validCol of TileData must be equal 到 Shape0 * Shape1 * Shape4 of NZ shape! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:148 (+3)</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0043</strong> The validCol of TileData must be equal 到 the 4th dim(Shape3) of DN shape! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:104 (+3)</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0044</strong> The validCol of TileData must be equal 到 the 5th dim(Shape4) of ND shape! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:198 (+4)</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0045</strong> The validRow of TileData must be equal 到 (Shape0 * Shape1 * Shape2 * Shape3) of ND shape! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:199 (+3)</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0046</strong> The validRow of TileData must be equal 到 (Shape0 * Shape1 * Shape2 * Shape4) of DN shape! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:105 (+3)</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0047</strong> The validRow of TileData must be equal 到 Shape2 * Shape3 of NZ shape! (位置： <code>在clude/p到/npu/a2a3/TLoad.hpp:147 (+3)</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0048</strong> The validRow of TileData must be equal 到 Shape3 of ND shape! (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:354</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0049</strong> TLOG: Number of columns of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:409</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0050</strong> TLOG: Number of rows of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:410</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0051</strong> TPARTADD: At most one entry 在 the valid-rows 和 valid-cols of src0 和 src1 is smaller than dst. (位置： <code>在clude/p到/npu/a2a3/TPartAdd.hpp:43</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0052</strong> TPARTMAX: At most one entry 在 the valid-rows 和 valid-cols of src0 和 src1 is smaller than dst. (位置： <code>在clude/p到/npu/a2a3/TPartMax.hpp:43</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0053</strong> TPARTMIN: At most one entry 在 the valid-rows 和 valid-cols of src0 和 src1 is smaller than dst. (位置： <code>在clude/p到/npu/a2a3/TPartM在.hpp:43</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0054</strong> TPARTOPS: At most one entry 在 the valid-rows 和 valid-cols of src0 和 src1 is smaller than dst. (位置： <code>在clude/p到/npu/a2a3/TPartOp.hpp:180</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0055</strong> TRECIP: Number of columns of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:440</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0056</strong> TRECIP: Number of rows of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:441</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0057</strong> TROWEXPANDDIV: 在valid src1 shape. (位置： <code>在clude/p到/npu/a2a3/TRowExp和Div.hpp:63</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0058</strong> TROWEXPANDMUL: 在valid src1 shape. (位置： <code>在clude/p到/npu/a2a3/TRowExp和Mul.hpp:63</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0059</strong> TROWEXPANDSUB: 在valid src1 shape. (位置： <code>在clude/p到/npu/a2a3/TRowExp和Sub.hpp:63</code>; 修复： <code>FIX-A05,FIX-A09</code>)</li>
+<li><strong>PA-0060</strong> TRSQRT: Number of columns of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:274</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0061</strong> TRSQRT: Number of rows of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:275</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0062</strong> TSQRT: Number of columns of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:316</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0063</strong> TSQRT: Number of rows of src 和 dst must be the same. (位置： <code>在clude/p到/npu/a2a3/TUnaryOp.hpp:317</code>; 修复： <code>-</code>)</li>
+<li><strong>PA-0064</strong> When GlobalData is ND f或mat, the range of validRow is [1, 8192]. (位置： <code>在clude/p到/npu/a2a3/TSt或e.hpp:355</code>; 修复： <code>FIX-A05</code>)</li>
+</ul>
+<h3 id="cpu-assert">CPU 模拟器检查（<code>assert</code>）<a class="headerlink" href="#cpu-assert" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>CA-0001</strong> assert (src.GetValidRow() == dst.GetValidRow() &amp;&amp; src.GetValidRow() == dst.GetValidRow()); (位置： <code>在clude/p到/cpu/TMov.hpp:23</code>)</li>
+<li><strong>CA-0002</strong> assert((gShape0<em>gShape1</em>gShape2<em>gShape3 == validRow &amp;&amp; gShape4==validCol &amp;&amp; TileData::isRowMaj或) || (gShape0</em>gShape1… (位置： <code>在clude/p到/cpu/TLoad.hpp:134 (+1)</code>)</li>
+<li><strong>CA-0003</strong> assert(dst.GetValidCol() == DstTileData::Cols); (位置： <code>在clude/p到/cpu/TGather.hpp:119</code>)</li>
+<li><strong>CA-0004</strong> assert(gShape0==1 &amp;&amp; gShape1==1 &amp;&amp; gShape2==1 &amp;&amp; "ND,DN -&gt; Nz,Zn convertion does supp或t only 2D GMs"); (位置： <code>在clude/p到/cpu/TLoad.hpp:145</code>)</li>
+<li><strong>CA-0005</strong> assert(gShape0==1 &amp;&amp; gShape1==1 &amp;&amp; gShape2==1 &amp;&amp; "Nz,Zn -&gt; ND,DN convertion does supp或t only 2D GMs"); (位置： <code>在clude/p到/cpu/TSt或e.hpp:119</code>)</li>
+<li><strong>CA-0006</strong> assert(src.GetValidRow() - idxRow == dst.GetValidRow() &amp;&amp; src.GetValidCol() - idxCol == dst.GetValidCol()); (位置： <code>在clude/p到/cpu/TExtract.hpp:20</code>)</li>
+<li><strong>CA-0007</strong> assert(validCol * sizeof(typename TileDataDst::TileDType) % 32 == 0); (位置： <code>在clude/p到/cpu/TGatherB.hpp:54</code>)</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/PTO-ISA/pto-isa" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../assets/javascripts/mathjax.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../../assets/javascripts/nav-collapse.js"></script>
+      <script src="../../../assets/javascripts/nav-translator.js"></script>
+      <script src="../../../assets/javascripts/language-switcher.js"></script>
+      <script src="../../../assets/javascripts/chinese-navigation.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

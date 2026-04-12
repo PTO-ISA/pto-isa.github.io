@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/assembly/scalar-arith-ops/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Scalar Arithmetic Operations - PTO Virtual ISA Architectural Manual</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/stylesheets/custom.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Scalar Arithmetic Operations";
+        var mkdocs_page_input_path = "docs/assembly/scalar-arith-ops.md";
+        var mkdocs_page_url = "/docs/assembly/scalar-arith-ops/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PTO Virtual ISA Architectural Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">PTO Virtual ISA Manual</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/">Preface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/01-overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/02-machine-model/">Execution Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/03-state-and-types/">State and Types</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/04-tiles-and-globaltensor/">Tiles and GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/05-synchronization/">Synchronization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/06-assembly/">PTO Assembly (PTO-AS)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/07-instructions/">Instruction Set (overview)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/08-programming/">Programming Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/09-virtual-isa-and-ir/">Virtual ISA and IR</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/10-bytecode-and-toolchain/">Bytecode and Toolchain</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/11-memory-ordering-and-consistency/">Memory Ordering and Consistency</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/12-backend-profiles-and-conformance/">Backend Profiles and Conformance</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-a-glossary/">Glossary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-b-instruction-contract-template/">Instruction Contract Template</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-c-diagnostics-taxonomy/">Diagnostics Taxonomy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../manual/appendix-d-instruction-family-matrix/">Instruction Family Matrix</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Programming Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/ProgrammingModel/">Programming Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/Tile/">Tile</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/GlobalTensor/">GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/Scalar/">Scalar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/Event/">Event</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/tutorial/">Tutorial</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tutorials</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../coding/tutorials/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../coding/tutorials/vec-add/">Vec Add</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../coding/tutorials/row-softmax/">Row Softmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../coding/tutorials/gemm/">GEMM</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/opt/">Optimization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../coding/debug/">Debugging</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Machine Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../machine/abstract-machine/">Abstract Machine</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../machine/">Machine Index</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">ISA Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../isa/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../isa/conventions/">ISA Conventions</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >PTO AS Reference</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../PTO-AS/">PTO-AS Specification</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../conventions/">Conventions</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../nonisa-ops/">Non-ISA Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../elementwise-ops/">Elementwise Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../tile-scalar-ops/">Tile-Scalar Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../axis-ops/">Axis Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../memory-ops/">Memory Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../matrix-ops/">Matrix Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../data-movement-ops/">Data Movement Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../complex-ops/">Complex Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../manual-binding-ops/">Manual Binding Operations</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Scalar Arithmetic Operations</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#integer-arithmetic-operations">Integer Arithmetic Operations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#arithaddi-integer-addition">arith.addi - Integer Addition</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithsubi-integer-subtraction">arith.subi - Integer Subtraction</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithmuli-integer-multiplication">arith.muli - Integer Multiplication</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithdivsi-signed-integer-division">arith.divsi - Signed Integer Division</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithdivui-unsigned-integer-division">arith.divui - Unsigned Integer Division</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithremsi-signed-integer-remainder">arith.remsi - Signed Integer Remainder</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithremui-unsigned-integer-remainder">arith.remui - Unsigned Integer Remainder</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithceildivsi-ceiling-division-signed">arith.ceildivsi - Ceiling Division (Signed)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithceildivui-ceiling-division-unsigned">arith.ceildivui - Ceiling Division (Unsigned)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithfloordivsi-floor-division-signed">arith.floordivsi - Floor Division (Signed)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#floating-point-arithmetic-operations">Floating-Point Arithmetic Operations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#arithaddf-floating-point-addition">arith.addf - Floating-Point Addition</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithsubf-floating-point-subtraction">arith.subf - Floating-Point Subtraction</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithmulf-floating-point-multiplication">arith.mulf - Floating-Point Multiplication</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithdivf-floating-point-division">arith.divf - Floating-Point Division</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithremf-floating-point-remainder">arith.remf - Floating-Point Remainder</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithnegf-floating-point-negation">arith.negf - Floating-Point Negation</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#bitwise-operations">Bitwise Operations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#arithandi-bitwise-and">arith.andi - Bitwise AND</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithori-bitwise-or">arith.ori - Bitwise OR</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithxori-bitwise-xor">arith.xori - Bitwise XOR</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#shift-operations">Shift Operations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#arithshli-shift-left">arith.shli - Shift Left</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithshrsi-arithmetic-shift-right-signed">arith.shrsi - Arithmetic Shift Right (Signed)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithshrui-logical-shift-right-unsigned">arith.shrui - Logical Shift Right (Unsigned)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#comparison-operations">Comparison Operations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#arithcmpi-integer-comparison">arith.cmpi - Integer Comparison</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithcmpf-floating-point-comparison">arith.cmpf - Floating-Point Comparison</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#minmax-operations">Min/Max Operations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#arithminsi-minimum-signed-integer">arith.minsi - Minimum (Signed Integer)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithminui-minimum-unsigned-integer">arith.minui - Minimum (Unsigned Integer)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithmaxsi-maximum-signed-integer">arith.maxsi - Maximum (Signed Integer)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithmaxui-maximum-unsigned-integer">arith.maxui - Maximum (Unsigned Integer)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithminimumf-minimum-float-propagates-nan">arith.minimumf - Minimum (Float, propagates NaN)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithmaximumf-maximum-float-propagates-nan">arith.maximumf - Maximum (Float, propagates NaN)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithminnumf-minimum-float-ignores-nan">arith.minnumf - Minimum (Float, ignores NaN)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithmaxnumf-maximum-float-ignores-nan">arith.maxnumf - Maximum (Float, ignores NaN)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#type-conversion-operations">Type Conversion Operations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#arithextsi-sign-extension">arith.extsi - Sign Extension</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithextui-zero-extension">arith.extui - Zero Extension</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithtrunci-truncate-integer">arith.trunci - Truncate Integer</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithextf-extend-float">arith.extf - Extend Float</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithtruncf-truncate-float">arith.truncf - Truncate Float</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithsitofp-signed-integer-to-float">arith.sitofp - Signed Integer to Float</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithuitofp-unsigned-integer-to-float">arith.uitofp - Unsigned Integer to Float</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithfptosi-float-to-signed-integer">arith.fptosi - Float to Signed Integer</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithfptoui-float-to-unsigned-integer">arith.fptoui - Float to Unsigned Integer</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithbitcast-bitcast">arith.bitcast - Bitcast</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithindex_cast-index-cast-signed">arith.index_cast - Index Cast (Signed)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithindex_castui-index-cast-unsigned">arith.index_castui - Index Cast (Unsigned)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#special-operations">Special Operations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#arithselect-conditional-select">arith.select - Conditional Select</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithconstant-constant-value">arith.constant - Constant Value</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#extended-arithmetic-operations">Extended Arithmetic Operations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#arithaddui_extended-extended-unsigned-addition">arith.addui_extended - Extended Unsigned Addition</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithmulsi_extended-extended-signed-multiplication">arith.mulsi_extended - Extended Signed Multiplication</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arithmului_extended-extended-unsigned-multiplication">arith.mului_extended - Extended Unsigned Multiplication</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../control-flow-ops/">Control Flow Operations</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../PTOISA/">PTO ISA Table</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Synchronization</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSYNC/">TSYNC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Manual / Resource Binding</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TASSIGN/">TASSIGN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSETFMATRIX/">TSETFMATRIX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSET_IMG2COL_PADDING/">TSET_IMG2COL_PADDING</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Elementwise (Tile-Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADD/">TADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TABS/">TABS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TAND/">TAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TOR/">TOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUB/">TSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMUL/">TMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMIN/">TMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMAX/">TMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCMP/">TCMP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TDIV/">TDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHL/">TSHL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHR/">TSHR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TXOR/">TXOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLOG/">TLOG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRECIP/">TRECIP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDC/">TADDC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBC/">TSUBC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCVT/">TCVT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSEL/">TSEL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRSQRT/">TRSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSQRT/">TSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXP/">TEXP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TNOT/">TNOT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRELU/">TRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TNEG/">TNEG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TREM/">TREM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFMOD/">TFMOD</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tile-Scalar / Tile-Immediate</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXPANDS/">TEXPANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCMPS/">TCMPS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSELS/">TSELS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMINS/">TMINS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TAXPY/">TAXPY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBS/">TSUBS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TDIVS/">TDIVS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMULS/">TMULS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFMODS/">TFMODS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TREMS/">TREMS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMAXS/">TMAXS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TANDS/">TANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TORS/">TORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHLS/">TSHLS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSHRS/">TSHRS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TXORS/">TXORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLRELU/">TLRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TADDSC/">TADDSC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBSC/">TSUBSC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Axis Reduce / Expand</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWSUM/">TROWSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWPROD/">TROWPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLSUM/">TCOLSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLPROD/">TCOLPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLMAX/">TCOLMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWMAX/">TROWMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWMIN/">TROWMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLMIN/">TCOLMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPAND/">TROWEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDDIV/">TROWEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMUL/">TROWEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDSUB/">TROWEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDADD/">TROWEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMAX/">TROWEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDMIN/">TROWEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TROWEXPANDEXPDIF/">TROWEXPANDEXPDIF</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPAND/">TCOLEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDDIV/">TCOLEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMUL/">TCOLEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDADD/">TCOLEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMAX/">TCOLEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDMIN/">TCOLEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDSUB/">TCOLEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCOLEXPANDEXPDIF/">TCOLEXPANDEXPDIF</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Memory (GM <-> Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TLOAD/">TLOAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPREFETCH/">TPREFETCH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSTORE/">TSTORE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSTORE_FP/">TSTORE_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/MGATHER/">MGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/MSCATTER/">MSCATTER</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Matrix Multiply</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL/">TMATMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_ACC/">TMATMUL_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_BIAS/">TMATMUL_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMATMUL_MX/">TMATMUL_MX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV/">TGEMV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_ACC/">TGEMV_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_BIAS/">TGEMV_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGEMV_MX/">TGEMV_MX</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Data Movement / Layout</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMOV/">TMOV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMOV_FP/">TMOV_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXTRACT/">TEXTRACT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TEXTRACT_FP/">TEXTRACT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TINSERT/">TINSERT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TINSERT_FP/">TINSERT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD/">TFILLPAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD_INPLACE/">TFILLPAD_INPLACE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFILLPAD_EXPAND/">TFILLPAD_EXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TRESHAPE/">TRESHAPE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCONCAT/">TCONCAT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPACK/">TPACK</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TIMG2COL/">TIMG2COL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGATHER/">TGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TGATHERB/">TGATHERB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSCATTER/">TSCATTER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TCI/">TCI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TTRI/">TTRI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTADD/">TPARTADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMUL/">TPARTMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMAX/">TPARTMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPARTMIN/">TPARTMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TSORT32/">TSORT32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TMRGSORT/">TMRGSORT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/THISTOGRAM/">THISTOGRAM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../isa/comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../reference/pto-intrinsics-header/">Intrinsics Header</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../manual/isa-reference/">All Instructions Index</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples & Kernels</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../kernels/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >High-Performance Kernels</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../kernels/manual/a2a3/gemm_performance/">GEMM Performance</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../kernels/manual/common/flash_atten/">Flash Attention</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Baseline Demos</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../demos/baseline/add/">Add Demo</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../demos/baseline/gemm_basic/">GEMM Demo</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tests</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../tests/">Tests Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../tests/script/">Test Scripts</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../">Docs Index</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../website/">Build Documentation</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../all-pages/">Full Index</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PTO Virtual ISA Architectural Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">ISA Reference</li>
+          <li class="breadcrumb-item">PTO AS Reference</li>
+      <li class="breadcrumb-item active">Scalar Arithmetic Operations</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <!-- Generated from `docs/assembly/scalar-arith-ops.md` -->
+
+<h1 id="scalar-arithmetic-operations">Scalar Arithmetic Operations<a class="headerlink" href="#scalar-arithmetic-operations" title="Permanent link">&para;</a></h1>
+<p>This document describes scalar arithmetic operations from the MLIR <code>arith</code> dialect.</p>
+<p><strong>Important:</strong> PTO AS only supports <strong>scalar operations</strong> from the arith dialect. Vector and tensor operations are not supported.</p>
+<p><strong>Total Operations:</strong> 47</p>
+<p><strong>Note:</strong> The operations <code>arith.scaling_extf</code> and <code>arith.scaling_truncf</code> are not included as they are not supported in PTO AS.</p>
+<hr />
+<h2 id="integer-arithmetic-operations">Integer Arithmetic Operations<a class="headerlink" href="#integer-arithmetic-operations" title="Permanent link">&para;</a></h2>
+<h3 id="arithaddi-integer-addition">arith.addi - Integer Addition<a class="headerlink" href="#arithaddi-integer-addition" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Integer addition with optional overflow flags.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.addi %lhs, %rhs : i32
+%result = arith.addi %lhs, %rhs overflow&lt;nsw, nuw&gt; : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar addition
+%a = arith.addi %b, %c : i64
+</code></pre>
+<hr />
+<h3 id="arithsubi-integer-subtraction">arith.subi - Integer Subtraction<a class="headerlink" href="#arithsubi-integer-subtraction" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.subi %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar subtraction
+%a = arith.subi %b, %c : i32
+</code></pre>
+<hr />
+<h3 id="arithmuli-integer-multiplication">arith.muli - Integer Multiplication<a class="headerlink" href="#arithmuli-integer-multiplication" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.muli %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar multiplication
+%a = arith.muli %b, %c : i64
+</code></pre>
+<hr />
+<h3 id="arithdivsi-signed-integer-division">arith.divsi - Signed Integer Division<a class="headerlink" href="#arithdivsi-signed-integer-division" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Signed integer division, rounds towards zero.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.divsi %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar signed division
+%a = arith.divsi %b, %c : i32
+</code></pre>
+<hr />
+<h3 id="arithdivui-unsigned-integer-division">arith.divui - Unsigned Integer Division<a class="headerlink" href="#arithdivui-unsigned-integer-division" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.divui %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar unsigned division
+%a = arith.divui %b, %c : i32
+</code></pre>
+<hr />
+<h3 id="arithremsi-signed-integer-remainder">arith.remsi - Signed Integer Remainder<a class="headerlink" href="#arithremsi-signed-integer-remainder" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.remsi %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar signed remainder
+%a = arith.remsi %b, %c : i32
+</code></pre>
+<hr />
+<h3 id="arithremui-unsigned-integer-remainder">arith.remui - Unsigned Integer Remainder<a class="headerlink" href="#arithremui-unsigned-integer-remainder" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.remui %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar unsigned remainder
+%a = arith.remui %b, %c : i32
+</code></pre>
+<hr />
+<h3 id="arithceildivsi-ceiling-division-signed">arith.ceildivsi - Ceiling Division (Signed)<a class="headerlink" href="#arithceildivsi-ceiling-division-signed" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Signed integer division rounding towards positive infinity.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.ceildivsi %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar ceiling division
+%a = arith.ceildivsi %b, %c : i32
+</code></pre>
+<hr />
+<h3 id="arithceildivui-ceiling-division-unsigned">arith.ceildivui - Ceiling Division (Unsigned)<a class="headerlink" href="#arithceildivui-ceiling-division-unsigned" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.ceildivui %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar ceiling division (unsigned)
+%a = arith.ceildivui %b, %c : i32
+</code></pre>
+<hr />
+<h3 id="arithfloordivsi-floor-division-signed">arith.floordivsi - Floor Division (Signed)<a class="headerlink" href="#arithfloordivsi-floor-division-signed" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Signed integer division rounding towards negative infinity.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.floordivsi %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar floor division
+%a = arith.floordivsi %b, %c : i32
+</code></pre>
+<hr />
+<h2 id="floating-point-arithmetic-operations">Floating-Point Arithmetic Operations<a class="headerlink" href="#floating-point-arithmetic-operations" title="Permanent link">&para;</a></h2>
+<h3 id="arithaddf-floating-point-addition">arith.addf - Floating-Point Addition<a class="headerlink" href="#arithaddf-floating-point-addition" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.addf %lhs, %rhs : f32
+%result = arith.addf %lhs, %rhs fastmath&lt;fast&gt; : f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar addition
+%a = arith.addf %b, %c : f64
+</code></pre>
+<hr />
+<h3 id="arithsubf-floating-point-subtraction">arith.subf - Floating-Point Subtraction<a class="headerlink" href="#arithsubf-floating-point-subtraction" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.subf %lhs, %rhs : f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar subtraction
+%a = arith.subf %b, %c : f32
+</code></pre>
+<hr />
+<h3 id="arithmulf-floating-point-multiplication">arith.mulf - Floating-Point Multiplication<a class="headerlink" href="#arithmulf-floating-point-multiplication" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.mulf %lhs, %rhs : f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar multiplication
+%a = arith.mulf %b, %c : f64
+</code></pre>
+<hr />
+<h3 id="arithdivf-floating-point-division">arith.divf - Floating-Point Division<a class="headerlink" href="#arithdivf-floating-point-division" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.divf %lhs, %rhs : f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar division
+%a = arith.divf %b, %c : f32
+</code></pre>
+<hr />
+<h3 id="arithremf-floating-point-remainder">arith.remf - Floating-Point Remainder<a class="headerlink" href="#arithremf-floating-point-remainder" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.remf %lhs, %rhs : f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar remainder
+%a = arith.remf %b, %c : f64
+</code></pre>
+<hr />
+<h3 id="arithnegf-floating-point-negation">arith.negf - Floating-Point Negation<a class="headerlink" href="#arithnegf-floating-point-negation" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.negf %operand : f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar negation
+%a = arith.negf %b : f32
+</code></pre>
+<hr />
+<h2 id="bitwise-operations">Bitwise Operations<a class="headerlink" href="#bitwise-operations" title="Permanent link">&para;</a></h2>
+<h3 id="arithandi-bitwise-and">arith.andi - Bitwise AND<a class="headerlink" href="#arithandi-bitwise-and" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.andi %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar bitwise AND
+%a = arith.andi %b, %c : i32
+</code></pre>
+<hr />
+<h3 id="arithori-bitwise-or">arith.ori - Bitwise OR<a class="headerlink" href="#arithori-bitwise-or" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.ori %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar bitwise OR
+%a = arith.ori %b, %c : i64
+</code></pre>
+<hr />
+<h3 id="arithxori-bitwise-xor">arith.xori - Bitwise XOR<a class="headerlink" href="#arithxori-bitwise-xor" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.xori %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar bitwise XOR
+%a = arith.xori %b, %c : i32
+</code></pre>
+<hr />
+<h2 id="shift-operations">Shift Operations<a class="headerlink" href="#shift-operations" title="Permanent link">&para;</a></h2>
+<h3 id="arithshli-shift-left">arith.shli - Shift Left<a class="headerlink" href="#arithshli-shift-left" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.shli %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar shift left
+%a = arith.shli %b, %c : i32
+</code></pre>
+<hr />
+<h3 id="arithshrsi-arithmetic-shift-right-signed">arith.shrsi - Arithmetic Shift Right (Signed)<a class="headerlink" href="#arithshrsi-arithmetic-shift-right-signed" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Arithmetic right shift (sign-extended).</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.shrsi %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar arithmetic shift right
+%a = arith.shrsi %b, %c : i32
+</code></pre>
+<hr />
+<h3 id="arithshrui-logical-shift-right-unsigned">arith.shrui - Logical Shift Right (Unsigned)<a class="headerlink" href="#arithshrui-logical-shift-right-unsigned" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Logical right shift (zero-extended).</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.shrui %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar logical shift right
+%a = arith.shrui %b, %c : i32
+</code></pre>
+<hr />
+<h2 id="comparison-operations">Comparison Operations<a class="headerlink" href="#comparison-operations" title="Permanent link">&para;</a></h2>
+<h3 id="arithcmpi-integer-comparison">arith.cmpi - Integer Comparison<a class="headerlink" href="#arithcmpi-integer-comparison" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Compare two integers with specified predicate.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.cmpi &lt;predicate&gt;, %lhs, %rhs : i32
+</code></pre>
+<p><strong>Predicates:</strong></p>
+<ul>
+<li>Signed: <code>slt</code>, <code>sle</code>, <code>sgt</code>, <code>sge</code></li>
+<li>Unsigned: <code>ult</code>, <code>ule</code>, <code>ugt</code>, <code>uge</code></li>
+<li>Equality: <code>eq</code>, <code>ne</code></li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar comparison
+%cmp = arith.cmpi slt, %a, %b : i32
+%eq = arith.cmpi eq, %x, %y : i64
+</code></pre>
+<hr />
+<h3 id="arithcmpf-floating-point-comparison">arith.cmpf - Floating-Point Comparison<a class="headerlink" href="#arithcmpf-floating-point-comparison" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Compare two floats with specified predicate.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.cmpf &lt;predicate&gt;, %lhs, %rhs : f32
+</code></pre>
+<p><strong>Predicates:</strong></p>
+<ul>
+<li>Ordered: <code>oeq</code>, <code>one</code>, <code>olt</code>, <code>ole</code>, <code>ogt</code>, <code>oge</code>, <code>ord</code></li>
+<li>Unordered: <code>ueq</code>, <code>une</code>, <code>ult</code>, <code>ule</code>, <code>ugt</code>, <code>uge</code>, <code>uno</code></li>
+<li>Always: <code>true</code>, <code>false</code></li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar comparison
+%cmp = arith.cmpf olt, %a, %b : f32
+%eq = arith.cmpf oeq, %x, %y : f64
+</code></pre>
+<hr />
+<h2 id="minmax-operations">Min/Max Operations<a class="headerlink" href="#minmax-operations" title="Permanent link">&para;</a></h2>
+<h3 id="arithminsi-minimum-signed-integer">arith.minsi - Minimum (Signed Integer)<a class="headerlink" href="#arithminsi-minimum-signed-integer" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.minsi %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar minimum
+%min = arith.minsi %a, %b : i32
+</code></pre>
+<hr />
+<h3 id="arithminui-minimum-unsigned-integer">arith.minui - Minimum (Unsigned Integer)<a class="headerlink" href="#arithminui-minimum-unsigned-integer" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.minui %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar minimum (unsigned)
+%min = arith.minui %a, %b : i32
+</code></pre>
+<hr />
+<h3 id="arithmaxsi-maximum-signed-integer">arith.maxsi - Maximum (Signed Integer)<a class="headerlink" href="#arithmaxsi-maximum-signed-integer" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.maxsi %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar maximum
+%max = arith.maxsi %a, %b : i32
+</code></pre>
+<hr />
+<h3 id="arithmaxui-maximum-unsigned-integer">arith.maxui - Maximum (Unsigned Integer)<a class="headerlink" href="#arithmaxui-maximum-unsigned-integer" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.maxui %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar maximum (unsigned)
+%max = arith.maxui %a, %b : i32
+</code></pre>
+<hr />
+<h3 id="arithminimumf-minimum-float-propagates-nan">arith.minimumf - Minimum (Float, propagates NaN)<a class="headerlink" href="#arithminimumf-minimum-float-propagates-nan" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.minimumf %lhs, %rhs : f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar minimum (propagates NaN)
+%min = arith.minimumf %a, %b : f32
+</code></pre>
+<hr />
+<h3 id="arithmaximumf-maximum-float-propagates-nan">arith.maximumf - Maximum (Float, propagates NaN)<a class="headerlink" href="#arithmaximumf-maximum-float-propagates-nan" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.maximumf %lhs, %rhs : f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar maximum (propagates NaN)
+%max = arith.maximumf %a, %b : f32
+</code></pre>
+<hr />
+<h3 id="arithminnumf-minimum-float-ignores-nan">arith.minnumf - Minimum (Float, ignores NaN)<a class="headerlink" href="#arithminnumf-minimum-float-ignores-nan" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.minnumf %lhs, %rhs : f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar minimum (ignores NaN)
+%min = arith.minnumf %a, %b : f64
+</code></pre>
+<hr />
+<h3 id="arithmaxnumf-maximum-float-ignores-nan">arith.maxnumf - Maximum (Float, ignores NaN)<a class="headerlink" href="#arithmaxnumf-maximum-float-ignores-nan" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.maxnumf %lhs, %rhs : f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar maximum (ignores NaN)
+%max = arith.maxnumf %a, %b : f64
+</code></pre>
+<hr />
+<h2 id="type-conversion-operations">Type Conversion Operations<a class="headerlink" href="#type-conversion-operations" title="Permanent link">&para;</a></h2>
+<h3 id="arithextsi-sign-extension">arith.extsi - Sign Extension<a class="headerlink" href="#arithextsi-sign-extension" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Sign-extend integer to wider type.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.extsi %in : i32 to i64
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar sign extension
+%wide = arith.extsi %narrow : i32 to i64
+</code></pre>
+<hr />
+<h3 id="arithextui-zero-extension">arith.extui - Zero Extension<a class="headerlink" href="#arithextui-zero-extension" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Zero-extend integer to wider type.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.extui %in : i32 to i64
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar zero extension
+%wide = arith.extui %narrow : i32 to i64
+</code></pre>
+<hr />
+<h3 id="arithtrunci-truncate-integer">arith.trunci - Truncate Integer<a class="headerlink" href="#arithtrunci-truncate-integer" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Truncate integer to narrower type.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.trunci %in : i64 to i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar truncation
+%narrow = arith.trunci %wide : i64 to i32
+</code></pre>
+<hr />
+<h3 id="arithextf-extend-float">arith.extf - Extend Float<a class="headerlink" href="#arithextf-extend-float" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Extend floating-point to wider type.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.extf %in : f32 to f64
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar float extension
+%double = arith.extf %single : f32 to f64
+</code></pre>
+<hr />
+<h3 id="arithtruncf-truncate-float">arith.truncf - Truncate Float<a class="headerlink" href="#arithtruncf-truncate-float" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Truncate floating-point to narrower type.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.truncf %in : f64 to f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar float truncation
+%single = arith.truncf %double : f64 to f32
+</code></pre>
+<hr />
+<h3 id="arithsitofp-signed-integer-to-float">arith.sitofp - Signed Integer to Float<a class="headerlink" href="#arithsitofp-signed-integer-to-float" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.sitofp %in : i32 to f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar int to float
+%fp = arith.sitofp %int : i32 to f32
+</code></pre>
+<hr />
+<h3 id="arithuitofp-unsigned-integer-to-float">arith.uitofp - Unsigned Integer to Float<a class="headerlink" href="#arithuitofp-unsigned-integer-to-float" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.uitofp %in : i32 to f32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar uint to float
+%fp = arith.uitofp %uint : i32 to f32
+</code></pre>
+<hr />
+<h3 id="arithfptosi-float-to-signed-integer">arith.fptosi - Float to Signed Integer<a class="headerlink" href="#arithfptosi-float-to-signed-integer" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Convert float to signed integer (rounds towards zero).</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.fptosi %in : f32 to i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar float to int
+%int = arith.fptosi %fp : f32 to i32
+</code></pre>
+<hr />
+<h3 id="arithfptoui-float-to-unsigned-integer">arith.fptoui - Float to Unsigned Integer<a class="headerlink" href="#arithfptoui-float-to-unsigned-integer" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.fptoui %in : f32 to i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar float to uint
+%uint = arith.fptoui %fp : f32 to i32
+</code></pre>
+<hr />
+<h3 id="arithbitcast-bitcast">arith.bitcast - Bitcast<a class="headerlink" href="#arithbitcast-bitcast" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Reinterpret bits as different type (same bit width).</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.bitcast %in : f32 to i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar bitcast
+%bits = arith.bitcast %fp : f32 to i32
+</code></pre>
+<hr />
+<h3 id="arithindex_cast-index-cast-signed">arith.index_cast - Index Cast (Signed)<a class="headerlink" href="#arithindex_cast-index-cast-signed" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Cast between <code>index</code> type and integer types (sign-extended).</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.index_cast %in : i32 to index
+%result = arith.index_cast %in : index to i64
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar index cast
+%idx = arith.index_cast %int : i32 to index
+%int = arith.index_cast %idx : index to i64
+</code></pre>
+<hr />
+<h3 id="arithindex_castui-index-cast-unsigned">arith.index_castui - Index Cast (Unsigned)<a class="headerlink" href="#arithindex_castui-index-cast-unsigned" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Cast between <code>index</code> type and integer types (zero-extended).</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.index_castui %in : i32 to index
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar index cast (unsigned)
+%idx = arith.index_castui %uint : i32 to index
+</code></pre>
+<hr />
+<h2 id="special-operations">Special Operations<a class="headerlink" href="#special-operations" title="Permanent link">&para;</a></h2>
+<h3 id="arithselect-conditional-select">arith.select - Conditional Select<a class="headerlink" href="#arithselect-conditional-select" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.select %condition, %true_value, %false_value : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar select
+%result = arith.select %cond, %a, %b : i32
+%fp_result = arith.select %cond, %x, %y : f32
+</code></pre>
+<hr />
+<h3 id="arithconstant-constant-value">arith.constant - Constant Value<a class="headerlink" href="#arithconstant-constant-value" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%result = arith.constant &lt;value&gt; : &lt;type&gt;
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar constants
+%c0 = arith.constant 0 : i32
+%c1 = arith.constant 1 : i64
+%pi = arith.constant 3.14159 : f32
+%true = arith.constant true
+</code></pre>
+<hr />
+<h2 id="extended-arithmetic-operations">Extended Arithmetic Operations<a class="headerlink" href="#extended-arithmetic-operations" title="Permanent link">&para;</a></h2>
+<h3 id="arithaddui_extended-extended-unsigned-addition">arith.addui_extended - Extended Unsigned Addition<a class="headerlink" href="#arithaddui_extended-extended-unsigned-addition" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Unsigned addition with overflow flag.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%sum, %overflow = arith.addui_extended %lhs, %rhs : i32, i1
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar extended addition
+%sum, %overflow = arith.addui_extended %a, %b : i32, i1
+</code></pre>
+<hr />
+<h3 id="arithmulsi_extended-extended-signed-multiplication">arith.mulsi_extended - Extended Signed Multiplication<a class="headerlink" href="#arithmulsi_extended-extended-signed-multiplication" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong> Signed multiplication returning low and high bits.</p>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%low, %high = arith.mulsi_extended %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar extended multiplication
+%low, %high = arith.mulsi_extended %a, %b : i32
+</code></pre>
+<hr />
+<h3 id="arithmului_extended-extended-unsigned-multiplication">arith.mului_extended - Extended Unsigned Multiplication<a class="headerlink" href="#arithmului_extended-extended-unsigned-multiplication" title="Permanent link">&para;</a></h3>
+<p><strong>Syntax:</strong></p>
+<pre><code class="language-mlir">%low, %high = arith.mului_extended %lhs, %rhs : i32
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-mlir">// Scalar extended multiplication (unsigned)
+%low, %high = arith.mului_extended %a, %b : i32
+</code></pre>
+<hr />
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../manual-binding-ops/" class="btn btn-neutral float-left" title="Manual Binding Operations"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../control-flow-ops/" class="btn btn-neutral float-right" title="Control Flow Operations">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/PTO-ISA/pto-isa" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../manual-binding-ops/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../control-flow-ops/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../assets/javascripts/mathjax.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../../assets/javascripts/nav-collapse.js"></script>
+      <script src="../../../assets/javascripts/nav-translator.js"></script>
+      <script src="../../../assets/javascripts/language-switcher.js"></script>
+      <script src="../../../assets/javascripts/chinese-navigation.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

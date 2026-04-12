@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/tests/npu/a5/src/st/testcase/mscatter/MSCATTER/" />
+      <link rel="shortcut icon" href="../../../../../../../../img/favicon.ico" />
+    <title>MSCATTER - PTO Virtual ISA Architectural Manual</title>
+    <link rel="stylesheet" href="../../../../../../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../../../../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../../../../../../assets/stylesheets/custom.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "MSCATTER";
+        var mkdocs_page_input_path = "tests/npu/a5/src/st/testcase/mscatter/MSCATTER.md";
+        var mkdocs_page_url = "/tests/npu/a5/src/st/testcase/mscatter/MSCATTER/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../../../../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../../../../../.." class="icon icon-home"> PTO Virtual ISA Architectural Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../../../../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../../../../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/getting-started/">Getting Started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">PTO Virtual ISA Manual</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/">Preface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/01-overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/02-machine-model/">Execution Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/03-state-and-types/">State and Types</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/04-tiles-and-globaltensor/">Tiles and GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/05-synchronization/">Synchronization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/06-assembly/">PTO Assembly (PTO-AS)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/07-instructions/">Instruction Set (overview)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/08-programming/">Programming Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/09-virtual-isa-and-ir/">Virtual ISA and IR</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/10-bytecode-and-toolchain/">Bytecode and Toolchain</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/11-memory-ordering-and-consistency/">Memory Ordering and Consistency</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/12-backend-profiles-and-conformance/">Backend Profiles and Conformance</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/appendix-a-glossary/">Glossary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/appendix-b-instruction-contract-template/">Instruction Contract Template</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/appendix-c-diagnostics-taxonomy/">Diagnostics Taxonomy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../manual/appendix-d-instruction-family-matrix/">Instruction Family Matrix</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Programming Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/coding/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/coding/ProgrammingModel/">Programming Model</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/coding/Tile/">Tile</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/coding/GlobalTensor/">GlobalTensor</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/coding/Scalar/">Scalar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/coding/Event/">Event</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/coding/tutorial/">Tutorial</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tutorials</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/coding/tutorials/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/coding/tutorials/vec-add/">Vec Add</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/coding/tutorials/row-softmax/">Row Softmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/coding/tutorials/gemm/">GEMM</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/coding/opt/">Optimization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/coding/debug/">Debugging</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Machine Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/machine/abstract-machine/">Abstract Machine</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/machine/">Machine Index</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">ISA Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/isa/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/isa/conventions/">ISA Conventions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO AS Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/PTO-AS/">PTO-AS Specification</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/conventions/">Conventions</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/nonisa-ops/">Non-ISA Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/elementwise-ops/">Elementwise Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/tile-scalar-ops/">Tile-Scalar Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/axis-ops/">Axis Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/memory-ops/">Memory Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/matrix-ops/">Matrix Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/data-movement-ops/">Data Movement Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/complex-ops/">Complex Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/manual-binding-ops/">Manual Binding Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/scalar-arith-ops/">Scalar Arithmetic Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/assembly/control-flow-ops/">Control Flow Operations</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/PTOISA/">PTO ISA Table</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Synchronization</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSYNC/">TSYNC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Manual / Resource Binding</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TASSIGN/">TASSIGN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSETHF32MODE/">TSETHF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSETTF32MODE/">TSETTF32MODE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSETFMATRIX/">TSETFMATRIX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSET_IMG2COL_RPT/">TSET_IMG2COL_RPT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSET_IMG2COL_PADDING/">TSET_IMG2COL_PADDING</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Elementwise (Tile-Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TADD/">TADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TABS/">TABS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TAND/">TAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TOR/">TOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSUB/">TSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMUL/">TMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMIN/">TMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMAX/">TMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCMP/">TCMP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TDIV/">TDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSHL/">TSHL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSHR/">TSHR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TXOR/">TXOR</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TLOG/">TLOG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TRECIP/">TRECIP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TADDC/">TADDC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSUBC/">TSUBC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCVT/">TCVT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSEL/">TSEL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TRSQRT/">TRSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSQRT/">TSQRT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TEXP/">TEXP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TNOT/">TNOT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TRELU/">TRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TNEG/">TNEG</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TREM/">TREM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TFMOD/">TFMOD</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tile-Scalar / Tile-Immediate</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TEXPANDS/">TEXPANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCMPS/">TCMPS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSELS/">TSELS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMINS/">TMINS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TADDS/">TADDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TAXPY/">TAXPY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSUBS/">TSUBS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TDIVS/">TDIVS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMULS/">TMULS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TFMODS/">TFMODS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TREMS/">TREMS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMAXS/">TMAXS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TANDS/">TANDS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TORS/">TORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSHLS/">TSHLS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSHRS/">TSHRS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TXORS/">TXORS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TLRELU/">TLRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TADDSC/">TADDSC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSUBSC/">TSUBSC</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Axis Reduce / Expand</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWSUM/">TROWSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWPROD/">TROWPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLSUM/">TCOLSUM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLPROD/">TCOLPROD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLMAX/">TCOLMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWMAX/">TROWMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWMIN/">TROWMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLMIN/">TCOLMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWEXPAND/">TROWEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWEXPANDDIV/">TROWEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWEXPANDMUL/">TROWEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWEXPANDSUB/">TROWEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWEXPANDADD/">TROWEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWEXPANDMAX/">TROWEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWEXPANDMIN/">TROWEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TROWEXPANDEXPDIF/">TROWEXPANDEXPDIF</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLEXPAND/">TCOLEXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLEXPANDDIV/">TCOLEXPANDDIV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLEXPANDMUL/">TCOLEXPANDMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLEXPANDADD/">TCOLEXPANDADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLEXPANDMAX/">TCOLEXPANDMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLEXPANDMIN/">TCOLEXPANDMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLEXPANDSUB/">TCOLEXPANDSUB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCOLEXPANDEXPDIF/">TCOLEXPANDEXPDIF</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Memory (GM <-> Tile)</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TLOAD/">TLOAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TPREFETCH/">TPREFETCH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSTORE/">TSTORE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSTORE_FP/">TSTORE_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/MGATHER/">MGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/MSCATTER/">MSCATTER</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Matrix Multiply</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMATMUL/">TMATMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMATMUL_ACC/">TMATMUL_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMATMUL_BIAS/">TMATMUL_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMATMUL_MX/">TMATMUL_MX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TGEMV/">TGEMV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TGEMV_ACC/">TGEMV_ACC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TGEMV_BIAS/">TGEMV_BIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TGEMV_MX/">TGEMV_MX</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Data Movement / Layout</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMOV/">TMOV</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMOV_FP/">TMOV_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TEXTRACT/">TEXTRACT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TEXTRACT_FP/">TEXTRACT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TINSERT/">TINSERT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TINSERT_FP/">TINSERT_FP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TFILLPAD/">TFILLPAD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TFILLPAD_INPLACE/">TFILLPAD_INPLACE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TFILLPAD_EXPAND/">TFILLPAD_EXPAND</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TRESHAPE/">TRESHAPE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TALIAS/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCONCAT/">TCONCAT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TTRANS/">TTRANS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TPACK/">TPACK</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TIMG2COL/">TIMG2COL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSUBVIEW/">TSUBVIEW</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Complex Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TGATHER/">TGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TGATHERB/">TGATHERB</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSCATTER/">TSCATTER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TCI/">TCI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TTRI/">TTRI</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TPARTADD/">TPARTADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TPARTMUL/">TPARTMUL</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TPARTMAX/">TPARTMAX</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TPARTMIN/">TPARTMIN</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TSORT32/">TSORT32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TMRGSORT/">TMRGSORT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TQUANT/">TQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TDEQUANT/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TPUSH/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TPOP/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TFREE/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/THISTOGRAM/">THISTOGRAM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/TPRINT/">TPRINT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TPUT/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TGET/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TPUT_ASYNC/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TGET_ASYNC/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TNOTIFY/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TWAIT/">TWAIT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TTEST/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TGATHER/">TGATHER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TSCATTER/">TSCATTER (comm)</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TREDUCE/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/isa/comm/TBROADCAST/">TBROADCAST</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../docs/reference/pto-intrinsics-header/">Intrinsics Header</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../manual/isa-reference/">All Instructions Index</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples & Kernels</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../kernels/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >High-Performance Kernels</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../kernels/manual/a2a3/gemm_performance/">GEMM Performance</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../kernels/manual/common/flash_atten/">Flash Attention</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Baseline Demos</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../demos/baseline/add/">Add Demo</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../../demos/baseline/gemm_basic/">GEMM Demo</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tests</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../">Tests Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../../../../script/">Test Scripts</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/">Docs Index</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../docs/website/">Build Documentation</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../../../../../../all-pages/">Full Index</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../../../..">PTO Virtual ISA Architectural Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../../../../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">MSCATTER</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <!-- Generated from `tests/npu/a5/src/st/testcase/mscatter/MSCATTER.md` -->
+
+<h1 id="mscatter">MSCATTER<a class="headerlink" href="#mscatter" title="Permanent link">&para;</a></h1>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="MSCATTER tile operation" src="../../../../../../../../docs/figures/isa/MSCATTER.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Scatter data from a Tile into a GlobalTensor (GM) using per-row or per-element indices. This custom instruction performs indexed memory writes to global memory, supporting both row-level block transfers (e.g., expert weight updates) and element-level indexed transfers (e.g., sparse gradient accumulation).</p>
+<p>MSCATTER is implemented as a SIMT kernel using <code>cce::async_invoke</code> with 1024 threads (32 warps × 32 lanes). Optional atomic operations handle write conflicts when multiple source elements target the same destination.</p>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
+<h3 id="row-indexed-scatter">Row-Indexed Scatter<a class="headerlink" href="#row-indexed-scatter" title="Permanent link">&para;</a></h3>
+<p>For a table with <code>RowWidth</code>-sized rows, given a 1D index tile <code>idx</code> of length <code>NumRows</code>:</p>
+<div class="arithmatex">\[ \mathrm{table}_{\mathrm{idx}_{i},\, j} = \mathrm{src}_{i,j} \quad \text{for } 0 \le i &lt; \text{NumRows},\; 0 \le j &lt; \text{RowWidth} \]</div>
+<p>Each index specifies the destination row in the table where the corresponding source row is written.</p>
+<h3 id="element-indexed-scatter">Element-Indexed Scatter<a class="headerlink" href="#element-indexed-scatter" title="Permanent link">&para;</a></h3>
+<p>For per-element indexing where each source element specifies its destination:</p>
+<div class="arithmatex">\[ \mathrm{table}[\mathrm{idx}_{i,j}] = \mathrm{src}_{i,j} \]</div>
+<p>Indices are interpreted as linear element offsets into the destination.</p>
+<h3 id="atomic-accumulation-mode">Atomic Accumulation Mode<a class="headerlink" href="#atomic-accumulation-mode" title="Permanent link">&para;</a></h3>
+<p>When <code>ScatterAtomicOp::Add</code> is specified:</p>
+<div class="arithmatex">\[ \mathrm{table}[\mathrm{idx}_{i,j}] \mathrel{+}= \mathrm{src}_{i,j} \]</div>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
+<p>PTO-AS form: see <a href="../../../../../../../../docs/assembly/PTO-AS/">PTO-AS Specification</a>.</p>
+<p>Row-indexed scatter:</p>
+<pre><code class="language-text">mscatter.row %table, %src, %idx : (!pto.memref&lt;...&gt;, !pto.tile&lt;NxMxT&gt;, !pto.tile&lt;Nx1xi32&gt;)
+</code></pre>
+<p>Element-indexed scatter:</p>
+<pre><code class="language-text">mscatter.elem %table, %src, %idx : (!pto.memref&lt;...&gt;, !pto.tile&lt;NxMxT&gt;, !pto.tile&lt;NxMxi32&gt;)
+</code></pre>
+<p>Atomic scatter:</p>
+<pre><code class="language-text">mscatter.row.atomic_add %table, %src, %idx : (!pto.memref&lt;...&gt;, !pto.tile&lt;NxMxT&gt;, !pto.tile&lt;Nx1xi32&gt;)
+</code></pre>
+<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
+<p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/npu/a5/MScatter.hpp</code>:</p>
+<pre><code class="language-cpp">// Default mode (ScatterAtomicOp::None, ScatterOOB::Undefined)
+template &lt;typename GlobalData, typename TileSrc, typename TileInd, typename... WaitEvents&gt;
+PTO_INST RecordEvent MSCATTER(GlobalData&amp; dst, TileSrc&amp; src, TileInd&amp; indexes, WaitEvents&amp;... events);
+
+// Explicit atomic mode
+template &lt;ScatterAtomicOp Atomic, typename GlobalData, typename TileSrc, typename TileInd, typename... WaitEvents&gt;
+PTO_INST RecordEvent MSCATTER(GlobalData&amp; dst, TileSrc&amp; src, TileInd&amp; indexes, WaitEvents&amp;... events);
+
+// Explicit atomic + OOB mode
+template &lt;ScatterAtomicOp Atomic, ScatterOOB Mode, typename GlobalData, typename TileSrc, typename TileInd,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent MSCATTER(GlobalData&amp; dst, TileSrc&amp; src, TileInd&amp; indexes, WaitEvents&amp;... events);
+</code></pre>
+<p><strong>Parameters:</strong>
+- <code>table</code>: Destination GlobalTensor in GM
+- <code>src</code>: Source tile in UB with shape <code>[NumRows, NumCols]</code>
+- <code>indices</code>: Index tile containing row indices (shape <code>[NumRows, 1]</code>) or element indices (shape <code>[NumRows, NumCols]</code>)
+- <code>Atomic</code>: Atomic operation mode for handling write conflicts (template parameter)
+- <code>Mode</code>: Out-of-bounds handling mode (template parameter)</p>
+<h2 id="atomic-types">Atomic Types<a class="headerlink" href="#atomic-types" title="Permanent link">&para;</a></h2>
+<p>The <code>ScatterAtomicOp</code> enum controls behavior when multiple source elements write to the same destination:</p>
+<pre><code class="language-cpp">enum class ScatterAtomicOp : uint8_t {
+    None = 0,  // Non-atomic write
+    Add  = 1,  // Atomic addition
+    Max  = 2,  // Atomic maximum
+    Min  = 3   // Atomic minimum
+};
+</code></pre>
+<h3 id="atomic-type-constraints">Atomic Type Constraints<a class="headerlink" href="#atomic-type-constraints" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>AtomicNone</code>: Available for all supported data types</li>
+<li><code>AtomicAdd</code>: Available for <code>int32_t</code>, <code>uint32_t</code>, <code>float</code>, <code>half</code></li>
+<li><code>AtomicMax</code>: Available for <code>int32_t</code>, <code>float</code></li>
+<li><code>AtomicMin</code>: Available for <code>int32_t</code>, <code>float</code></li>
+</ul>
+<h2 id="out-of-bounds-handling">Out-of-Bounds Handling<a class="headerlink" href="#out-of-bounds-handling" title="Permanent link">&para;</a></h2>
+<p>The <code>ScatterOOB</code> enum controls behavior when indices exceed table bounds:</p>
+<pre><code class="language-cpp">enum class ScatterOOB : uint8_t {
+    Undefined = 0,  // No bounds check
+    Skip      = 1,  // Skip OOB writes (no memory access)
+    Clamp     = 2,  // Clamp index to valid range [0, tableSize-1]
+    Wrap      = 3   // Index modulo tableSize (idx % tableSize)
+};
+</code></pre>
+<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<h3 id="data-types-a5">Data Types (A5)<a class="headerlink" href="#data-types-a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TileSrc::DType</code> must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, <code>float8_e4m3_t</code>, <code>float8_e5m2_t</code>.</li>
+</ul>
+<h3 id="index-types">Index Types<a class="headerlink" href="#index-types" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TileIdx::DType</code> must be <code>int32_t</code> or <code>uint32_t</code>.</li>
+</ul>
+<h3 id="tile-constraints">Tile Constraints<a class="headerlink" href="#tile-constraints" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source tile location must be <code>TileType::Vec</code> (UB).</li>
+<li>Index tile location must be <code>TileType::Vec</code> (UB).</li>
+<li><code>TileSrc::Rows == TileIdx::Rows</code> (matching row count).</li>
+<li><code>TileIdx::Cols == 1</code> for row-indexed scatter, or <code>TileIdx::Cols == TileSrc::Cols</code> for element-indexed scatter.</li>
+<li>Source and table must have the same data type.</li>
+</ul>
+<h3 id="shape-constraints">Shape Constraints<a class="headerlink" href="#shape-constraints" title="Permanent link">&para;</a></h3>
+<ul>
+<li>For row-indexed mode: Table shape dimension 3 specifies number of rows, dimension 4 specifies row width.</li>
+<li>For element-indexed mode: Table is treated as a linear array of size <code>Shape[3] * Shape[4]</code>.</li>
+</ul>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<h3 id="row-indexed-scatter-weight-update">Row-Indexed Scatter (Weight Update)<a class="headerlink" href="#row-indexed-scatter-weight-update" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/npu/a5/custom/MScatter.hpp&gt;
+
+using namespace pto;
+
+template &lt;typename T, int NumRows, int RowWidth, int TableRows&gt;
+void example_weight_update(__gm__ T* table, __gm__ int32_t* indices) {
+    using IdxTile = Tile&lt;TileType::Vec, int32_t, NumRows, 1&gt;;
+    using SrcTile = Tile&lt;TileType::Vec, T, NumRows, RowWidth&gt;;
+    using TableShape = Shape&lt;1, 1, 1, TableRows, RowWidth&gt;;
+    using TableStride = Stride&lt;1, 1, 1, RowWidth, 1&gt;;
+    using TableTensor = GlobalTensor&lt;T, TableShape, TableStride, Layout::ND&gt;;
+
+    TableTensor tableGM(table);
+    IdxTile idx;
+    SrcTile src;
+
+    TASSIGN(idx, 0x0);
+    TASSIGN(src, 0x1000);
+
+    // Scatter with skip mode for invalid indices
+    MSCATTER&lt;ScatterAtomicOp::None, ScatterOOB::Skip&gt;(tableGM, src, idx);
+}
+</code></pre>
+<h3 id="atomic-gradient-accumulation">Atomic Gradient Accumulation<a class="headerlink" href="#atomic-gradient-accumulation" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/npu/a5/custom/MScatter.hpp&gt;
+
+using namespace pto;
+
+void example_gradient_accumulation(__gm__ float* gradTable, __gm__ int32_t* tokenIndices) {
+    using IdxTile = Tile&lt;TileType::Vec, int32_t, 16, 1&gt;;
+    using GradTile = Tile&lt;TileType::Vec, float, 16, 64&gt;;
+    using TableShape = Shape&lt;1, 1, 1, 65536, 64&gt;;
+    using TableStride = Stride&lt;1, 1, 1, 64, 1&gt;;
+    using TableTensor = GlobalTensor&lt;float, TableShape, TableStride, Layout::ND&gt;;
+
+    TableTensor tableGM(gradTable);
+    IdxTile idx;
+    GradTile grads;
+
+    TASSIGN(idx, 0x0);
+    TASSIGN(grads, 0x1000);
+
+    // Atomic add for gradient accumulation
+    MSCATTER&lt;ScatterAtomicOp::Add, ScatterOOB::Skip&gt;(tableGM, grads, idx);
+}
+</code></pre>
+<h3 id="element-indexed-scatter-sparse-update">Element-Indexed Scatter (Sparse Update)<a class="headerlink" href="#element-indexed-scatter-sparse-update" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/npu/a5/custom/MScatter.hpp&gt;
+
+using namespace pto;
+
+void example_sparse_update(__gm__ float* data, __gm__ int32_t* sparseIndices) {
+    using IdxTile = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
+    using SrcTile = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+    using DataShape = Shape&lt;1, 1, 1, 1024, 64&gt;;
+    using DataStride = Stride&lt;1, 1, 1, 64, 1&gt;;
+    using DataTensor = GlobalTensor&lt;float, DataShape, DataStride, Layout::ND&gt;;
+
+    DataTensor dataGM(data);
+    IdxTile idx;
+    SrcTile src;
+
+    TASSIGN(idx, 0x0);
+    TASSIGN(src, 0x2000);
+
+    // Scatter with wrap mode
+    MSCATTER&lt;ScatterAtomicOp::None, ScatterOOB::Wrap&gt;(dataGM, src, idx);
+}
+</code></pre>
+<h3 id="manual-memory-assignment">Manual Memory Assignment<a class="headerlink" href="#manual-memory-assignment" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/npu/a5/custom/MScatter.hpp&gt;
+
+using namespace pto;
+
+void example_manual() {
+    using IdxTile = Tile&lt;TileType::Vec, int32_t, 8, 1&gt;;
+    using SrcTile = Tile&lt;TileType::Vec, half, 8, 64&gt;;
+    using TableShape = Shape&lt;1, 1, 1, 65536, 64&gt;;
+    using TableStride = Stride&lt;1, 1, 1, 64, 1&gt;;
+    using TableTensor = GlobalTensor&lt;half, TableShape, TableStride, Layout::ND&gt;;
+
+    __gm__ half* tablePtr = /* ... */;
+    TableTensor tableGM(tablePtr);
+
+    IdxTile idx;
+    SrcTile src;
+
+    TASSIGN(idx, 0x0);
+    TASSIGN(src, 0x1000);
+
+    MSCATTER&lt;ScatterAtomicOp::None, ScatterOOB::Clamp&gt;(tableGM, src, idx);
+}
+</code></pre>
+<h2 id="performance-considerations">Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permanent link">&para;</a></h2>
+<ol>
+<li>
+<p><strong>Row-indexed scatter</strong> is more efficient than element-indexed when writing structured data because it enables coalesced memory access within each row.</p>
+</li>
+<li>
+<p><strong>Atomic operations</strong>: Use <code>ScatterAtomicOp::None</code> when indices are guaranteed unique for best performance. Atomic modes add synchronization overhead.</p>
+</li>
+<li>
+<p><strong>SIMT execution</strong>: The kernel uses 1024 threads (32 warps × 32 lanes) for parallel scatter operations.</p>
+</li>
+<li>
+<p><strong>Out-of-bounds mode</strong>: <code>ScatterOOB::Undefined</code> is fastest but requires indices to be valid. Use <code>Skip</code>, <code>Clamp</code>, or <code>Wrap</code> when indices may exceed bounds.</p>
+</li>
+<li>
+<p><strong>Write conflicts</strong>: When multiple source elements target the same destination with <code>AtomicNone</code>, the result is non-deterministic (last writer wins).</p>
+</li>
+</ol>
+<h2 id="related-instructions">Related Instructions<a class="headerlink" href="#related-instructions" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../../../../../../../docs/isa/TSTORE/"><code>TSTORE</code></a>: Contiguous block transfer from Tile to GM</li>
+<li><a href="../../../../../../../../docs/isa/TSCATTER/"><code>TSCATTER</code></a>: Index-based scatter within tiles (UB-to-UB)</li>
+<li><a href="../../mgather/MGATHER/"><code>MGATHER</code></a>: Indexed gather from GM to Tile (inverse operation)</li>
+</ul>
+<h2 id="test-cases">Test Cases<a class="headerlink" href="#test-cases" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Data Type</th>
+<th>Src Size</th>
+<th>Out Size</th>
+<th>Atomic</th>
+<th>OOB Mode</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>case_half_8x32_1024</td>
+<td>half</td>
+<td>8×32</td>
+<td>1024</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_half_16x64_2048</td>
+<td>half</td>
+<td>16×64</td>
+<td>2048</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_8x32_512</td>
+<td>float</td>
+<td>8×32</td>
+<td>512</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_16x32_1024</td>
+<td>float</td>
+<td>16×32</td>
+<td>1024</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_16x64_2048</td>
+<td>float</td>
+<td>16×64</td>
+<td>2048</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_8x8_128</td>
+<td>float</td>
+<td>8×8</td>
+<td>128</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_int32_8x16_256</td>
+<td>int32</td>
+<td>8×16</td>
+<td>256</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_int32_16x32_1024</td>
+<td>int32</td>
+<td>16×32</td>
+<td>1024</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_int32_16x16_512</td>
+<td>int32</td>
+<td>16×16</td>
+<td>512</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_uint8_16x32_1024</td>
+<td>uint8</td>
+<td>16×32</td>
+<td>1024</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_uint8_16x64_2048</td>
+<td>uint8</td>
+<td>16×64</td>
+<td>2048</td>
+<td>None</td>
+<td>Undefined</td>
+<td>Default mode</td>
+</tr>
+<tr>
+<td>case_float_skip_8x32_512</td>
+<td>float</td>
+<td>8×32</td>
+<td>512</td>
+<td>None</td>
+<td>Skip</td>
+<td>OOB writes skipped</td>
+</tr>
+<tr>
+<td>case_int32_clamp_8x16_256</td>
+<td>int32</td>
+<td>8×16</td>
+<td>256</td>
+<td>None</td>
+<td>Clamp</td>
+<td>OOB indices clamped</td>
+</tr>
+<tr>
+<td>case_half_wrap_8x32_1024</td>
+<td>half</td>
+<td>8×32</td>
+<td>1024</td>
+<td>None</td>
+<td>Wrap</td>
+<td>OOB indices wrapped via modulo</td>
+</tr>
+<tr>
+<td>case_float_atomicadd_8x32_512</td>
+<td>float</td>
+<td>8×32</td>
+<td>512</td>
+<td>Add</td>
+<td>Undefined</td>
+<td>Atomic addition</td>
+</tr>
+<tr>
+<td>case_int32_atomicadd_skip_8x16_256</td>
+<td>int32</td>
+<td>8×16</td>
+<td>256</td>
+<td>Add</td>
+<td>Skip</td>
+<td>Atomic add with OOB skip</td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/PTO-ISA/pto-isa" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../../../../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../../../../../../..";</script>
+    <script src="../../../../../../../../js/theme_extra.js"></script>
+    <script src="../../../../../../../../js/theme.js"></script>
+      <script src="../../../../../../../../assets/javascripts/mathjax.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../../../../../../../assets/javascripts/nav-collapse.js"></script>
+      <script src="../../../../../../../../assets/javascripts/nav-translator.js"></script>
+      <script src="../../../../../../../../assets/javascripts/language-switcher.js"></script>
+      <script src="../../../../../../../../assets/javascripts/chinese-navigation.js"></script>
+      <script src="../../../../../../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
