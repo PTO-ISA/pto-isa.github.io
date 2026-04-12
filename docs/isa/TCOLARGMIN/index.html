@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TCOLARGMIN/" />
       <link rel="shortcut icon" href="../../../img/favicon.ico" />
-    <title>TCOLARGMIN - PTO ISA Manual</title>
+    <title>pto.tcolargmin - PTO ISA Manual</title>
     <link rel="stylesheet" href="../../../css/theme.css" />
     <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,7 +13,7 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "TCOLARGMIN";
+        var mkdocs_page_name = "pto.tcolargmin";
         var mkdocs_page_input_path = "docs/isa/TCOLARGMIN.md";
         var mkdocs_page_url = "/docs/isa/TCOLARGMIN/";
       </script>
@@ -123,7 +123,7 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">9. Tile Instruction Reference</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="" href="../tile/README.md">Overview</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
@@ -256,15 +256,15 @@
                 </li>
     </ul>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" >Reduce And Expand</a>
-    <ul>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Reduce And Expand</a>
+    <ul class="current">
                 <li class="toctree-l2"><a class="" href="../tile/reduce-and-expand.md">Instruction Set Contract</a>
                 </li>
                 <li class="toctree-l2"><a class="" href="../tile/ops/reduce-and-expand/trowsum.md">pto.trowsum</a>
                 </li>
                 <li class="toctree-l2"><a class="" href="../tile/ops/reduce-and-expand/tcolsum.md">pto.tcolsum</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../tile/ops/reduce-and-expand/trowprod.md">pto.trowprod</a>
+                <li class="toctree-l2"><a class="reference internal" href="../TROWPROD/">pto.trowprod</a>
                 </li>
                 <li class="toctree-l2"><a class="" href="../tile/ops/reduce-and-expand/tcolprod.md">pto.tcolprod</a>
                 </li>
@@ -272,9 +272,59 @@
                 </li>
                 <li class="toctree-l2"><a class="" href="../tile/ops/reduce-and-expand/tcolmin.md">pto.tcolmin</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../tile/ops/reduce-and-expand/tcolargmax.md">pto.tcolargmax</a>
+                <li class="toctree-l2"><a class="reference internal" href="../TCOLARGMAX/">pto.tcolargmax</a>
                 </li>
-                <li class="toctree-l2"><a class="" href="../tile/ops/reduce-and-expand/tcolargmin.md">pto.tcolargmin</a>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.tcolargmin</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-implementation-checks">A2A3 implementation checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-implementation-checks">A5 implementation checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#about-temporary-tile-tmp-for-a2a3">About temporary tile tmp for A2A3</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#about-temporary-tile-tmp-for-a5">About temporary tile tmp for A5</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
                 </li>
                 <li class="toctree-l2"><a class="" href="../tile/ops/reduce-and-expand/trowmax.md">pto.trowmax</a>
                 </li>
@@ -897,7 +947,9 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">TCOLARGMIN</li>
+          <li class="breadcrumb-item">9. Tile Instruction Reference</li>
+          <li class="breadcrumb-item">Reduce And Expand</li>
+      <li class="breadcrumb-item active">pto.tcolargmin</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -1033,6 +1085,10 @@ pto.tcolargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&g
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../TCOLARGMAX/" class="btn btn-neutral float-left" title="pto.tcolargmax"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../comm/" class="btn btn-neutral float-right" title="Communication Overview">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -1058,6 +1114,10 @@ pto.tcolargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&g
         </span>
     
     
+      <span><a href="../TCOLARGMAX/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../comm/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
