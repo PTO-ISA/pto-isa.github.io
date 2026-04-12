@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/introduction/what-is-pto-visa/" />
+      <link rel="shortcut icon" href="../../../../img/favicon.ico" />
+    <title>Introduction - PTO ISA Manual</title>
+    <link rel="stylesheet" href="../../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../../assets/stylesheets/custom.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Introduction";
+        var mkdocs_page_input_path = "docs/isa/introduction/what-is-pto-visa.md";
+        var mkdocs_page_url = "/docs/isa/introduction/what-is-pto-visa/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../.." class="icon icon-home"> PTO ISA Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">1. Introduction</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Introduction</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#why-tile-first">Why Tile-First</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#two-compilation-flows">Two Compilation Flows</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#flow-a-high-level-compile-ptoas-c-bisheng-binary">Flow A: High-Level Compile (ptoas → C++ → bisheng → binary)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#flow-b-direct-assemble-ptoas-binary">Flow B: Direct Assemble (ptoas → binary)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#which-flow-to-use">Which Flow to Use</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#a-minimal-example">A Minimal Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#key-terms">Key Terms</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#position-in-the-software-stack">Position In The Software Stack</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#hierarchical-abstractions">Hierarchical Abstractions</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#machine-model">Machine Model</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#execution-hierarchy">Execution Hierarchy</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#target-profiles">Target Profiles</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#instruction-syntax-overview">Instruction Syntax Overview</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-form-pto-as">Assembly Form (PTO-AS)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ssa-form-as-level-1">SSA Form (AS Level 1)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#dps-form-as-level-2">DPS Form (AS Level 2)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#tile-surface-and-vector-surface">Tile Surface And Vector Surface</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-surface-ptot">Tile Surface (pto.t*)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#vector-surface-ptov">Vector Surface (pto.v*)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#when-to-use-which-surface">When To Use Which Surface</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#audience-who-reads-this-manual">Audience: Who Reads This Manual</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#compiler-backend-developers">Compiler Backend Developers</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#kernel-writers">Kernel Writers</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#scope-of-this-manual">Scope Of This Manual</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See Also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../document-structure/">Document Structure</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../goals-of-pto/">Goals Of PTO</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../pto-isa-version-1-0/">PTO ISA Version 1.0</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../design-goals-and-boundaries/">Scope And Boundaries</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">2. Programming Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../programming-model/tiles-and-valid-regions/">Tiles And Valid Regions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../programming-model/globaltensor-and-data-movement/">GlobalTensor And Data Movement</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../programming-model/auto-vs-manual/">Auto Vs Manual</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">3. Machine Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../machine-model/execution-agents/">Execution Agents And Target Profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../machine-model/ordering-and-synchronization/">Ordering And Synchronization</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">4. Syntax And Operands</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../syntax-and-operands/operands-and-attributes/">Operands And Attributes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../conventions/">Common Conventions</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">5. State And Types</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../state-and-types/type-system/">Type System</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../state-and-types/layout/">Layout Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../state-and-types/data-format/">Data Format Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../state-and-types/location-intent-and-legality/">Location Intent And Legality</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">6. Memory Model</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../memory-model/consistency-baseline/">Consistency Baseline</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../memory-model/producer-consumer-ordering/">Producer Consumer Ordering</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">7. Instruction Set Overview</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-surfaces/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-surfaces/tile-instructions/">Tile Instructions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-surfaces/vector-instructions/">Vector Instructions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-surfaces/scalar-and-control-instructions/">Scalar And Control Instructions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-surfaces/other-instructions/">Other Instructions</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">8. Instruction Set Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-families/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-families/tile-families/">Tile Instruction Set</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-families/vector-families/">Vector Instruction Set</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-families/scalar-and-control-families/">Scalar And Control Instruction Set</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-families/other-families/">Other Instruction Set</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">9. Tile Instruction Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsync/">pto.tsync</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tassign/">pto.tassign</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsethf32mode/">pto.tsethf32mode</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsettf32mode/">pto.tsettf32mode</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsetfmatrix/">pto.tsetfmatrix</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tset-img2col-rpt/">pto.tset_img2col_rpt</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tset-img2col-padding/">pto.tset_img2col_padding</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsubview/">pto.tsubview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tget-scale-addr/">pto.tget_scale_addr</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Elementwise Tile Tile</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/elementwise-tile-tile/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tadd/">pto.tadd</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tabs/">pto.tabs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tand/">pto.tand</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tor/">pto.tor</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tsub/">pto.tsub</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tmul/">pto.tmul</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tmin/">pto.tmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tmax/">pto.tmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tcmp/">pto.tcmp</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tdiv/">pto.tdiv</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tshl/">pto.tshl</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tshr/">pto.tshr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/txor/">pto.txor</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tlog/">pto.tlog</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/trecip/">pto.trecip</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tprelu/">pto.tprelu</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/taddc/">pto.taddc</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tsubc/">pto.tsubc</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tcvt/">pto.tcvt</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tsel/">pto.tsel</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/trsqrt/">pto.trsqrt</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tsqrt/">pto.tsqrt</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/texp/">pto.texp</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tnot/">pto.tnot</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/trelu/">pto.trelu</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tneg/">pto.tneg</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/trem/">pto.trem</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tfmod/">pto.tfmod</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Tile Scalar And Immediate</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/tile-scalar-and-immediate/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/texpands/">pto.texpands</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tcmps/">pto.tcmps</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tsels/">pto.tsels</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tmins/">pto.tmins</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tadds/">pto.tadds</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tsubs/">pto.tsubs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/trems/">pto.trems</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tmaxs/">pto.tmaxs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tands/">pto.tands</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tors/">pto.tors</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tshls/">pto.tshls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tshrs/">pto.tshrs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/txors/">pto.txors</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tlrelu/">pto.tlrelu</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/taddsc/">pto.taddsc</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tsubsc/">pto.tsubsc</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Reduce And Expand</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/reduce-and-expand/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowsum/">pto.trowsum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolsum/">pto.tcolsum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TROWPROD/">pto.trowprod</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolprod/">pto.tcolprod</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolmax/">pto.tcolmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolmin/">pto.tcolmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TCOLARGMAX/">pto.tcolargmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TCOLARGMIN/">pto.tcolargmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowmax/">pto.trowmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowmin/">pto.trowmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowargmax/">pto.trowargmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowargmin/">pto.trowargmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowexpand/">pto.trowexpand</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowexpanddiv/">pto.trowexpanddiv</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowexpandmul/">pto.trowexpandmul</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowexpandsub/">pto.trowexpandsub</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowexpandadd/">pto.trowexpandadd</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowexpandmax/">pto.trowexpandmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowexpandmin/">pto.trowexpandmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/trowexpandexpdif/">pto.trowexpandexpdif</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolexpand/">pto.tcolexpand</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolexpanddiv/">pto.tcolexpanddiv</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolexpandmul/">pto.tcolexpandmul</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolexpandadd/">pto.tcolexpandadd</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolexpandmax/">pto.tcolexpandmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolexpandmin/">pto.tcolexpandmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolexpandsub/">pto.tcolexpandsub</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/reduce-and-expand/tcolexpandexpdif/">pto.tcolexpandexpdif</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Memory And Data Movement</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/memory-and-data-movement/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tload/">pto.tload</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tprefetch/">pto.tprefetch</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tstore/">pto.tstore</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tstore-fp/">pto.tstore_fp</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/mgather/">pto.mgather</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/mscatter/">pto.mscatter</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Matrix And Matrix Vector</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/matrix-and-matrix-vector/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/matrix-and-matrix-vector/tgemv-mx/">pto.tgemv_mx</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/matrix-and-matrix-vector/tmatmul-mx/">pto.tmatmul_mx</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/matrix-and-matrix-vector/tmatmul/">pto.tmatmul</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/matrix-and-matrix-vector/tmatmul-acc/">pto.tmatmul_acc</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/matrix-and-matrix-vector/tmatmul-bias/">pto.tmatmul_bias</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/matrix-and-matrix-vector/tgemv/">pto.tgemv</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/matrix-and-matrix-vector/tgemv-acc/">pto.tgemv_acc</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/matrix-and-matrix-vector/tgemv-bias/">pto.tgemv_bias</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Layout And Rearrangement</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/layout-and-rearrangement/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/textract/">pto.textract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/textract-fp/">pto.textract_fp</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/timg2col/">pto.timg2col</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tinsert/">pto.tinsert</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tinsert-fp/">pto.tinsert_fp</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tfillpad/">pto.tfillpad</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tfillpad-inplace/">pto.tfillpad_inplace</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tfillpad-expand/">pto.tfillpad_expand</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tmov/">pto.tmov</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tmov-fp/">pto.tmov_fp</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/treshape/">pto.treshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/ttrans/">pto.ttrans</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Irregular And Complex</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/irregular-and-complex/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tprint/">pto.tprint</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tmrgsort/">pto.tmrgsort</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tsort32/">pto.tsort32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tgather/">pto.tgather</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tgatherb/">pto.tgatherb</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tscatter/">pto.tscatter</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tci/">pto.tci</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/ttri/">pto.ttri</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tpartadd/">pto.tpartadd</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tpartmul/">pto.tpartmul</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tpartmax/">pto.tpartmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tpartmin/">pto.tpartmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tquant/">pto.tquant</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">10. Vector ISA Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../vector/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Vector Load Store</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/vector-load-store/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vlds/">pto.vlds</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldas/">pto.vldas</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsldb/">pto.vsldb</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vgather2/">pto.vgather2</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vgatherb/">pto.vgatherb</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vgather2-bc/">pto.vgather2_bc</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsstb/">pto.vsstb</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vscatter/">pto.vscatter</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsta/">pto.vsta</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstas/">pto.vstas</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstar/">pto.vstar</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstu/">pto.vstu</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstus/">pto.vstus</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstur/">pto.vstur</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Predicate And Materialization</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/predicate-and-materialization/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/predicate-and-materialization/vbr/">pto.vbr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/predicate-and-materialization/vdup/">pto.vdup</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Unary Vector Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/unary-vector-ops/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vabs/">pto.vabs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vneg/">pto.vneg</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vexp/">pto.vexp</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vln/">pto.vln</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vsqrt/">pto.vsqrt</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vrsqrt/">pto.vrsqrt</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vrec/">pto.vrec</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vrelu/">pto.vrelu</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vnot/">pto.vnot</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vbcnt/">pto.vbcnt</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vcls/">pto.vcls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/unary-vector-ops/vmov/">pto.vmov</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Binary Vector Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/binary-vector-ops/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vadd/">pto.vadd</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vsub/">pto.vsub</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vmul/">pto.vmul</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vdiv/">pto.vdiv</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vmax/">pto.vmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vmin/">pto.vmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vand/">pto.vand</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vor/">pto.vor</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vxor/">pto.vxor</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vshl/">pto.vshl</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vshr/">pto.vshr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vaddc/">pto.vaddc</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/binary-vector-ops/vsubc/">pto.vsubc</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Vector-Scalar Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/vec-scalar-ops/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vadds/">pto.vadds</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vsubs/">pto.vsubs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vmuls/">pto.vmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vmaxs/">pto.vmaxs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vmins/">pto.vmins</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vands/">pto.vands</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vors/">pto.vors</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vxors/">pto.vxors</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vshls/">pto.vshls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vshrs/">pto.vshrs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vlrelu/">pto.vlrelu</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vaddcs/">pto.vaddcs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vec-scalar-ops/vsubcs/">pto.vsubcs</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Conversion Ops</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/conversion-ops/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/conversion-ops/vci/">pto.vci</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/conversion-ops/vcvt/">pto.vcvt</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/conversion-ops/vtrc/">pto.vtrc</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Reduction Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/reduction-ops/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/reduction-ops/vcadd/">pto.vcadd</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/reduction-ops/vcmax/">pto.vcmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/reduction-ops/vcmin/">pto.vcmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/reduction-ops/vcgadd/">pto.vcgadd</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/reduction-ops/vcgmax/">pto.vcgmax</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/reduction-ops/vcgmin/">pto.vcgmin</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/reduction-ops/vcpadd/">pto.vcpadd</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Compare And Select</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/compare-select/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/compare-select/vcmp/">pto.vcmp</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/compare-select/vcmps/">pto.vcmps</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/compare-select/vsel/">pto.vsel</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/compare-select/vselr/">pto.vselr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/compare-select/vselrv2/">pto.vselrv2</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Data Rearrangement</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/data-rearrangement/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vintlv/">pto.vintlv</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vdintlv/">pto.vdintlv</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vslide/">pto.vslide</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vshift/">pto.vshift</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vsqz/">pto.vsqz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vusqz/">pto.vusqz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vperm/">pto.vperm</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vpack/">pto.vpack</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vsunpack/">pto.vsunpack</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vzunpack/">pto.vzunpack</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vintlvv2/">pto.vintlvv2</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/data-rearrangement/vdintlvv2/">pto.vdintlvv2</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >SFU And DSA Instructions</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/sfu-and-dsa-ops/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vsubrelu/">pto.vsubrelu</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vaxpy/">pto.vaxpy</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vaddreluconv/">pto.vaddreluconv</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vmulconv/">pto.vmulconv</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vmull/">pto.vmull</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vmula/">pto.vmula</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vtranspose/">pto.vtranspose</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vsort32/">pto.vsort32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vmrgsort/">pto.vmrgsort</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11. Scalar And Control Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../scalar/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../scalar/control-and-configuration/">Control And Configuration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Pipeline Sync</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/pipeline-sync/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/pipeline-sync/set-flag/">pto.set_flag</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/pipeline-sync/wait-flag/">pto.wait_flag</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/pipeline-sync/pipe-barrier/">pto.pipe_barrier</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/pipeline-sync/get-buf/">pto.get_buf</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/pipeline-sync/rls-buf/">pto.rls_buf</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/pipeline-sync/mem-bar/">pto.mem_bar</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/pipeline-sync/set-cross-core/">pto.set_cross_core</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/pipeline-sync/wait-flag-dev/">pto.wait_flag_dev</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/pipeline-sync/set-intra-block/">pto.set_intra_block</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/pipeline-sync/wait-intra-core/">pto.wait_intra_core</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >DMA Copy</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/dma-copy/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/dma-copy/set-loop-size-outtoub/">pto.set_loop_size_outtoub</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/dma-copy/set-loop2-stride-outtoub/">pto.set_loop2_stride_outtoub</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/dma-copy/set-loop1-stride-outtoub/">pto.set_loop1_stride_outtoub</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/dma-copy/set-loop-size-ubtoout/">pto.set_loop_size_ubtoout</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/dma-copy/set-loop2-stride-ubtoout/">pto.set_loop2_stride_ubtoout</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/dma-copy/set-loop1-stride-ubtoout/">pto.set_loop1_stride_ubtoout</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/dma-copy/copy-gm-to-ubuf/">pto.copy_gm_to_ubuf</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/dma-copy/copy-ubuf-to-gm/">pto.copy_ubuf_to_gm</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/dma-copy/copy-ubuf-to-ubuf/">pto.copy_ubuf_to_ubuf</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Predicate Load Store</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/predicate-load-store/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-load-store/plds/">pto.plds</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-load-store/pld/">pto.pld</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-load-store/pldi/">pto.pldi</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-load-store/psts/">pto.psts</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-load-store/pst/">pto.pst</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-load-store/psti/">pto.psti</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-load-store/pstu/">pto.pstu</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Predicate Generation And Algebra</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/predicate-generation-and-algebra/">Instruction Set Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pset-b8/">pto.pset_b8</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pset-b16/">pto.pset_b16</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pset-b32/">pto.pset_b32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pge-b8/">pto.pge_b8</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pge-b16/">pto.pge_b16</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pge-b32/">pto.pge_b32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/plt-b8/">pto.plt_b8</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/plt-b16/">pto.plt_b16</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/plt-b32/">pto.plt_b32</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/ppack/">pto.ppack</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/punpack/">pto.punpack</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pand/">pto.pand</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/por/">pto.por</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pxor/">pto.pxor</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pnot/">pto.pnot</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/psel/">pto.psel</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pdintlv-b8/">pto.pdintlv_b8</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/ops/predicate-generation-and-algebra/pintlv-b16/">pto.pintlv_b16</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../scalar/shared-arith/">Shared Arithmetic</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../scalar/shared-scf/">Shared SCF</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../other/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Communication And Runtime</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../other/communication-and-runtime/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/">Communication Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TBROADCAST_zh/">TBROADCAST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TGET_zh/">TGET</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TGET_ASYNC_zh/">TGET_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TGATHER_zh/">TGATHER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TNOTIFY_zh/">TNOTIFY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TPUT_zh/">TPUT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TPUT_ASYNC_zh/">TPUT_ASYNC</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TREDUCE_zh/">TREDUCE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TSCATTER_zh/">TSCATTER</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TTEST_zh/">TTEST</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../comm/TWAIT_zh/">TWAIT</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Non ISA And Supporting Ops</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../other/non-isa-and-supporting-ops/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TALIAS_zh/">TALIAS</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TAXPY_zh/">TAXPY</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TCONCAT_zh/">TCONCAT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TDEQUANT_zh/">TDEQUANT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TFREE_zh/">TFREE</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../THISTOGRAM_zh/">THISTOGRAM</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TPACK_zh/">TPACK</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TPOP_zh/">TPOP</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TPUSH_zh/">TPUSH</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../TRANDOM_zh/">TRANDOM</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">13. Reference Notes</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/format-of-instruction-descriptions/">Format Of Instruction Descriptions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/diagnostics-and-illegal-cases/">Diagnostics And Illegal Cases</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/glossary/">Glossary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/portability-and-target-profiles/">Portability And Target Profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/source-of-truth/">Source Of Truth</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../..">PTO ISA Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">1. Introduction</li>
+      <li class="breadcrumb-item active">Introduction</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <!-- Generated from `docs/mkdocs/src/docs/isa/introduction/what-is-pto-visa.md` -->
+
+<h1 id="parallel-tile-operation-isa">Parallel Tile Operation ISA<a class="headerlink" href="#parallel-tile-operation-isa" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p><strong>PTO ISA</strong> (Parallel Tile Operation Instruction Set Architecture) defines a machine-independent ISA for Huawei Ascend NPU software. PTO ISA provides a stable low-level programming contract above generation-specific hardware instruction sets, serving as the assembly-language layer of the PTO software stack.</p>
+<p>PTO ISA is not the native binary ISA of any single Ascend implementation. It defines the architecture-visible meaning of legal PTO programs and the instruction vocabulary shared by frontends, code generators, verifiers, simulators, and target backends.</p>
+<h2 id="why-tile-first">Why Tile-First<a class="headerlink" href="#why-tile-first" title="Permanent link">&para;</a></h2>
+<p>Most Ascend kernels are authored in terms of <strong>tiles</strong> — bounded multi-dimensional array fragments with layout and valid-region metadata — not anonymous lanes or opaque buffers. A generic SIMD or SIMT model can describe the hardware eventually, but it pushes the important questions into backend-specific folklore:</p>
+<ul>
+<li>Shape and layout legality</li>
+<li>Which elements are meaningful (valid regions)</li>
+<li>When two tiles may alias</li>
+<li>Where synchronization must appear</li>
+</ul>
+<p>PTO lifts these questions into the ISA so programs, verifiers, and backends share one testable, portable contract.</p>
+<p>See <a href="../goals-of-pto/">Goals Of PTO</a> for product goals and <a href="../../programming-model/tiles-and-valid-regions/">Tiles And Valid Regions</a> for how tiles work in programs.</p>
+<h2 id="two-compilation-flows">Two Compilation Flows<a class="headerlink" href="#two-compilation-flows" title="Permanent link">&para;</a></h2>
+<p>PTO programs can be compiled to hardware through two supported paths. Both paths share the same PTO instruction semantics; they differ in how the final binary is produced.</p>
+<h3 id="flow-a-high-level-compile-ptoas-c-bisheng-binary">Flow A: High-Level Compile (ptoas → C++ → bisheng → binary)<a class="headerlink" href="#flow-a-high-level-compile-ptoas-c-bisheng-binary" title="Permanent link">&para;</a></h3>
+<p>High-level frontends (TileLang, PyPTO, custom DSLs) emit PTO programs as <code>.pto</code> text files. The <code>ptoas</code> tool parses, validates, and lowers these to C++ code that calls the <code>pto-isa</code> C++ library. A backend compiler (bisheng) then compiles this C++ to the target binary.</p>
+<pre><code>High-level Frontend
+(TileLang, PyPTO, C/C++, ...)
+        │
+        ▼
+   .pto file
+   (PTO program text)
+        │
+        ▼
+   ptoas
+   (PTO assembler &amp; optimizer)
+   ┌─────────────────────────────────────┐
+   │ Parse, validate, optimize            │
+   │ Lower PTO instructions to C++ calls  │
+   │ Insert synchronization (auto-sync)   │
+   └─────────────────────────────────────┘
+        │
+        ▼
+   C++ kernel code
+   (calls pto-isa C++ intrinsics)
+        │
+        ▼
+   bisheng (or backend C++ compiler)
+   ┌─────────────────────────────────────┐
+   │ Compile to target binary             │
+   │ Target: A2/A3 (Ascend 2/3-class)   │
+   │ Target: A5 (Ascend 9xx-class)       │
+   │ Target: CPU simulator                │
+   └─────────────────────────────────────┘
+        │
+        ▼
+   Binary
+</code></pre>
+<p><strong>Who uses this flow:</strong> Compiler developers, library authors, high-level framework integrators. The <code>.pto</code> text format is portable and can be cached/distributed as bytecode.</p>
+<h3 id="flow-b-direct-assemble-ptoas-binary">Flow B: Direct Assemble (ptoas → binary)<a class="headerlink" href="#flow-b-direct-assemble-ptoas-binary" title="Permanent link">&para;</a></h3>
+<p>PTO programs can also be assembled directly to binary via <code>ptoas</code> with an appropriate backend target. This bypasses the C++ intermediate step.</p>
+<pre><code>High-level Frontend
+(TileLang, PyPTO, C/C++, ...)
+        │
+        ▼
+   .pto file
+   (PTO program text)
+        │
+        ▼
+   ptoas --target=a3|a5|cpu
+   ┌─────────────────────────────────────┐
+   │ Parse, validate, lower to binary     │
+   │ Directly emit target instructions    │
+   └─────────────────────────────────────┘
+        │
+        ▼
+   Binary
+</code></pre>
+<p><strong>Who uses this flow:</strong> Performance engineers who need direct control over the final instruction stream, or toolchains that embed <code>ptoas</code> as a pure assembler without a full C++ toolchain.</p>
+<h3 id="which-flow-to-use">Which Flow to Use<a class="headerlink" href="#which-flow-to-use" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Criterion</th>
+<th>Flow A (ptoas → C++ → bisheng)</th>
+<th>Flow B (ptoas → binary)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Debugging</td>
+<td>Full C++ debugging available</td>
+<td>Binary only</td>
+</tr>
+<tr>
+<td>Portability</td>
+<td>C++ code is source portable</td>
+<td>Binary is target-specific</td>
+</tr>
+<tr>
+<td>Integration</td>
+<td>Easy with existing C++ codebases</td>
+<td>Requires custom binary packaging</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Depends on C++ compiler</td>
+<td>Direct, predictable instruction stream</td>
+</tr>
+<tr>
+<td>Typical user</td>
+<td>Library authors, compiler devs</td>
+<td>Kernel engineers, performance tuners</td>
+</tr>
+</tbody>
+</table>
+<h2 id="a-minimal-example">A Minimal Example<a class="headerlink" href="#a-minimal-example" title="Permanent link">&para;</a></h2>
+<p>The smallest end-to-end PTO program loads two tiles from global memory, adds them element-wise, and stores the result:</p>
+<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&amp; ga,
+             const GlobalTensor&lt;float&gt;&amp; gb) {
+    Tile&lt;float, 16, 16&gt; a, b;
+    TLOAD(a, ga);           // Load from global memory
+    TLOAD(b, gb);           // Load from global memory
+    TADD(c, a, b);          // Element-wise addition
+    TSTORE(gc, c);          // Store to global memory
+}
+</code></pre>
+<p>Even this fragment depends on valid regions, dtype and layout rules, and explicit data movement — ideas the manual unpacks in the programming model, machine model, and per-instruction reference.</p>
+<h2 id="key-terms">Key Terms<a class="headerlink" href="#key-terms" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PTO</strong></td>
+<td>The programming and instruction model built around tiles, explicit data movement, explicit synchronization, and machine-visible execution structure</td>
+</tr>
+<tr>
+<td><strong>PTO ISA</strong></td>
+<td>The instruction set architecture defined by this manual</td>
+</tr>
+<tr>
+<td><strong>PTO-AS</strong></td>
+<td>The textual assembly syntax for PTO ISA (e.g., <code>tadd %dst, %src0, %src1</code>)</td>
+</tr>
+<tr>
+<td><strong>ptoas</strong></td>
+<td>The assembler and optimizer tool that parses <code>.pto</code> files and lowers them to C++ or directly to binary</td>
+</tr>
+<tr>
+<td><strong>PTOBC</strong></td>
+<td>The bytecode representation used to package PTO programs for transport, caching, and distribution</td>
+</tr>
+<tr>
+<td><strong>Tile</strong></td>
+<td>A bounded multi-dimensional array fragment with shape, layout, and valid-region metadata that is architecturally visible</td>
+</tr>
+<tr>
+<td><strong>Valid Region</strong></td>
+<td>The subset of a tile's declared shape that contains meaningful data, expressed as <code>(Rv, Cv)</code> — valid rows and valid columns</td>
+</tr>
+<tr>
+<td><strong>Global Memory (GM)</strong></td>
+<td>Off-chip device memory (<code>__gm__</code> address space) shared by all blocks and accessible via <code>GlobalTensor</code> views</td>
+</tr>
+<tr>
+<td><strong>Unified Buffer (UB)</strong></td>
+<td>On-chip local memory (<code>!pto.ptr&lt;T, ub&gt;</code>) visible to a single AI Core; the staging ground for GM↔tile data movement</td>
+</tr>
+<tr>
+<td><strong>Tile Buffer</strong></td>
+<td>On-chip storage for a single Tile, partitioned by <code>TileType</code>: <code>Vec</code> (vector compute), <code>Mat</code> (matrix/CUBE compute), <code>Acc</code> (accumulator), <code>Scalar</code> (scalar tile)</td>
+</tr>
+<tr>
+<td><strong>Location Intent</strong></td>
+<td>The declared role of a tile operand: <code>Left</code> (LHS of matmul), <code>Right</code> (RHS), <code>Acc</code> (accumulator/output), <code>Vec</code> (general vector tile)</td>
+</tr>
+<tr>
+<td><strong>Block Layout (BLayout)</strong></td>
+<td>The in-memory storage order of a tile: <code>RowMajor</code> (row-major, C-contiguous) or <code>ColMajor</code> (column-major, Fortran-contiguous)</td>
+</tr>
+<tr>
+<td><strong>Stripe Layout (SLayout)</strong></td>
+<td>The layout of sub-elements within a tile: <code>NoneBox</code> (uniform rectangular), <code>RowMajor</code> (fractal/strided), <code>ColMajor</code> (fractal/strided)</td>
+</tr>
+<tr>
+<td><strong>Fractal Layout</strong></td>
+<td>A strided layout encoding non-uniform strides for 2D tiles: <code>NZ</code> (row-major fractal), <code>ZN</code> (col-major fractal), <code>FR</code> (row-fractal), <code>RN</code> (row-N-fractal)</td>
+</tr>
+<tr>
+<td><strong>TileType</strong></td>
+<td>Classification of tile buffer role: <code>Vec</code> (vector pipe), <code>Mat</code> (matrix/CUBE pipe), <code>Acc</code> (accumulator), <code>Scalar</code> (scalar tile), <code>Left</code>/<code>Right</code> (matmul operands)</td>
+</tr>
+<tr>
+<td><strong>MTE</strong></td>
+<td>DMA engine sub-unit: <code>MTE1</code> (GM→UB), <code>MTE2</code> (UB→GM for loads), <code>MTE3</code> (tile→GM for stores)</td>
+</tr>
+<tr>
+<td><strong>Target Profile</strong></td>
+<td>A concrete instantiation of PTO ISA for a specific backend: <code>CPU</code> (reference simulator), <code>A2/A3</code> (Ascend 2/3-class), <code>A5</code> (Ascend 9xx-class)</td>
+</tr>
+<tr>
+<td><strong>Instruction Surface</strong></td>
+<td>One of the four ISA surfaces: <code>pto.t*</code> (tile surface), <code>pto.v*</code> (vector micro-instruction surface), <code>pto.*</code> (scalar/control surface), collective ops (communication surface)</td>
+</tr>
+<tr>
+<td><strong>pto.t</strong>*</td>
+<td>The tile compute surface (<code>pto.tadd</code>, <code>pto.tmul</code>, etc.) that operates on tile buffers</td>
+</tr>
+<tr>
+<td><strong>pto.v</strong>*</td>
+<td>The low-level vector micro-instruction surface (<code>pto.v*</code>) that operates on vector registers after an explicit GM→UB→vector data flow</td>
+</tr>
+<tr>
+<td><strong>Element Type</strong></td>
+<td>The dtype of a tile's elements: floating-point (<code>f16</code>, <code>bf16</code>, <code>f32</code>, <code>f8e4m3</code>, <code>f8e5m2</code>), integer (<code>i8</code>–<code>i64</code>, <code>u8</code>–<code>u64</code>), or specialized (<code>hifloat8_t</code>, <code>float4_e*</code>)</td>
+</tr>
+<tr>
+<td><strong>Auto Mode</strong></td>
+<td>Execution mode where the compiler/runtime automatically inserts <code>TASSIGN</code>, <code>TSYNC</code>, and data-movement operations</td>
+</tr>
+<tr>
+<td><strong>Manual Mode</strong></td>
+<td>Execution mode where the author explicitly binds tile resources with <code>TASSIGN</code> and manages synchronization explicitly</td>
+</tr>
+<tr>
+<td><strong>pto.tget / TGET</strong></td>
+<td>Inter-NPU remote read: reads data from a remote NPU's GM to local GM. Both spellings (<code>pto.tget</code> in IR, <code>TGET</code> in C++) refer to the same operation.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="position-in-the-software-stack">Position In The Software Stack<a class="headerlink" href="#position-in-the-software-stack" title="Permanent link">&para;</a></h2>
+<p>PTO ISA sits between source-level frontends and target-specific lowering. Frontends and code generators target PTO ISA; target backends lower PTO ISA to CPU simulation or to supported Ascend NPU targets.</p>
+<pre><code>Source Languages
+(C/C++, Python, TileLang, PyPTO, code generators)
+        │
+        ▼
+   PTO instructions (.pto text)
+        │
+        ├──► ptoas ──► C++ ──► bisheng ──► binary  (Flow A)
+        │
+        └──► ptoas ──────────────────► binary        (Flow B)
+
+Targets: CPU simulation / A2-A3 / A5 / future Ascend NPUs
+</code></pre>
+<p>This structure gives the software stack one versioned instruction language even when native hardware instruction sets and low-level programming rules change across generations.</p>
+<h2 id="hierarchical-abstractions">Hierarchical Abstractions<a class="headerlink" href="#hierarchical-abstractions" title="Permanent link">&para;</a></h2>
+<p>PTO ISA uses <strong>hierarchical abstractions</strong> rather than one flat opcode space. The ISA is organized into four instruction surfaces:</p>
+<pre><code>PTO ISA
+├── Tile Surface (pto.t*)              Primary tile-oriented compute surface
+│   ├── Sync and Config                Resource binding, event setup, mode control
+│   ├── Elementwise Tile-Tile           Lane-wise binary and unary operations
+│   ├── Tile-Scalar and Immediate       Tile combined with scalar or immediate
+│   ├── Reduce and Expand             Row/column reductions and expansions
+│   ├── Memory and Data Movement       GM↔tile transfer, gather/scatter
+│   ├── Matrix and Matrix-Vector       GEMV, matmul, and variants
+│   ├── Layout and Rearrangement       Reshape, transpose, extract, insert
+│   └── Irregular and Complex          Sort, quantize, print, and others
+│
+├── Vector Surface (pto.v*)             Micro-instruction surface for vector pipe
+│   ├── Vector Load/Store              Predicate-based vector memory access
+│   ├── Unary Vector Ops              abs, neg, exp, sqrt, rec, relu, not, etc.
+│   ├── Binary Vector Ops             add, sub, mul, div, max, min, shl, shr, etc.
+│   ├── Vec-Scalar Ops                Vector combined with scalar operands
+│   ├── Conversion Ops                Type conversion between numeric types
+│   ├── Reduction Ops                 Cross-lane reductions (cadd, cmax, etc.)
+│   ├── Compare and Select            Comparison and conditional selection
+│   ├── Data Rearrangement            Interleave, slide, shift, permute, pack
+│   └── SFU and DSA Ops              Special function units and DSA ops
+│
+├── Scalar and Control Surface (pto.*)  State setup and control shell
+│   ├── Pipeline Sync                 Event and barrier synchronization
+│   ├── DMA Copy                     GM↔UB memory transfer configuration
+│   ├── Predicate Load/Store         Mask-based scalar memory access
+│   ├── Predicate Generation         pset, pge, plt, pand, por, pxor, pnot, etc.
+│   └── Shared Arithmetic/SCF         Scalar arithmetic and structured control flow
+│
+└── Communication Surface (pto.*)       Collective and runtime operations
+    ├── Collective Communication        TBROADCAST, TGET, TPUT, TREDUCE, etc.
+    └── Supporting Operations          TALIAS, TAXPY, TCONCAT, TFREE, etc.
+</code></pre>
+<p>The <strong>tile surface</strong> is the primary programming surface. The <strong>vector surface</strong> exists for fine-grained vector-pipe control. The <strong>scalar/control surface</strong> sets up the execution shell around tile payload regions. The <strong>communication surface</strong> handles inter-rank communication and runtime support.</p>
+<h2 id="machine-model">Machine Model<a class="headerlink" href="#machine-model" title="Permanent link">&para;</a></h2>
+<p>PTO programs run on a hierarchical execution structure:</p>
+<pre><code>Grid (whole kernel invocation)
+└── Block  (AI Core / NPU)
+    ├── Host Interface
+    ├── Scalar Unit          (control flow, address calculation)
+    ├── Unified Buffer (UB)  256 KB on-chip SRAM
+    ├── Tile Registers       (16×16 tile slots, typed by TileType)
+    │   ├── Vec slots   ──► Vector Pipeline (V)
+    │   ├── Mat slots   ──► Matrix Multiply Unit (M / CUBE)
+    │   └── Acc slots   ──► Accumulator output
+    ├── DMA Engine
+    │   ├── MTE1: GM ──► UB  (GM→UB, prefetch)
+    │   ├── MTE2: GM ──► UB  (GM→UB, load staging)
+    │   └── MTE3: UB ──► GM  (UB→GM, store)
+    └── Vector Pipeline (V)  (unary/binary/reduce on vector regs)
+</code></pre>
+<h3 id="execution-hierarchy">Execution Hierarchy<a class="headerlink" href="#execution-hierarchy" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Description</th>
+<th>PTO Visibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Grid</strong></td>
+<td>Entire kernel invocation across all participating AI Cores</td>
+<td><code>GetBlockNum()</code>, <code>GetBlockIdx()</code></td>
+</tr>
+<tr>
+<td><strong>Block</strong></td>
+<td>Single AI Core with local UB, tile regs, and compute units</td>
+<td><code>GetSubBlockNum()</code>, <code>GetSubBlockIdx()</code></td>
+</tr>
+<tr>
+<td><strong>Tile Buffer</strong></td>
+<td>Per-core on-chip storage for one tile (typed by <code>TileType</code>)</td>
+<td><code>!pto.tile_buf&lt;...&gt;</code></td>
+</tr>
+<tr>
+<td><strong>Vector Register</strong></td>
+<td>Per-lane on-chip storage for vector compute (N lanes)</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+</tr>
+<tr>
+<td><strong>Unified Buffer (UB)</strong></td>
+<td>On-chip staging area shared by all tile buffers and vector regs</td>
+<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
+</tr>
+<tr>
+<td><strong>Global Memory (GM)</strong></td>
+<td>Off-chip device memory shared by all AI Cores</td>
+<td><code>__gm__ T*</code>, <code>!pto.partition_tensor_view&lt;...&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="target-profiles">Target Profiles<a class="headerlink" href="#target-profiles" title="Permanent link">&para;</a></h3>
+<p>PTO ISA is instantiated by concrete <strong>target profiles</strong> that narrow the ISA to the capabilities of a specific backend. Profiles do NOT introduce new ISA semantics; they only restrict which subsets are available.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th style="text-align: center;">CPU Simulator</th>
+<th style="text-align: center;">A2/A3 Profile</th>
+<th style="text-align: center;">A5 Profile</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tile surface (<code>pto.t*</code>)</td>
+<td style="text-align: center;">Full</td>
+<td style="text-align: center;">Full</td>
+<td style="text-align: center;">Full</td>
+</tr>
+<tr>
+<td>Vector surface (<code>pto.v*</code>)</td>
+<td style="text-align: center;">Emulated</td>
+<td style="text-align: center;">Emulated</td>
+<td style="text-align: center;">Full</td>
+</tr>
+<tr>
+<td>Matmul / CUBE ops</td>
+<td style="text-align: center;">Software fallback</td>
+<td style="text-align: center;">Hardware</td>
+<td style="text-align: center;">Hardware</td>
+</tr>
+<tr>
+<td>MX format (int8→acc int32)</td>
+<td style="text-align: center;">Not applicable</td>
+<td style="text-align: center;">Not applicable</td>
+<td style="text-align: center;">Supported</td>
+</tr>
+<tr>
+<td>Fractal layout (NZ/ZN/FR/RN)</td>
+<td style="text-align: center;">Simulated</td>
+<td style="text-align: center;">Simulated</td>
+<td style="text-align: center;">Full</td>
+</tr>
+<tr>
+<td>UB size</td>
+<td style="text-align: center;">Configurable</td>
+<td style="text-align: center;">256 KB/core</td>
+<td style="text-align: center;">256 KB/core</td>
+</tr>
+<tr>
+<td>Vector width (f32 / f16,bf16 / i8)</td>
+<td style="text-align: center;">N=64 / N=128 / N=256</td>
+<td style="text-align: center;">N=64 / N=128 / N=256</td>
+<td style="text-align: center;">N=64 / N=128 / N=256</td>
+</tr>
+<tr>
+<td>FP8 types (e4m3 / e5m2)</td>
+<td style="text-align: center;">Not supported</td>
+<td style="text-align: center;">Not supported</td>
+<td style="text-align: center;">Supported</td>
+</tr>
+<tr>
+<td>Vector unaligned store (<code>vstu</code>)</td>
+<td style="text-align: center;">Not supported</td>
+<td style="text-align: center;">Not supported</td>
+<td style="text-align: center;">Supported</td>
+</tr>
+<tr>
+<td>Block-scoped collective comm</td>
+<td style="text-align: center;">Not supported</td>
+<td style="text-align: center;">Supported</td>
+<td style="text-align: center;">Supported</td>
+</tr>
+</tbody>
+</table>
+<h2 id="instruction-syntax-overview">Instruction Syntax Overview<a class="headerlink" href="#instruction-syntax-overview" title="Permanent link">&para;</a></h2>
+<p>PTO instructions use a consistent textual syntax. Three forms are commonly shown:</p>
+<h3 id="assembly-form-pto-as">Assembly Form (PTO-AS)<a class="headerlink" href="#assembly-form-pto-as" title="Permanent link">&para;</a></h3>
+<p>The human-readable assembly spelling — the preferred form for documentation and portable pseudocode:</p>
+<pre><code class="language-asm"># Scalar operand suffix: immediate added to each tile element
+tadds %dst, %src, 0x3F800000  : !pto.tile&lt;f32, 16, 16&gt;
+
+# Saturating carry variant
+taddc %dst, %src0, %src1       : !pto.tile&lt;f32, 16, 16&gt;
+
+# Tile with explicit memory operand: load from GlobalTensor view
+tload %tile, %gtensor[%r, %c]  : (!pto.tile&lt;f32,16,16&gt;, !pto.memref&lt;f32,1x16x16x16&gt;) -&gt; !pto.tile&lt;f32,16,16&gt;
+</code></pre>
+<h3 id="ssa-form-as-level-1">SSA Form (AS Level 1)<a class="headerlink" href="#ssa-form-as-level-1" title="Permanent link">&para;</a></h3>
+<p>MLIR-style SSA form with explicit types and a named result:</p>
+<pre><code class="language-mlir">// Tile compute: element-wise addition
+%dst = pto.tadd %src0, %src1 : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;
+
+// Tile load: from GlobalTensor partition view
+%tile = pto.tload %mem : !pto.partition_tensor_view&lt;1x1x1x16x16xf32&gt; -&gt; !pto.tile_buf&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+
+// Scalar tile comparison
+%cmp = pto.tcmps %src, 0 : !pto.tile&lt;f32, 16, 16&gt;, i32 -&gt; !pto.tile&lt;predicate, 16, 16&gt;
+</code></pre>
+<h3 id="dps-form-as-level-2">DPS Form (AS Level 2)<a class="headerlink" href="#dps-form-as-level-2" title="Permanent link">&para;</a></h3>
+<p>Functional-style form with explicit <code>ins(...)</code> and <code>outs(...)</code> blocks — closest to the C++ intrinsic surface:</p>
+<pre><code class="language-mlir">// Tile compute (DPS)
+pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
+          outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)
+
+// Tile load (DPS)
+pto.tload ins(%mem : !pto.partition_tensor_view&lt;1x1x1x16x16xf32&gt;)
+          outs(%tile : !pto.tile_buf&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;)
+
+// Tile store (DPS)
+pto.tstore ins(%tile : !pto.tile_buf&lt;f32, 16, 16&gt;)
+          outs(%mem : !pto.partition_tensor_view&lt;1x1x1x16x16xf32&gt;)
+</code></pre>
+<p>See <a href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a> for the full syntax specification.</p>
+<h2 id="tile-surface-and-vector-surface">Tile Surface And Vector Surface<a class="headerlink" href="#tile-surface-and-vector-surface" title="Permanent link">&para;</a></h2>
+<p>PTO distinguishes two complementary data-flow paths from GM to computed result. Both are architecturally visible; neither is a backend-only detail.</p>
+<h3 id="tile-surface-ptot">Tile Surface (pto.t*)<a class="headerlink" href="#tile-surface-ptot" title="Permanent link">&para;</a></h3>
+<p>The tile surface operates on tile buffers directly. The complete data path is:</p>
+<pre><code>GM ──(MTE2)──► UB ──(implicit)──► Tile Buffer ──(Tile Compute)──► Tile Buffer ──(MTE3)──► GM
+                      │                                                              ▲
+                      └──(vlds/vsts on vector surface before/after tile ops)─────────┘
+</code></pre>
+<ul>
+<li><code>TLOAD</code> copies data from GM into a tile buffer (via MTE2 → UB → tile)</li>
+<li>Tile compute (<code>TADD</code>, <code>TMATMUL</code>, etc.) operates directly on tile buffers</li>
+<li><code>TSTORE</code> copies data from a tile buffer to GM (via tile → MTE3 → UB → GM)</li>
+<li>Valid regions, layout, and tile type are explicit at every step</li>
+</ul>
+<h3 id="vector-surface-ptov">Vector Surface (pto.v*)<a class="headerlink" href="#vector-surface-ptov" title="Permanent link">&para;</a></h3>
+<p>The vector surface operates on vector registers after an explicit UB staging step. The data path is:</p>
+<pre><code>GM ──(copy_gm_to_ubuf)──► UB ──(vlds)──► Vector Register ──(Vector Compute)──► Vector Register ──(vsts)──► UB ──(copy_ubuf_to_gm)──► GM
+</code></pre>
+<ul>
+<li><code>copy_gm_to_ubuf</code> / <code>copy_ubuf_to_gm</code>: DMA engine moves data between GM and UB</li>
+<li><code>vlds</code> / <code>vsld</code> / <code>vgather2</code>: Vector load brings data from UB into vector registers</li>
+<li>Vector compute (<code>vadd</code>, <code>vmul</code>, etc.): operates on vector registers with predicate masking</li>
+<li><code>vsts</code> / <code>vsst</code> / <code>vscatter</code>: Vector store writes data from vector registers back to UB</li>
+<li>An explicit <code>sync</code> or <code>set_flag</code> / <code>wait_flag</code> sequence establishes producer-consumer ordering between DMA and vector compute</li>
+</ul>
+<h3 id="when-to-use-which-surface">When To Use Which Surface<a class="headerlink" href="#when-to-use-which-surface" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Tile Surface (<code>pto.t*</code>)</th>
+<th>Vector Surface (<code>pto.v*</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Typical use</td>
+<td>Dense tensor algebra, matmul, elementwise</td>
+<td>Fine-grained vector-pipe control, per-lane masking</td>
+</tr>
+<tr>
+<td>Data movement</td>
+<td>TLOAD/TSTORE (implicit tile↔UB)</td>
+<td>copy_gm_to_ubuf / copy_ubuf_to_gm + vlds/vsts</td>
+</tr>
+<tr>
+<td>Synchronization</td>
+<td>TSYNC, set_flag/wait_flag</td>
+<td>set_flag/wait_flag on vector pipe, mem_bar</td>
+</tr>
+<tr>
+<td>Layout control</td>
+<td>Via tile layout parameters</td>
+<td>Via distribution mode (NORM, BRC, DS, etc.)</td>
+</tr>
+<tr>
+<td>Predicate support</td>
+<td>No per-lane masking</td>
+<td>Yes — <code>%mask : !pto.mask</code> on every vector op</td>
+</tr>
+<tr>
+<td>Target portability</td>
+<td>All profiles</td>
+<td>A5 hardware; emulated on CPU/A2/A3</td>
+</tr>
+</tbody>
+</table>
+<h2 id="audience-who-reads-this-manual">Audience: Who Reads This Manual<a class="headerlink" href="#audience-who-reads-this-manual" title="Permanent link">&para;</a></h2>
+<p>This manual serves two primary audiences with different needs:</p>
+<h3 id="compiler-backend-developers">Compiler Backend Developers<a class="headerlink" href="#compiler-backend-developers" title="Permanent link">&para;</a></h3>
+<p>You are building or maintaining a compiler that targets PTO ISA. You need to understand:</p>
+<ul>
+<li>The complete instruction inventory and its legality rules</li>
+<li>How PTO-AS maps to your backend's native instructions</li>
+<li>Target profile restrictions (which ops are available on A2/A3 vs A5)</li>
+<li>Layout constraints (which tile layouts are legal for which operations)</li>
+<li>Synchronization contracts (when to insert <code>set_flag</code>/<code>wait_flag</code> pairs)</li>
+<li>The two compilation flows and when to use each</li>
+</ul>
+<h3 id="kernel-writers">Kernel Writers<a class="headerlink" href="#kernel-writers" title="Permanent link">&para;</a></h3>
+<p>You are writing PTO programs directly, either in C++ (using <code>pto-isa</code> intrinsics) or in <code>.pto</code> text (using <code>ptoas</code>). You need to understand:</p>
+<ul>
+<li>Tile and valid region semantics (what data is meaningful)</li>
+<li>The tile surface programming model (TLOAD, TSTORE, TADD, TMATMUL, etc.)</li>
+<li>GlobalTensor and memory layout (how data maps from GM to tiles)</li>
+<li>Auto vs. Manual mode (when the compiler helps vs. when you control everything)</li>
+<li>The synchronization model (TSYNC, set_flag/wait_flag, RecordEvent)</li>
+<li>Collective communication (<code>pto.tbroadcast</code>, <code>pto.tget</code>, <code>pto.tput</code>) for multi-NPU kernels</li>
+</ul>
+<h2 id="scope-of-this-manual">Scope Of This Manual<a class="headerlink" href="#scope-of-this-manual" title="Permanent link">&para;</a></h2>
+<p>This manual defines:</p>
+<ul>
+<li>The architecture-visible meaning of PTO instructions</li>
+<li>The programming model, machine model, and memory model of PTO ISA</li>
+<li>The distinction between tile, vector, scalar/control, and communication surfaces</li>
+<li>The boundary between core ISA guarantees and target-profile restrictions</li>
+</ul>
+<p>This manual is written for:</p>
+<ul>
+<li>Library and kernel authors</li>
+<li>Compiler and code generator developers</li>
+<li>Backend and runtime implementers</li>
+<li>Performance engineers</li>
+<li>Architecture and conformance test authors</li>
+</ul>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../document-structure/">Document structure</a> — Full chapter map</li>
+<li><a href="../goals-of-pto/">Goals Of PTO</a> — Design objectives</li>
+<li><a href="../design-goals-and-boundaries/">Scope And Boundaries</a> — ISA scope and boundaries</li>
+<li><a href="../pto-isa-version-1-0/">PTO ISA Version 1.0</a> — Version baseline decisions</li>
+<li><a href="../../programming-model/tiles-and-valid-regions/">Tiles And Valid Regions</a> — Tile semantics</li>
+<li><a href="../../programming-model/auto-vs-manual/">Auto Vs Manual</a> — Execution modes</li>
+<li><a href="../../reference/format-of-instruction-descriptions/">Format of instruction descriptions</a> — How individual opcode pages are structured</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../document-structure/" class="btn btn-neutral float-right" title="Document Structure">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/PTO-ISA/pto-isa" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+      <span><a href="../document-structure/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../../..";</script>
+    <script src="../../../../js/theme_extra.js"></script>
+    <script src="../../../../js/theme.js"></script>
+      <script src="../../../../assets/javascripts/mathjax.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../../../assets/javascripts/nav-collapse.js"></script>
+      <script src="../../../../assets/javascripts/language-switcher.js"></script>
+      <script src="../../../../assets/javascripts/site-chrome.js"></script>
+      <script src="../../../../assets/javascripts/nav-translator.js"></script>
+      <script src="../../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
