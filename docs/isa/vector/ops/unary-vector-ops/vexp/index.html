@@ -264,7 +264,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/reduce-and-expand/tcolsum/">pto.tcolsum</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TROWPROD/">pto.trowprod</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/reduce-and-expand/trowprod/">pto.trowprod</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/reduce-and-expand/tcolprod/">pto.tcolprod</a>
                 </li>
@@ -272,9 +272,9 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/reduce-and-expand/tcolmin/">pto.tcolmin</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TCOLARGMAX/">pto.tcolargmax</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/reduce-and-expand/tcolargmax/">pto.tcolargmax</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TCOLARGMIN/">pto.tcolargmin</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/reduce-and-expand/tcolargmin/">pto.tcolargmin</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/reduce-and-expand/trowmax/">pto.trowmax</a>
                 </li>
@@ -496,6 +496,18 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-semantics">C Semantics</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -509,11 +521,25 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-latency">A5 Latency</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-throughput">A2/A3 Throughput</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#softmax-numerator-numerically-stable">Softmax numerator (numerically stable)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#c-usage">C++ usage</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-family-links">Related Ops / Family Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
     </ul>
                 </li>
@@ -705,6 +731,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../sfu-and-dsa-ops/vsort32/">pto.vsort32</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../sfu-and-dsa-ops/vbitsort/">pto.vbitsort</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../sfu-and-dsa-ops/vmrgsort/">pto.vmrgsort</a>
                 </li>
     </ul>
@@ -843,27 +871,27 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../comm/">Communication Overview</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TBROADCAST_zh/">TBROADCAST</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TBROADCAST/">TBROADCAST</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TGET_zh/">TGET</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TGET/">TGET</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TGET_ASYNC_zh/">TGET_ASYNC</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TGET_ASYNC/">TGET_ASYNC</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TGATHER_zh/">TGATHER</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TGATHER/">TGATHER</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TNOTIFY_zh/">TNOTIFY</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TNOTIFY/">TNOTIFY</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TPUT_zh/">TPUT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TPUT/">TPUT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TPUT_ASYNC_zh/">TPUT_ASYNC</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TREDUCE_zh/">TREDUCE</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TREDUCE/">TREDUCE</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TSCATTER_zh/">TSCATTER</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TSCATTER/">TSCATTER</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TTEST_zh/">TTEST</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TTEST/">TTEST</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TWAIT_zh/">TWAIT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../comm/TWAIT/">TWAIT</a>
                 </li>
     </ul>
                   </li>
@@ -871,25 +899,25 @@
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../other/non-isa-and-supporting-ops/">Instruction Set Contract</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TALIAS_zh/">TALIAS</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../TALIAS/">TALIAS</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TAXPY_zh/">TAXPY</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../TAXPY/">TAXPY</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT_zh/">TCONCAT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT_zh/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT/">TDEQUANT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE_zh/">TFREE</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE/">TFREE</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../THISTOGRAM_zh/">THISTOGRAM</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../THISTOGRAM/">THISTOGRAM</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TPACK_zh/">TPACK</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../TPACK/">TPACK</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TPOP_zh/">TPOP</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../TPOP/">TPOP</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TPUSH_zh/">TPUSH</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../TPUSH/">TPUSH</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TRANDOM_zh/">TRANDOM</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../TRANDOM/">TRANDOM</a>
                 </li>
     </ul>
                   </li>
@@ -934,50 +962,243 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/vector/ops/unary-vector-ops/vexp.md` -->
+                <!-- Generated from `docs/isa/vector/ops/unary-vector-ops/vexp.md` -->
 
 <h1 id="ptovexp">pto.vexp<a class="headerlink" href="#ptovexp" title="Permanent link">&para;</a></h1>
-<p>Standalone reference page for <code>pto.vexp</code>. This page belongs to the <a href="../../../unary-vector-ops/">Unary Vector Ops</a> family in the PTO ISA manual.</p>
+<p>Standalone reference page for <code>pto.vexp</code>. This page belongs to the <a href="../../../unary-vector-ops/">Unary Vector Instructions</a> instruction set in the PTO ISA manual.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> holds <code>exp(input[i])</code> per active lane.</p>
+<p>Lane-wise exponential: computes <code>exp(src[i])</code> for each active lane. Active lanes compute <code>e^src[i]</code>; inactive lanes leave the destination register element unchanged.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vexp</code> is a <code>pto.v*</code> compute operation. It applies its semantics to active lanes, obeys the family operand model, and returns its results in vector-register or mask form.</p>
+<p><code>pto.vexp</code> is a <code>pto.v*</code> compute operation. It applies the exponential function to each active lane independently:</p>
+<p>For each lane <code>i</code> where the predicate mask bit is 1:</p>
+<div class="arithmatex">\[ \mathrm{dst}_i = \exp(\mathrm{src}_i) \]</div>
+<p>Active lanes (<code>mask[i] == 1</code>): the exponential is computed and written to <code>dst[i]</code>.</p>
+<p>Inactive lanes (<code>mask[i] == 0</code>): <code>dst[i]</code> is <strong>unmodified</strong> (preserves the prior value in the destination register).</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%result = pto.vexp %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%result = vexp %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask
 </code></pre>
-<p>Documented A5 types or forms: <code>f16, f32</code>.</p>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vexp %input, %mask : (!pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
+</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.vexp ins(%input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask)
+          outs(%result : !pto.vreg&lt;NxT&gt;)
+</code></pre>
+<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
+<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
+<pre><code class="language-cpp">template &lt;typename VecDst, typename VecSrc, typename MaskT, typename... WaitEvents&gt;
+PTO_INST RecordEvent VEXP(VecDst&amp; dst, const VecSrc&amp; src,
+                          const MaskT&amp; mask, WaitEvents&amp;... events);
+</code></pre>
+<h2 id="c-semantics">C Semantics<a class="headerlink" href="#c-semantics" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    if (mask[i])
+        dst[i] = expf(src[i]);
+    // else: dst[i] unchanged
+</code></pre>
+<p>Where <code>N</code> is the vector lane count determined by the element type:</p>
+<table>
+<thead>
+<tr>
+<th>Element Type</th>
+<th style="text-align: center;">Lanes (N)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code></td>
+<td style="text-align: center;">64</td>
+<td></td>
+</tr>
+<tr>
+<td><code>f16</code>, <code>bf16</code></td>
+<td style="text-align: center;">128</td>
+<td></td>
+</tr>
+<tr>
+<td><code>i8</code>, <code>u8</code></td>
+<td style="text-align: center;">256</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%input</code> is the source vector and <code>%mask</code> selects active lanes.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%input</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Source vector register; holds the input values</td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>Predicate mask; lanes where mask bit is 1 are active</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> holds <code>exp(input[i])</code> per active lane.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Destination vector register; holds <code>exp(input[i])</code> on active lanes; inactive lanes are unmodified</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
+<p>None. This operation has no architectural side effects beyond producing its destination vector register. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Only floating-point element types are legal.</p>
+<ul>
+<li><strong>Type match</strong>: Source and destination registers MUST have identical element types.</li>
+<li><strong>Width match</strong>: Source and destination registers MUST have the same vector width <code>N</code>.</li>
+<li><strong>Mask width</strong>: Mask width MUST equal <code>N</code> (logical lane count).</li>
+<li><strong>Active lanes</strong>: Only lanes where <code>mask[i] == 1</code> participate in the computation.</li>
+<li><strong>Inactive lanes</strong>: Destination elements at inactive lanes are <strong>unmodified</strong> — do not assume they are zeroed.</li>
+<li><strong>Domain</strong>: Input values follow the floating-point exception rules of the target profile for overflow, underflow, and NaN.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected family or target profile.</li>
-<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
+<li>The verifier rejects illegal operand type mismatches, width mismatches, or mask width mismatches.</li>
+<li>Overflow and NaN behavior is target-defined; code MUST NOT rely on specific exceptional values unless explicitly documented.</li>
+<li>Any additional illegality stated in the <a href="../../../unary-vector-ops/">Unary Vector Instructions</a> instruction set overview page is part of the contract.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Documented A5 coverage: <code>f16, f32</code>.</li>
-<li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on a family-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>Element Type</th>
+<th style="text-align: center;">CPU Simulator</th>
+<th style="text-align: center;">A2/A3</th>
+<th style="text-align: center;">A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code></td>
+<td style="text-align: center;">Simulated</td>
+<td style="text-align: center;">Simulated</td>
+<td style="text-align: center;">Supported</td>
+</tr>
+<tr>
+<td><code>f16</code></td>
+<td style="text-align: center;">Simulated</td>
+<td style="text-align: center;">Simulated</td>
+<td style="text-align: center;">Supported</td>
+</tr>
+</tbody>
+</table>
+<p>A5 is the primary concrete profile for vector transcendental operations. CPU simulation and A2/A3-class targets emulate <code>pto.v*</code> transcendental operations using scalar loops while preserving the visible PTO contract.</p>
+<h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
+<h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Element Type</th>
+<th>Latency (cycles)</th>
+<th>A5 RV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code></td>
+<td>16</td>
+<td><code>RV_VEXP</code></td>
+</tr>
+<tr>
+<td><code>f16</code></td>
+<td>21</td>
+<td><code>RV_VEXP</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a2a3-throughput">A2/A3 Throughput<a class="headerlink" href="#a2a3-throughput" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value (f32)</th>
+<th>Value (f16)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Startup latency</td>
+<td>13 (<code>A2A3_STARTUP_REDUCE</code>)</td>
+<td>13</td>
+</tr>
+<tr>
+<td>Completion latency</td>
+<td>26 (<code>A2A3_COMPL_FP32_EXP</code>)</td>
+<td>28 (<code>A2A3_COMPL_FP16_EXP</code>)</td>
+</tr>
+<tr>
+<td>Per-repeat throughput</td>
+<td>2</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Pipeline interval</td>
+<td>18</td>
+<td>18</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong>: 1024 f32 elements with 16 iterations:</p>
+<pre><code>A5 (pipelined): 16 + 15×2 = 46 cycles
+A2/A3: 13 + 26 + 32 + 270 = 341 cycles
+</code></pre>
+<p><strong>Performance note</strong>: For numerically stable softmax, prefer <code>vexpdiff</code> (fused exp-diff) over <code>vexp</code> + <code>vsub</code> since it avoids a separate max-subtraction kernel and has better combined throughput.</p>
+<hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = expf(src[i]);
+<h3 id="softmax-numerator-numerically-stable">Softmax numerator (numerically stable)<a class="headerlink" href="#softmax-numerator-numerically-stable" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">// Softmax: exp(x - max) for numerical stability
+%max_bc = pto.vlds %ub_max[%c0] {dist = &quot;BRC&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+%sub = pto.vsub %x, %max_bc, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+%exp = pto.vexp %sub, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<h3 id="c-usage">C++ usage<a class="headerlink" href="#c-usage" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+void exp_vector(VReg&lt;64, float&gt;&amp; dst, const VReg&lt;64, float&gt;&amp; src, Mask&lt;64&gt;&amp; mask) {
+    VEXP(dst, src, mask);
+}
 </code></pre>
 <h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = expf(src[i]);
-</code></pre>
-<h2 id="related-ops-family-links">Related Ops / Family Links<a class="headerlink" href="#related-ops-family-links" title="Permanent link">&para;</a></h2>
+<p>The exponential function <code>exp(x)</code> computes <code>e^x</code> where <code>e ≈ 2.71828</code>. On floating-point targets:</p>
 <ul>
-<li>Family overview: <a href="../../../unary-vector-ops/">Unary Vector Ops</a></li>
-<li>Previous op in family: <a href="../vneg/">pto.vneg</a></li>
-<li>Next op in family: <a href="../vln/">pto.vln</a></li>
+<li><code>exp(+INF) = +INF</code></li>
+<li><code>exp(-INF) = +0</code></li>
+<li><code>exp(NaN) = NaN</code></li>
+<li>Very large positive inputs may overflow to <code>+INF</code></li>
+<li>Very large negative inputs may underflow to <code>+0</code></li>
+</ul>
+<p>For numerically stable softmax, prefer computing <code>exp(x - max(x))</code> rather than <code>exp(x)</code> directly to avoid overflow.</p>
+<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Instruction set overview: <a href="../../../unary-vector-ops/">Unary Vector Instructions</a></li>
+<li>Previous op in instruction set: <a href="../vneg/">pto.vneg</a></li>
+<li>Next op in instruction set: <a href="../vln/">pto.vln</a></li>
+<li>Vector instruction overview: <a href="../../instruction-surfaces/vector-instructions.md">Vector Instructions</a></li>
+<li>Type system: <a href="../../state-and-types/type-system.md">Type System</a></li>
 </ul>
               
             </div>
@@ -1026,6 +1247,7 @@
       <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       <script src="../../../../../../assets/javascripts/nav-collapse.js"></script>
       <script src="../../../../../../assets/javascripts/language-switcher.js"></script>
+      <script src="../../../../../../assets/javascripts/pto-syntax.js"></script>
       <script src="../../../../../../assets/javascripts/site-chrome.js"></script>
       <script src="../../../../../../assets/javascripts/nav-translator.js"></script>
       <script src="../../../../../../search/main.js"></script>
