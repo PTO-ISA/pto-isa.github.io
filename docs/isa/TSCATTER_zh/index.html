@@ -910,87 +910,13 @@
               
                 <!-- Generated from `docs/isa/TSCATTER_zh.md` -->
 
-<h1 id="tscatter">TSCATTER<a class="headerlink" href="#tscatter" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSCATTER tile operation" src="../../figures/isa/TSCATTER.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>使用逐元素行索引将源 Tile 的行散播到目标 Tile 中。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个源元素 <code>(i, j)</code>, let <code>k = idx[i,j]</code> and write:</p>
-<div class="arithmatex">\[ \mathrm{dst\_flat}_{k} = \mathrm{src}_{i,j} \]</div>
-<p>Here <code>dst_flat</code> denotes the destination tile viewed as a single linear storage sequence. <code>TSCATTER</code> does <strong>not</strong> interpret <code>idx[i,j]</code> as a destination row selector. On the standard row-major tile layout, this is equivalent to writing the <code>k</code>-th flattened destination element.</p>
-<p>If multiple elements map to the same destination location, the final value is implementation-defined (last writer wins in the current implementation).</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = tscatter %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tscatter %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tscatter ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename TileDataI, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSCATTER(TileDataD &amp;dst, TileDataS &amp;src, TileDataI &amp;indexes, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotscatter">pto.tscatter<a class="headerlink" href="#ptotscatter" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/irregular-and-complex/tscatter_zh/">pto.tscatter</a>。</p>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
-<li><code>TileDataD::Loc</code>, <code>TileDataS::Loc</code>, <code>TileDataI::Loc</code> must be <code>TileType::Vec</code>.</li>
-<li><code>TileDataD::DType</code>, <code>TileDataS::DType</code> must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>int8_t</code>, <code>half</code>, <code>float32_t</code>, <code>uint32_t</code>, <code>uint16_t</code>, <code>uint8_t</code>, <code>bfloat16_t</code>.</li>
-<li><code>TileDataI::DType</code> must be one of: <code>int16_t</code>, <code>int32_t</code>, <code>uint16_t</code> or <code>uint32_t</code>.</li>
-<li><code>indexes</code> values are interpreted as flattened destination element offsets in destination tile storage order.</li>
-<li>No bounds checks are enforced on <code>indexes</code> values.</li>
-<li>Static valid bounds: <code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>, <code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>, <code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>, <code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>, <code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>, <code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>.</li>
-<li><code>TileDataD::DType</code> and <code>TileDataS::DType</code> must be the same.</li>
-<li>When size of <code>TileDataD::DType</code> is 4 bytes, the size of <code>TileDataI::DType</code> must be 4 bytes.</li>
-<li>When size of <code>TileDataD::DType</code> is 2 bytes, the size of <code>TileDataI::DType</code> must be 2 bytes.</li>
-<li>When size of <code>TileDataD::DType</code> is 1 bytes, the size of <code>TileDataI::DType</code> must be 2 bytes.</li>
-<li><strong>实现检查 (A5)</strong>:</li>
-<li><code>TileDataD::Loc</code>, <code>TileDataS::Loc</code>, <code>TileDataI::Loc</code> must be <code>TileType::Vec</code>.</li>
-<li><code>TileDataD::DType</code>, <code>TileDataS::DType</code> must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>int8_t</code>, <code>half</code>, <code>float32_t</code>, <code>uint32_t</code>, <code>uint16_t</code>, <code>uint8_t</code>, <code>bfloat16_t</code>.</li>
-<li><code>TileDataI::DType</code> must be one of: <code>int16_t</code>, <code>int32_t</code>, <code>uint16_t</code> or <code>uint32_t</code>.</li>
-<li><code>indexes</code> values are interpreted as flattened destination element offsets in destination tile storage order.</li>
-<li>No bounds checks are enforced on <code>indexes</code> values.</li>
-<li>Static valid bounds: <code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>, <code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>, <code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>, <code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>, <code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>, <code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>.</li>
-<li><code>TileDataD::DType</code> and <code>TileDataS::DType</code> must be the same.</li>
-<li>When size of <code>TileDataD::DType</code> is 4 bytes, the size of <code>TileDataI::DType</code> must be 4 bytes.</li>
-<li>When size of <code>TileDataD::DType</code> is 2 bytes, the size of <code>TileDataI::DType</code> must be 2 bytes.</li>
-<li>When size of <code>TileDataD::DType</code> is 1 bytes, the size of <code>TileDataI::DType</code> must be 2 bytes.</li>
+<li>指令集：<a href="../tile/irregular-and-complex_zh/">不规则与复杂指令集</a></li>
+<li>规范页：<a href="../tile/ops/irregular-and-complex/tscatter_zh/">pto.tscatter</a></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using IdxT = Tile&lt;TileType::Vec, uint16_t, 16, 16&gt;;
-  TileT src, dst;
-  IdxT idx;
-  TSCATTER(dst, src, idx);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using IdxT = Tile&lt;TileType::Vec, uint16_t, 16, 16&gt;;
-  TileT src, dst;
-  IdxT idx;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TASSIGN(idx, 0x3000);
-  TSCATTER(dst, src, idx);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

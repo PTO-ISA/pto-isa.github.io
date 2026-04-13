@@ -910,85 +910,13 @@
               
                 <!-- Generated from `docs/isa/TABS_zh.md` -->
 
-<h1 id="tabs">TABS<a class="headerlink" href="#tabs" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TABS tile operation" src="../../figures/isa/TABS.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>Tile 的逐元素绝对值。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
-<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \left|\mathrm{src}_{i,j}\right| \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = tabs %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tabs %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tabs ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tabs %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tabs ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TABS(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotabs">pto.tabs<a class="headerlink" href="#ptotabs" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/elementwise-tile-tile/tabs_zh/">pto.tabs</a>。</p>
 <ul>
-<li><strong>实现检查 (CPU sim)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>int</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>The implementation iterates over <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code>.</li>
+<li>指令集：<a href="../tile/elementwise-tile-tile_zh/">逐元素 Tile-Tile 指令集</a></li>
+<li>规范页：<a href="../tile/ops/elementwise-tile-tile/tabs_zh/">pto.tabs</a></li>
 </ul>
-</li>
-<li><strong>实现检查 (Costmodel)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>uint8_t</code>、<code>half</code>、<code>float</code>.</li>
-</ul>
-</li>
-<li><strong>实现检查 (NPU)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>float</code> or <code>half</code>;</li>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>);</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>;</li>
-<li>Runtime: <code>src.GetValidRow() == dst.GetValidRow()</code> and <code>src.GetValidCol() == dst.GetValidCol()</code>;</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
-</ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT src, dst;
-  TABS(dst, src);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT src, dst;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TABS(dst, src);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

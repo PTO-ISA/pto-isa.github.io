@@ -908,18 +908,82 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/scalar/predicate-load-store_zh.md` -->
+                <!-- Generated from `docs/isa/scalar/predicate-load-store_zh.md` -->
 
-<h1 id="predicate-load-store">Predicate Load Store<a class="headerlink" href="#predicate-load-store" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">谓词加载存储<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>谓词加载存储指令集在 UB 可见存储与架构谓词指令集之间搬运 <code>!pto.mask</code> 状态。谓词是 <code>pto.v*</code> 向量操作消费的 lane mask 机制。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>谓词状态属于标量与控制指令集。<code>pld*</code> / <code>pst*</code> 操作在 UB 与谓词寄存器之间搬运位图，使谓词可以跨 kernel 持久化或与标量地址计算共享。</p>
+<h3 id="_3">数据流<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">Predicate Register File -&gt; UB
+UB -&gt; Predicate Register File
+</code></pre>
+<h3 id="_4">谓词宽度<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th style="text-align: center;">向量宽度 N</th>
+<th style="text-align: center;">谓词宽度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f32</td>
+<td style="text-align: center;">64</td>
+<td style="text-align: center;">64 bits</td>
+</tr>
+<tr>
+<td>f16 / bf16</td>
+<td style="text-align: center;">128</td>
+<td style="text-align: center;">128 bits</td>
+</tr>
+<tr>
+<td>i8 / u8</td>
+<td style="text-align: center;">256</td>
+<td style="text-align: center;">256 bits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_5">对齐要求<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>对齐要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>plds</code> / <code>psts</code></td>
+<td>64-bit 对齐</td>
+</tr>
+<tr>
+<td><code>pld</code> / <code>pst</code></td>
+<td>基址和偏移都必须满足 64-bit 对齐</td>
+</tr>
+<tr>
+<td><code>pldi</code> / <code>psti</code></td>
+<td>立即数偏移必须合法且满足对齐</td>
+</tr>
+<tr>
+<td><code>pstu</code></td>
+<td>不要求首地址对齐，但会维护内部 alignment state</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">共享约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../predicate-load-store/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li>指针必须位于 UB 地址空间</li>
+<li>搬运覆盖完整谓词宽度，不支持部分传输</li>
+<li>与 DMA 或向量计算形成依赖链时，必须显式建立顺序边</li>
+<li>任一时刻架构上只能有合法的活动谓词状态</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../control-and-configuration_zh/">控制与配置</a></li>
+<li><a href="../predicate-generation-and-algebra_zh/">谓词生成与代数</a></li>
+</ul>
               
             </div>
           </div><footer>

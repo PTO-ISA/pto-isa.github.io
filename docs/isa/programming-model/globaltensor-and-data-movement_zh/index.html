@@ -908,20 +908,333 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/programming-model/globaltensor-and-data-movement_zh.md` -->
+                <!-- Generated from `docs/isa/programming-model/globaltensor-and-data-movement_zh.md` -->
 
-<h1 id="globaltensor-and-data-movement">GlobalTensor And Data Movement<a class="headerlink" href="#globaltensor-and-data-movement" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="globaltensor">GlobalTensor 与数据搬运<a class="headerlink" href="#globaltensor" title="Permanent link">&para;</a></h1>
+<p>PTO 不隐藏全局内存与本地执行状态之间的数据移动。<code>GlobalTensor</code> 是面向 GM 的架构可见对象，数据移动操作定义了数据何时进入或离开局部有效载荷指令集。下文给出 GM 侧类型以及通向 tile buffer 与向量寄存器的完整路径。</p>
+<h2 id="globaltensor_1">GlobalTensor<a class="headerlink" href="#globaltensor_1" title="Permanent link">&para;</a></h2>
+<h3 id="_1">模板签名<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">GlobalTensor&lt;DType, Shape, Stride, Layout&gt;
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DType</code></td>
+<td>C++ type</td>
+<td>元素类型</td>
+</tr>
+<tr>
+<td><code>Shape</code></td>
+<td><code>Shape&lt;ND&gt;()</code></td>
+<td>N 维 shape</td>
+</tr>
+<tr>
+<td><code>Stride</code></td>
+<td><code>Stride&lt;ND&gt;()</code></td>
+<td>各维 stride</td>
+</tr>
+<tr>
+<td><code>Layout</code></td>
+<td>enum</td>
+<td><code>ND</code>、<code>DN</code>、<code>NZ</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>GlobalTensor</code> 是 <code>__gm__</code> 内存的带元数据视图，而不是存储本体。</p>
+<h3 id="globaltensor-partitiontensorview">GlobalTensor 与 PartitionTensorView<a class="headerlink" href="#globaltensor-partitiontensorview" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+<th>用法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GlobalTensor</code></td>
+<td>C++ API 里的 GM 视图</td>
+<td>C++ kernel</td>
+</tr>
+<tr>
+<td><code>!pto.partition_tensor_view&lt;...&gt;</code></td>
+<td>SSA/IR 里的 GM 分区描述</td>
+<td>PTO-AS / MLIR</td>
+</tr>
+<tr>
+<td><code>!pto.memref&lt;...&gt;</code></td>
+<td>更低层的标准 memref 形式</td>
+<td>Lowered 形式</td>
+</tr>
+</tbody>
+</table>
+<p><code>partition_tensor_view</code> 通常以 5D 形式描述 <code>(B, H, W, R, C)</code>。</p>
+<h3 id="layout">支持的 Layout<a class="headerlink" href="#layout" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Layout</th>
+<th>Stride Pattern</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ND</code></td>
+<td>row-major</td>
+<td>默认形式</td>
+</tr>
+<tr>
+<td><code>DN</code></td>
+<td>column-major</td>
+<td>列优先形式</td>
+</tr>
+<tr>
+<td><code>NZ</code></td>
+<td>分形 row-major stride</td>
+<td>用于分形 tile 兼容</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tile">Tile 指令的数据路径<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h2>
+<p>Tile 指令通过 MTE2/MTE3 在 GM 与 tile buffer 之间搬运数据：</p>
+<pre><code class="language-text">GM -&gt; UB -&gt; Tile Buffer -&gt; Tile Compute -&gt; Tile Buffer -&gt; UB -&gt; GM
+</code></pre>
+<h3 id="tload">TLOAD<a class="headerlink" href="#tload" title="Permanent link">&para;</a></h3>
+<p><code>TLOAD</code> 把 <code>GlobalTensor</code> 中的数据搬进 tile buffer：</p>
+<pre><code class="language-text">dst[i, j] = src[r0 + i, c0 + j]
+</code></pre>
+<p>其中 <code>r0</code>、<code>c0</code> 由 <code>GlobalTensor</code> 的 shape/stride 与 tile 的 valid region 推导。</p>
+<p><strong>传输大小</strong>：</p>
+<pre><code class="language-text">dst.GetValidRow() × dst.GetValidCol()
+</code></pre>
+<p><strong>约束</strong>：</p>
 <ul>
-<li><a href="../globaltensor-and-data-movement/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../manual/03-state-and-types_zh/">中文章节手册状态与类型</a></li>
-<li><a href="../../../../manual/04-tiles-and-globaltensor_zh/">中文章节手册 Tile 与 GlobalTensor</a></li>
-<li><a href="../../../../manual/08-programming_zh/">中文章节手册编程指南</a></li>
+<li>源 dtype 大小必须等于目标 dtype 大小</li>
+<li>布局必须兼容</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h3 id="tstore">TSTORE<a class="headerlink" href="#tstore" title="Permanent link">&para;</a></h3>
+<p><code>TSTORE</code> 把 tile buffer 中的数据写回 <code>GlobalTensor</code>：</p>
+<pre><code class="language-text">dst[r0 + i, c0 + j] = src[i, j]
+</code></pre>
+<p>其中 <code>i ∈ [0, src.GetValidRow())</code>，<code>j ∈ [0, src.GetValidCol())</code>。</p>
+<h3 id="store">原子 Store 变体<a class="headerlink" href="#store" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>AtomicType</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AtomicNone</code></td>
+<td>普通覆盖写入</td>
+</tr>
+<tr>
+<td><code>AtomicAdd</code></td>
+<td>原子加</td>
+</tr>
+<tr>
+<td><code>AtomicMax</code></td>
+<td>原子最大值</td>
+</tr>
+<tr>
+<td><code>AtomicMin</code></td>
+<td>原子最小值</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">向量指令的数据路径<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>向量指令先经过显式的 GM↔UB DMA，再做 UB↔向量寄存器的搬运：</p>
+<pre><code class="language-text">GM -&gt; copy_gm_to_ubuf -&gt; UB -&gt; vlds/vgather2 -&gt; vreg -&gt; vector compute
+vreg -&gt; vsts/vscatter -&gt; UB -&gt; copy_ubuf_to_gm -&gt; GM
+</code></pre>
+<h3 id="dma">DMA 拷贝操作<a class="headerlink" href="#dma" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>方向</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>copy_gm_to_ubuf</code></td>
+<td>GM → UB</td>
+<td>从 GM 复制到 UB 暂存区</td>
+</tr>
+<tr>
+<td><code>copy_ubuf_to_gm</code></td>
+<td>UB → GM</td>
+<td>从 UB 回写到 GM</td>
+</tr>
+<tr>
+<td><code>copy_ubuf_to_ubuf</code></td>
+<td>UB → UB</td>
+<td>UB 内复制，常见于双缓冲</td>
+</tr>
+</tbody>
+</table>
+<p>这些操作本身不隐式同步。向量计算真正使用数据前，需要显式 <code>set_flag</code> / <code>wait_flag</code> 或等价顺序边。</p>
+<h3 id="vector-loadstore">Vector Load/Store<a class="headerlink" href="#vector-loadstore" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>路径</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vlds</code></td>
+<td>UB → vreg</td>
+<td>标准向量加载</td>
+</tr>
+<tr>
+<td><code>vsld</code></td>
+<td>vreg → UB</td>
+<td>标准向量存储</td>
+</tr>
+<tr>
+<td><code>vgather2</code></td>
+<td>UB → vreg</td>
+<td>gather / stride 加载</td>
+</tr>
+<tr>
+<td><code>vscatter</code></td>
+<td>vreg → UB</td>
+<td>scatter 存储</td>
+</tr>
+</tbody>
+</table>
+<h4 id="_3">常见分布模式<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NORM</code></td>
+<td>连续加载</td>
+</tr>
+<tr>
+<td><code>BRC_B8/B16/B32</code></td>
+<td>广播</td>
+</tr>
+<tr>
+<td><code>US_B8/B16</code></td>
+<td>上采样</td>
+</tr>
+<tr>
+<td><code>DS_B8/B16</code></td>
+<td>下采样</td>
+</tr>
+<tr>
+<td><code>UNPK_B8/B16/B32</code></td>
+<td>unpack / 零扩展</td>
+</tr>
+<tr>
+<td><code>DINTLV_B32</code></td>
+<td>去交错</td>
+</tr>
+<tr>
+<td><code>SPLT2CHN_B8/B16</code></td>
+<td>双通道拆分</td>
+</tr>
+<tr>
+<td><code>SPLT4CHN_B8</code></td>
+<td>四通道拆分</td>
+</tr>
+</tbody>
+</table>
+<h2 id="mte">MTE 流水<a class="headerlink" href="#mte" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>MTE</th>
+<th>方向</th>
+<th>Tile 指令中的角色</th>
+<th>Vector 指令中的角色</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MTE1</code></td>
+<td>GM → UB</td>
+<td>可选预取</td>
+<td>向量加载前预取</td>
+</tr>
+<tr>
+<td><code>MTE2</code></td>
+<td>GM → UB</td>
+<td><code>TLOAD</code> 的加载阶段</td>
+<td><code>copy_gm_to_ubuf</code></td>
+</tr>
+<tr>
+<td><code>MTE3</code></td>
+<td>UB → GM</td>
+<td><code>TSTORE</code> 的写回阶段</td>
+<td><code>copy_ubuf_to_gm</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>数据移动的合法性依赖源/目标指令集、布局和 target profile</li>
+<li>数据移动不会抹掉 valid-region 语义</li>
+<li>向量路径的 buffer/register 规则与 tile 路径不同，不能混用</li>
+<li>DMA 完成前，不得假设向量计算已经看见数据</li>
+</ul>
+<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把需要显式移动的数据路径写成“自动可见”</li>
+<li>把 vector 路径和 tile 路径写成同一套合法性契约</li>
+<li>把 target-specific 快捷路径写成架构保证</li>
+<li>在 <code>copy_gm_to_ubuf</code> 完成前直接 <code>vlds</code></li>
+</ul>
+<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="tile_1">Tile 指令：逐元素加法<a class="headerlink" href="#tile_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&amp; ga,
+             const GlobalTensor&lt;float&gt;&amp; gb) {
+    Tile&lt;float, 16, 16&gt; a, b;
+    TLOAD(a, ga);
+    TLOAD(b, gb);
+    TADD(c, a, b);
+    TSTORE(gc, c);
+}
+</code></pre>
+<h3 id="ub">向量指令：显式 UB 暂存<a class="headerlink" href="#ub" title="Permanent link">&para;</a></h3>
+<pre><code class="language-c">copy_gm_to_ubuf(%ub_ptr, %gm_ptr, ...);
+set_flag(PIPE_MTE2, PIPE_V, EVENT_ID0);
+wait_flag(PIPE_MTE2, PIPE_V, EVENT_ID0);
+%vreg = pto.vlds %ub[%offset] {dist = &quot;NORM&quot;};
+%result = pto.vadd %vreg, %vreg;
+pto.vsts %result, %ub_out[%offset];
+copy_ubuf_to_gm(%ub_out, %gm_out, ...);
+</code></pre>
+<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tiles-and-valid-regions_zh/">Tile 与有效区域</a></li>
+<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
+<li><a href="../../vector/vector-load-store_zh/">向量加载存储参考</a></li>
+<li><a href="../../scalar/dma-copy_zh/">DMA 拷贝参考</a></li>
+</ul>
               
             </div>
           </div><footer>

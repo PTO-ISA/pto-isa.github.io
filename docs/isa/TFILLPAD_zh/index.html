@@ -910,80 +910,13 @@
               
                 <!-- Generated from `docs/isa/TFILLPAD_zh.md` -->
 
-<h1 id="tfillpad">TFILLPAD<a class="headerlink" href="#tfillpad" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TFILLPAD tile operation" src="../../figures/isa/TFILLPAD.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>复制 Tile 并在有效区域外使用编译时填充值进行填充。</p>
-<p>Copy a source tile into a destination tile and fill the remaining (padded) elements with a compile-time pad value
-selected by <code>TileDataDst::PadVal</code> (e.g., <code>PadValue::Min</code>/<code>PadValue::Max</code>).</p>
-<p>This is commonly used to materialize deterministic values outside the runtime valid region so that subsequent ops can
-operate on a full static tile shape.</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>VR = src.GetValidRow()</code> and <code>VC = src.GetValidCol()</code>. 对每个 destination element <code>(i, j)</code>:</p>
-<div class="arithmatex">\[
-\mathrm{dst}_{i,j} =
-\begin{cases}
-\mathrm{src}_{i,j} &amp; \text{if } i &lt; VR \text{ and } j &lt; VC \\
-\mathrm{pad}       &amp; \text{otherwise}
-\end{cases}
-\]</div>
-<p><code>pad</code> is determined by <code>TileDataDst::PadVal</code> and the element type (e.g., <code>+inf/-inf</code> for floating types when available,
-otherwise <code>std::numeric_limits&lt;T&gt;::max()/min()</code>).</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>Synchronous form (conceptual):</p>
-<pre><code class="language-text">%dst = tfillpad %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tfillpad %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tfillpad ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tfillpad %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tfillpad ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>Implemented in the backend headers pulled in by <code>include/pto/common/pto_instr_impl.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileData, PadValue PadVal = PadValue::Zero, typename... WaitEvents&gt;
-PTO_INST RecordEvent TFILLPAD(TileData &amp;dst, TileData &amp;src, WaitEvents &amp;... events);
-
-template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TFILLPAD(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotfillpad">pto.tfillpad<a class="headerlink" href="#ptotfillpad" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/layout-and-rearrangement/tfillpad_zh/">pto.tfillpad</a>。</p>
 <ul>
-<li><code>TileDataDst::PadVal != PadValue::Null</code>.</li>
-<li><code>sizeof(TileDataDst::DType) == sizeof(TileDataSrc::DType)</code> and element size must be <code>1</code>, <code>2</code>, or <code>4</code> bytes.</li>
-<li><code>TFILLPAD</code>: <code>TileDataDst::Rows/Cols</code> must match <code>TileDataSrc::Rows/Cols</code>.</li>
-<li><code>TFILLPAD_EXPAND</code>: <code>TileDataDst::Rows &gt;= TileDataSrc::Rows</code> and <code>TileDataDst::Cols &gt;= TileDataSrc::Cols</code>.</li>
-<li><code>TFILLPAD(TileData &amp;dst, TileData &amp;src)</code>:<code>if TileData::TileType is Mat, layout only support (!TileData::isRowMajor &amp;&amp; TileData::Slayout::RowMajor), and PadVal only support PadValue::Zero</code></li>
+<li>指令集：<a href="../tile/layout-and-rearrangement_zh/">布局与重排指令集</a></li>
+<li>规范页：<a href="../tile/ops/layout-and-rearrangement/tfillpad_zh/">pto.tfillpad</a></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example1() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 16, 16, BLayout::RowMajor, 16, 16, SLayout::NoneBox, TileConfig::fractalABSize, PadValue::Min&gt;;
-
-  SrcT src;
-  DstT dst;
-  TFILLPAD(dst, src);
-}
-
-void example2() {
-  using TileMatData = Tile&lt;TileType::Mat, float, 16, 256, BLayout::ColMajor, 1, 224, SLayout::RowMajor, 512&gt;;
-
-  TileMatData matTile;
-  TFILLPAD(matTile, matTile);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

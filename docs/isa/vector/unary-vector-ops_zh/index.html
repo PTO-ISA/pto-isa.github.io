@@ -908,18 +908,51 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/vector/unary-vector-ops_zh.md` -->
+                <!-- Generated from `docs/isa/vector/unary-vector-ops_zh.md` -->
 
-<h1 id="vector-families-unary-vector-ops">Vector Families: Unary Vector Ops<a class="headerlink" href="#vector-families-unary-vector-ops" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">一元向量指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>一元向量指令对单个向量输入做 lane 级变换，常见于绝对值、取负、指数、对数、平方根和倒数等操作。</p>
+<h2 id="_2">常见操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../unary-vector-ops/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li><code>pto.vabs</code></li>
+<li><code>pto.vneg</code></li>
+<li><code>pto.vexp</code></li>
+<li><code>pto.vln</code></li>
+<li><code>pto.vsqrt</code></li>
+<li><code>pto.vrsqrt</code></li>
+<li><code>pto.vrec</code></li>
+<li><code>pto.vrelu</code></li>
+<li><code>pto.vnot</code></li>
+<li><code>pto.vbcnt</code></li>
+<li><code>pto.vcls</code></li>
+<li><code>pto.vmov</code></li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">操作数模型<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%input</code>：源向量寄存器</li>
+<li><code>%mask</code>：控制激活 lane</li>
+<li><code>%result</code>：目标向量寄存器</li>
+</ul>
+<h2 id="_4">机制<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>对每个激活 lane：</p>
+<div class="arithmatex">\[ \mathrm{dst}_i = f(\mathrm{input}_i) \]</div>
+<p>不同指令在浮点异常、整数边界值和 masked-lane 处理上会有各自细节。</p>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>源和目标类型通常保持一致，除非具体指令另有说明</li>
+<li>指数、对数、平方根等只对浮点类型合法</li>
+<li>profile 会缩窄某些低精度形式</li>
+</ul>
+<h2 id="_6">不允许的情形<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li>在未文档化类型上使用一元数学函数</li>
+<li>依赖 masked-lane 的未说明结果</li>
+</ul>
+<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../vector-families_zh/">向量指令族</a></li>
+<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

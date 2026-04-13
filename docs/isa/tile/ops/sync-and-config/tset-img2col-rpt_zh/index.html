@@ -908,19 +908,92 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/tile/ops/sync-and-config/tset-img2col-rpt_zh.md` -->
+                <!-- Generated from `docs/isa/tile/ops/sync-and-config/tset-img2col-rpt_zh.md` -->
 
-<h1 id="ptotset_img2col_rpt">pto.tset_img2col_rpt<a class="headerlink" href="#ptotset_img2col_rpt" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="tset_img2col_rpt">TSET_IMG2COL_RPT<a class="headerlink" href="#tset_img2col_rpt" title="Permanent link">&para;</a></h1>
+<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><img alt="TSET_IMG2COL_RPT tile operation" src="../../../../../figures/isa/TSET_IMG2COL_RPT.svg" /></p>
+<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>TSET_IMG2COL_RPT</code> 把 <code>Img2colTileConfig</code> 里的重复控制字段写入 IMG2COL 相关寄存器，供后续 <code>TIMG2COL</code> 一类操作使用。</p>
+<p>如果 <code>TSETFMATRIX</code> 负责写“输入特征图几何信息”，那么这条指令负责写“IMG2COL 应该按什么重复方式工作”。</p>
+<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>A2/A3 与 A5 都会从配置 Tile 中读取 <code>repeat</code> 相关字段，但两代硬件暴露的字段不完全一样。</p>
+<h3 id="a2a3">A2/A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p>会把以下字段打包到一份 repeat 配置里：</p>
 <ul>
-<li><a href="../tset-img2col-rpt/">对应英文页面</a></li>
-<li><a href="../../../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../TSET_IMG2COL_RPT_zh/">现有中文指令说明</a></li>
-<li><a href="../../../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li><code>repeatStride</code></li>
+<li><code>repeatTime</code></li>
+<li><code>repeatMode</code></li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p>除了上面三项，还会额外写入：</p>
+<ul>
+<li><code>dstStride</code></li>
+<li><code>dstMposition</code></li>
+</ul>
+<p>并且支持写到 A 侧或 B 侧的对应寄存器。</p>
+<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>示意形式：</p>
+<pre><code class="language-text">tset_img2col_rpt %cfg
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tset_img2col_rpt %cfg : !pto.fmatrix_config -&gt; ()
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tset_img2col_rpt ins(%cfg : !pto.fmatrix_config) outs()
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename ConvTileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TSET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);
+
+template &lt;typename ConvTileData, SetFmatrixMode FmatrixMode = SetFmatrixMode::FMATRIX_A_MANUAL, typename... WaitEvents&gt;
+PTO_INST RecordEvent TSET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);
+</code></pre>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>src</code> 应是有效的 IMG2COL 配置 Tile。</li>
+<li>这条指令只更新控制状态，不直接产生新的 tile 数据。</li>
+<li>通常应在同一执行流中先配置 repeat，再发出依赖它的 <code>TIMG2COL</code>。</li>
+</ul>
+<h3 id="cpu">CPU 模拟器<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CPU 只检查 <code>repeatTime</code> 已被初始化（<code>GetRepeatTime() &gt;= 0</code>）。</li>
+</ul>
+<h3 id="a2a3_1">A2/A3 实现<a class="headerlink" href="#a2a3_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A2/A3 的无 <code>SetFmatrixMode</code> 重载会直接写 repeat 配置。</li>
+<li>当前仓库里的 A2/A3 实现字段是：</li>
+<li><code>repeatStride</code></li>
+<li><code>repeatTime</code></li>
+<li><code>repeatMode</code></li>
+</ul>
+<h3 id="a5_1">A5 实现<a class="headerlink" href="#a5_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A5 仅在 <code>FMATRIX_A_MANUAL</code> 或 <code>FMATRIX_B_MANUAL</code> 时真正写寄存器。</li>
+<li>A5 比 A2/A3 多写两项：</li>
+<li><code>dstStride</code></li>
+<li><code>dstMposition</code></li>
+<li><code>FMATRIX_A_MANUAL</code> 写 A 侧 repeat 配置。</li>
+<li><code>FMATRIX_B_MANUAL</code> 写 B 侧 repeat 配置。</li>
+</ul>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_set_img2col_rpt(Img2colTileConfig&lt;uint16_t&gt;&amp; cfg) {
+  TSET_IMG2COL_RPT(cfg);
+}
+</code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tsetfmatrix_zh/">TSETFMATRIX</a></li>
+<li><a href="../tset-img2col-padding_zh/">TSET_IMG2COL_PADDING</a></li>
+<li><a href="../../layout-and-rearrangement/timg2col_zh/">TIMG2COL</a></li>
+</ul>
               
             </div>
           </div><footer>

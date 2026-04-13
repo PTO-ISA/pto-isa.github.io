@@ -908,18 +908,82 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/scalar/predicate-generation-and-algebra_zh.md` -->
+                <!-- Generated from `docs/isa/scalar/predicate-generation-and-algebra_zh.md` -->
 
-<h1 id="predicate-generation-and-algebra">Predicate Generation And Algebra<a class="headerlink" href="#predicate-generation-and-algebra" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">谓词生成与代数<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>谓词生成与代数操作在标量与控制指令集中创建、组合、打包、解包和交错 <code>!pto.mask</code>。<code>!pto.mask</code> 是 <code>pto.v*</code> 向量操作消费的 lane mask 机制。</p>
+<h2 id="ptomask"><code>!pto.mask</code> 类型<a class="headerlink" href="#ptomask" title="Permanent link">&para;</a></h2>
+<p><code>!pto.mask</code> 的宽度与当前元素类型绑定：</p>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th style="text-align: center;">向量宽度 N</th>
+<th style="text-align: center;">谓词宽度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f32</td>
+<td style="text-align: center;">64</td>
+<td style="text-align: center;">64 bits</td>
+</tr>
+<tr>
+<td>f16 / bf16</td>
+<td style="text-align: center;">128</td>
+<td style="text-align: center;">128 bits</td>
+</tr>
+<tr>
+<td>i8 / u8</td>
+<td style="text-align: center;">256</td>
+<td style="text-align: center;">256 bits</td>
+</tr>
+</tbody>
+</table>
+<p>位值 <code>1</code> 表示 lane 激活，<code>0</code> 表示 lane 非激活。</p>
+<h2 id="_2">子类概览<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>子类</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pattern-based construction</td>
+<td><code>pset_b8</code>, <code>pset_b16</code>, <code>pset_b32</code></td>
+</tr>
+<tr>
+<td>Comparison generation</td>
+<td><code>pge_*</code>, <code>plt_*</code></td>
+</tr>
+<tr>
+<td>Predicate pack / unpack</td>
+<td><code>ppack</code>, <code>punpack</code></td>
+</tr>
+<tr>
+<td>Boolean algebra</td>
+<td><code>pand</code>, <code>por</code>, <code>pxor</code>, <code>pnot</code>, <code>psel</code></td>
+</tr>
+<tr>
+<td>Interleave / deinterleave</td>
+<td><code>pdintlv_b8</code>, <code>pintlv_b16</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">共享约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../predicate-generation-and-algebra/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li>所有谓词操作数必须是 <code>!pto.mask</code></li>
+<li>同一操作中的谓词宽度必须一致</li>
+<li>pattern token 必须被当前 profile 支持</li>
+<li><code>pge_*</code> / <code>plt_*</code> 的标量类型必须与后缀匹配</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_4">相关页面<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../predicate-load-store_zh/">谓词加载存储</a></li>
+<li><a href="../../vector/predicate-and-materialization_zh/">向量谓词与物化</a></li>
+</ul>
               
             </div>
           </div><footer>

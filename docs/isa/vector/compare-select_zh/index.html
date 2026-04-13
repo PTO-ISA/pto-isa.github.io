@@ -908,18 +908,88 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/vector/compare-select_zh.md` -->
+                <!-- Generated from `docs/isa/vector/compare-select_zh.md` -->
 
-<h1 id="vector-families-compare-and-select">Vector Families: Compare And Select<a class="headerlink" href="#vector-families-compare-and-select" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">比较与选择指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>比较与选择指令集负责在向量层生成谓词并按谓词选择结果。后续向量和控制操作会依赖这些 mask 语义，因此它们属于架构可见契约。</p>
+<h2 id="_2">常见操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../compare-select/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li><code>pto.vcmp</code></li>
+<li><code>pto.vcmps</code></li>
+<li><code>pto.vsel</code></li>
+<li><code>pto.vselr</code></li>
+<li><code>pto.vselrv2</code></li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">操作数模型<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%src0</code> / <code>%src1</code>：向量源操作数</li>
+<li><code>%scalar</code>：标量比较值（用于 <code>vcmps</code>）</li>
+<li><code>%seed</code>：输入谓词，限制哪些 lane 参与比较</li>
+<li><code>%mask</code>：选择操作使用的谓词</li>
+<li><code>%result</code>：谓词结果或向量结果</li>
+</ul>
+<h2 id="_4">比较模式<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>eq</code></td>
+<td>等于</td>
+</tr>
+<tr>
+<td><code>ne</code></td>
+<td>不等于</td>
+</tr>
+<tr>
+<td><code>lt</code></td>
+<td>小于</td>
+</tr>
+<tr>
+<td><code>le</code></td>
+<td>小于等于</td>
+</tr>
+<tr>
+<td><code>gt</code></td>
+<td>大于</td>
+</tr>
+<tr>
+<td><code>ge</code></td>
+<td>大于等于</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">机制<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">比较<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vcmp : vector × vector -&gt; mask
+vcmps: vector × scalar -&gt; mask
+</code></pre>
+<h3 id="_7">选择<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vsel : mask ? src0 : src1
+vselr / vselrv2: 选择语义由具体变体定义
+</code></pre>
+<h2 id="_8">约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>参与比较的向量宽度和类型必须兼容</li>
+<li><code>%seed</code> 或 <code>%mask</code> 的宽度必须匹配目标向量宽度</li>
+<li><code>vsel</code> 的两个源向量与结果向量必须共享相同 shape 和 dtype</li>
+<li><code>vselr</code> / <code>vselrv2</code> 的变体语义必须由 lowering 精确保留</li>
+</ul>
+<h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li>用不匹配的 mask 宽度驱动比较或选择</li>
+<li>把某个 backend 的隐式谓词来源写成通用 PTO 语义</li>
+<li>省略 compare mode 对结果的影响</li>
+</ul>
+<h2 id="_10">相关页面<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../predicate-and-materialization_zh/">谓词与物化</a></li>
+<li><a href="../vector-families_zh/">向量指令族</a></li>
+</ul>
               
             </div>
           </div><footer>

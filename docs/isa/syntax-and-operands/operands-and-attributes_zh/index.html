@@ -908,18 +908,273 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/syntax-and-operands/operands-and-attributes_zh.md` -->
+                <!-- Generated from `docs/isa/syntax-and-operands/operands-and-attributes_zh.md` -->
 
-<h1 id="operands-and-attributes">Operands And Attributes<a class="headerlink" href="#operands-and-attributes" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">操作数与属性<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>PTO VISA 操作围绕少量操作数类别展开：tile、全局内存视图、标量、谓词和同步值。属性与修饰符会细化操作行为，但不会取代操作数本身的合法性规则。</p>
+<h2 id="_2">操作数类别<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>PTO 定义七种操作数类别：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>SSA 类型</th>
+<th>C++ API</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tile</strong></td>
+<td><code>!pto.tile&lt;...&gt;</code> / <code>!pto.tile_buf&lt;...&gt;</code></td>
+<td><code>Tile&lt;...&gt;</code></td>
+<td>带 shape、layout、valid-region 元数据的 tile</td>
+</tr>
+<tr>
+<td><strong>GlobalTensor</strong></td>
+<td><code>!pto.partition_tensor_view&lt;...&gt;</code> / <code>!pto.memref&lt;...&gt;</code></td>
+<td><code>GlobalTensor&lt;...&gt;</code></td>
+<td>面向 GM 的视图</td>
+</tr>
+<tr>
+<td><strong>Scalar</strong></td>
+<td><code>i8</code>–<code>i64</code>, <code>u8</code>–<code>u64</code>, <code>f16</code>, <code>bf16</code>, <code>f32</code></td>
+<td>标准 C++ 标量类型</td>
+<td>立即数或运行时标量</td>
+</tr>
+<tr>
+<td><strong>Predicate</strong></td>
+<td><code>!pto.mask</code></td>
+<td>IR 层</td>
+<td>控制向量 lane 参与的 mask</td>
+</tr>
+<tr>
+<td><strong>Event</strong></td>
+<td><code>!pto.event</code></td>
+<td><code>RecordEvent</code></td>
+<td>顺序令牌</td>
+</tr>
+<tr>
+<td><strong>UB Pointer</strong></td>
+<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
+<td>IR 层</td>
+<td>指向 UB 的指针</td>
+</tr>
+<tr>
+<td><strong>GM Pointer</strong></td>
+<td><code>!pto.ptr&lt;T, gm&gt;</code></td>
+<td><code>__gm__ T*</code></td>
+<td>指向 GM 的指针</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">各类操作数<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="tile">Tile<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
+<p>Tile 是 <code>pto.t*</code> 的主要有效载荷类型。</p>
+<pre><code class="language-text">!pto.tile&lt;loc=LOC, DTYPE, ROWS, COLS, BLAYOUT, SLAYOUT, FRACTAL, PAD&gt;
+</code></pre>
+<h3 id="globaltensor">GlobalTensor<a class="headerlink" href="#globaltensor" title="Permanent link">&para;</a></h3>
+<p><code>GlobalTensor</code> 描述 GM 存储视图：</p>
+<pre><code class="language-text">!pto.partition_tensor_view&lt;BxHxWxRxCxdtype&gt;
+</code></pre>
+<h3 id="scalar">Scalar<a class="headerlink" href="#scalar" title="Permanent link">&para;</a></h3>
+<p>标量可以是立即数或运行时值，出现在：</p>
 <ul>
-<li><a href="../operands-and-attributes/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../manual/06-assembly_zh/">中文章节手册 PTO 汇编</a></li>
+<li>PTO-AS 的直接立即数</li>
+<li>SSA 中的 <code>i32</code>、<code>i64</code>、<code>f32</code> 等</li>
+<li>C++ intrinsic 的标准标量参数</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h3 id="predicate">Predicate<a class="headerlink" href="#predicate" title="Permanent link">&para;</a></h3>
+<p>谓词 <code>!pto.mask</code> 控制向量操作中哪些 lane 参与。</p>
+<h3 id="ub-pointer">UB Pointer<a class="headerlink" href="#ub-pointer" title="Permanent link">&para;</a></h3>
+<p><code>!pto.ptr&lt;T, ub&gt;</code> 用于：</p>
+<ul>
+<li><code>vlds</code>、<code>vsld</code>、<code>vgather2</code>、<code>vsts</code>、<code>vscatter</code></li>
+<li><code>copy_gm_to_ubuf</code>、<code>copy_ubuf_to_gm</code></li>
+</ul>
+<h3 id="gm-pointer">GM Pointer<a class="headerlink" href="#gm-pointer" title="Permanent link">&para;</a></h3>
+<p><code>!pto.ptr&lt;T, gm&gt;</code> 或 <code>__gm__ T*</code> 用于：</p>
+<ul>
+<li>标量 load/store</li>
+<li>DMA copy</li>
+</ul>
+<h2 id="_4">属性<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>属性会改变操作行为，但不会改变操作数类别。</p>
+<h3 id="compare">Compare 属性<a class="headerlink" href="#compare" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>取值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cmp</code></td>
+<td><code>"eq"</code>, <code>"ne"</code>, <code>"lt"</code>, <code>"le"</code>, <code>"gt"</code>, <code>"ge"</code></td>
+<td>比较模式</td>
+</tr>
+<tr>
+<td><code>cmpS</code></td>
+<td>同上</td>
+<td>标量比较变体</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_5">舍入模式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>取值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rnd</code></td>
+<td><code>"rne"</code>, <code>"rz"</code>, <code>"rp"</code>, <code>"rm"</code></td>
+<td>nearest-even / toward-zero / toward +inf / toward -inf</td>
+</tr>
+</tbody>
+</table>
+<h3 id="atomic">Atomic 模式<a class="headerlink" href="#atomic" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>取值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>atomic</code></td>
+<td><code>"none"</code>, <code>"add"</code>, <code>"max"</code>, <code>"min"</code></td>
+<td><code>pto.tstore</code> 的原子模式</td>
+</tr>
+</tbody>
+</table>
+<h3 id="transform">Transform 模式<a class="headerlink" href="#transform" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>取值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mode</code></td>
+<td><code>"hw"</code>, <code>"wh"</code>, <code>"cubic"</code> 等</td>
+<td>由具体操作决定取值域</td>
+</tr>
+</tbody>
+</table>
+<h3 id="matmul-phase">Matmul Phase<a class="headerlink" href="#matmul-phase" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>取值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>phase</code></td>
+<td><code>"relu"</code>, <code>"none"</code></td>
+<td>matmul 后处理阶段</td>
+</tr>
+</tbody>
+</table>
+<h3 id="distribution-mode">Distribution Mode<a class="headerlink" href="#distribution-mode" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>取值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dist</code></td>
+<td><code>"NORM"</code>, <code>"BRC_B8/B16/B32"</code>, <code>"US_B8/B16"</code>, <code>"DS_B8/B16"</code>, <code>"UNPK_B8/B16/B32"</code>, <code>"DINTLV_B32"</code>, <code>"SPLT2CHN_B8/B16"</code>, <code>"SPLT4CHN_B8"</code></td>
+<td><code>vlds</code> / <code>vsts</code> 的分布模式</td>
+</tr>
+</tbody>
+</table>
+<h3 id="mask">Mask 相关属性<a class="headerlink" href="#mask" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>取值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mask</code></td>
+<td><code>"POST_UPDATE"</code>, <code>"NO_POST_UPDATE"</code></td>
+<td>masked store 后是否更新 alignment state</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">操作数约束规则<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="tile_1">Tile 操作数约束<a class="headerlink" href="#tile_1" title="Permanent link">&para;</a></h3>
+<p>对二元 tile 操作 <code>optile(dst, src0, src1)</code>：</p>
+<ol>
+<li><strong>类型兼容</strong>：<code>dtype(src0) == dtype(src1) == dtype(dst)</code>，除非是显式转换操作</li>
+<li><strong>形状兼容</strong>：<code>shape(src0) == shape(src1) == shape(dst)</code>，不存在隐式广播</li>
+<li><strong>布局兼容</strong>：<code>BLayout + SLayout + Fractal</code> 必须满足当前指令集要求</li>
+<li><strong>位置意图</strong>：源和目标的 role 必须与指令匹配</li>
+</ol>
+<h3 id="globaltensor_1">GlobalTensor 约束<a class="headerlink" href="#globaltensor_1" title="Permanent link">&para;</a></h3>
+<p>对 <code>TLOAD(tile, tensor)</code>：</p>
+<ol>
+<li><code>sizeof(tile.dtype) == sizeof(tensor.dtype)</code></li>
+<li><code>tensor.Layout</code> 必须与 tile 的布局要求兼容</li>
+<li>shape 各维必须为正</li>
+</ol>
+<h3 id="_7">谓词约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>对带 mask 的向量操作：</p>
+<ol>
+<li>谓词宽度必须匹配目标向量宽度</li>
+<li>谓词必须来自合法的谓词生成操作</li>
+</ol>
+<h3 id="_8">立即数 / 标量约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<ol>
+<li>立即数必须在其类型的可表示范围内</li>
+<li>shift amount 必须非负且小于元素位宽</li>
+<li>广播必须由显式支持该行为的操作承担，例如 <code>tadds</code></li>
+</ol>
+<h2 id="_9">规则示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当某条指令接受 tile 加一个标量属性时，合法性仍然同时取决于：</p>
+<ul>
+<li>tile tuple 是否合法</li>
+<li>属性取值是否在文档化取值域内</li>
+</ul>
+<p>合法 tile 不能修复非法属性；合法属性也不能修复非法 tile tuple。</p>
+<h2 id="_10">契约说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<ul>
+<li>每个必需属性都必须定义允许的取值域</li>
+<li>非法属性值必须产生确定性诊断</li>
+<li>操作数角色与属性语义必须在 intrinsic、PTO-AS 和 per-op 页面之间保持一致</li>
+<li>不存在隐式类型提升；需要时必须显式写出 <code>TCVT</code> / <code>vcvt</code></li>
+<li>广播必须由操作本身显式定义，例如 <code>tadds</code> 会广播标量，<code>tadd</code> 不会</li>
+</ul>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../assembly-model_zh/">汇编拼写与操作数</a></li>
+<li><a href="../../state-and-types/type-system_zh/">类型系统</a></li>
+<li><a href="../../programming-model/tiles-and-valid-regions_zh/">Tile 与有效区域</a></li>
+<li><a href="../../programming-model/globaltensor-and-data-movement_zh/">GlobalTensor 与数据搬运</a></li>
+<li><a href="../../reference/format-of-instruction-descriptions_zh/">指令描述格式</a></li>
+</ul>
               
             </div>
           </div><footer>

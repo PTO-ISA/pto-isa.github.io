@@ -910,91 +910,13 @@
               
                 <!-- Generated from `docs/isa/TCMP_zh.md` -->
 
-<h1 id="tcmp">TCMP<a class="headerlink" href="#tcmp" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TCMP tile operation" src="../../figures/isa/TCMP.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>比较两个 Tile 并写入一个打包的谓词掩码。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Conceptually, for each element <code>(i, j)</code> in the valid region, define a predicate:</p>
-<div class="arithmatex">\[ p_{i,j} = \left(\mathrm{src0}_{i,j}\ \mathrm{cmpMode}\ \mathrm{src1}_{i,j}\right) \]</div>
-<p>The predicate mask is stored in <code>dst</code> using an implementation-defined packed layout.</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcmp %src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcmp ins(%src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcmp %src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcmp ins(%src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/type.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataSrc &amp;src1, CmpMode cmpMode, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotcmp">pto.tcmp<a class="headerlink" href="#ptotcmp" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/elementwise-tile-tile/tcmp_zh/">pto.tcmp</a>。</p>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li>Input type must be one of: <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>Output type must be <code>uint8_t</code>.</li>
-<li><code>src0/src1/dst</code> tile location must be <code>TileType::Vec</code>.</li>
-<li>Static valid bounds: <code>TileDataSrc::ValidRow &lt;= TileDataSrc::Rows</code> and <code>TileDataSrc::ValidCol &lt;= TileDataSrc::Cols</code>.</li>
-<li>Runtime: <code>src0.GetValidRow() == dst.GetValidRow()</code> and <code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
-<li>Note: <code>src1</code> shape/valid is not validated by explicit runtime assertions in this implementation.</li>
-<li>For <code>TileDataSrc::DType == int32_t</code>, the implementation uses the <code>EQ</code> compare path regardless of <code>cmpMode</code>.</li>
+<li>指令集：<a href="../tile/elementwise-tile-tile_zh/">逐元素 Tile-Tile 指令集</a></li>
+<li>规范页：<a href="../tile/ops/elementwise-tile-tile/tcmp_zh/">pto.tcmp</a></li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li>Input type must be one of: <code>uint32_t</code>, <code>int32_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint8_t</code>,  <code>int8_t</code>, <code>float</code>, <code>half</code>.</li>
-<li>Output type must be <code>uint32_t</code>.</li>
-<li>Implemented (see <code>include/pto/npu/a5/TCmp.hpp</code>).</li>
-<li>The A5 implementation uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain and writes a packed predicate mask into <code>dst</code> (target-defined packing).</li>
-</ul>
-</li>
-<li><strong>Mask encoding</strong>:<ul>
-<li>The mask tile is interpreted as packed predicate bits in a target-defined layout.</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using MaskT = Tile&lt;TileType::Vec, uint8_t, 16, 32, BLayout::RowMajor, -1, -1&gt;;
-  SrcT src0, src1;
-  MaskT mask(16, 2);
-  TCMP(mask, src0, src1, CmpMode::GT);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using MaskT = Tile&lt;TileType::Vec, uint8_t, 16, 32, BLayout::RowMajor, -1, -1&gt;;
-  SrcT src0, src1;
-  MaskT mask(16, 2);
-  TASSIGN(src0, 0x1000);
-  TASSIGN(src1, 0x2000);
-  TASSIGN(mask, 0x3000);
-  TCMP(mask, src0, src1, CmpMode::GT);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

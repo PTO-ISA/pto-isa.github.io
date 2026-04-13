@@ -912,109 +912,77 @@
 
 <h1 id="tbroadcast">TBROADCAST<a class="headerlink" href="#tbroadcast" title="Permanent link">&para;</a></h1>
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>将当前 NPU 的数据广播到并行组中所有 rank。调用方 NPU 为根节点，其数据将被复制到所有其他 NPU。</p>
-<p>只有根节点需要执行 <code>TBROADCAST</code>。非根节点只需确保在操作期间其目标缓冲区已分配且可写。在非根节点上调用 <code>TBROADCAST</code> 属于未定义行为。</p>
-<p><strong>大 Tile 支持</strong>：当 GlobalTensor 在行和/或列方向超出 UB（统一缓冲区）Tile 容量时，传输将通过二维滑动自动分块。</p>
+<p><code>TBROADCAST</code> 把当前 NPU 作为根节点的数据广播到并行组中的所有 rank。</p>
+<p>只有根节点执行 <code>TBROADCAST</code>。非根节点只需要保证目标缓冲区在操作期间已分配且可写；在非根节点上主动调用该指令属于未定义行为。</p>
+<p>当数据超过单个 UB Tile 容量时，传输会自动按二维滑动方式分块。</p>
 <h2 id="_2">数学语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>操作完成后：</p>
+<p>广播完成后：</p>
 <div class="arithmatex">\[ \mathrm{dst}^{(k)}_{i,j} = \mathrm{src}^{(\text{root})}_{i,j} \quad \forall k \in [0, N) \]</div>
-<p>其中 <span class="arithmatex">\(N\)</span> 为 rank 总数，<code>root</code> 为调用方 NPU。</p>
+<p>其中 <code>N</code> 为 rank 总数。</p>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>同步形式：</p>
+<p>PTO-AS 形式：</p>
 <pre><code class="language-text">tbroadcast %group, %src : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
 </code></pre>
-<p>降级时会为 GM→UB→GM 数据路径引入 UB 暂存 Tile；C++ 内建接口需要显式传入 <code>stagingTileData</code>（或 <code>pingTile</code> / <code>pongTile</code>）操作数。</p>
+<p>lowering 会引入 UB 暂存 Tile，因此 C++ 接口要求显式传入 <code>stagingTileData</code>，或在双缓冲模式下传入 <code>pingTile</code> / <code>pongTile</code>。</p>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
-<pre><code class="language-cpp">// 基础广播（单暂存 Tile）
-template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
+<pre><code class="language-cpp">template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TBROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
                                 TileData &amp;stagingTileData, WaitEvents&amp;... events);
 
-// 乒乓广播（使用两个暂存 Tile 实现双缓冲）
 template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TBROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
                                 TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
 </code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">类型约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>类型约束</strong>：<ul>
-<li><code>ParallelGroup::value_type::RawDType</code> 必须等于 <code>GlobalSrcData::RawDType</code>。</li>
-<li><code>TileData::DType</code> 必须等于 <code>GlobalSrcData::RawDType</code>。</li>
+<li><code>ParallelGroup::value_type::RawDType</code> 必须等于 <code>GlobalSrcData::RawDType</code></li>
+<li><code>TileData::DType</code> 必须等于 <code>GlobalSrcData::RawDType</code></li>
 </ul>
-</li>
-<li><strong>内存约束</strong>：<ul>
-<li><code>srcGlobalData</code> 必须指向本地内存（当前 NPU）。</li>
-<li><code>stagingTileData</code>（或 <code>pingTile</code> / <code>pongTile</code>）必须预先在 UB 中分配。</li>
+<h3 id="_6">内存与并行组约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>srcGlobalData</code> 必须指向根节点本地内存</li>
+<li><code>stagingTileData</code>、<code>pingTile</code>、<code>pongTile</code> 必须预先在 UB 中分配</li>
+<li><code>parallelGroup.tensors[k]</code> 必须指向 rank <code>k</code> 的目标缓冲区</li>
+<li><code>parallelGroup.GetRootIdx()</code> 必须标识当前调用方是广播根节点</li>
 </ul>
-</li>
-<li><strong>ParallelGroup 约束</strong>：<ul>
-<li><code>parallelGroup.tensors[k]</code> 必须指向 rank <code>k</code> 的目标缓冲区（从根节点视角看到的远端 GM）。</li>
-<li><code>parallelGroup.GetRootIdx()</code> 标识调用方 NPU 为广播根节点。</li>
-<li>所有目标 tensor 假定具有相同的形状和步幅。</li>
+<h3 id="_7">分块约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>静态 <code>ValidRow</code> / <code>ValidCol</code> 场景下，对应维度必须能整除</li>
+<li>若要支持不足整行或整列的边界情况，应使用动态 valid region 的 Tile</li>
 </ul>
-</li>
-<li><strong>分块模式约束</strong>（数据超出单个 UB Tile 时）：<ul>
-<li>若 <code>TileData</code> 具有静态 <code>ValidRow</code>，则 <code>GetShape(DIM_3)</code> 必须能被 <code>ValidRow</code> 整除。如需支持不足一行的情况，请使用 <code>DYNAMIC</code> ValidRow 的 Tile。</li>
-<li>若 <code>TileData</code> 具有静态 <code>ValidCol</code>，则 <code>GetShape(DIM_4)</code> 必须能被 <code>ValidCol</code> 整除。如需支持不足一列的情况，请使用 <code>DYNAMIC</code> ValidCol 的 Tile。</li>
-</ul>
-</li>
-</ul>
-<h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">基础广播<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h3 id="_9">基础广播<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
 template &lt;typename T, int ROWS, int COLS, int TILE_ROWS, int TILE_COLS, int NRANKS&gt;
 void broadcast(__gm__ T* group_addrs[NRANKS], __gm__ T* my_data, int my_rank) {
-    // Tile 维度可以与 tensor 维度不同。
-    // 二维滑动分块路径会自动在行和列两个方向进行分块。
     using TileT = Tile&lt;TileType::Vec, T, TILE_ROWS, TILE_COLS, BLayout::RowMajor, -1, -1&gt;;
     using GTensor = GlobalTensor&lt;T, Shape&lt;1,1,1,ROWS,COLS&gt;,
                                  BaseShape2D&lt;T, ROWS, COLS, Layout::ND&gt;, Layout::ND&gt;;
 
     GTensor tensors[NRANKS];
-    for (int i = 0; i &lt; NRANKS; ++i) {
-        tensors[i] = GTensor(group_addrs[i]);
-    }
+    for (int i = 0; i &lt; NRANKS; ++i) tensors[i] = GTensor(group_addrs[i]);
 
     comm::ParallelGroup&lt;GTensor&gt; group(tensors, NRANKS, my_rank);
     GTensor srcG(my_data);
     TileT stagingTile(TILE_ROWS, TILE_COLS);
 
-    // 当前 NPU 将自身数据广播到所有其他 NPU
     comm::TBROADCAST(group, srcG, stagingTile);
 }
 </code></pre>
-<h3 id="_7">乒乓广播（双缓冲）<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<p>使用两个 UB Tile，将下一块的 TLOAD 与当前块的 TSTORE 重叠执行。</p>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T, int ROWS, int COLS, int TILE_ROWS, int TILE_COLS, int NRANKS&gt;
-void broadcast_pingpong(__gm__ T* group_addrs[NRANKS], __gm__ T* my_data, int my_rank) {
-
-    using TileT = Tile&lt;TileType::Vec, T, TILE_ROWS, TILE_COLS, BLayout::RowMajor, -1, -1&gt;;
-    using GPerRank = GlobalTensor&lt;T, Shape&lt;1,1,1,ROWS,COLS&gt;,
-                                  BaseShape2D&lt;T, ROWS, COLS, Layout::ND&gt;, Layout::ND&gt;;
-
-    GPerRank tensors[NRANKS];
-    for (int i = 0; i &lt; NRANKS; ++i) {
-        tensors[i] = GPerRank(group_addrs[i]);
-    }
-
-    comm::ParallelGroup&lt;GPerRank&gt; group(tensors, NRANKS, my_rank);
-    GPerRank srcG(my_data);
-    TileT pingTile(TILE_ROWS, TILE_COLS);
-    TileT pongTile(TILE_ROWS, TILE_COLS);
-
-    // 乒乓模式：将 TLOAD 与 TSTORE 重叠执行以提升吞吐量
-    comm::TBROADCAST(group, srcG, pingTile, pongTile);
-}
+<h3 id="_10">乒乓双缓冲<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">comm::TBROADCAST(group, srcG, pingTile, pongTile);
 </code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../other/communication-and-runtime_zh/">通信与运行时</a></li>
+<li><a href="../TGATHER_zh/">TGATHER</a></li>
+<li><a href="../TSCATTER_zh/">TSCATTER</a></li>
+</ul>
               
             </div>
           </div><footer>

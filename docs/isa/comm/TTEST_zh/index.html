@@ -912,17 +912,22 @@
 
 <h1 id="ttest">TTEST<a class="headerlink" href="#ttest" title="Permanent link">&para;</a></h1>
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>非阻塞检测信号是否满足比较条件。满足则返回 <code>true</code>，否则返回 <code>false</code>。适用于基于轮询的同步（含超时）或与其他工作交错执行的场景。</p>
-<p>支持单个信号或多维信号 tensor（最高 5 维，形状由 GlobalTensor 决定）。对于 tensor，仅当<strong>所有</strong>信号均满足条件时才返回 <code>true</code>。</p>
+<p><code>TTEST</code> 是非阻塞检测原语：检查一个或一组信号是否满足比较条件，满足时返回 <code>true</code>，否则立即返回 <code>false</code>。</p>
+<p>它适合：</p>
+<ul>
+<li>轮询式同步</li>
+<li>带超时的等待</li>
+<li>在等待期间穿插其他工作</li>
+</ul>
+<p>既支持单个信号，也支持最多 5 维的信号 tensor。对 tensor 形式，只有当 <strong>所有</strong> 元素都满足条件时才返回 <code>true</code>。</p>
 <h2 id="_2">数学语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>检测并返回结果：</p>
 <p>单个信号：</p>
-<div class="arithmatex">\[\mathrm{result} = (\mathrm{signal} \;\mathtt{cmp}\; \mathrm{cmpValue})\]</div>
-<p>信号 tensor（所有元素均须满足）：</p>
-<div class="arithmatex">\[\mathrm{result} = \bigwedge_{d_0, d_1, d_2, d_3, d_4} (\mathrm{signal}_{d_0, d_1, d_2, d_3, d_4} \;\mathtt{cmp}\; \mathrm{cmpValue})\]</div>
-<p>其中 <code>cmp</code> ∈ {<code>EQ</code>, <code>NE</code>, <code>GT</code>, <code>GE</code>, <code>LT</code>, <code>LE</code>}</p>
+<div class="arithmatex">\[ \mathrm{result} = (\mathrm{signal} \;\mathtt{cmp}\; \mathrm{cmpValue}) \]</div>
+<p>信号 tensor：</p>
+<div class="arithmatex">\[ \mathrm{result} = \bigwedge_{d_0, d_1, d_2, d_3, d_4} (\mathrm{signal}_{d_0, d_1, d_2, d_3, d_4} \;\mathtt{cmp}\; \mathrm{cmpValue}) \]</div>
+<p>其中 <code>cmp ∈ {EQ, NE, GT, GE, LT, LE}</code>。</p>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>PTO-AS 形式：</p>
 <pre><code class="language-text">%result = ttest %signal, %cmp_value {cmp = #pto.cmp&lt;EQ&gt;} : (!pto.memref&lt;i32&gt;, i32) -&gt; i1
 %result = ttest %signal_matrix, %cmp_value {cmp = #pto.cmp&lt;GE&gt;} : (!pto.memref&lt;i32, MxN&gt;, i32) -&gt; i1
 </code></pre>
@@ -933,107 +938,61 @@ PTO_INST bool TTEST(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp 
 </code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>类型约束</strong>：<ul>
-<li><code>GlobalSignalData::DType</code> 必须为 <code>int32_t</code>（32 位信号）。</li>
+<li><code>GlobalSignalData::DType</code> 必须为 <code>int32_t</code></li>
+<li><code>signalData</code> 必须指向本地地址（当前 NPU）</li>
+<li>单个信号的形状为 <code>&lt;1,1,1,1,1&gt;</code></li>
+<li>tensor 形式由其 shape 决定检测区域，并要求所有元素都满足条件</li>
 </ul>
-</li>
-<li><strong>内存约束</strong>：<ul>
-<li><code>signalData</code> 必须指向本地地址（当前 NPU）。</li>
-</ul>
-</li>
-<li><strong>返回值</strong>：<ul>
-<li>条件满足时返回 <code>true</code>，否则返回 <code>false</code>。</li>
-<li>对于信号 tensor，仅当所有信号均满足条件时才返回 <code>true</code>。</li>
-</ul>
-</li>
-<li><strong>形状语义</strong>：<ul>
-<li>单个信号：形状为 <code>&lt;1,1,1,1,1&gt;</code>。</li>
-<li>信号 tensor：形状决定要检测的多维区域（最高 5 维）。</li>
-</ul>
-</li>
-<li><strong>比较运算符</strong>（WaitCmp）：
-  | 值 | 条件 |
-  |-------|--------|
-  | <code>EQ</code> | <code>signal == cmpValue</code> |
-  | <code>NE</code> | <code>signal != cmpValue</code> |
-  | <code>GT</code> | <code>signal &gt; cmpValue</code> |
-  | <code>GE</code> | <code>signal &gt;= cmpValue</code> |
-  | <code>LT</code> | <code>signal &lt; cmpValue</code> |
-  | <code>LE</code> | <code>signal &lt;= cmpValue</code> |</li>
-</ul>
-<h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">基础检测<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-bool check_ready(__gm__ int32_t* local_signal) {
+<h3 id="_5">比较运算符<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>值</th>
+<th>条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EQ</code></td>
+<td><code>signal == cmpValue</code></td>
+</tr>
+<tr>
+<td><code>NE</code></td>
+<td><code>signal != cmpValue</code></td>
+</tr>
+<tr>
+<td><code>GT</code></td>
+<td><code>signal &gt; cmpValue</code></td>
+</tr>
+<tr>
+<td><code>GE</code></td>
+<td><code>signal &gt;= cmpValue</code></td>
+</tr>
+<tr>
+<td><code>LT</code></td>
+<td><code>signal &lt; cmpValue</code></td>
+</tr>
+<tr>
+<td><code>LE</code></td>
+<td><code>signal &lt;= cmpValue</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="_7">基础检测<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">bool check_ready(__gm__ int32_t* local_signal) {
     comm::Signal sig(local_signal);
-
-    // 检测 signal == 1
     return comm::TTEST(sig, 1, comm::WaitCmp::EQ);
 }
 </code></pre>
-<h3 id="_7">检测信号矩阵<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-// 检测 4x8 网格中所有 worker 的信号是否就绪
-bool check_worker_grid(__gm__ int32_t* signal_matrix) {
+<h3 id="_8">检测信号矩阵<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">bool check_worker_grid(__gm__ int32_t* signal_matrix) {
     comm::Signal2D&lt;4, 8&gt; grid(signal_matrix);
-
-    // 仅当所有 32 个信号均为 1 时返回 true
     return comm::TTEST(grid, 1, comm::WaitCmp::EQ);
 }
 </code></pre>
-<h3 id="_8">带超时的轮询<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-bool poll_with_timeout(__gm__ int32_t* local_signal, int max_iterations) {
-    comm::Signal sig(local_signal);
-
-    for (int i = 0; i &lt; max_iterations; ++i) {
-        if (comm::TTEST(sig, 1, comm::WaitCmp::EQ)) {
-            return true;  // 收到信号
-        }
-        // 两次轮询之间可执行其他工作
-    }
-    return false;  // 超时
-}
-</code></pre>
-<h3 id="_9">基于进度的轮询<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-void process_with_progress(__gm__ int32_t* local_counter, int expected_count) {
-    comm::Signal counter(local_counter);
-
-    while (!comm::TTEST(counter, expected_count, comm::WaitCmp::GE)) {
-        // 等待期间执行其他有用工作
-        // ...
-    }
-    // 所有预期信号均已收到
-}
-</code></pre>
-<h3 id="twait-ttest">TWAIT 与 TTEST 对比<a class="headerlink" href="#twait-ttest" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-void compare_wait_test(__gm__ int32_t* local_signal) {
-    comm::Signal sig(local_signal);
-
-    // 阻塞：自旋直到 signal == 1
-    comm::TWAIT(sig, 1, comm::WaitCmp::EQ);
-
-    // 非阻塞：立即返回结果
-    bool ready = comm::TTEST(sig, 1, comm::WaitCmp::EQ);
-}
-</code></pre>
+<h3 id="twait">与 TWAIT 的区别<a class="headerlink" href="#twait" title="Permanent link">&para;</a></h3>
+<p><code>TWAIT</code> 会阻塞直到条件满足；<code>TTEST</code> 只返回当前检测结果，不会阻塞调用方。</p>
               
             </div>
           </div><footer>

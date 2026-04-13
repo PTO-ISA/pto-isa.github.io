@@ -912,14 +912,21 @@
 
 <h1 id="tstore_fp">TSTORE_FP<a class="headerlink" href="#tstore_fp" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSTORE_FP tile operation" src="../figures/isa/TSTORE_FP.svg" /></p>
+<p><img alt="TSTORE_FP tile operation" src="../../../../../figures/isa/TSTORE_FP.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>使用缩放 (<code>fp</code>) Tile 作为向量量化参数，将累加器 Tile 存储到全局内存。</p>
+<p><code>TSTORE_FP</code> 是带向量量化参数的累加器写回指令。它把 <code>Acc</code> Tile 写回 <code>GlobalTensor</code>，同时使用额外的 <code>fp</code> Tile 提供向量量化或反量化所需的参数。</p>
+<p>如果普通 <code>TSTORE</code> 足够表达你的写回，就不需要这条指令；只有当写回过程本身依赖一组外部缩放参数时，才使用 <code>TSTORE_FP</code>。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. Conceptually (2D view, with a base offset), for <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
+<p>设：</p>
+<ul>
+<li><code>R = src.GetValidRow()</code></li>
+<li><code>C = src.GetValidCol()</code></li>
+</ul>
+<p>从二维视角写回时，可概念化为：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{r_0 + i,\; c_0 + j} = \mathrm{Convert}\!\left(\mathrm{src}_{i,j};\ \mathrm{fp}\right) \]</div>
+<p>其中 <code>Convert</code> 表示“结合 <code>fp</code> 参数完成的向量量化 / 反量化写回”。地址计算规则与普通 <code>TSTORE</code> 一致，仍由 <code>GlobalTensor</code> 的 shape / stride 决定。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">tstore.fp %src, %fp, %sv_out[%c0, %c0]
 </code></pre>
@@ -930,29 +937,52 @@
 <pre><code class="language-text">pto.tstore.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename FpTileData, AtomicType atomicType = AtomicType::AtomicNone,
           ReluPreMode reluPreMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
 PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li>The fp store path is implemented via <code>TSTORE_IMPL(dst, src, fp)</code> and uses the same accumulator-to-GM legality checks as quantized accumulator stores:</li>
-<li>Destination layout must be ND or NZ.</li>
-<li>Source dtype must be <code>int32_t</code> or <code>float</code>.</li>
-<li>Static shape constraints: <code>1 &lt;= TileData::Cols &lt;= 4095</code>; if ND then <code>1 &lt;= TileData::Rows &lt;= 8192</code>; if NZ then <code>1 &lt;= TileData::Rows &lt;= 65535</code> and <code>TileData::Cols % 16 == 0</code>.</li>
-<li>Runtime: <code>1 &lt;= src.GetValidCol() &lt;= 4095</code>.</li>
-<li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code> (the implementation uses <code>fp</code> to set FPC state).</li>
+<li><code>src</code> 必须是 <code>Acc</code> Tile。</li>
+<li><code>TSTORE_FP</code> 复用累加器到 GM 的量化写回检查，因此目标布局、行列范围和 dtype 合法域都沿用对应 backend 的 quantized <code>Acc -&gt; GM</code> 路径。</li>
+<li>当前实现不会对 <code>FpTileData::Loc</code> 做直接 <code>static_assert</code>，但可移植代码应将 <code>fp</code> 建成 <code>TileType::Scaling</code>。</li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li>Implemented via <code>TSTORE_IMPL(dst, src, fp)</code> and validated by <code>CheckStaticAcc&lt;..., true&gt;()</code> for the accumulator path (ND/NZ only, <code>int32_t/float</code> source dtype, rows/cols ranges).</li>
-<li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code> (the implementation uses <code>fp</code> to set FPC state).</li>
+<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>目标 <code>GlobalTensor</code> 布局必须是 <code>ND</code>、<code>NZ</code> 或 <code>NC1HWC0</code>。</li>
+<li>源累加器类型必须是 <code>float</code> 或 <code>int32_t</code>。</li>
+<li>静态范围：</li>
+<li><code>1 &lt;= TileData::Cols &lt;= 4095</code></li>
+<li>若目标为 <code>ND</code>，则 <code>1 &lt;= TileData::Rows &lt;= 8192</code></li>
+<li>若目标为 <code>NZ</code> 或 <code>NC1HWC0</code>，则 <code>1 &lt;= TileData::Rows &lt;= 65535</code> 且 <code>TileData::Cols % 16 == 0</code></li>
+<li>运行时要求：</li>
+<li><code>1 &lt;= src.GetValidCol() &lt;= 4095</code></li>
+<li>目标 shape 各维与源 valid region 都必须大于 <code>0</code></li>
+<li>量化支持集为：</li>
+<li><code>float Acc -&gt; __gm__ int8_t / __gm__ uint8_t</code></li>
+<li><code>int32_t Acc -&gt; __gm__ int8_t / __gm__ uint8_t / __gm__ half</code></li>
 </ul>
-</li>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>目标 <code>GlobalTensor</code> 布局必须是 <code>ND</code>、<code>NZ</code>、<code>NHWC</code>、<code>NCHW</code> 或 <code>NCDHW</code>。</li>
+<li>源累加器类型必须是 <code>float</code> 或 <code>int32_t</code>。</li>
+<li>静态范围：</li>
+<li><code>1 &lt;= TileData::Cols &lt;= 4095</code></li>
+<li>若目标为 <code>ND</code>，则 <code>1 &lt;= TileData::Rows &lt;= 8192</code></li>
+<li>若目标为 <code>NZ/NHWC/NCHW/NCDHW</code>，则 <code>1 &lt;= TileData::Rows &lt;= 65535</code> 且 <code>TileData::Cols % 16 == 0</code></li>
+<li>量化支持集为：</li>
+<li><code>float Acc -&gt; __gm__ int8_t / __gm__ uint8_t / __gm__ bfloat16_t / __gm__ half / __gm__ hifloat8_t / __gm__ float8_e4m3_t / __gm__ float</code></li>
+<li><code>int32_t Acc -&gt; __gm__ int8_t / __gm__ uint8_t / __gm__ bfloat16_t / __gm__ half</code></li>
+<li>若启用 <code>AtomicAdd</code>，目标 dtype 还必须属于 backend 允许的原子类型集合。</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="cpu">CPU 模拟器说明<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
+<ul>
+<li>当前 CPU 模拟器会接受 <code>TSTORE_FP</code> 接口，但不会真正消费 <code>fp</code> 参数，而是退化为普通 <code>TSTORE</code>。</li>
+<li>因而依赖 <code>fp</code> 具体数值的量化效果，应以 NPU backend 为准。</li>
+</ul>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -987,10 +1017,16 @@ void example_manual(__gm__ int8_t* out) {
   AccT acc;
   FpT fp(16);
   TASSIGN(acc, 0x1000);
-  TASSIGN(fp,  0x2000);
+  TASSIGN(fp, 0x2000);
   TSTORE_FP(gout, acc, fp);
 }
 </code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tstore_zh/">TSTORE</a></li>
+<li><a href="../../layout-and-rearrangement/tmov-fp_zh/">TMOV_FP</a></li>
+<li><a href="../../../memory-and-data-movement_zh/">内存与数据搬运指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

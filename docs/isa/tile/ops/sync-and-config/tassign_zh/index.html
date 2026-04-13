@@ -912,14 +912,20 @@
 
 <h1 id="tassign">TASSIGN<a class="headerlink" href="#tassign" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TASSIGN tile operation" src="../figures/isa/TASSIGN.svg" /></p>
+<p><img alt="TASSIGN tile operation" src="../../../../../figures/isa/TASSIGN.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>将 Tile 对象绑定到实现定义的片上地址（手动放置）。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Not applicable.</p>
+<p><code>TASSIGN</code> 把一个 Tile 或 <code>GlobalTensor</code> 对象绑定到具体存储地址。它不做算术，也不搬运数据；它做的是“把抽象对象落到某个物理或模拟地址上”。</p>
+<p>这条指令主要服务于手动放置和手动调度场景。很多自动流程也会在 lowering 过程中显式插入它，用来把 SSA 层的 tile 名称映射到真实缓冲。</p>
+<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>对 Tile 来说，<code>TASSIGN</code> 的作用是把内部数据指针指向某个片上地址；对 <code>GlobalTensor</code> 来说，则是把对象绑定到一段外部指针地址。</p>
+<p>它本身没有独立的数学语义。真正重要的是：</p>
+<ul>
+<li>绑定的是哪类对象</li>
+<li>地址是在运行时给出，还是在编译期给出</li>
+<li>当前目标是否允许这种地址落点</li>
+</ul>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
-<p><code>TASSIGN</code> is typically introduced by bufferization/lowering when mapping SSA tiles to physical storage.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">tassign %tile, %addr : !pto.tile&lt;...&gt;, index
 </code></pre>
@@ -930,173 +936,39 @@
 <pre><code class="language-text">pto.tassign ins(%tile, %addr : !pto.tile_buf&lt;...&gt;, dtype)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>.</p>
-<h3 id="form-1-runtime-address">Form 1: Runtime address<a class="headerlink" href="#form-1-runtime-address" title="Permanent link">&para;</a></h3>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>。</p>
+<h3 id="_5">运行时地址形式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">template &lt;typename T, typename AddrType&gt;
 PTO_INST void TASSIGN(T&amp; obj, AddrType addr);
 </code></pre>
-<p>Binds <code>obj</code> to the on-chip address <code>addr</code>. No compile-time bounds checking is
-performed (the address value is not available at compile time).</p>
-<h3 id="form-2-compile-time-address-with-static-bounds-check">Form 2: Compile-time address (with static bounds check)<a class="headerlink" href="#form-2-compile-time-address-with-static-bounds-check" title="Permanent link">&para;</a></h3>
+<h3 id="_6">编译期地址形式<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">template &lt;std::size_t Addr, typename T&gt;
-PTO_INST void TASSIGN(T&amp; obj);
+PTO_INST std::enable_if_t&lt;is_tile_data_v&lt;T&gt; || is_conv_tile_v&lt;T&gt;&gt; TASSIGN(T&amp; obj);
 </code></pre>
-<p>Binds <code>obj</code> to the on-chip address <code>Addr</code>. Because <code>Addr</code> is a non-type
-template parameter, the compiler performs the following <strong>compile-time</strong> checks
-via <code>static_assert</code>:</p>
-<table>
-<thead>
-<tr>
-<th>Check</th>
-<th>Condition</th>
-<th>Assertion ID</th>
-<th>Error message</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Memory space exists</td>
-<td><code>capacity &gt; 0</code></td>
-<td>SA-0351</td>
-<td>Memory space is not available on this architecture.</td>
-</tr>
-<tr>
-<td>Tile fits in memory</td>
-<td><code>tile_size &lt;= capacity</code></td>
-<td>SA-0352</td>
-<td>Tile storage size exceeds memory space capacity.</td>
-</tr>
-<tr>
-<td>Address in bounds</td>
-<td><code>Addr + tile_size &lt;= capacity</code></td>
-<td>SA-0353</td>
-<td>addr + tile_size exceeds memory space capacity (out of bounds).</td>
-</tr>
-<tr>
-<td>Address aligned</td>
-<td><code>Addr % alignment == 0</code></td>
-<td>SA-0354</td>
-<td>addr is not properly aligned for the target memory space.</td>
-</tr>
-</tbody>
-</table>
-<p>See <code>docs/coding/debug.md</code> (fix recipe <code>FIX-A12</code>) for suggested remedies.</p>
-<p>The memory space, capacity, and alignment are determined automatically from the
-Tile's <code>TileType</code> (i.e. <code>Loc</code> template parameter):</p>
-<table>
-<thead>
-<tr>
-<th>TileType</th>
-<th>Memory</th>
-<th>Capacity (A2A3)</th>
-<th>Capacity (A5)</th>
-<th>Capacity (Kirin9030)</th>
-<th>Capacity (KirinX90)</th>
-<th>Alignment</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Vec</td>
-<td>UB</td>
-<td>192 KB</td>
-<td>256 KB</td>
-<td>128 KB</td>
-<td>128 KB</td>
-<td>32 B</td>
-</tr>
-<tr>
-<td>Mat</td>
-<td>L1</td>
-<td>512 KB</td>
-<td>512 KB</td>
-<td>512 KB</td>
-<td>1024 KB</td>
-<td>32 B</td>
-</tr>
-<tr>
-<td>Left</td>
-<td>L0A</td>
-<td>64 KB</td>
-<td>64 KB</td>
-<td>32 KB</td>
-<td>64 KB</td>
-<td>32 B</td>
-</tr>
-<tr>
-<td>Right</td>
-<td>L0B</td>
-<td>64 KB</td>
-<td>64 KB</td>
-<td>32 KB</td>
-<td>64 KB</td>
-<td>32 B</td>
-</tr>
-<tr>
-<td>Acc</td>
-<td>L0C</td>
-<td>128 KB</td>
-<td>256 KB</td>
-<td>64 KB</td>
-<td>128 KB</td>
-<td>32 B</td>
-</tr>
-<tr>
-<td>Bias</td>
-<td>Bias</td>
-<td>1 KB</td>
-<td>4 KB</td>
-<td>1 KB</td>
-<td>1 KB</td>
-<td>32 B</td>
-</tr>
-<tr>
-<td>Scaling</td>
-<td>FBuffer</td>
-<td>2 KB</td>
-<td>4 KB</td>
-<td>7 KB</td>
-<td>6 KB</td>
-<td>32 B</td>
-</tr>
-<tr>
-<td>ScaleLeft</td>
-<td>L0A</td>
-<td>N/A</td>
-<td>4 KB</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>32 B</td>
-</tr>
-<tr>
-<td>ScaleRight</td>
-<td>L0B</td>
-<td>N/A</td>
-<td>4 KB</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>32 B</td>
-</tr>
-</tbody>
-</table>
-<p>Capacities can be overridden at build time via <code>-D</code> flags (e.g.
-<code>-DPTO_UBUF_SIZE_BYTES=262144</code>). See <code>include/pto/common/buffer_limits.hpp</code>.</p>
-<p><strong>Note:</strong> This overload is only available for <code>Tile</code> and <code>ConvTile</code> types. For
-<code>GlobalTensor</code>, use <code>TASSIGN(obj, pointer)</code> (Form 1).</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>第二种写法会在编译期执行静态边界与对齐检查，因此更适合固定地址的手动布局。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="tile-convtile">Tile / ConvTile<a class="headerlink" href="#tile-convtile" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查</strong>:<ul>
-<li>If <code>obj</code> is a Tile:</li>
-<li>In manual mode (when <code>__PTO_AUTO__</code> is not defined), <code>addr</code> must be an integral type and is reinterpreted as the tile's storage address.</li>
-<li>In auto mode (when <code>__PTO_AUTO__</code> is defined), <code>TASSIGN(tile, addr)</code> is a no-op.</li>
-<li>If <code>obj</code> is a <code>GlobalTensor</code>:</li>
-<li><code>addr</code> must be a pointer type.</li>
-<li>The pointed-to element type must match <code>GlobalTensor::DType</code>.</li>
+<li>运行时地址形式要求 <code>addr</code> 是整型地址。</li>
+<li>在 NPU manual 模式下，这个地址会被直接解释成 tile 存储地址。</li>
+<li>在 <code>__PTO_AUTO__</code> 打开的自动模式下，NPU backend 中的 <code>TASSIGN(tile, addr)</code> 当前是 no-op。</li>
+<li>CPU 模拟器不会直接把整型当裸地址使用，而是通过 <code>NPUMemoryModel</code> 把它解析到对应架构的模拟缓冲区。</li>
 </ul>
-</li>
+<h3 id="globaltensor">GlobalTensor<a class="headerlink" href="#globaltensor" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>addr</code> 必须是指针类型。</li>
+<li>指针指向的元素类型必须和 <code>GlobalTensor::DType</code> 一致。</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="runtime-address-no-compile-time-check">Runtime address (no compile-time check)<a class="headerlink" href="#runtime-address-no-compile-time-check" title="Permanent link">&para;</a></h3>
+<h3 id="_8">编译期地址检查<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p><code>TASSIGN&lt;Addr&gt;(tile)</code> 会根据 Tile 的 <code>Loc</code> 自动推导对应内存空间，并检查：</p>
+<ul>
+<li>该内存空间在当前架构上是否存在</li>
+<li>Tile 是否能放得下</li>
+<li><code>Addr + tile_size</code> 是否越界</li>
+<li>地址是否满足对齐要求</li>
+</ul>
+<h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="_10">运行时地址<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -1110,7 +982,7 @@ void example_runtime() {
   TADD(c, a, b);
 }
 </code></pre>
-<h3 id="compile-time-address-with-static-bounds-check">Compile-time address (with static bounds check)<a class="headerlink" href="#compile-time-address-with-static-bounds-check" title="Permanent link">&para;</a></h3>
+<h3 id="_11">编译期地址<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -1119,45 +991,18 @@ void example_checked() {
   using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   TileT a, b, c;
 
-  TASSIGN&lt;0x0000&gt;(a);   // OK: 0x0000 + 1024 &lt;= 192KB
-  TASSIGN&lt;0x0400&gt;(b);   // OK: 0x0400 + 1024 &lt;= 192KB
-  TASSIGN&lt;0x0800&gt;(c);   // OK: 0x0800 + 1024 &lt;= 192KB
+  TASSIGN&lt;0x0000&gt;(a);
+  TASSIGN&lt;0x0400&gt;(b);
+  TASSIGN&lt;0x0800&gt;(c);
   TADD(c, a, b);
 }
 </code></pre>
-<p>The following triggers a compile error:</p>
-<pre><code class="language-cpp">void example_oob() {
-  // Tile&lt;Vec, float, 256, 256&gt; occupies 256*256*4 = 256KB
-  using BigTile = Tile&lt;TileType::Vec, float, 256, 256&gt;;
-  BigTile t;
-
-  // static_assert fires: tile_size (256KB) &gt; UB capacity (192KB on A2A3)
-  TASSIGN&lt;0x0&gt;(t);
-}
-</code></pre>
-<pre><code class="language-cpp">void example_oob_addr() {
-  using TileT = Tile&lt;TileType::Vec, float, 128, 128&gt;;  // 64KB
-  TileT t;
-
-  // static_assert fires: 0x20000 (128KB) + 64KB = 192KB,
-  //                       but 0x20001 + 64KB &gt; 192KB
-  TASSIGN&lt;0x20001&gt;(t);
-}
-</code></pre>
-<h3 id="ping-pong-l0-buffer-allocation">Ping-pong L0 buffer allocation<a class="headerlink" href="#ping-pong-l0-buffer-allocation" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void example_pingpong() {
-  using L0ATile = TileLeft&lt;half, 64, 128&gt;;   // L0A tile
-  using L0BTile = TileRight&lt;half, 128, 64&gt;;  // L0B tile
-
-  L0ATile a0, a1;
-  L0BTile b0, b1;
-
-  TASSIGN&lt;0x0000&gt;(a0);   // L0A ping
-  TASSIGN&lt;0x8000&gt;(a1);   // L0A pong
-  TASSIGN&lt;0x0000&gt;(b0);   // L0B ping  (separate physical memory from L0A)
-  TASSIGN&lt;0x8000&gt;(b1);   // L0B pong
-}
-</code></pre>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tsubview_zh/">TSUBVIEW</a></li>
+<li><a href="../../../../TALIAS_zh/">TALIAS</a></li>
+<li><a href="../../../sync-and-config_zh/">同步与配置指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

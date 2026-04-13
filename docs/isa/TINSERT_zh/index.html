@@ -910,82 +910,13 @@
               
                 <!-- Generated from `docs/isa/TINSERT_zh.md` -->
 
-<h1 id="tinsert">TINSERT<a class="headerlink" href="#tinsert" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TINSERT tile operation" src="../../figures/isa/TINSERT.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>在 (indexRow, indexCol) 偏移处将子 Tile 插入到目标 Tile 中。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>设 <code>R = src.GetValidRow()</code> 和 <code>C = src.GetValidCol()</code>。概念上，对于 <code>0 &lt;= i &lt; R</code> 和 <code>0 &lt;= j &lt; C</code>：</p>
-<div class="arithmatex">\[
-\mathrm{dst}_{\mathrm{indexRow}+i,\;\mathrm{indexCol}+j} = \mathrm{src}_{i,j}
-\]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = tinsert %src[%r0, %r1] : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tinsert %src[%r0, %r1] : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tinsert ins(%src[%r0, %r1] : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
-
-template &lt;typename DstTileData, typename SrcTileData, ReluPreMode reluMode, typename... WaitEvents&gt;
-PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
-
-template &lt;typename DstTileData, typename SrcTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
-
-template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TINSERT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
-
-#ifdef PTO_NPU_ARCH_A5
-template &lt;TInsertMode mode, typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src, uint32_t indexRow = 0, uint32_t indexCol = 0, WaitEvents &amp;... events);
-#endif
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotinsert">pto.tinsert<a class="headerlink" href="#ptotinsert" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/layout-and-rearrangement/tinsert_zh/">pto.tinsert</a>。</p>
 <ul>
-<li><strong>A2/A3</strong>:<ul>
-<li>文档中列出的这些重载对应 <code>Acc -&gt; Mat</code> 插入路径，包括普通形式、<code>reluMode</code> 形式、标量预量化形式以及向量预量化（<code>TINSERT_FP</code>）形式。</li>
-<li>运行时边界必须满足 <code>indexRow + src.Rows &lt;= dst.Rows</code> 且 <code>indexCol + src.Cols &lt;= dst.Cols</code>。</li>
+<li>指令集：<a href="../tile/layout-and-rearrangement_zh/">布局与重排指令集</a></li>
+<li>规范页：<a href="../tile/ops/layout-and-rearrangement/tinsert_zh/">pto.tinsert</a></li>
 </ul>
-</li>
-<li><strong>A5</strong>:<ul>
-<li>除了上面的 <code>Acc -&gt; Mat</code> 插入路径外，A5 还额外提供 <code>template &lt;TInsertMode mode, ...&gt; TINSERT(...)</code>，用于 <code>Vec -&gt; Mat</code> 与 <code>Vec -&gt; Vec</code> 插入变体。</li>
-<li><code>mode == TInsertMode::ND</code> 要求源向量 tile 为行优先，并以 ND 布局插入到矩阵 tile。</li>
-<li><code>mode == TInsertMode::ND_VEC</code> 要求源和目的都为行优先向量 tile。</li>
-<li>NZ 系列模式（<code>NZ</code>、<code>NZ_PLUS_1</code>、<code>SPLIT2_NZ_PLUS_1</code>、<code>SPLIT4_NZ_PLUS_1</code>）要求源向量 tile 为 NZ 格式，目的为矩阵 tile。</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>参见 <code>docs/isa/</code> 和 <code>docs/coding/tutorials/</code> 中的相关示例。</p>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.tinsert %src[%r0, %r1] : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.tinsert %src[%r0, %r1] : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tinsert %src[%r0, %r1] : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tinsert ins(%src[%r0, %r1] : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

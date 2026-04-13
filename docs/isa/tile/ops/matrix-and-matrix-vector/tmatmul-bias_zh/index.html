@@ -912,21 +912,22 @@
 
 <h1 id="tmatmul_bias">TMATMUL_BIAS<a class="headerlink" href="#tmatmul_bias" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TMATMUL_BIAS tile operation" src="../figures/isa/TMATMUL_BIAS.svg" /></p>
+<p><img alt="TMATMUL_BIAS tile operation" src="../../../../../figures/isa/TMATMUL_BIAS.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>带偏置加法的矩阵乘法。</p>
+<p><code>TMATMUL_BIAS</code> 在矩阵乘法结果上再叠加一行 Bias Tile。它表达的是“矩阵乘法 + 列偏置”，而不是另一种不同的乘法。</p>
+<p>这条指令常见于需要在 cube 计算后立刻加入每列偏置的场景，可以避免把乘法和偏置加法拆成两步理解。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let:</p>
+<p>设：</p>
 <ul>
 <li><code>M = aMatrix.GetValidRow()</code></li>
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>For <code>0 &lt;= i &lt; M</code> and <code>0 &lt;= j &lt; N</code>:</p>
+<p>对 <code>0 &lt;= i &lt; M</code> 和 <code>0 &lt;= j &lt; N</code>：</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} + \mathrm{Bias}_{0,j} \]</div>
-<p>Bias broadcasting behavior is implementation-defined.</p>
+<p>这里的 Bias Tile 只有一行，因此它按列广播到所有输出行。<code>bias[0, j]</code> 会加到结果矩阵的整列 <code>j</code> 上。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%acc = tmatmul.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -937,29 +938,41 @@
 <pre><code class="language-text">pto.tmatmul.bias ins(%a, %b, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename TileBias, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
+PTO_INST RecordEvent TMATMUL_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData,
+                                  WaitEvents &amp;... events);
 
 template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename TileBias,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
+PTO_INST RecordEvent TMATMUL_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData,
+                                  WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li>All constraints from <code>TMATMUL</code> apply to the <code>(cMatrix, aMatrix, bMatrix)</code> triple.</li>
-<li><strong>Bias constraints (A2A3)</strong>:<ul>
-<li><code>TileBias::DType</code> must match <code>TileRes::DType</code>.</li>
-<li><code>TileBias::Loc == TileType::Bias</code> and <code>TileBias::Rows == 1</code>.</li>
+<li><code>TMATMUL</code> 的所有 shape、位置、dtype 和 target-profile 约束，在这里同样成立。</li>
+<li><code>biasData</code> 的元素类型必须与结果累加器 <code>TileRes::DType</code> 一致。</li>
+<li><code>biasData</code> 必须是单行 Bias Tile，因为它表示“按列广播”的偏置。</li>
 </ul>
-</li>
-<li><strong>Bias constraints (A5)</strong>:<ul>
-<li><code>TileBias::DType</code> must match <code>TileRes::DType</code>.</li>
-<li><code>TileBias::Loc == TileType::Bias</code>, <code>TileBias::Rows == 1</code>, and <code>TileBias::isRowMajor</code>.</li>
+<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TileBias::Loc == TileType::Bias</code></li>
+<li><code>TileBias::Rows == 1</code></li>
 </ul>
-</li>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TileBias::Loc == TileType::Bias</code></li>
+<li><code>TileBias::Rows == 1</code></li>
+<li><code>TileBias::isRowMajor == true</code></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="_7">目标差异说明<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>通用 A5 / A2A3 路径都把 bias 直接送入底层 cube bias 通道。</li>
+<li>CPU 模拟器则先完成普通矩阵乘法，再把 <code>bias[0, j]</code> 显式加到每一行的第 <code>j</code> 列上。</li>
+<li>虽然实现方式不同，但对读者可见的合同是一致的：Bias 是“按列广播”。</li>
+</ul>
+<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -968,7 +981,7 @@ using namespace pto;
 void example_auto() {
   using A = TileLeft&lt;half, 16, 16&gt;;
   using B = TileRight&lt;half, 16, 16&gt;;
-  using Bias = Tile&lt;TileType::Bias, half, 1, 16&gt;;
+  using Bias = Tile&lt;TileType::Bias, float, 1, 16&gt;;
   using C = TileAcc&lt;float, 16, 16&gt;;
   A a;
   B b;
@@ -985,7 +998,7 @@ using namespace pto;
 void example_manual() {
   using A = TileLeft&lt;half, 16, 16&gt;;
   using B = TileRight&lt;half, 16, 16&gt;;
-  using Bias = Tile&lt;TileType::Bias, half, 1, 16&gt;;
+  using Bias = Tile&lt;TileType::Bias, float, 1, 16&gt;;
   using C = TileAcc&lt;float, 16, 16&gt;;
   A a;
   B b;
@@ -998,6 +1011,12 @@ void example_manual() {
   TMATMUL_BIAS(c, a, b, bias);
 }
 </code></pre>
+<h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tmatmul_zh/">TMATMUL</a></li>
+<li><a href="../tmatmul-acc_zh/">TMATMUL_ACC</a></li>
+<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵向量指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

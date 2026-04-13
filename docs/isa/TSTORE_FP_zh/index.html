@@ -910,93 +910,13 @@
               
                 <!-- Generated from `docs/isa/TSTORE_FP_zh.md` -->
 
-<h1 id="tstore_fp">TSTORE_FP<a class="headerlink" href="#tstore_fp" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSTORE_FP tile operation" src="../../figures/isa/TSTORE_FP.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>使用缩放 (<code>fp</code>) Tile 作为向量量化参数，将累加器 Tile 存储到全局内存。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. Conceptually (2D view, with a base offset), for <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
-<div class="arithmatex">\[ \mathrm{dst}_{r_0 + i,\; c_0 + j} = \mathrm{Convert}\!\left(\mathrm{src}_{i,j};\ \mathrm{fp}\right) \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">tstore.fp %src, %fp, %sv_out[%c0, %c0]
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tstore.fp %src, %fp, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tstore.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tstore.fp %src, %fp, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tstore.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename FpTileData, AtomicType atomicType = AtomicType::AtomicNone,
-          ReluPreMode reluPreMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotstore_fp">pto.tstore_fp<a class="headerlink" href="#ptotstore_fp" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/memory-and-data-movement/tstore-fp_zh/">pto.tstore_fp</a>。</p>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li>The fp store path is implemented via <code>TSTORE_IMPL(dst, src, fp)</code> and uses the same accumulator-to-GM legality checks as quantized accumulator stores:</li>
-<li>Destination layout must be ND or NZ.</li>
-<li>Source dtype must be <code>int32_t</code> or <code>float</code>.</li>
-<li>Static shape constraints: <code>1 &lt;= TileData::Cols &lt;= 4095</code>; if ND then <code>1 &lt;= TileData::Rows &lt;= 8192</code>; if NZ then <code>1 &lt;= TileData::Rows &lt;= 65535</code> and <code>TileData::Cols % 16 == 0</code>.</li>
-<li>Runtime: <code>1 &lt;= src.GetValidCol() &lt;= 4095</code>.</li>
-<li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code> (the implementation uses <code>fp</code> to set FPC state).</li>
+<li>指令集：<a href="../tile/memory-and-data-movement_zh/">内存与数据搬运指令集</a></li>
+<li>规范页：<a href="../tile/ops/memory-and-data-movement/tstore-fp_zh/">pto.tstore_fp</a></li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li>Implemented via <code>TSTORE_IMPL(dst, src, fp)</code> and validated by <code>CheckStaticAcc&lt;..., true&gt;()</code> for the accumulator path (ND/NZ only, <code>int32_t/float</code> source dtype, rows/cols ranges).</li>
-<li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code> (the implementation uses <code>fp</code> to set FPC state).</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto(__gm__ int8_t* out) {
-  using AccT = TileAcc&lt;float, 16, 16&gt;;
-  using FpT = Tile&lt;TileType::Scaling, uint64_t, 1, 16, BLayout::RowMajor, 1, DYNAMIC, SLayout::NoneBox&gt;;
-  using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
-  using GStride = BaseShape2D&lt;int8_t, 16, 16, Layout::ND&gt;;
-  using GT = GlobalTensor&lt;int8_t, GShape, GStride, Layout::ND&gt;;
-
-  GT gout(out);
-  AccT acc;
-  FpT fp(16);
-  TSTORE_FP(gout, acc, fp);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual(__gm__ int8_t* out) {
-  using AccT = TileAcc&lt;float, 16, 16&gt;;
-  using FpT = Tile&lt;TileType::Scaling, uint64_t, 1, 16, BLayout::RowMajor, 1, DYNAMIC, SLayout::NoneBox&gt;;
-  using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
-  using GStride = BaseShape2D&lt;int8_t, 16, 16, Layout::ND&gt;;
-  using GT = GlobalTensor&lt;int8_t, GShape, GStride, Layout::ND&gt;;
-
-  GT gout(out);
-  AccT acc;
-  FpT fp(16);
-  TASSIGN(acc, 0x1000);
-  TASSIGN(fp,  0x2000);
-  TSTORE_FP(gout, acc, fp);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

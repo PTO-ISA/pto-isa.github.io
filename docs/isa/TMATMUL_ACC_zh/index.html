@@ -910,93 +910,13 @@
               
                 <!-- Generated from `docs/isa/TMATMUL_ACC_zh.md` -->
 
-<h1 id="tmatmul_acc">TMATMUL_ACC<a class="headerlink" href="#tmatmul_acc" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TMATMUL_ACC tile operation" src="../../figures/isa/TMATMUL_ACC.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>带累加器输入的矩阵乘法（融合累加）。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let:</p>
+<h1 id="ptotmatmul_acc">pto.tmatmul_acc<a class="headerlink" href="#ptotmatmul_acc" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/matrix-and-matrix-vector/tmatmul-acc_zh/">pto.tmatmul_acc</a>。</p>
 <ul>
-<li><code>M = aMatrix.GetValidRow()</code></li>
-<li><code>K = aMatrix.GetValidCol()</code></li>
-<li><code>N = bMatrix.GetValidCol()</code></li>
+<li>指令集：<a href="../tile/matrix-and-matrix-vector_zh/">矩阵与矩阵-向量指令集</a></li>
+<li>规范页：<a href="../tile/ops/matrix-and-matrix-vector/tmatmul-acc_zh/">pto.tmatmul_acc</a></li>
 </ul>
-<p>For <code>0 &lt;= i &lt; M</code> and <code>0 &lt;= j &lt; N</code>:</p>
-<div class="arithmatex">\[ \mathrm{C1}_{i,j} = \mathrm{C0}_{i,j} + \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%acc1 = tmatmul.acc %acc0, %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c_out = pto.tmatmul.acc %c_in, %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmatmul.acc ins(%c_in, %a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c_out = pto.tmatmul.acc %c_in, %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmatmul.acc ins(%c_in, %a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase = AccPhase::Unspecified, typename TileRes, typename TileLeft, typename TileRight,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_ACC(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<ul>
-<li>All constraints from <code>TMATMUL</code> apply to the <code>(cOutMatrix, aMatrix, bMatrix)</code> triple.</li>
-<li><strong>Implementation notes (A2A3/A5)</strong>:<ul>
-<li><code>TMATMUL_ACC_IMPL</code> uses <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, and <code>bMatrix.GetValidCol()</code> for <code>m/k/n</code>.</li>
-<li><code>cInMatrix</code> is not validated by explicit assertions in the current implementations (target-defined behavior).</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto() {
-  using A = TileLeft&lt;half, 16, 16&gt;;
-  using B = TileRight&lt;half, 16, 16&gt;;
-  using C = TileAcc&lt;float, 16, 16&gt;;
-  A a;
-  B b;
-  C c0, c1;
-  TMATMUL_ACC(c1, c0, a, b);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using A = TileLeft&lt;half, 16, 16&gt;;
-  using B = TileRight&lt;half, 16, 16&gt;;
-  using C = TileAcc&lt;float, 16, 16&gt;;
-  A a;
-  B b;
-  C c0, c1;
-  TASSIGN(a, 0x1000);
-  TASSIGN(b, 0x2000);
-  TASSIGN(c0, 0x3000);
-  TASSIGN(c1, 0x4000);
-  TMATMUL_ACC(c1, c0, a, b);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

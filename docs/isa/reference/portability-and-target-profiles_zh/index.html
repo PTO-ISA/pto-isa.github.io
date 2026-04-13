@@ -908,17 +908,44 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/reference/portability-and-target-profiles_zh.md` -->
+                <!-- Generated from `docs/isa/reference/portability-and-target-profiles_zh.md` -->
 
-<h1 id="portability-and-target-profiles">Portability And Target Profiles<a class="headerlink" href="#portability-and-target-profiles" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="profile">可移植性与目标 Profile<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h1>
+<p>PTO 的可移植性成立于虚拟 ISA 层，而不是每一种目标专属优化、支持子集或性能行为层。</p>
+<h2 id="pto">可移植 PTO 契约<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h2>
+<p>可移植 PTO 文档应描述：</p>
 <ul>
-<li><a href="../portability-and-target-profiles/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
+<li>合法程序的架构可见语义</li>
+<li>必需的同步与可见性边</li>
+<li>tile、vector、scalar/control 与 communication 操作的含义</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="profile_1">Profile 缩窄<a class="headerlink" href="#profile_1" title="Permanent link">&para;</a></h2>
+<p>目标 profile 可以缩窄：</p>
+<ul>
+<li>支持的数据类型</li>
+<li>支持的 layout 或 tile role</li>
+<li>支持的向量形式与流水线特性</li>
+<li>支持的性能导向或不规则指令族</li>
+</ul>
+<p>这些限制应写成目标 profile 限制，而不是把 PTO 本身重写成 profile 专属规则。</p>
+<h2 id="_1">兼容性边界<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>跨 profile 的可移植代码应满足两层约束：</p>
+<ol>
+<li>PTO 本身定义的合法性与语义约束</li>
+<li>所选 profile 额外施加的缩窄条件</li>
+</ol>
+<p>如果某条程序只在单一 profile 上成立，应明确把该条件写进文档，而不是默认这类约束会从 backend 行为中被自行推断。</p>
+<h2 id="_2">文档要求<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ul>
+<li>架构层规则与 profile 层规则必须分开陈述。</li>
+<li>当 profile 改变支持子集时，应说明“哪里被缩窄”，而不是只说“某目标不支持”。</li>
+<li>profile 特有性能、对齐或流水线细节可以记录，但不能伪装成通用 PTO 语义。</li>
+</ul>
+<h2 id="_3">相关页面<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../source-of-truth_zh/">规范来源</a></li>
+<li><a href="../diagnostics-and-illegal-cases_zh/">诊断与非法情形</a></li>
+</ul>
               
             </div>
           </div><footer>

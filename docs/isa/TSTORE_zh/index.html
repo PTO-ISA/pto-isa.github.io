@@ -910,115 +910,13 @@
               
                 <!-- Generated from `docs/isa/TSTORE_zh.md` -->
 
-<h1 id="tstore">TSTORE<a class="headerlink" href="#tstore" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSTORE tile operation" src="../../figures/isa/TSTORE.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>将 Tile 中的数据存储到 GlobalTensor (GM)，可选使用原子写入或量化参数。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Notation depends on the <code>GlobalTensor</code> shape/stride and the <code>Tile</code> layout. Conceptually (2D view, with a base offset):</p>
-<div class="arithmatex">\[ \mathrm{dst}_{r_0 + i,\; c_0 + j} = \mathrm{src}_{i,j} \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">tstore %t1, %sv_out[%c0, %c0]
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tstore %src, %mem : (!pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tstore ins(%src : !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, AtomicType atomicType = AtomicType::AtomicNone,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TSTORE(GlobalData &amp;dst, TileData &amp;src, WaitEvents &amp;... events);
-
-template &lt;typename TileData, typename GlobalData, AtomicType atomicType = AtomicType::AtomicNone,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TSTORE(GlobalData &amp;dst, TileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);
-
-template &lt;typename TileData, typename GlobalData, typename FpTileData, AtomicType atomicType = AtomicType::AtomicNone,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
-</code></pre>
-<p>The <code>preQuantScalar</code> and <code>TSTORE_FP</code> quantized-store overloads are only legal for <code>TileType::Acc</code> on current A2/A3 and A5 backends. They do not provide a native vec-tile quantized store contract.</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotstore">pto.tstore<a class="headerlink" href="#ptotstore" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/memory-and-data-movement/tstore_zh/">pto.tstore</a>。</p>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
-<li>Source tile location must be one of: <code>TileType::Vec</code>, <code>TileType::Mat</code>, <code>TileType::Acc</code>.</li>
-<li>Runtime: all <code>dst.GetShape(dim)</code> values and <code>src.GetValidRow()/GetValidCol()</code> must be <code>&gt; 0</code>.</li>
-<li>For <code>TileType::Vec</code> / <code>TileType::Mat</code>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>int64_t</code>, <code>uint64_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
-<li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>.</li>
-<li>Layouts must match ND/DN/NZ (or a special case where <code>TileData::Rows == 1</code> or <code>TileData::Cols == 1</code>).</li>
-<li>For <code>int64_t/uint64_t</code>, only ND-&gt;ND or DN-&gt;DN are supported.</li>
-<li>A2/A3 does not expose a native vec quantized-store path. Frontends that need <code>vec -&gt; GM</code> dtype conversion or quantization MUST first materialize the converted vec tile (for example via <code>TCVT</code>) and then issue a same-dtype <code>TSTORE</code>.</li>
+<li>指令集：<a href="../tile/memory-and-data-movement_zh/">内存与数据搬运指令集</a></li>
+<li>规范页：<a href="../tile/ops/memory-and-data-movement/tstore_zh/">pto.tstore</a></li>
 </ul>
-</li>
-<li>For <code>TileType::Acc</code> (including quantized/atomic variants):<ul>
-<li>Destination layout must be ND or NZ.</li>
-<li>Source dtype must be <code>int32_t</code> or <code>float</code>.</li>
-<li>When not using quantization, destination dtype must be <code>__gm__ int32_t/float/half/bfloat16_t</code>.</li>
-<li>Static shape constraints: <code>1 &lt;= TileData::Cols &lt;= 4095</code>; if ND then <code>1 &lt;= TileData::Rows &lt;= 8192</code>; if NZ then <code>1 &lt;= TileData::Rows &lt;= 65535</code> and <code>TileData::Cols % 16 == 0</code>.</li>
-<li>Runtime: <code>1 &lt;= src.GetValidCol() &lt;= 4095</code>.</li>
-</ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:</li>
-<li>Source tile location must be <code>TileType::Vec</code> or <code>TileType::Acc</code> (no <code>Mat</code> store on this target).</li>
-<li>For <code>TileType::Vec</code>:<ul>
-<li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>.</li>
-<li><code>TileData::DType</code> must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>int64_t</code>, <code>uint64_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, <code>float8_e4m3_t</code>, <code>float8_e5m2_t</code>, <code>hifloat8_t</code>, <code>float4_e1m2x2_t</code>, <code>float4_e2m1x2_t</code>.</li>
-<li>Layouts must match ND/DN/NZ (or a special case where <code>TileData::Rows == 1</code> or <code>TileData::Cols == 1</code>).</li>
-<li>Additional alignment constraints are enforced (e.g., for ND the row-major width in bytes must be a multiple of 32; for DN the column-major height in bytes must be a multiple of 32, with special-case exceptions).</li>
-</ul>
-</li>
-<li>For <code>TileType::Acc</code>:<ul>
-<li>Destination layout must be ND or NZ; source dtype must be <code>int32_t</code> or <code>float</code>.</li>
-<li>When not using quantization, destination dtype must be <code>__gm__ int32_t/float/half/bfloat16_t</code>.</li>
-<li>Static shape constraints match A2A3 for rows/cols; <code>AtomicAdd</code> additionally restricts destination dtype to supported atomic types.</li>
-</ul>
-</li>
-<li><strong>有效区域</strong>:</li>
-<li>The implementation uses <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code> as the transfer size.</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T&gt;
-void example_auto(__gm__ T* out) {
-  using TileT = Tile&lt;TileType::Vec, T, 16, 16&gt;;
-  using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
-  using GStride = BaseShape2D&lt;T, 16, 16, Layout::ND&gt;;
-  using GTensor = GlobalTensor&lt;T, GShape, GStride, Layout::ND&gt;;
-
-  GTensor gout(out);
-  TileT t;
-  TSTORE(gout, t);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T&gt;
-void example_manual(__gm__ T* out) {
-  using TileT = Tile&lt;TileType::Vec, T, 16, 16&gt;;
-  using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
-  using GStride = BaseShape2D&lt;T, 16, 16, Layout::ND&gt;;
-  using GTensor = GlobalTensor&lt;T, GShape, GStride, Layout::ND&gt;;
-
-  GTensor gout(out);
-  TileT t;
-  TASSIGN(t, 0x1000);
-  TSTORE&lt;TileT, GTensor, AtomicType::AtomicAdd&gt;(gout, t);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

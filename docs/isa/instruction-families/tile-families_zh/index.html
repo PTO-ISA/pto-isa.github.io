@@ -908,19 +908,80 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/instruction-families/tile-families_zh.md` -->
+                <!-- Generated from `docs/isa/instruction-families/tile-families_zh.md` -->
 
-<h1 id="tile-families">Tile Families<a class="headerlink" href="#tile-families" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="tile">Tile 指令族<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h1>
+<p>Tile 指令族定义 <code>pto.t*</code> 各组操作共享的机制、操作数模型、约束和 profile 缩窄关系，然后再进入具体 per-op 页面。</p>
+<h2 id="_1">指令族概览<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>指令族</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>同步与配置</td>
+<td><code>tassign</code>、<code>tsync</code>、<code>tset*</code> 等</td>
+</tr>
+<tr>
+<td>逐元素 Tile-Tile</td>
+<td><code>tadd</code>、<code>tmul</code>、<code>tcmp</code>、<code>tcvt</code> 等</td>
+</tr>
+<tr>
+<td>Tile-标量与立即数</td>
+<td><code>tadds</code>、<code>tmuls</code>、<code>tmins</code> 等</td>
+</tr>
+<tr>
+<td>归约与扩展</td>
+<td><code>trowsum</code>、<code>tcolmax</code>、<code>trowexpand</code> 等</td>
+</tr>
+<tr>
+<td>内存与数据搬运</td>
+<td><code>tload</code>、<code>tstore</code>、<code>mgather</code>、<code>mscatter</code></td>
+</tr>
+<tr>
+<td>矩阵与矩阵-向量</td>
+<td><code>tgemv</code>、<code>tmatmul</code> 及其变体</td>
+</tr>
+<tr>
+<td>布局与重排</td>
+<td><code>tmov</code>、<code>ttrans</code>、<code>textract</code>、<code>tinsert</code> 等</td>
+</tr>
+<tr>
+<td>不规则与复杂</td>
+<td><code>tmrgsort</code>、<code>tquant</code>、<code>tprint</code> 等</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">共享操作数模型<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../tile-families/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
-<li><a href="../../../../manual/07-instructions_zh/">中文章节手册指令集概述</a></li>
+<li>tile / tile buffer</li>
+<li>标量修饰符与立即数</li>
+<li>GM 视图</li>
+<li>事件链与等待事件</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">共享约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>valid region 交互必须明确</li>
+<li>layout 与 role 限制必须明确</li>
+<li>target-profile 缩窄必须单独标明</li>
+<li>不允许的组合必须在族级说明中出现</li>
+</ul>
+<h2 id="_4">域外语义<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>对于逐元素类族，目标 tile 的 valid region 决定迭代域。源 tile 在域外坐标上的读取如果没有单独定义，应按 implementation-defined 或 unsupported 处理，而不是默认视为有意义数据。</p>
+<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把目标 profile 的实现便利当成 PTO 通用规则</li>
+<li>把未定义的域外行为写成稳定语义</li>
+<li>依赖隐式广播、隐式 reshape 或隐式同步</li>
+</ul>
+<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令集</a></li>
+<li><a href="../../tile/README_zh/">Tile 参考入口</a></li>
+</ul>
               
             </div>
           </div><footer>

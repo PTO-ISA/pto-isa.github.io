@@ -910,105 +910,13 @@
               
                 <!-- Generated from `docs/isa/TMRGSORT_zh.md` -->
 
-<h1 id="tmrgsort">TMRGSORT<a class="headerlink" href="#tmrgsort" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TMRGSORT tile operation" src="../../figures/isa/TMRGSORT.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>用于多个已排序列表的归并排序（实现定义的元素格式和布局）。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Merges sorted input lists into <code>dst</code>. Ordering, element format (e.g., value/index pairs), and the meaning of executed counts depend on the implementation.</p>
-<div class="arithmatex">\[ \mathrm{dst} = \mathrm{merge}(\mathrm{src}_0, \mathrm{src}_1, \ldots) \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>Synchronous form (conceptual):</p>
-<pre><code class="language-text">%dst, %executed = tmrgsort %src0, %src1 {exhausted = false}
-    : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; (!pto.tile&lt;...&gt;, vector&lt;4xi16&gt;)
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tmrgsort %src, %blockLen : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-%dst, %executed = pto.tmrgsort %src0, %src1, %src2, %src3 {exhausted = false}
- : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, vector&lt;4xi16&gt;)
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmrgsort ins(%src, %blockLen : !pto.tile_buf&lt;...&gt;, dtype)  outs(%dst : !pto.tile_buf&lt;...&gt;)
-pto.tmrgsort ins(%src0, %src1, %src2, %src3 {exhausted = false} : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
-outs(%dst, %executed : !pto.tile_buf&lt;...&gt;, vector&lt;4xi16&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tmrgsort %src, %blockLen : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-%dst, %executed = pto.tmrgsort %src0, %src1, %src2, %src3 {exhausted = false}
- : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, vector&lt;4xi16&gt;)
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmrgsort ins(%src, %blockLen : !pto.tile_buf&lt;...&gt;, dtype)  outs(%dst : !pto.tile_buf&lt;...&gt;)
-pto.tmrgsort ins(%src0, %src1, %src2, %src3 {exhausted = false} : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
-outs(%dst, %executed : !pto.tile_buf&lt;...&gt;, vector&lt;4xi16&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData,
-          typename Src2TileData, typename Src3TileData, bool exhausted, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, Src2TileData &amp;src2, Src3TileData &amp;src3, WaitEvents &amp;... events);
-
-template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData,
-          typename Src2TileData, bool exhausted, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, Src2TileData &amp;src2, WaitEvents &amp;... events);
-
-template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData, bool exhausted,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, WaitEvents &amp;... events);
-
-template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, SrcTileData &amp;src, uint32_t blockLen, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotmrgsort">pto.tmrgsort<a class="headerlink" href="#ptotmrgsort" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/irregular-and-complex/tmrgsort_zh/">pto.tmrgsort</a>。</p>
 <ul>
-<li><strong>实现检查 (A2A3/A5)</strong>:<ul>
-<li>Element type must be <code>half</code> or <code>float</code> and must match across <code>dst/tmp/src*</code> tiles.</li>
-<li>All tiles must be <code>TileType::Vec</code>, row-major, and have <code>Rows == 1</code> (list stored in a single row).</li>
-<li>UB memory usage is checked (compile-time and runtime) against target limits (single <code>Cols</code> across inputs plus <code>tmp</code>/<code>dst</code>).</li>
+<li>指令集：<a href="../tile/irregular-and-complex_zh/">不规则与复杂指令集</a></li>
+<li>规范页：<a href="../tile/ops/irregular-and-complex/tmrgsort_zh/">pto.tmrgsort</a></li>
 </ul>
-</li>
-<li><strong>Single-list variant (<code>TMRGSORT(dst, src, blockLen)</code>)</strong>:<ul>
-<li><code>blockLen</code> must be a multiple of 64 (as checked by the implementation).</li>
-<li><code>src.GetValidCol()</code> must be an integer multiple of <code>blockLen * 4</code>.</li>
-<li><code>repeatTimes = src.GetValidCol() / (blockLen * 4)</code> must be in <code>[1, 255]</code>.</li>
-</ul>
-</li>
-<li><strong>Multi-list variants</strong>:<ul>
-<li><code>tmp</code> is required and <code>executedNumList</code> is written by the implementation; supported list counts and exact semantics are target-defined.</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto() {
-  using SrcT = Tile&lt;TileType::Vec, float, 1, 256&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 1, 256&gt;;
-  SrcT src;
-  DstT dst;
-  TMRGSORT(dst, src, /*blockLen=*/64);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 1, 256&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 1, 256&gt;;
-  SrcT src;
-  DstT dst;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TMRGSORT(dst, src, /*blockLen=*/64);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

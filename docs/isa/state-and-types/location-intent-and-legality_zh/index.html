@@ -908,18 +908,169 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/state-and-types/location-intent-and-legality_zh.md` -->
+                <!-- Generated from `docs/isa/state-and-types/location-intent-and-legality_zh.md` -->
 
-<h1 id="location-intent-and-legality">Location Intent And Legality<a class="headerlink" href="#location-intent-and-legality" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">位置意图与合法性<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>PTO 的合法性不只取决于元素类型和 shape。许多操作还依赖值打算处于哪里、承担什么角色。位置意图分类和合法性检查流水如下。</p>
+<h2 id="_2">位置意图分类<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>每个 tile 操作数都带有 <strong>location intent</strong>。它决定该 tile 由哪个执行流水处理，以及哪些操作对它是合法的。位置意图编码在 tile 类型中的 <code>loc=</code> 字段里。</p>
+<h3 id="_3">位置意图取值<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>位置意图</th>
+<th>Pipeline</th>
+<th>说明</th>
+<th>常见用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loc=vec</code></td>
+<td>Vector Pipeline</td>
+<td>通用向量 tile</td>
+<td><code>TADD</code>、<code>TMUL</code>、<code>TCVT</code>、<code>TLOAD/TSTORE</code></td>
+</tr>
+<tr>
+<td><code>loc=mat</code></td>
+<td>Matrix / CUBE</td>
+<td>矩阵乘输入</td>
+<td><code>TGEMV</code> 等</td>
+</tr>
+<tr>
+<td><code>loc=acc</code></td>
+<td>Matrix / CUBE</td>
+<td>累加器 / 输出 tile</td>
+<td><code>TMATMUL*</code> 输出</td>
+</tr>
+<tr>
+<td><code>loc=left</code></td>
+<td>Matrix / CUBE</td>
+<td>MX matmul 左操作数</td>
+<td><code>TMATMUL_MX</code> 左输入</td>
+</tr>
+<tr>
+<td><code>loc=right</code></td>
+<td>Matrix / CUBE</td>
+<td>MX matmul 右操作数</td>
+<td><code>TMATMUL_MX</code> 右输入</td>
+</tr>
+<tr>
+<td><code>loc=scalar</code></td>
+<td>Scalar Unit</td>
+<td>标量 tile</td>
+<td>标量型 tile 操作</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_4">在类型中的写法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+!pto.tile_buf&lt;loc=left, int8, 16, 16, RowMajor, RowMajor, NZ, Null&gt;
+!pto.tile_buf&lt;loc=acc, int32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+</code></pre>
+<p>在 C++ API 中，位置意图由 <code>TileType</code> 模板参数表达：</p>
+<pre><code class="language-cpp">using VecTile = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+using AccTile = Tile&lt;TileType::Acc, float, 16, 16&gt;;
+using LeftTile = Tile&lt;TileType::Left, int8_t, 16, 16, RowMajor, RowMajor, NZ, Null&gt;;
+</code></pre>
+<h2 id="_5">合法性检查流水<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>PTO 的合法性按四个阶段依次检查。程序只有通过四个阶段才算合法：</p>
+<pre><code class="language-text">Stage 1: TYPE CHECK
+Stage 2: SHAPE CHECK
+Stage 3: LAYOUT CHECK
+Stage 4: TARGET PROFILE CHECK
+</code></pre>
+<h3 id="stage-1-type-check">Stage 1: Type Check<a class="headerlink" href="#stage-1-type-check" title="Permanent link">&para;</a></h3>
+<p>元素类型必须与操作要求兼容。</p>
+<p>对二元 tile 操作：</p>
+<pre><code class="language-text">dtype(src0) == dtype(src1) == dtype(dst)
+</code></pre>
+<p>对显式转换类操作，例如 <code>TCVT</code>，允许源和目标类型不同，但必须属于文档化的转换组。</p>
+<h3 id="stage-2-shape-check">Stage 2: Shape Check<a class="headerlink" href="#stage-2-shape-check" title="Permanent link">&para;</a></h3>
+<p>物理 shape 和 valid region 必须在该指令和目标 profile 允许的范围内：</p>
+<pre><code class="language-text">1 &lt;= Rows &lt;= MAX_ROWS(profile)
+1 &lt;= Cols &lt;= MAX_COLS(profile)
+0 &lt;= Rv &lt;= Rows
+0 &lt;= Cv &lt;= Cols
+</code></pre>
+<h3 id="stage-3-layout-check">Stage 3: Layout Check<a class="headerlink" href="#stage-3-layout-check" title="Permanent link">&para;</a></h3>
+<p><code>BLayout + SLayout + Fractal</code> 组合必须对当前 <code>TileType</code> 和当前指令合法。</p>
+<p>示例：</p>
 <ul>
-<li><a href="../location-intent-and-legality/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../manual/03-state-and-types_zh/">中文章节手册状态与类型</a></li>
+<li><code>Vec</code> tile 使用 NZ 布局：非法</li>
+<li><code>Left</code> tile 使用 <code>ColMajor</code>：非法</li>
+<li><code>Mat</code> tile 使用分形布局：非法</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h3 id="stage-4-target-profile-check">Stage 4: Target Profile Check<a class="headerlink" href="#stage-4-target-profile-check" title="Permanent link">&para;</a></h3>
+<p>操作数的 <code>TileType</code>、元素类型和布局还必须被所选 target profile 支持。</p>
+<p>示例：</p>
+<ul>
+<li>A2/A3 上使用 FP8：非法</li>
+<li>CPU 或 A2/A3 上使用 <code>Left/Right</code> 的 MX tile：非法</li>
+</ul>
+<h2 id="_6">按指令集的合法性要求<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="tile-tile">逐元素 Tile-Tile<a class="headerlink" href="#tile-tile" title="Permanent link">&para;</a></h3>
+<ul>
+<li>所有操作数必须为 <code>loc=vec</code></li>
+<li>布局组合必须与 <code>Vec</code> 兼容</li>
+<li><code>dtype</code> 必须在该指令集支持列表内</li>
+</ul>
+<h3 id="matmul">Matmul<a class="headerlink" href="#matmul" title="Permanent link">&para;</a></h3>
+<ul>
+<li>左输入：<code>TileType::Left</code> 或 <code>TileType::Mat</code></li>
+<li>右输入：<code>TileType::Right</code> 或 <code>TileType::Mat</code></li>
+<li>累加器：<code>TileType::Acc</code></li>
+<li>形状必须满足 matmul 维度兼容关系</li>
+</ul>
+<h3 id="_7">向量计算<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>操作数必须为 <code>!pto.vreg&lt;NxDTYPE&gt;</code></li>
+<li>mask 宽度必须匹配向量宽度</li>
+<li><code>dtype</code> 必须在目标 profile 支持列表内</li>
+</ul>
+<h2 id="gm">GM 侧操作数<a class="headerlink" href="#gm" title="Permanent link">&para;</a></h2>
+<p>GlobalTensor 操作数遵循单独的合法性路径：</p>
+<table>
+<thead>
+<tr>
+<th>检查</th>
+<th>规则</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dtype 大小</td>
+<td><code>sizeof(tile.dtype) == sizeof(gtensor.dtype)</code></td>
+</tr>
+<tr>
+<td>布局兼容性</td>
+<td><code>gtensor.Layout</code> 必须与 tile 布局兼容</td>
+</tr>
+<tr>
+<td>Shape 正值</td>
+<td>所有 shape 维度 &gt; 0</td>
+</tr>
+<tr>
+<td>Valid region</td>
+<td><code>Rv &gt; 0</code> 且 <code>Cv &gt; 0</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_8">不允许的情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>在 tile 指令上偷用 vector-buffer 假设而没有显式桥接</li>
+<li>把 location-sensitive 指令集写成“所有本地存储角色都等价”</li>
+<li>用模糊的 implementation-defined 掩盖其实是 profile 缩窄的限制</li>
+<li>把 CPU 模拟器的宽松行为当成 A5 合法性的证据</li>
+</ul>
+<h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../type-system_zh/">类型系统</a></li>
+<li><a href="../../programming-model/tiles-and-valid-regions_zh/">Tile 与有效区域</a></li>
+<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令集</a></li>
+<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
+<li><a href="../../reference/portability-and-target-profiles_zh/">可移植性与目标 Profile</a></li>
+</ul>
               
             </div>
           </div><footer>

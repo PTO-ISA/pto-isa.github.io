@@ -908,18 +908,209 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/syntax-and-operands/assembly-model_zh.md` -->
+                <!-- Generated from `docs/isa/syntax-and-operands/assembly-model_zh.md` -->
 
-<h1 id="assembly-spelling-and-operands">Assembly Spelling And Operands<a class="headerlink" href="#assembly-spelling-and-operands" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">汇编拼写与操作数<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>PTO ISA 包含一套文本汇编拼写形式，即 PTO-AS，但架构契约本身仍定义在 PTO ISA manual 中。下文给出三种文本层级的 BNF 语法、操作数修饰规则和属性语法；具体指令的特殊拼写由各自的 per-op 页面补充。</p>
+<h2 id="_2">三层语法系统<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>PTO 定义三种文本语法层级，它们保留同一套 ISA 契约：</p>
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>名称</th>
+<th>形式</th>
+<th>常见用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Assembly Form (PTO-AS)</strong></td>
+<td>人类可读形式</td>
+<td><code>tadd %dst, %src0, %src1</code></td>
+<td>文档、伪代码</td>
+</tr>
+<tr>
+<td><strong>SSA Form (AS Level 1)</strong></td>
+<td>MLIR SSA</td>
+<td><code>%dst = pto.tadd %src0, %src1</code></td>
+<td>IR、代码生成器</td>
+</tr>
+<tr>
+<td><strong>DPS Form (AS Level 2)</strong></td>
+<td>Functional DPS</td>
+<td><code>pto.tadd ins(...) outs(...)</code></td>
+<td>C++ intrinsic 对应形态</td>
+</tr>
+</tbody>
+</table>
+<p>三种形式在语义上等价。backend 或 verifier 不能因为语法层不同而赋予不同语义。</p>
+<h2 id="bnf">BNF 语法<a class="headerlink" href="#bnf" title="Permanent link">&para;</a></h2>
+<h3 id="assembly-formpto-as">Assembly Form（PTO-AS）<a class="headerlink" href="#assembly-formpto-as" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">assembly-program  ::= assembly-stmt*
+assembly-stmt     ::= label? op-name operands? &quot;:&quot; type-ref (&quot;#&quot; attribute)*
+label             ::= identifier &quot;:&quot;
+op-name           ::= (&quot;pto.&quot;)? identifier (&quot;_&quot; identifier)*
+operands          ::= operand (&quot;,&quot; operand)*
+operand           ::= register | immediate | memory-operand | mask-operand
+register          ::= &quot;%&quot; identifier
+immediate         ::= integer | hex-integer | floating-point
+hex-integer       ::= &quot;0x&quot; [0-9a-fA-F]+
+floating-point    ::= [0-9]+ &quot;.&quot; [0-9]+ (&quot;e&quot; [+-]? [0-9]+)?
+memory-operand    ::= register &quot;[&quot; register (&quot;,&quot; register)* &quot;]&quot;
+mask-operand      ::= &quot;%&quot; identifier &quot;:&quot; &quot;!&quot; pto.mask
+type-ref          ::= &quot;!&quot; pto &quot;.&quot; type-key &quot;&lt;&quot; type-params &quot;&gt;&quot;
+type-key          ::= &quot;tile&quot; | &quot;tile_buf&quot; | &quot;vreg&quot; | &quot;ptr&quot; | &quot;partition_tensor_view&quot; | &quot;mask&quot; | &quot;event&quot;
+</code></pre>
+<h3 id="ssa-formas-level-1">SSA Form（AS Level 1）<a class="headerlink" href="#ssa-formas-level-1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">ssa-program       ::= ssa-stmt*
+ssa-stmt          ::= ssa-result &quot;=&quot; op-name operands &quot;:&quot; ssa-type -&gt; ssa-type
+ssa-result        ::= &quot;%&quot; identifier
+op-name           ::= &quot;pto.&quot; identifier (&quot;_&quot; identifier)*
+operands          ::= ssa-operand (&quot;,&quot; ssa-operand)*
+ssa-operand       ::= ssa-result | immediate | memory-operand
+ssa-type          ::= ssa-type-key &quot;&lt;&quot; type-params &quot;&gt;&quot;
+ssa-type-key      ::= &quot;tile&quot; | &quot;tile_buf&quot; | &quot;vreg&quot; | &quot;ptr&quot; | &quot;partition_tensor_view&quot; | &quot;mask&quot;
+</code></pre>
+<h3 id="dps-formas-level-2">DPS Form（AS Level 2）<a class="headerlink" href="#dps-formas-level-2" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">dps-program       ::= dps-stmt*
+dps-stmt          ::= op-name &quot;ins(&quot; dps-ins &quot;)&quot; &quot;outs(&quot; dps-outs &quot;)&quot;
+dps-ins           ::= dps-ins-item (&quot;,&quot; dps-ins-item)*
+dps-outs          ::= dps-out-item (&quot;,&quot; dps-out-item)*
+dps-ins-item      ::= ssa-result &quot;:&quot; ssa-type
+dps-out-item      ::= ssa-result &quot;:&quot; ssa-type
+</code></pre>
+<h2 id="_3">操作数修饰规则<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="tile">Tile 操作数<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
+<p>PTO-AS 中的 tile 操作数可以带修饰：</p>
+<pre><code class="language-text">%tile
+%tile[%r, %c]
+%tile!loc=vec
+</code></pre>
+<p>在 SSA 形式中，location intent 和 valid-region 相关信息编码在 tile 类型里：</p>
+<pre><code class="language-text">!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+!pto.tile_buf&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+</code></pre>
+<h3 id="globaltensor">GlobalTensor 操作数<a class="headerlink" href="#globaltensor" title="Permanent link">&para;</a></h3>
+<p>在 PTO-AS 中，<code>GlobalTensor</code> 一般表现为 <code>memref</code> 或 <code>partition_tensor_view</code>：</p>
+<pre><code class="language-text">%tensor
+%tensor[%r, %c]
+%tensor[%b, %h, %w, %r, %c]
+</code></pre>
+<h3 id="_4">谓词操作数<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%mask : !pto.mask
+</code></pre>
+<p>向量指令把 mask 作为显式操作数：</p>
+<pre><code class="language-text">%result = pto.vadd %src0, %src1, %mask : ... -&gt; ...
+</code></pre>
+<h3 id="_5">立即数操作数<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">tadds %dst, %src, 0x3F800000
+tshrs %dst, %src, 16
+</code></pre>
+<h2 id="_6">指令后缀<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>后缀</th>
+<th>含义</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(none)</em></td>
+<td>标准形式</td>
+<td><code>tadd</code></td>
+</tr>
+<tr>
+<td><code>s</code></td>
+<td>标量变体</td>
+<td><code>tadds</code></td>
+</tr>
+<tr>
+<td><code>c</code></td>
+<td>carry / saturating 变体</td>
+<td><code>taddc</code>, <code>tsubc</code></td>
+</tr>
+<tr>
+<td><code>sc</code></td>
+<td>标量 + carry</td>
+<td><code>taddsc</code>, <code>tsubsc</code></td>
+</tr>
+<tr>
+<td><code>_fp</code></td>
+<td>浮点专用变体</td>
+<td><code>tstore_fp</code>, <code>tinsert_fp</code></td>
+</tr>
+<tr>
+<td><code>_acc</code></td>
+<td>累加变体</td>
+<td><code>tmatmul_acc</code></td>
+</tr>
+<tr>
+<td><code>_bias</code></td>
+<td>带 bias 变体</td>
+<td><code>tmatmul_bias</code></td>
+</tr>
+<tr>
+<td><code>_mx</code></td>
+<td>MX format 变体</td>
+<td><code>tgemv_mx</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_7">属性语法<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p>在 PTO-AS 中，属性写在 <code>#</code> 后面：</p>
+<pre><code class="language-text">tstore %tile, %tensor #atomic=add
+tcmps %dst, %src, 0 #cmp=gt
+tmatmul %c, %a, %b #phase=relu
+</code></pre>
+<p>在 SSA 中，属性写成 <code>{key = value}</code>：</p>
+<pre><code class="language-text">%result = pto.tcmp %src0, %src1 {cmp = &quot;lt&quot;} : ... -&gt; ...
+</code></pre>
+<h2 id="_8">完整示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h3 id="tile_1">Tile 逐元素加法<a class="headerlink" href="#tile_1" title="Permanent link">&para;</a></h3>
+<p><strong>Assembly Form</strong>:</p>
+<pre><code class="language-text">tadd %dst, %src0, %src1 : !pto.tile&lt;f32, 16, 16&gt;
+</code></pre>
+<p><strong>SSA Form</strong>:</p>
+<pre><code class="language-text">%dst = pto.tadd %src0, %src1 : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;
+</code></pre>
+<p><strong>DPS Form</strong>:</p>
+<pre><code class="language-text">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
+          outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)
+</code></pre>
+<h3 id="tile_2">Tile 加载<a class="headerlink" href="#tile_2" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">tload %tile, %tensor[%r, %c] : (!pto.tile&lt;f32,16,16&gt;, !pto.memref&lt;f32,5&gt;) -&gt; !pto.tile&lt;f32,16,16&gt;
+</code></pre>
+<h3 id="_9">向量加法<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%result = pto.vadd %src0, %src1, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<h3 id="_10">谓词生成<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%pred = pto.pge_b32 %src0, %src1 : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;) -&gt; !pto.mask
+</code></pre>
+<h2 id="_11">文本拼写不能替代的内容<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<p>文本拼写不能替代：</p>
 <ul>
-<li><a href="../assembly-model/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../manual/06-assembly_zh/">中文章节手册 PTO 汇编</a></li>
+<li>PTO ISA 的机器模型</li>
+<li>PTO ISA 的内存模型</li>
+<li>CPU / A2/A3 / A5 的 target-profile 规则</li>
+<li>独立于文本拼写之外的架构级合法性规则</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_12">契约说明<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<ul>
+<li>文本汇编形式必须与对应 intrinsic 形式保持同一可见语义</li>
+<li>汇编语法规则必须留在 PTO ISA 的语法与操作数页面中，而不是落入 backend 私有注释</li>
+<li>会改变语义的语法变体必须被明确文档化</li>
+</ul>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../operands-and-attributes_zh/">操作数与属性</a></li>
+<li><a href="../../state-and-types/type-system_zh/">类型系统</a></li>
+<li><a href="../../introduction/what-is-pto-visa_zh/">什么是 PTO 虚拟 ISA</a></li>
+<li><a href="../../instruction-families/README_zh/">指令族总览</a></li>
+<li><a href="../../conventions_zh/">通用约定</a></li>
+</ul>
               
             </div>
           </div><footer>

@@ -910,92 +910,13 @@
               
                 <!-- Generated from `docs/isa/TREM_zh.md` -->
 
-<h1 id="trem">TREM<a class="headerlink" href="#trem" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TREM tile operation" src="../../figures/isa/TREM.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>两个 Tile 的逐元素余数运算。结果符号与除数相同。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
-<div class="arithmatex">\[\mathrm{dst}_{i,j} = \mathrm{src0}_{i,j} \bmod \mathrm{src1}_{i,j}\]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = trem %src0, %src1 : !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trem %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trem ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename TileDataTmp, typename... WaitEvents&gt;
-PTO_INST RecordEvent TREM(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotrem">pto.trem<a class="headerlink" href="#ptotrem" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/elementwise-tile-tile/trem_zh/">pto.trem</a>。</p>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 必须使用相同的元素类型。</li>
-<li>支持的元素类型：<code>float</code> 和 <code>int32_t</code>。</li>
-<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 必须是向量 Tile。</li>
-<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 必须是行主序。</li>
-<li>运行时：<code>dst.GetValidRow() == src0.GetValidRow() == src1.GetValidRow() &gt; 0</code> 且 <code>dst.GetValidCol() == src0.GetValidCol() == src1.GetValidCol() &gt; 0</code>。</li>
-<li><strong>tmp 缓冲区要求</strong>：</li>
-<li><code>tmp.GetValidCol() &gt;= dst.GetValidCol()</code>（至少与 dst 相同的列数）</li>
-<li><code>tmp.GetValidRow() &gt;= 1</code>（至少 1 行）</li>
-<li>数据类型必须与 <code>TileDataDst::DType</code> 匹配。</li>
+<li>指令集：<a href="../tile/elementwise-tile-tile_zh/">逐元素 Tile-Tile 指令集</a></li>
+<li>规范页：<a href="../tile/ops/elementwise-tile-tile/trem_zh/">pto.trem</a></li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 必须使用相同的元素类型。</li>
-<li>支持的元素类型：<code>float</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>int16_t</code> 和 <code>uint16_t</code>。</li>
-<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 必须是向量 Tile。</li>
-<li>静态有效边界：所有 Tile 都必须满足 <code>ValidRow &lt;= Rows</code> 且 <code>ValidCol &lt;= Cols</code>。</li>
-<li>运行时：<code>dst.GetValidRow() == src0.GetValidRow() == src1.GetValidRow()</code> 且 <code>dst.GetValidCol() == src0.GetValidCol() == src1.GetValidCol()</code>。</li>
-<li>注意：tmp 参数在 A5 上被接受但不进行验证或使用。</li>
-</ul>
-</li>
-<li><strong>除零</strong>:<ul>
-<li>行为由目标定义；CPU 模拟器在调试构建中会断言。</li>
-</ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>该操作使用 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 作为迭代域。</li>
-</ul>
-</li>
-<li><strong>对于 <code>int32_t</code> 输入（仅 A2A3）</strong>：<code>src0</code> 和 <code>src1</code> 的所有元素必须在 <code>[-2^24, 2^24]</code> 范围内（即 <code>[-16777216, 16777216]</code>），以确保在计算过程中能精确转换为 float32。</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example() {
-  using TileT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
-  TileT out, a, b;
-  Tile&lt;TileType::Vec, int32_t, 16, 16&gt; tmp;
-  TREM(out, a, b, tmp);
-}
-</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.trem %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.trem %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = trem %src0, %src1 : !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.trem ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

@@ -910,73 +910,13 @@
               
                 <!-- Generated from `docs/isa/TGEMV_MX_zh.md` -->
 
-<h1 id="tgemv_mx">TGEMV_MX<a class="headerlink" href="#tgemv_mx" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TGEMV_MX tile operation" src="../../figures/isa/TGEMV_MX.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>带缩放 Tile 的 GEMV 变体，支持混合精度/量化矩阵向量计算。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Conceptually (base GEMV path):</p>
-<div class="arithmatex">\[
-\mathrm{C}_{0,j} = \sum_{k=0}^{K-1} \mathrm{A}_{0,k} \cdot \mathrm{B}_{k,j}
-\]</div>
-<p>For <code>TGEMV_MX</code>, scale tiles participate in implementation-defined mixed-precision reconstruction / scaling. The architectural contract is that output corresponds to the target-defined mx GEMV semantics.</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>Schematic form:</p>
-<pre><code class="language-text">%acc = tgemv.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%acc = pto.tgemv.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tgemv.mx ins(%a, %a_scale, %b, %b_scale : (!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)) outs(%acc : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%acc = pto.tgemv.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tgemv.mx ins(%a, %a_scale, %b, %b_scale : (!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)) outs(%acc : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight,
-          typename TileRightScale, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
-
-template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight,
-          typename TileRightScale, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
-
-template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
-          typename TileBias, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight,
-          typename TileRightScale, typename TileBias, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
-</code></pre>
-<p>Additional overloads support accumulation/bias variants and <code>AccPhase</code> selection.</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotgemv_mx">pto.tgemv_mx<a class="headerlink" href="#ptotgemv_mx" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/matrix-and-matrix-vector/tgemv-mx_zh/">pto.tgemv_mx</a>。</p>
 <ul>
-<li>Uses backend-specific mx legality checks for data types, tile locations, fractal/layout combinations, and scaling formats.</li>
-<li>Scale tile compatibility and accumulator promotion are implementation-defined by target backend.</li>
-<li>For portability, validate the exact <code>(A, B, scaleA, scaleB, C)</code> type tuple and tile layout against target implementation constraints.</li>
+<li>指令集：<a href="../tile/matrix-and-matrix-vector_zh/">矩阵与矩阵-向量指令集</a></li>
+<li>规范页：<a href="../tile/ops/matrix-and-matrix-vector/tgemv-mx_zh/">pto.tgemv_mx</a></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>For practical usage patterns, see:</p>
-<ul>
-<li><code>docs/isa/TMATMUL_MX.md</code></li>
-<li><code>docs/isa/TGEMV.md</code></li>
-</ul>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

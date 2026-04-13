@@ -908,18 +908,53 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/vector/binary-vector-ops_zh.md` -->
+                <!-- Generated from `docs/isa/vector/binary-vector-ops_zh.md` -->
 
-<h1 id="vector-families-binary-vector-ops">Vector Families: Binary Vector Ops<a class="headerlink" href="#vector-families-binary-vector-ops" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">二元向量指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>二元向量指令对两个 <code>!pto.vreg&lt;NxT&gt;</code> 输入做 lane 级运算，并产生一个向量结果。它们是 <code>pto.v*</code> 中最核心的一组算术与逻辑操作。</p>
+<h2 id="_2">常见操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../binary-vector-ops/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li><code>pto.vadd</code> / <code>pto.vsub</code></li>
+<li><code>pto.vmul</code> / <code>pto.vdiv</code></li>
+<li><code>pto.vmax</code> / <code>pto.vmin</code></li>
+<li><code>pto.vand</code> / <code>pto.vor</code> / <code>pto.vxor</code></li>
+<li><code>pto.vshl</code> / <code>pto.vshr</code></li>
+<li><code>pto.vaddc</code> / <code>pto.vsubc</code></li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">操作数模型<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%lhs</code> / <code>%rhs</code>：两个源向量寄存器</li>
+<li><code>%mask</code>：控制参与 lane 的谓词</li>
+<li><code>%result</code>：目标向量寄存器</li>
+</ul>
+<p>除非某条指令另有说明，<code>%lhs</code>、<code>%rhs</code> 和 <code>%result</code> 的向量宽度与元素类型必须一致。</p>
+<h2 id="_4">执行模型<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>这组操作在 <code>PIPE_V</code> 上执行。常见的数据路径是：</p>
+<pre><code class="language-text">DMA -&gt; UB -&gt; vlds -&gt; vreg binary op -&gt; vsts -&gt; UB -&gt; DMA
+</code></pre>
+<p>在 A2/A3 上，这类操作通常以 <code>get_buf / rls_buf</code> 加 <code>set_flag / wait_flag</code> 的 producer-consumer 模式与 DMA 配合；在 A5 上则由原生向量流水线执行。</p>
+<h2 id="_5">机制<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>对每个激活 lane：</p>
+<div class="arithmatex">\[ \mathrm{dst}_i = f(\mathrm{lhs}_i, \mathrm{rhs}_i) \]</div>
+<p><code>%mask</code> 为非激活的 lane 决定是否参与。域外或未激活 lane 的精确结果，必须以具体指令文档为准。</p>
+<h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li>两个输入与结果的类型必须兼容</li>
+<li>掩码宽度必须匹配向量宽度</li>
+<li>位运算和移位类只对相应整数类型合法</li>
+<li>某些操作会在 A5 / A2A3 之间有不同的支持子集或性能特征</li>
+</ul>
+<h2 id="_7">不允许的情形<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>用宽度不匹配的谓词驱动二元向量运算</li>
+<li>把未文档化的 masked-lane 行为当成稳定契约</li>
+<li>在不支持的类型组合上使用位移或 carry 变体</li>
+</ul>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../vector-families_zh/">向量指令族</a></li>
+<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

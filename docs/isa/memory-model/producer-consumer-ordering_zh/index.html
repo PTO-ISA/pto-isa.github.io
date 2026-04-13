@@ -908,18 +908,105 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/memory-model/producer-consumer-ordering_zh.md` -->
+                <!-- Generated from `docs/isa/memory-model/producer-consumer-ordering_zh.md` -->
 
-<h1 id="producer-consumer-ordering">Producer-Consumer Ordering<a class="headerlink" href="#producer-consumer-ordering" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="-">生产者-消费者排序<a class="headerlink" href="#-" title="Permanent link">&para;</a></h1>
+<p>生产者-消费者排序是解释 PTO 可见性规则最直接的方式。只有当消费者通过当前指令集允许的同步与搬运机制，看见生产者必须公开的写入或状态变化时，程序才是合法的。</p>
+<h2 id="-_1">生产者-消费者状态机<a class="headerlink" href="#-_1" title="Permanent link">&para;</a></h2>
+<p>每个数据移动或计算操作都参与一条 producer-consumer 链：</p>
+<pre><code class="language-text">IDLE -&gt; IN_PROGRESS -&gt; COMPLETE -&gt; consumed by next op
+</code></pre>
+<p>一个操作被后续操作消费，通常通过以下两种方式之一：</p>
+<ol>
+<li>把生产者返回的 <code>RecordEvent</code> 作为 <code>WaitEvents...</code></li>
+<li>对同一事件发出 <code>wait_flag</code></li>
+</ol>
+<h2 id="tile">Tile 指令排序<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h2>
+<p>对 <code>pto.t*</code> 程序，常见顺序链如下：</p>
+<pre><code class="language-text">TLOAD -&gt; Tile Compute -&gt; TSTORE
+</code></pre>
+<h3 id="recordevent">RecordEvent 链接<a class="headerlink" href="#recordevent" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">RecordEvent e0 = TLOAD(a, ga);
+RecordEvent e1 = TLOAD(b, gb);
+TMATMUL(c, a, b, e0, e1);
+RecordEvent e2 = TMATMUL(...);
+TSTORE(gc, c, e2);
+</code></pre>
+<p>当一个操作带有多个 <code>WaitEvents...</code> 时，它必须等待所有这些事件完成后才能开始。</p>
+<h3 id="tsync">TSYNC<a class="headerlink" href="#tsync" title="Permanent link">&para;</a></h3>
+<p>当不需要细粒度事件链时，可以使用 <code>TSYNC</code>：</p>
+<pre><code class="language-cpp">TLOAD(a, ga);
+TLOAD(b, gb);
+TSYNC();
+TADD(c, a, b);
+TSYNC();
+TSTORE(gc, c);
+</code></pre>
+<h2 id="_1">向量指令排序<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>对 <code>pto.v*</code> 程序，排序链一般包含显式 DMA：</p>
+<pre><code class="language-text">copy_gm_to_ubuf
+  -&gt; set_flag
+  -&gt; wait_flag
+  -&gt; vlds
+  -&gt; vector compute
+  -&gt; vsts
+  -&gt; set_flag
+  -&gt; wait_flag
+  -&gt; copy_ubuf_to_gm
+</code></pre>
+<h3 id="tile_1">Tile 指令与向量指令的差异<a class="headerlink" href="#tile_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Tile 指令</th>
+<th>向量指令</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>同步机制</td>
+<td><code>RecordEvent</code>, <code>TSYNC</code></td>
+<td><code>set_flag</code> / <code>wait_flag</code></td>
+</tr>
+<tr>
+<td>数据路径</td>
+<td>GM ↔ Tile Buffer</td>
+<td>GM ↔ UB ↔ Vector Register</td>
+</tr>
+<tr>
+<td>隐式顺序</td>
+<td>同一 tile buffer 内有程序顺序</td>
+<td>DMA 与计算之间没有隐式顺序</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">跨指令集交接<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>当 tile 指令的结果要给向量指令消费，或反过来时，交接必须经过 UB 或 GM：</p>
+<pre><code class="language-text">Tile Buffer -&gt; TSTORE / GM -&gt; copy_gm_to_ubuf -&gt; UB -&gt; vlds
+</code></pre>
+<p>因此跨指令集 handoff 不能省略搬运与同步。</p>
+<h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../producer-consumer-ordering/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../manual/11-memory-ordering-and-consistency_zh/">中文章节手册内存顺序与一致性</a></li>
+<li>消费者只能在建立了 producer-consumer 边后依赖可见性</li>
+<li>同一操作的 <code>RecordEvent</code> 只能被后续操作消费，不能逆向使用</li>
+<li>指令集页面和 per-op 页面必须显式说明各自需要的顺序机制</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_4">不允许的情形<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>只写“消费者可见”，却不说明生产者如何建立可见性</li>
+<li>把某个目标偶然更强的顺序当作架构契约</li>
+<li>省略跨指令集 handoff 的搬运和同步</li>
+<li>在 <code>copy_gm_to_ubuf</code> 完成前直接 <code>vlds</code></li>
+<li>在 <code>vsts</code> 完成前直接 <code>copy_ubuf_to_gm</code></li>
+</ul>
+<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../consistency-baseline_zh/">一致性基线</a></li>
+<li><a href="../../machine-model/ordering-and-synchronization_zh/">顺序与同步</a></li>
+<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令集</a></li>
+<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

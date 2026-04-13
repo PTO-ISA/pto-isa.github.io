@@ -908,18 +908,48 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/vector/vec-scalar-ops_zh.md` -->
+                <!-- Generated from `docs/isa/vector/vec-scalar-ops_zh.md` -->
 
-<h1 id="vector-families-vector-scalar-ops">Vector Families: Vector-Scalar Ops<a class="headerlink" href="#vector-families-vector-scalar-ops" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="-">向量-标量指令集<a class="headerlink" href="#-" title="Permanent link">&para;</a></h1>
+<p>向量-标量指令把一个向量寄存器与一个标量操作数结合。标量会逻辑广播到每个参与的 lane。</p>
+<h2 id="_1">常见操作<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../vec-scalar-ops/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li><code>pto.vadds</code> / <code>vsubs</code> / <code>vmuls</code></li>
+<li><code>pto.vmaxs</code> / <code>vmins</code></li>
+<li><code>pto.vands</code> / <code>vors</code> / <code>vxors</code></li>
+<li><code>pto.vshls</code> / <code>vshrs</code></li>
+<li><code>pto.vlrelu</code></li>
+<li><code>pto.vaddcs</code> / <code>vsubcs</code></li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_2">操作数模型<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%input</code>：向量输入</li>
+<li><code>%scalar</code>：标量输入</li>
+<li><code>%mask</code>：激活 lane 谓词</li>
+<li><code>%result</code>：目标向量</li>
+</ul>
+<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<pre><code class="language-text">dst[i] = f(src[i], scalar)
+</code></pre>
+<p>标量广播本身是该指令集语义的一部分，而不是 lowering 时临时补出来的行为。</p>
+<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>标量类型必须与目标向量类型兼容</li>
+<li>对 32-bit scalar 形式，backend 可能对标量来源施加额外限制</li>
+<li>位移类要求 shift amount 与元素位宽兼容</li>
+<li>carry 变体同时会产生结果与 carry-out 谓词</li>
+</ul>
+<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>假设存在隐式类型提升</li>
+<li>使用超出元素位宽的 shift count</li>
+<li>把 carry-out 谓词丢失在 lowering 中</li>
+</ul>
+<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../vector-families_zh/">向量指令族</a></li>
+<li><a href="../binary-vector-ops_zh/">二元向量指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

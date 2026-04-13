@@ -912,64 +912,88 @@
 
 <h1 id="tgemv_mx">TGEMV_MX<a class="headerlink" href="#tgemv_mx" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TGEMV_MX tile operation" src="../figures/isa/TGEMV_MX.svg" /></p>
+<p><img alt="TGEMV_MX tile operation" src="../../../../../figures/isa/TGEMV_MX.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>带缩放 Tile 的 GEMV 变体，支持混合精度/量化矩阵向量计算。</p>
+<p><code>TGEMV_MX</code> 是 MX 路径下的矩阵向量乘版本。它和 <code>TMATMUL_MX</code> 共享同一套 scale Tile 思路，只是把乘法域收窄到 GEMV 形态。</p>
+<p>从接口上看，这条指令同样支持普通、累加和 bias 三种变体。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Conceptually (base GEMV path):</p>
-<div class="arithmatex">\[
-\mathrm{C}_{0,j} = \sum_{k=0}^{K-1} \mathrm{A}_{0,k} \cdot \mathrm{B}_{k,j}
-\]</div>
-<p>For <code>TGEMV_MX</code>, scale tiles participate in implementation-defined mixed-precision reconstruction / scaling. The architectural contract is that output corresponds to the target-defined mx GEMV semantics.</p>
+<p>GEMV 基础乘法域可以写成：</p>
+<div class="arithmatex">\[ \mathrm{C}_{0,j} = \sum_{k=0}^{K-1} \mathrm{A}_{0,k} \cdot \mathrm{B}_{k,j} \]</div>
+<p>和 <code>TMATMUL_MX</code> 一样，<code>aScaleMatrix</code> / <code>bScaleMatrix</code> 会参与 MX 路径下的重建 / 缩放；它们的精确作用由目标定义，而不是由这页单独给出一套独立数值规则。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
-<p>Schematic form:</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>示意形式：</p>
 <pre><code class="language-text">%acc = tgemv.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%acc = pto.tgemv.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tgemv.mx ins(%a, %a_scale, %b, %b_scale : (!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)) outs(%acc : !pto.tile_buf&lt;...&gt;)
+<pre><code class="language-text">pto.tgemv.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%acc : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight,
-          typename TileRightScale, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
+PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix,
+                              TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
 
 template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight,
-          typename TileRightScale, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
+PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix,
+                              TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
 
 template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename TileBias, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight,
-          typename TileRightScale, typename TileBias, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
+PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix,
+                              TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
 </code></pre>
-<p>Additional overloads support accumulation/bias variants and <code>AccPhase</code> selection.</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="a5-mx">A5 真正支持的 MX 语义<a class="headerlink" href="#a5-mx" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Uses backend-specific mx legality checks for data types, tile locations, fractal/layout combinations, and scaling formats.</li>
-<li>Scale tile compatibility and accumulator promotion are implementation-defined by target backend.</li>
-<li>For portability, validate the exact <code>(A, B, scaleA, scaleB, C)</code> type tuple and tile layout against target implementation constraints.</li>
+<li><code>TGEMV_MX</code> 复用与 <code>TMATMUL_MX</code> 相同的 <code>CheckMadMxValid(...)</code> 约束，因此：</li>
+<li>结果累加器必须是 <code>float</code></li>
+<li>输入必须是受支持的 fp4 或 fp8 组合</li>
+<li>Left / Right / Acc 的位置与 fractal 方向必须合法</li>
+<li>运行时这里不再取 <code>m = aMatrix.GetValidRow()</code>，而是固定 GEMV 语义使用单行输出：</li>
+<li><code>k = aMatrix.GetValidCol()</code></li>
+<li><code>n = bMatrix.GetValidCol()</code></li>
+<li><code>k/n</code> 均必须落在 <code>[1, 4095]</code></li>
+<li>Bias 变体要求：</li>
+<li><code>biasData</code> 元素类型为 <code>float</code></li>
+<li><code>biasData</code> 是单行 <code>TileType::Bias</code></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>For practical usage patterns, see:</p>
+<h3 id="_6">其他目标的现状<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>docs/isa/TMATMUL_MX.md</code></li>
-<li><code>docs/isa/TGEMV.md</code></li>
+<li>CPU 模拟器当前会忽略 <code>aScaleMatrix</code> / <code>bScaleMatrix</code>，退化为普通 <code>TGEMV</code> / <code>TGEMV_ACC</code> / <code>TGEMV_BIAS</code>。</li>
+<li>Kirin9030 当前没有 MX 实现路径。</li>
+</ul>
+<p>因此，这条指令的真实 MX 数值语义目前仍以 A5 backend 为准。</p>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example() {
+  using A = TileLeft&lt;float8_e5m2_t, 1, 64&gt;;
+  using B = TileRight&lt;float8_e5m2_t, 64, 32&gt;;
+  using ScaleA = TileLeftScale&lt;float8_e8m0_t, 1, 2&gt;;
+  using ScaleB = TileRightScale&lt;float8_e8m0_t, 2, 32&gt;;
+  using C = TileAcc&lt;float, 1, 32&gt;;
+
+  A a;
+  B b;
+  ScaleA scaleA;
+  ScaleB scaleB;
+  C c;
+  TGEMV_MX(c, a, scaleA, b, scaleB);
+}
+</code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tmatmul-mx_zh/">TMATMUL_MX</a></li>
+<li><a href="../tgemv_zh/">TGEMV</a></li>
+<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵向量指令集</a></li>
 </ul>
               
             </div>

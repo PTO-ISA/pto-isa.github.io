@@ -912,81 +912,99 @@
 
 <h1 id="tmatmul_mx">TMATMUL_MX<a class="headerlink" href="#tmatmul_mx" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TMATMUL_MX tile operation" src="../figures/isa/TMATMUL_MX.svg" /></p>
+<p><img alt="TMATMUL_MX tile operation" src="../../../../../figures/isa/TMATMUL_MX.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>带额外缩放 Tile 的矩阵乘法 (GEMM)，用于支持目标上的混合精度/量化矩阵乘法。</p>
+<p><code>TMATMUL_MX</code> 是带双 scale Tile 的矩阵乘法扩展，用来表达 MX 路径下的混合精度 / 量化 GEMM。它和普通 <code>TMATMUL</code> 共享 Left / Right / Acc 的整体结构，但额外携带 <code>aScaleMatrix</code> 和 <code>bScaleMatrix</code>。</p>
+<p>这条指令存在的意义，是把“矩阵乘法本体”和“MX 重建/缩放参数”同时放进一条架构可见指令里，而不是靠外部约定隐式拼接。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let:</p>
+<p>设：</p>
 <ul>
 <li><code>M = aMatrix.GetValidRow()</code></li>
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>Conceptually, the result corresponds to a matrix multiply over the effective matmul domain (<code>0 &lt;= i &lt; M</code>, <code>0 &lt;= j &lt; N</code>), with the scaling tiles <code>aScaleMatrix</code> / <code>bScaleMatrix</code> configuring implementation-defined mixed-precision behavior:</p>
+<p>基础乘法域仍然是：</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p>The exact role of <code>aScaleMatrix</code> / <code>bScaleMatrix</code> (and any dequant/quant semantics) is target-defined.</p>
+<p>区别在于，<code>aScaleMatrix</code> 和 <code>bScaleMatrix</code> 会参与 MX 路径下的重建 / 缩放。它们如何参与，不是通用 PTO 规则，而是目标定义的 MX 语义。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
-<p>Synchronous forms (conceptual):</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>示意形式：</p>
 <pre><code class="language-text">%c = tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c_out = tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c = tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
--&gt; !pto.tile&lt;...&gt;
-%c_out = pto.tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;,
-!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)  -&gt; !pto.tile&lt;...&gt;
-%c = pto.tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;,
-!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)  -&gt; !pto.tile&lt;...&gt;
+<pre><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+%c_out = pto.tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+%c = pto.tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
-outs(%c :  !pto.tile_buf&lt;...&gt;)
-pto.tmatmul.mx.acc ins(%c_in, %a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;,
-!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
-pto.tmatmul.mx.bias ins(%a, %a_scale, %b, %b_scale, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;,
-!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
+<pre><code class="language-text">pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
+pto.tmatmul.mx.acc ins(%c_in, %a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
+pto.tmatmul.mx.bias ins(%a, %a_scale, %b, %b_scale, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight,
-          typename TileRightScale, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
+PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix,
+                                TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
 
 template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight,
-          typename TileRightScale, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
+PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix,
+                                TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
 
 template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename TileBias, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight,
-          typename TileRightScale, typename TileBias, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
+PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix,
+                                TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
 </code></pre>
+<p><code>AccPhase</code> 的模板重载与普通 <code>TMATMUL</code> 一样，主要用于目标实现侧的 unit-flag 选择。</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="a5-mx">A5 真正支持的 MX 语义<a class="headerlink" href="#a5-mx" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li><code>m/k/n</code> are taken from <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, <code>bMatrix.GetValidCol()</code>.</li>
-<li>Static legality checks are enforced via <code>CheckMadMxValid&lt;...&gt;()</code> (types, shapes, fractals, and scaling tile legality).</li>
+<li>当前仓库里，只有 A5 backend 真正实现了 MX 语义。</li>
+<li>A5 的 <code>CheckMadMxValid(...)</code> 要求：</li>
+<li>结果累加器类型必须是 <code>float</code></li>
+<li>输入必须是受支持的 fp4 或 fp8 组合</li>
+<li><code>TileLeft::Cols</code> 必须是 <code>64</code> 的倍数</li>
+<li>若走 fp4 路径，<code>TileLeft::Cols</code> 还必须是偶数</li>
+<li>Left / Right / Acc 的位置与 fractal 方向必须符合 cube 路径要求</li>
 </ul>
-</li>
-<li><strong>Bias form</strong>:<ul>
-<li><code>TileBias::DType</code> must be <code>float</code> and <code>TileBias::Loc == TileType::Bias</code> with <code>TileBias::Rows == 1</code> (A5 checks via <code>static_assert</code>).</li>
+<p>支持的输入组合包括：</p>
+<ul>
+<li>fp4：</li>
+<li><code>float4_e1m2x2_t</code> / <code>float4_e1m2x2_t</code></li>
+<li><code>float4_e1m2x2_t</code> / <code>float4_e2m1x2_t</code></li>
+<li><code>float4_e2m1x2_t</code> / <code>float4_e2m1x2_t</code></li>
+<li><code>float4_e2m1x2_t</code> / <code>float4_e1m2x2_t</code></li>
+<li>fp8：</li>
+<li><code>float8_e4m3_t</code> / <code>float8_e4m3_t</code></li>
+<li><code>float8_e4m3_t</code> / <code>float8_e5m2_t</code></li>
+<li><code>float8_e5m2_t</code> / <code>float8_e4m3_t</code></li>
+<li><code>float8_e5m2_t</code> / <code>float8_e5m2_t</code></li>
 </ul>
-</li>
+<p>Bias 变体还要求：</p>
+<ul>
+<li><code>biasData</code> 的元素类型必须是 <code>float</code></li>
+<li><code>biasData</code> 必须是单行 <code>TileType::Bias</code></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="_6">运行时范围<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A5 的 <code>m/k/n</code> 均必须落在 <code>[1, 4095]</code>。</li>
+</ul>
+<h3 id="_7">其他目标的现状<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CPU 模拟器会接受 <code>TMATMUL_MX</code> 接口，但当前实现会忽略 <code>aScaleMatrix</code> / <code>bScaleMatrix</code>，直接退化为普通 <code>TMATMUL</code> / <code>TMATMUL_ACC</code> / <code>TMATMUL_BIAS</code>。</li>
+<li>Kirin9030 当前明确不支持 <code>TMATMUL_MX</code>，对应实现直接 <code>static_assert</code> 失败。</li>
+</ul>
+<p>这意味着：</p>
+<ul>
+<li>如果你要验证真正的 MX 语义，应以 A5 为准。</li>
+<li>CPU 只能用来跑接口形态或近似流程，不适合作为 MX 数值语义的最终依据。</li>
+</ul>
+<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1035,6 +1053,12 @@ void example_manual() {
   TMATMUL_MX(c, a, scaleA, b, scaleB, bias);
 }
 </code></pre>
+<h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tgemv-mx_zh/">TGEMV_MX</a></li>
+<li><a href="../tmatmul_zh/">TMATMUL</a></li>
+<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵向量指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

@@ -908,17 +908,62 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/reference/source-of-truth_zh.md` -->
+                <!-- Generated from `docs/isa/reference/source-of-truth_zh.md` -->
 
-<h1 id="source-of-truth">Source Of Truth<a class="headerlink" href="#source-of-truth" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">规范来源<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>重写或验证 PTO ISA 文档时，按下面的顺序判定事实来源：</p>
+<ol>
+<li><code>include/pto/common/pto_instr.hpp</code>
+   公共 C++ 内建接口与可见 API 形态</li>
+<li>当前仓库中的 PTO ISA 文档
+   架构可见语义与约束说明</li>
+<li>PTO-AS 文档
+   语法、汇编拼写与汇编层形式</li>
+<li>较旧的 manual 文本
+   仅作为迁移背景</li>
+</ol>
+<p>如果 prose 与代码可见的 PTO 指令集冲突，不应把未支持行为写成架构保证。</p>
+<h2 id="_2">权威顺序<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>当规范边界不清楚时，按以下顺序裁决：</p>
+<ol>
+<li><strong>PTO ISA manual 与 per-op 页</strong>
+   架构可见语义</li>
+<li><strong>代码</strong>
+   合法指令集与接口形态</li>
+<li><strong>PTO-AS 文档</strong>
+   语法和文本拼写</li>
+<li><strong>目标 profile 说明</strong>
+   backend 专属缩窄</li>
+</ol>
+<h2 id="_3">两条编译路径<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>PTO 程序进入工具链有两条路径，两条路径共享同一套 PTO ISA 语义：</p>
+<pre><code class="language-text">PTO program (.pto text)
+        |
+        +--&gt; ptoas --&gt; C++ --&gt; bisheng --&gt; binary
+        |
+        +--&gt; ptoas ---------------------&gt; binary
+</code></pre>
+<p><code>ptoas</code> 是权威汇编器。文档讨论 “PTO 做什么” 时，指的是 PTO ISA 定义的语义，而不是某一条具体产物路径。</p>
+<h2 id="_4">对文档维护的含义<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../source-of-truth/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
+<li>如果 manual 说某个行为合法，而代码拒绝它，应把这视为缺陷并继续核对。</li>
+<li>如果 manual 沉默而代码接受该行为，代码当前是事实来源，文档应补上。</li>
+<li>如果 manual 与代码冲突，先以代码接口为准，再修正文档。</li>
+<li>如果 manual 沉默而代码拒绝该行为，它通常属于 backend-specific 或尚未进入 PTO 契约。</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="ptoas">PTOAS 的角色<a class="headerlink" href="#ptoas" title="Permanent link">&para;</a></h2>
+<p><code>ptoas</code> 定义：</p>
+<ul>
+<li>PTO-AS 语法与文法</li>
+<li>解析与验证规则</li>
+<li>从 PTO-AS 到 C++ 或二进制的 lowering 语义</li>
+</ul>
+<p>当 PTO ISA manual 记录 SSA 或 DPS 形式时，应与 <code>ptoas</code> 实际接受的形式保持一致。</p>
+<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../format-of-instruction-descriptions_zh/">指令描述格式</a></li>
+<li><a href="../../../assembly/PTO-AS_zh/">PTO-AS 规范</a></li>
+</ul>
               
             </div>
           </div><footer>

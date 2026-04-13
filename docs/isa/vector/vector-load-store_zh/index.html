@@ -908,18 +908,85 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/vector/vector-load-store_zh.md` -->
+                <!-- Generated from `docs/isa/vector/vector-load-store_zh.md` -->
 
-<h1 id="vector-families-vector-loadstore">Vector Families: Vector Load/Store<a class="headerlink" href="#vector-families-vector-loadstore" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">向量加载存储指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>向量加载存储指令集定义 UB 与向量寄存器之间的数据搬运形式。<code>pto.v*</code> 计算只在向量寄存器上执行，因此这组指令构成 DMA 与向量计算之间的桥。</p>
+<h2 id="_2">执行模型<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<pre><code class="language-text">GM -&gt; MTE2 -&gt; UB -&gt; VLDS -&gt; vreg -&gt; PTO.v* compute -&gt; VSTS -&gt; UB -&gt; MTE3 -&gt; GM
+</code></pre>
+<p>典型顺序链：</p>
 <ul>
-<li><a href="../vector-load-store/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li><code>copy_gm_to_ubuf</code></li>
+<li><code>set_flag(PIPE_MTE2, PIPE_V, id)</code></li>
+<li><code>wait_flag(...)</code></li>
+<li><code>vlds</code></li>
+<li>向量计算</li>
+<li><code>vsts</code></li>
+<li><code>set_flag(PIPE_V, PIPE_MTE3, id)</code></li>
+<li><code>wait_flag(...)</code></li>
+<li><code>copy_ubuf_to_gm</code></li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">常见操作<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>pto.vlds</code></li>
+<li><code>pto.vldas</code></li>
+<li><code>pto.vldus</code></li>
+<li><code>pto.vldx2</code></li>
+<li><code>pto.vsld</code></li>
+<li><code>pto.vsldb</code></li>
+<li><code>pto.vsst</code></li>
+<li><code>pto.vsstb</code></li>
+<li><code>pto.vsta</code></li>
+<li><code>pto.vstar</code></li>
+<li><code>pto.vstas</code></li>
+<li><code>pto.vstu</code></li>
+<li><code>pto.vstus</code></li>
+<li><code>pto.vstur</code></li>
+<li><code>pto.vscatter</code></li>
+<li><code>pto.vgather2</code></li>
+<li><code>pto.vgather2_bc</code></li>
+<li><code>pto.vgatherb</code></li>
+</ul>
+<h2 id="_4">操作数模型<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%source</code> / <code>%dest</code>：UB 地址基址</li>
+<li><code>%offset</code>：位移</li>
+<li><code>%mask</code>：predicated memory op 的谓词</li>
+<li><code>%result</code>：目标向量寄存器</li>
+<li><code>!pto.align</code>：非对齐 load/store 使用的对齐状态</li>
+</ul>
+<h2 id="_5">分布模式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>常见 <code>dist</code> 模式包括：</p>
+<ul>
+<li><code>NORM</code></li>
+<li><code>BRC_B8/B16/B32</code></li>
+<li><code>US_B8/B16</code></li>
+<li><code>DS_B8/B16</code></li>
+<li><code>UNPK_B8/B16/B32</code></li>
+<li><code>DINTLV_B32</code></li>
+<li><code>SPLT2CHN_B8/B16</code></li>
+<li><code>SPLT4CHN_B8</code></li>
+</ul>
+<h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li>基址必须是 UB 指针</li>
+<li>有效地址必须满足对应分布模式的对齐要求</li>
+<li>非对齐流必须先通过 <code>vldas</code> 等操作初始化对齐状态</li>
+<li>predicated memory op 不应在 inactive lane 上发起未文档化的内存请求</li>
+</ul>
+<h2 id="_7">不允许的情形<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>在没有建立对齐状态时直接使用非对齐流式 load/store</li>
+<li>在 DMA 尚未完成时直接消费 UB 数据</li>
+<li>把 UB 地址空间与 GM 地址空间混用</li>
+</ul>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../pipeline-sync_zh/">向量流水同步</a></li>
+<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
+<li><a href="../../scalar/dma-copy_zh/">标量 DMA 拷贝</a></li>
+</ul>
               
             </div>
           </div><footer>

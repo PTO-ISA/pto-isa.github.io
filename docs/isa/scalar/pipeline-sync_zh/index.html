@@ -908,18 +908,43 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/scalar/pipeline-sync_zh.md` -->
+                <!-- Generated from `docs/isa/scalar/pipeline-sync_zh.md` -->
 
-<h1 id="pipeline-sync">Pipeline Sync<a class="headerlink" href="#pipeline-sync" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">流水线同步<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>这些 <code>pto.*</code> 形式在 PTO 执行阶段之间建立显式 producer-consumer 顺序。即便它们协调的是向量相关流水线，架构上暴露出来的仍然是依赖状态，而不是向量有效载荷算术。</p>
+<h2 id="_2">同步层次<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<pre><code class="language-text">事件同步 (set_flag / wait_flag)
+    ↑
+buffer-token 协议 (get_buf / rls_buf)
+    ↑
+内存屏障 (mem_bar)
+    ↑
+跨核协调 (set_cross_core / wait_flag_dev / set_intra_block / wait_intra_core)
+</code></pre>
 <ul>
-<li><a href="../pipeline-sync/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li><strong>事件同步</strong>：基础形式</li>
+<li><strong>buffer-token</strong>：双缓冲协议，底层仍依赖事件</li>
+<li><strong>内存屏障</strong>：保证内存可见性，不单独建立跨阶段顺序</li>
+<li><strong>跨核协调</strong>：profile 相关的更大范围同步</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">覆盖的操作<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>pto.set_flag</code></li>
+<li><code>pto.wait_flag</code></li>
+<li><code>pto.pipe_barrier</code></li>
+<li><code>pto.get_buf</code></li>
+<li><code>pto.rls_buf</code></li>
+<li><code>pto.mem_bar</code></li>
+<li><code>pto.set_cross_core</code></li>
+<li><code>pto.wait_flag_dev</code></li>
+<li><code>pto.set_intra_block</code></li>
+<li><code>pto.wait_intra_core</code></li>
+</ul>
+<h2 id="_4">相关页面<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../control-and-configuration_zh/">控制与配置</a></li>
+<li><a href="../../machine-model/ordering-and-synchronization_zh/">顺序与同步</a></li>
+</ul>
               
             </div>
           </div><footer>

@@ -912,21 +912,23 @@
 
 <h1 id="tmatmul">TMATMUL<a class="headerlink" href="#tmatmul" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TMATMUL tile operation" src="../figures/isa/TMATMUL.svg" /></p>
+<p><img alt="TMATMUL tile operation" src="../../../../../figures/isa/TMATMUL.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>矩阵乘法 (GEMM)，生成累加器/输出 Tile。</p>
+<p><code>TMATMUL</code> 是 PTO tile 路径里最核心的矩阵乘法指令之一：它从 <code>Left</code> / <code>Right</code> Tile 读取操作数，在 <code>Acc</code> Tile 中生成新的乘加结果。</p>
+<p>这条指令的语义是“用当前 <code>aMatrix</code> 和 <code>bMatrix</code> 计算一个新的输出块”。如果你要在已有累加器内容上继续累加，应改用 <code>TMATMUL_ACC</code>；这也是 <code>TMATMUL</code> 和 <code>TMATMUL_ACC</code> 分开的原因。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let:</p>
+<p>设：</p>
 <ul>
 <li><code>M = aMatrix.GetValidRow()</code></li>
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>For <code>0 &lt;= i &lt; M</code> and <code>0 &lt;= j &lt; N</code> (output elements in the effective matmul domain):</p>
+<p>对 <code>0 &lt;= i &lt; M</code> 和 <code>0 &lt;= j &lt; N</code>：</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p>Exact accumulator behavior and datatype promotion are target/implementation-defined.</p>
+<p>这里的有效计算域由 <code>aMatrix</code> 和 <code>bMatrix</code> 的 valid region 决定，而不是单纯由静态 Tile 尺寸决定。</p>
+<p>累加器内部的精确实现细节，例如某些 target 上的特殊舍入或 profile 限定的数据类型子集，不属于这条通用语义本身，而是目标 profile 的约束。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%acc = tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -937,40 +939,54 @@
 <pre><code class="language-text">pto.tmatmul ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
 
 template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
 </code></pre>
+<p>带 <code>AccPhase</code> 的模板重载不会改变矩阵乘法本身的算术含义；它只是在目标实现侧附带 unit-flag 相关的选择。</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li>Supported <code>(CType, AType, BType)</code> triples:</li>
+<li>静态 shape 必须满足：</li>
+<li><code>TileLeft::Rows == TileRes::Rows</code></li>
+<li><code>TileLeft::Cols == TileRight::Rows</code></li>
+<li><code>TileRight::Cols == TileRes::Cols</code></li>
+<li>Tile 位置必须满足：</li>
+<li>左操作数为 <code>TileType::Left</code></li>
+<li>右操作数为 <code>TileType::Right</code></li>
+<li>结果为 <code>TileType::Acc</code></li>
+<li>运行时 <code>m/k/n</code> 均必须落在 <code>[1, 4095]</code>。</li>
+<li><code>TMATMUL</code> 依赖 cube 路径认可的 fractal/layout 组合；Left / Right / Acc 不是可随意替换的通用 Tile 位置。</li>
+</ul>
+<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A2/A3 支持的 <code>(CType, AType, BType)</code> 组合是：</li>
 <li><code>(int32_t, int8_t, int8_t)</code></li>
 <li><code>(float, half, half)</code></li>
 <li><code>(float, float, float)</code></li>
 <li><code>(float, bfloat16_t, bfloat16_t)</code></li>
-<li>Static shape constraints: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</li>
-<li>Tile locations: <code>TileLeft::Loc == Left</code>, <code>TileRight::Loc == Right</code>, <code>TileRes::Loc == Acc</code>.</li>
-<li>Runtime: <code>m/k/n</code> (taken from <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code>.</li>
+<li>对 <code>float + float + float</code> 路径，backend 还会根据输入对齐信息决定某些内部实现细节，但不改变外部矩阵乘法语义。</li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li>Accumulator type must be <code>int32_t</code> or <code>float</code>.</li>
-<li>If <code>int32_t</code>: <code>AType == int8_t</code> and <code>BType == int8_t</code>.</li>
-<li>If <code>float</code>: supports <code>half/bfloat16_t/float</code> and selected fp8 pairs (target-defined).</li>
-<li>Static shape constraints: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</li>
-<li>Fractal/layout constraints are enforced:</li>
-<li>Left: <code>Loc == Left</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></li>
-<li>Right: <code>Loc == Right</code>, <code>isRowMajor</code>, <code>SFractal == ColMajor</code></li>
-<li>Acc: <code>Loc == Acc</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></li>
-<li>Runtime: <code>m/k/n</code> (taken from <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code>.</li>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A5 上，累加器类型必须是 <code>int32_t</code> 或 <code>float</code>。</li>
+<li>当累加器为 <code>int32_t</code> 时，左右输入都必须是 <code>int8_t</code>。</li>
+<li>当累加器为 <code>float</code> 时，当前实现支持以下输入族：</li>
+<li><code>half / half</code></li>
+<li><code>bfloat16_t / bfloat16_t</code></li>
+<li><code>float / float</code></li>
+<li>若干 fp8 组合：<code>float8_e4m3_t</code> / <code>float8_e5m2_t</code></li>
+<li><code>hifloat8_t / hifloat8_t</code></li>
+<li>A5 的 Left / Right / Acc 还要求固定的 fractal 方向：</li>
+<li>Left：<code>Loc == Left</code>，非 row-major，<code>SFractal == RowMajor</code></li>
+<li>Right：<code>Loc == Right</code>，row-major，<code>SFractal == ColMajor</code></li>
+<li>Acc：<code>Loc == Acc</code>，非 row-major，<code>SFractal == RowMajor</code></li>
+<li>某些具体 A5 目标可能比通用 A5 实现更窄。例如部分具体芯片只开放其中一部分 dtype 组合；这类收窄以目标 profile 为准。</li>
 </ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1004,6 +1020,12 @@ void example_manual() {
   TMATMUL(c, a, b);
 }
 </code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵向量指令集</a></li>
+<li><a href="../tmatmul-acc_zh/">TMATMUL_ACC</a></li>
+<li><a href="../../layout-and-rearrangement/tmov_zh/">TMOV</a></li>
+</ul>
               
             </div>
           </div><footer>

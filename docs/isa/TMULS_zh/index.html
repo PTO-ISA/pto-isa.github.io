@@ -910,84 +910,13 @@
               
                 <!-- Generated from `docs/isa/TMULS_zh.md` -->
 
-<h1 id="tmuls">TMULS<a class="headerlink" href="#tmuls" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TMULS tile operation" src="../../figures/isa/TMULS.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>Tile 与标量的逐元素乘法。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
-<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{i,j} \cdot \mathrm{scalar} \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = tmuls %src, %scalar : !pto.tile&lt;...&gt;, f32
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tmuls %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmuls ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tmuls %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmuls ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMULS(TileDataDst &amp;dst, TileDataSrc &amp;src0, typename TileDataSrc::DType scalar, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotmuls">pto.tmuls<a class="headerlink" href="#ptotmuls" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/tile-scalar-and-immediate/tmuls_zh/">pto.tmuls</a>。</p>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>int</code>, <code>int16_t</code>, <code>half</code>, <code>float16_t</code>, <code>float</code>, <code>float32_t</code>.</li>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>Runtime: <code>src0.GetValidRow() == dst.GetValidRow()</code> and <code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
+<li>指令集：<a href="../tile/tile-scalar-and-immediate_zh/">Tile-标量与立即数指令集</a></li>
+<li>规范页：<a href="../tile/ops/tile-scalar-and-immediate/tmuls_zh/">pto.tmuls</a></li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>, <code>bfloat16_t</code>.</li>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>Runtime: <code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
-</ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT src, dst;
-  TMULS(dst, src, 2.0f);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT src, dst;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TMULS(dst, src, 2.0f);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

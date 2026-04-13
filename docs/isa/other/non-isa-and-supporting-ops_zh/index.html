@@ -908,18 +908,105 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/other/non-isa-and-supporting-ops_zh.md` -->
+                <!-- Generated from `docs/isa/other/non-isa-and-supporting-ops_zh.md` -->
 
-<h1 id="non-isa-and-supporting-operations">Non-ISA And Supporting Operations<a class="headerlink" href="#non-isa-and-supporting-operations" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="isa">非 ISA 与支撑操作<a class="headerlink" href="#isa" title="Permanent link">&para;</a></h1>
+<p>这组操作提供 tile 序列、量化、内存释放和辅助变换等支撑语义。部分操作可以映射到多个核心 ISA 操作的组合，部分则依赖目标 profile 的专用支持。</p>
+<h2 id="_1">操作概览<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>说明</th>
+<th>类别</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>talias</code></td>
+<td>在不复制数据的前提下创建 tile 别名视图</td>
+<td>Alias</td>
+</tr>
+<tr>
+<td><code>taxpy</code></td>
+<td>融合乘加 <code>dst = src0 * scalar + src1</code></td>
+<td>Fused compute</td>
+</tr>
+<tr>
+<td><code>tconcat</code></td>
+<td>按指定维度拼接 tile</td>
+<td>Tile sequence</td>
+</tr>
+<tr>
+<td><code>tdequant</code></td>
+<td>把量化表示恢复成数值表示</td>
+<td>Quantize</td>
+</tr>
+<tr>
+<td><code>tfree</code></td>
+<td>释放先前分配的 tile 或缓冲区</td>
+<td>Memory</td>
+</tr>
+<tr>
+<td><code>thistogram</code></td>
+<td>统计 tile 元素直方图</td>
+<td>Statistics</td>
+</tr>
+<tr>
+<td><code>tpack</code></td>
+<td>将多个 tile 打包进单一 tile buffer</td>
+<td>Tile sequence</td>
+</tr>
+<tr>
+<td><code>tpop</code></td>
+<td>计算谓词 mask 的 population count</td>
+<td>Predicate</td>
+</tr>
+<tr>
+<td><code>tpush</code></td>
+<td>计算谓词 mask 的 push count</td>
+<td>Predicate</td>
+</tr>
+<tr>
+<td><code>trandom</code></td>
+<td>用随机值填充 tile</td>
+<td>Generation</td>
+</tr>
+<tr>
+<td><code>tquant</code></td>
+<td>把 tile 量化为整数或低精度格式</td>
+<td>Quantize</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">机制摘要<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h3 id="alias">Alias<a class="headerlink" href="#alias" title="Permanent link">&para;</a></h3>
+<p><code>talias</code> 生成共享底层存储的新视图，不复制数据。别名视图与原 tile 可以拥有不同的 shape、layout 或 valid region，但共享同一块底层存储。</p>
+<h3 id="tile">Tile 序列<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
+<p><code>tconcat</code> 和 <code>tpack</code> 用于在 tile 序列层组织数据。它们描述的是更高层的组合关系，而不是单条底层算术指令。</p>
+<h3 id="_3">量化<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p><code>tquant</code> / <code>tdequant</code> 在浮点表示和量化表示之间转换。scale、zero-point 以及目标格式都会进入合法性约束。</p>
+<h3 id="memory">Memory<a class="headerlink" href="#memory" title="Permanent link">&para;</a></h3>
+<p><code>tfree</code> 修改可复用的分配状态。它不会产生新的 tile 数据，但会影响后续资源使用。</p>
+<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../non-isa-and-supporting-ops/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li>量化必须使用合法的 scale 和 zero-point。</li>
+<li><code>tconcat</code> 需要沿拼接轴满足维度兼容关系。</li>
+<li><code>tfree</code> 不能释放仍在使用中的对象。</li>
+<li>A5 专属操作只能在支持它们的 profile 上使用。</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>在仍被后续操作引用的对象上调用 <code>tfree</code></li>
+<li>使用非法量化参数</li>
+<li>假设所有 backend 都以同一条硬件指令实现 <code>taxpy</code></li>
+<li>在不支持的 profile 上使用 <code>thistogram</code>、<code>tpack</code> 或 <code>trandom</code></li>
+</ul>
+<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../instruction-surfaces/other-instructions_zh/">其他指令集</a></li>
+<li><a href="../../instruction-families/other-families_zh/">其他指令族</a></li>
+</ul>
               
             </div>
           </div><footer>

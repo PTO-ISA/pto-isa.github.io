@@ -914,11 +914,18 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TALIAS tile operation" src="../../figures/isa/TALIAS.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>创建一个与原始 Tile 共享底层存储的别名视图。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>语义随指令而变化。 Unless stated otherwise, behavior is defined over the destination valid region.</p>
+<p><code>TALIAS</code> 创建一个与源 Tile 共享底层存储的别名视图。它不复制数据，只改变后续代码观察这块存储的逻辑方式。</p>
+<p>这类操作通常用于：</p>
+<ul>
+<li>在同一块 tile buffer 上建立新的 shape 或切片视图</li>
+<li>把同一份数据交给不同的后续操作，以不同逻辑边界读取</li>
+<li>避免为了得到子视图或重解释视图而额外搬运数据</li>
+</ul>
+<h2 id="_3">语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p><code>TALIAS</code> 的结果与源 Tile 指向同一块底层存储。通过任一别名写入的数据，都会对共享该存储的其他别名立即可见。</p>
+<p>它本身不定义新的数值变换；后续行为仍由消费该别名的具体指令决定，并且默认只在目标 valid region 内具有架构意义。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <code>docs/assembly/PTO-AS.md</code>.</p>
+<p>PTO-AS 形式见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.talias ...
 </code></pre>
@@ -926,11 +933,20 @@
 <pre><code class="language-text">pto.talias ins(...) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>.</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>。</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>Refer to backend-specific legality checks for data type/layout/location/shape constraints.</p>
+<ul>
+<li><code>TALIAS</code> 不会修复原始 Tile 的非法 shape、layout 或 location intent。</li>
+<li>alias 后得到的 Tile 仍需满足后续消费者指令的合法性要求。</li>
+<li>若多个别名在没有额外同步的情况下并发读写，共享存储的可见顺序由后续使用这些别名的指令负责建立。</li>
+</ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>See related instruction pages in <code>docs/isa/</code> for concrete Auto/Manual usage patterns.</p>
+<p><code>TALIAS</code> 常与子视图、局部重排和“同存储多视图”模式配合使用。更具体的用法见相关的 tile 搬运与布局页。</p>
+<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tile/layout-and-rearrangement_zh/">布局与重排指令集</a></li>
+<li><a href="../programming-model/tiles-and-valid-regions_zh/">Tile 与有效区域</a></li>
+</ul>
               
             </div>
           </div><footer>

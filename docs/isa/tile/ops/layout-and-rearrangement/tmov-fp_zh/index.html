@@ -912,14 +912,21 @@
 
 <h1 id="tmov_fp">TMOV_FP<a class="headerlink" href="#tmov_fp" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TMOV_FP tile operation" src="../figures/isa/TMOV_FP.svg" /></p>
+<p><img alt="TMOV_FP tile operation" src="../../../../../figures/isa/TMOV_FP.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>使用缩放 (<code>fp</code>) Tile 作为向量量化参数，将累加器 Tile 移动/转换到目标 Tile。</p>
+<p><code>TMOV_FP</code> 是 <code>TMOV</code> 家族里的向量量化版本：它从累加器 Tile 读取源数据，同时使用额外的 <code>fp</code> Tile 提供量化参数，把结果移动到目标 Tile。</p>
+<p>这条指令解决的是“单纯按 dtype cast 不够”的问题。很多量化路径不仅需要源/目标类型，还需要一组外部缩放参数。<code>TMOV_FP</code> 把这组参数显式建模成一个 Tile 操作数。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Conceptually converts each element using an implementation-defined quantization/dequantization configuration derived from <code>fp</code>:</p>
+<p>对有效区域中的每个元素，<code>TMOV_FP</code> 可以概念化为：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{Convert}\!\left(\mathrm{src}_{i,j};\ \mathrm{fp}\right) \]</div>
+<p>这里的 <code>Convert</code> 并不是单纯的 C++ 类型转换，而是“由 <code>fp</code> 指定量化 / 反量化参数”的目标相关转换。架构层可见的合同是：</p>
+<ul>
+<li><code>src</code> 来自 <code>Acc</code> Tile；</li>
+<li><code>fp</code> 提供向量量化所需的缩放信息；</li>
+<li><code>dst</code> 接收量化或反量化后的结果。</li>
+</ul>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = tmov.fp %src, %fp : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -930,26 +937,52 @@
 <pre><code class="language-text">pto.tmov.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
 </code></pre>
+<p>如果目标是 Vec Tile，并且还需要显式选择 <code>AccToVecMode</code>，则使用 <code>TMOV</code> 的同族模板重载而不是这个命名接口。</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li>The fp path is only supported for accumulator conversion and is validated by internal compile-time checks in <code>TMOV_IMPL(dst, src, fp)</code>.</li>
-<li><code>FpTileData::Loc</code> must be <code>TileType::Scaling</code> (<code>static_assert</code>).</li>
+<li><code>src</code> 必须来自 <code>Acc</code> Tile。</li>
+<li><code>fp</code> 的设计意图是承载量化参数；可移植代码应将它建成 <code>TileType::Scaling</code>。</li>
+<li>目标 dtype 的支持集由具体 backend 上的向量量化模式决定，而不是由 <code>TMOV_FP</code> 单独定义一套新规则。</li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li>Validated by <code>CheckTMovAccValid(...)</code> and related compile-time checks in <code>TMOV_IMPL(dst, src, fp)</code>.</li>
-<li><code>FpTileData::Loc</code> must be <code>TileType::Scaling</code> (<code>static_assert</code>).</li>
-<li>Destination location is target-dependent (<code>Vec</code> or <code>Mat</code> are supported in the fp path).</li>
+<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A2/A3 的 <code>TMOV_FP</code> 实际对应 <code>Acc -&gt; Mat</code> 路径，不支持 <code>Acc -&gt; Vec</code>。</li>
+<li><code>FpTileData::Loc</code> 必须是 <code>TileType::Scaling</code>。</li>
+<li>源必须是 <code>Acc</code>，目标必须是 <code>Mat</code>，并且满足 <code>CheckTMovAccToMat(...)</code>：</li>
+<li>目标 fractal size 必须是 <code>512</code></li>
+<li>目标列宽字节数必须是 <code>32</code> 的倍数</li>
+<li>源 dtype 必须是 <code>float</code> 或 <code>int32_t</code></li>
+<li>量化支持集为：</li>
+<li><code>float Acc -&gt; int8_t Mat</code></li>
+<li><code>int32_t Acc -&gt; int8_t / uint8_t / half / int16_t Mat</code></li>
 </ul>
-</li>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A5 的 <code>TMOV_FP</code> 由 <code>CheckTMovAccValid(..., true)</code> 约束。</li>
+<li><code>FpTileData::Loc</code> 必须是 <code>TileType::Scaling</code>。</li>
+<li>命名接口 <code>TMOV_FP(dst, src, fp)</code> 支持：</li>
+<li><code>Acc -&gt; Vec</code></li>
+<li><code>Acc -&gt; Mat</code></li>
+<li>对 <code>Acc -&gt; Vec/Mat</code>：</li>
+<li>源 dtype 必须是 <code>float</code> 或 <code>int32_t</code></li>
+<li>目标布局只允许 <code>nz2nz</code>、<code>nz2nd</code>、<code>nz2dn</code></li>
+<li>目标 stride 对应字节数必须是 <code>32</code> 的倍数</li>
+<li>量化支持集为：</li>
+<li><code>float Acc -&gt; int8_t / uint8_t / hifloat8_t / half / bfloat16_t / float8_e4m3_t / float</code></li>
+<li><code>int32_t Acc -&gt; int8_t / uint8_t / half / bfloat16_t</code></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="cpu">CPU 模拟器说明<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
+<ul>
+<li>当前 CPU 模拟器会接受 <code>TMOV_FP</code> 接口，但不会真正消费 <code>fp</code> 参数，而是退化为普通 <code>TMOV</code> 路径。</li>
+<li>因此，依赖 <code>fp</code> 具体数值的行为应以 NPU backend 和目标 profile 为准。</li>
+</ul>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -981,10 +1014,16 @@ void example_manual() {
   FpT fp;
   TASSIGN(acc, 0x1000);
   TASSIGN(dst, 0x2000);
-  TASSIGN(fp,  0x3000);
+  TASSIGN(fp, 0x3000);
   TMOV_FP(dst, acc, fp);
 }
 </code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tmov_zh/">TMOV</a></li>
+<li><a href="../../memory-and-data-movement/tstore-fp_zh/">TSTORE_FP</a></li>
+<li><a href="../../../layout-and-rearrangement_zh/">布局与重排指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

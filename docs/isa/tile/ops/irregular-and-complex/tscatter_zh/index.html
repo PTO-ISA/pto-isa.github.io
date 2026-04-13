@@ -912,16 +912,27 @@
 
 <h1 id="tscatter">TSCATTER<a class="headerlink" href="#tscatter" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSCATTER tile operation" src="../figures/isa/TSCATTER.svg" /></p>
+<p><img alt="TSCATTER tile operation" src="../../../../../figures/isa/TSCATTER.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>使用逐元素行索引将源 Tile 的行散播到目标 Tile 中。</p>
+<p><code>TSCATTER</code> 按索引 Tile 给出的目标偏移，把源 Tile 中的元素分散写入目标 Tile。它适合表达“不规则写回到本地 Tile”这类模式：数据仍然留在 tile 空间里，但目的位置不再由规则的行列映射决定。</p>
+<p>和规则搬运不同，<code>TSCATTER</code> 的关键输入不是另一个 shape，而是 <code>indexes</code>。每个索引元素都表示目标 Tile 在线性存储视角下的一个元素偏移。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个源元素 <code>(i, j)</code>, let <code>k = idx[i,j]</code> and write:</p>
-<div class="arithmatex">\[ \mathrm{dst\_flat}_{k} = \mathrm{src}_{i,j} \]</div>
-<p>Here <code>dst_flat</code> denotes the destination tile viewed as a single linear storage sequence. <code>TSCATTER</code> does <strong>not</strong> interpret <code>idx[i,j]</code> as a destination row selector. On the standard row-major tile layout, this is equivalent to writing the <code>k</code>-th flattened destination element.</p>
-<p>If multiple elements map to the same destination location, the final value is implementation-defined (last writer wins in the current implementation).</p>
+<p>设：</p>
+<ul>
+<li><code>R = indexes.GetValidRow()</code></li>
+<li><code>C = indexes.GetValidCol()</code></li>
+</ul>
+<p>当前实现会先把整个 <code>dst</code> Tile 清零，然后对 <code>0 &lt;= i &lt; R</code>、<code>0 &lt;= j &lt; C</code> 执行：</p>
+<div class="arithmatex">\[ \mathrm{dst\_flat}_{\mathrm{indexes}_{i,j}} = \mathrm{src}_{i,j} \]</div>
+<p>其中 <code>dst_flat</code> 表示把目标 Tile 按其存储顺序看成一段线性序列。对标准 row-major Tile 来说，这就是“写到扁平化后的第 <code>k</code> 个元素”。</p>
+<p>这条语义有三个读者容易忽略的点：</p>
+<ul>
+<li><code>TSCATTER</code> 按 <code>indexes</code> 的 valid region 遍历，而不是按 <code>dst</code> 的 valid region 遍历。</li>
+<li>没有被任何索引命中的目标位置，在当前实现里保持为零值，而不是保留调用前的 <code>dst</code> 内容。</li>
+<li>如果多个源元素落到同一个目标位置，最终值属于实现定义行为；当前实现按行优先顺序遍历，因此后写入的元素会覆盖前值。</li>
+</ul>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = tscatter %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -932,36 +943,43 @@
 <pre><code class="language-text">pto.tscatter ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename TileDataI, typename... WaitEvents&gt;
 PTO_INST RecordEvent TSCATTER(TileDataD &amp;dst, TileDataS &amp;src, TileDataI &amp;indexes, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:</li>
-<li><code>TileDataD::Loc</code>, <code>TileDataS::Loc</code>, <code>TileDataI::Loc</code> must be <code>TileType::Vec</code>.</li>
-<li><code>TileDataD::DType</code>, <code>TileDataS::DType</code> must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>int8_t</code>, <code>half</code>, <code>float32_t</code>, <code>uint32_t</code>, <code>uint16_t</code>, <code>uint8_t</code>, <code>bfloat16_t</code>.</li>
-<li><code>TileDataI::DType</code> must be one of: <code>int16_t</code>, <code>int32_t</code>, <code>uint16_t</code> or <code>uint32_t</code>.</li>
-<li><code>indexes</code> values are interpreted as flattened destination element offsets in destination tile storage order.</li>
-<li>No bounds checks are enforced on <code>indexes</code> values.</li>
-<li>Static valid bounds: <code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>, <code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>, <code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>, <code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>, <code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>, <code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>.</li>
-<li><code>TileDataD::DType</code> and <code>TileDataS::DType</code> must be the same.</li>
-<li>When size of <code>TileDataD::DType</code> is 4 bytes, the size of <code>TileDataI::DType</code> must be 4 bytes.</li>
-<li>When size of <code>TileDataD::DType</code> is 2 bytes, the size of <code>TileDataI::DType</code> must be 2 bytes.</li>
-<li>When size of <code>TileDataD::DType</code> is 1 bytes, the size of <code>TileDataI::DType</code> must be 2 bytes.</li>
-<li><strong>实现检查 (A5)</strong>:</li>
-<li><code>TileDataD::Loc</code>, <code>TileDataS::Loc</code>, <code>TileDataI::Loc</code> must be <code>TileType::Vec</code>.</li>
-<li><code>TileDataD::DType</code>, <code>TileDataS::DType</code> must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>int8_t</code>, <code>half</code>, <code>float32_t</code>, <code>uint32_t</code>, <code>uint16_t</code>, <code>uint8_t</code>, <code>bfloat16_t</code>.</li>
-<li><code>TileDataI::DType</code> must be one of: <code>int16_t</code>, <code>int32_t</code>, <code>uint16_t</code> or <code>uint32_t</code>.</li>
-<li><code>indexes</code> values are interpreted as flattened destination element offsets in destination tile storage order.</li>
-<li>No bounds checks are enforced on <code>indexes</code> values.</li>
-<li>Static valid bounds: <code>TileDataD::ValidRow &lt;= TileDataD::Rows</code>, <code>TileDataD::ValidCol &lt;= TileDataD::Cols</code>, <code>TileDataS::ValidRow &lt;= TileDataS::Rows</code>, <code>TileDataS::ValidCol &lt;= TileDataS::Cols</code>, <code>TileDataI::ValidRow &lt;= TileDataI::Rows</code>, <code>TileDataI::ValidCol &lt;= TileDataI::Cols</code>.</li>
-<li><code>TileDataD::DType</code> and <code>TileDataS::DType</code> must be the same.</li>
-<li>When size of <code>TileDataD::DType</code> is 4 bytes, the size of <code>TileDataI::DType</code> must be 4 bytes.</li>
-<li>When size of <code>TileDataD::DType</code> is 2 bytes, the size of <code>TileDataI::DType</code> must be 2 bytes.</li>
-<li>When size of <code>TileDataD::DType</code> is 1 bytes, the size of <code>TileDataI::DType</code> must be 2 bytes.</li>
+<li><code>dst</code>、<code>src</code>、<code>indexes</code> 都必须是 <code>TileType::Vec</code>。</li>
+<li><code>dst</code> 与 <code>src</code> 的元素类型必须完全一致。</li>
+<li><code>indexes</code> 必须是整型 Tile，且索引元素宽度必须和数据元素宽度匹配：</li>
+<li>数据为 4 字节时，索引也必须是 4 字节；</li>
+<li>数据为 2 字节时，索引也必须是 2 字节；</li>
+<li>数据为 1 字节时，索引必须是 2 字节。</li>
+<li>实现按 <code>indexes.GetValidRow()</code> / <code>indexes.GetValidCol()</code> 遍历。可移植代码应保证 <code>src</code> 在同一坐标域内可读。</li>
+<li>当前 backend 不会对索引做越界检查。超出目标 Tile 线性范围的索引不属于合法使用域。</li>
+<li>编译期 valid bounds 必须满足：</li>
+<li><code>TileDataD::ValidRow &lt;= TileDataD::Rows</code></li>
+<li><code>TileDataD::ValidCol &lt;= TileDataD::Cols</code></li>
+<li><code>TileDataS::ValidRow &lt;= TileDataS::Rows</code></li>
+<li><code>TileDataS::ValidCol &lt;= TileDataS::Cols</code></li>
+<li><code>TileDataI::ValidRow &lt;= TileDataI::Rows</code></li>
+<li><code>TileDataI::ValidCol &lt;= TileDataI::Cols</code></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>dst/src</code> 的元素类型必须属于：
+  <code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>uint8_t</code>、<code>half</code>、<code>float32_t</code>、<code>bfloat16_t</code>。</li>
+<li><code>indexes</code> 的元素类型必须属于：
+  <code>int16_t</code>、<code>int32_t</code>、<code>uint16_t</code>、<code>uint32_t</code>。</li>
+</ul>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A5 上的类型限制与 A2/A3 相同：</li>
+<li><code>dst/src</code> 支持 <code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>uint8_t</code>、<code>half</code>、<code>float32_t</code>、<code>bfloat16_t</code></li>
+<li><code>indexes</code> 支持 <code>int16_t</code>、<code>int32_t</code>、<code>uint16_t</code>、<code>uint32_t</code></li>
+</ul>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -991,6 +1009,12 @@ void example_manual() {
   TSCATTER(dst, src, idx);
 }
 </code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../../irregular-and-complex_zh/">不规则与复杂指令集</a></li>
+<li><a href="../../../../state-and-types/layout_zh/">布局参考</a></li>
+<li><a href="../../../../state-and-types/data-format_zh/">数据格式</a></li>
+</ul>
               
             </div>
           </div><footer>

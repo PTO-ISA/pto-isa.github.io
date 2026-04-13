@@ -908,19 +908,87 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/instruction-families/vector-families_zh.md` -->
+                <!-- Generated from `docs/isa/instruction-families/vector-families_zh.md` -->
 
-<h1 id="vector-families">Vector Families<a class="headerlink" href="#vector-families" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">向量指令族<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>向量指令族按 PTOAS VPTO 的分组方式组织 <code>pto.v*</code> 微指令。各族页面负责说明共享机制、操作数模型、约束和 profile 缩窄，再进入具体 per-op 页面。</p>
+<h2 id="_2">指令族概览<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>指令族</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>向量加载存储</td>
+<td>UB 与向量寄存器之间的搬运</td>
+</tr>
+<tr>
+<td>谓词与物化</td>
+<td>广播、复制和谓词相关结果</td>
+</tr>
+<tr>
+<td>一元向量操作</td>
+<td>单输入 lane 级运算</td>
+</tr>
+<tr>
+<td>二元向量操作</td>
+<td>双输入 lane 级运算</td>
+</tr>
+<tr>
+<td>向量-标量操作</td>
+<td>向量与标量混合</td>
+</tr>
+<tr>
+<td>转换操作</td>
+<td>类型转换和索引生成</td>
+</tr>
+<tr>
+<td>归约操作</td>
+<td>跨 lane 的归约</td>
+</tr>
+<tr>
+<td>比较与选择</td>
+<td>谓词生成和按 mask 选择</td>
+</tr>
+<tr>
+<td>数据重排</td>
+<td>interleave、pack、permute、slide</td>
+</tr>
+<tr>
+<td>SFU 与 DSA</td>
+<td>特殊函数、融合形式和特定领域操作</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">共享操作数模型<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../vector-families/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
-<li><a href="../../../../manual/07-instructions_zh/">中文章节手册指令集概述</a></li>
+<li><code>!pto.vreg&lt;NxT&gt;</code></li>
+<li>标量寄存器或立即数</li>
+<li><code>!pto.mask</code></li>
+<li><code>!pto.ptr&lt;T, ub&gt;</code></li>
+<li>分布、舍入、对齐相关属性</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_4">共享约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>向量宽度由元素类型决定。</li>
+<li>谓词宽度必须与目标向量宽度一致。</li>
+<li>UB 指针空间和对齐要求由操作族与 profile 共同决定。</li>
+<li>A5 专属形式必须单独标明。</li>
+</ul>
+<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>使用宽度不匹配的谓词</li>
+<li>在不支持的 profile 上使用专属向量形式</li>
+<li>把未文档化的 masked lane 结果当作稳定契约</li>
+</ul>
+<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
+<li><a href="../../vector/README_zh/">向量参考入口</a></li>
+</ul>
               
             </div>
           </div><footer>

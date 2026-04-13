@@ -912,13 +912,19 @@
 
 <h1 id="treshape">TRESHAPE<a class="headerlink" href="#treshape" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TRESHAPE tile operation" src="../figures/isa/TRESHAPE.svg" /></p>
+<p><img alt="TRESHAPE tile operation" src="../../../../../figures/isa/TRESHAPE.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>将 Tile 重新解释为另一种 Tile 类型/形状，同时保留底层字节。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>除非另有说明, semantics are defined over the valid region and target-dependent behavior is marked as implementation-defined.</p>
+<p><code>TRESHAPE</code> 重新解释一个 Tile 的字节视图，而不改变底层字节内容。它不是数值转换，也不是数据搬运；它做的是“同一块数据，用另一种 Tile 形状/类型规则来看”。</p>
+<p>如果你需要真的改变值，应该找 <code>TCVT</code>、<code>TMOV</code> 或量化类指令；如果你只是想换一种兼容的 Tile 视图，才使用 <code>TRESHAPE</code>。</p>
+<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>从结果上看，可以把 <code>TRESHAPE</code> 理解成：</p>
+<ul>
+<li><code>src</code> 的字节序列保持不变</li>
+<li><code>dst</code> 只是用另一套 Tile 元数据去解释同一批字节</li>
+</ul>
+<p>因此它的核心前提不是“形状能不能算”，而是“总字节数和布局类别能不能兼容”。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <pre><code class="language-text">%dst = treshape %src : !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
@@ -928,20 +934,31 @@
 <pre><code class="language-text">pto.treshape ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename... WaitEvents&gt;
 PTO_INST RecordEvent TRESHAPE(TileDataOut &amp;dst, TileDataIn &amp;src, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>Enforced by <code>TRESHAPE_IMPL</code>:</p>
+<h3 id="backend">所有 backend 都共享的硬约束<a class="headerlink" href="#backend" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Tile type must match</strong>: <code>TileDataIn::Loc == TileDataOut::Loc</code>.</li>
-<li><strong>Total byte size must match</strong>: <code>sizeof(InElem) * InNumel == sizeof(OutElem) * OutNumel</code>.</li>
-<li><strong>No boxed/non-boxed conversion</strong>:<ul>
-<li>cannot reshape between <code>SLayout::NoneBox</code> and boxed layouts.</li>
+<li><code>TileDataIn::Loc == TileDataOut::Loc</code></li>
+<li><code>sizeof(InElem) * InNumel == sizeof(OutElem) * OutNumel</code></li>
+<li>不能在 boxed layout 和 non-boxed layout 之间重解释</li>
 </ul>
-</li>
+<h3 id="cpu">CPU 模拟器<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CPU 还会额外检查元素类型兼容性：</li>
+<li>同类型，或</li>
+<li>都是浮点，或</li>
+<li>都是整数</li>
 </ul>
+<h3 id="a2a3-a5-kirin9030">A2/A3 / A5 / Kirin9030<a class="headerlink" href="#a2a3-a5-kirin9030" title="Permanent link">&para;</a></h3>
+<ul>
+<li>NPU 路径没有 CPU 那么强的“元素类别兼容”检查。</li>
+<li>A2/A3 在非自动路径下会把 <code>dst</code> 直接别名到 <code>src</code> 的地址；自动路径用 <code>__cce_alias</code>。</li>
+<li>A5 和 Kirin9030 复用 A2/A3 的 <code>TRESHAPE</code> 实现。</li>
+</ul>
+<p>这意味着 <code>TRESHAPE</code> 在 NPU 上更接近“受约束的别名/重解释”，而不是一次真实复制。</p>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -950,13 +967,19 @@ using namespace pto;
 void example() {
   using Src = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   using Dst = Tile&lt;TileType::Vec, float, 8, 32&gt;;
-  static_assert(Src::Numel == Dst::Numel);
+  static_assert(sizeof(typename Src::DType) * Src::Numel == sizeof(typename Dst::DType) * Dst::Numel);
 
   Src src;
   Dst dst;
   TRESHAPE(dst, src);
 }
 </code></pre>
+<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../../../TALIAS_zh/">TALIAS</a></li>
+<li><a href="../tmov_zh/">TMOV</a></li>
+<li><a href="../../../layout-and-rearrangement_zh/">布局与重排指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

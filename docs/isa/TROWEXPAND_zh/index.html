@@ -910,77 +910,13 @@
               
                 <!-- Generated from `docs/isa/TROWEXPAND_zh.md` -->
 
-<h1 id="trowexpand">TROWEXPAND<a class="headerlink" href="#trowexpand" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TROWEXPAND tile operation" src="../../figures/isa/TROWEXPAND.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>将每个源行的第一个元素广播到目标行中。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
-<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{i,0} \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = trowexpand %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trowexpand %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trowexpand ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trowexpand %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trowexpand ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TROWEXPAND(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>实现检查 (NPU):</p>
+<h1 id="ptotrowexpand">pto.trowexpand<a class="headerlink" href="#ptotrowexpand" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/reduce-and-expand/trowexpand_zh/">pto.trowexpand</a>。</p>
 <ul>
-<li>Tile Type: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile 布局: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>) for both <code>src</code> and <code>dst</code>.</li>
-<li>Data type: A2A3/A5 element types must be one of: <code>int8_t</code> or <code>uint8_t</code> or <code>int16_t</code> or <code>uint16_t</code> or <code>int32_t</code> or <code>uint32_t</code> or <code>half</code> or <code>bfloat16_t</code> or <code>float</code>.</li>
-<li>运行期有效区域检查:<ul>
-<li>A2A3: returns early if any of <code>dstValidRow</code>, <code>dstValidCol</code>, <code>srcValidRow</code>, <code>srcValidCol</code> is zero.</li>
-<li>A5: asserts <code>srcValidRow == dstValidRow</code> and asserts <code>srcValidRow != 0 &amp;&amp; srcValidCol != 0</code>.</li>
+<li>指令集：<a href="../tile/reduce-and-expand_zh/">归约与扩展指令集</a></li>
+<li>规范页：<a href="../tile/ops/reduce-and-expand/trowexpand_zh/">pto.trowexpand</a></li>
 </ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  SrcT src;
-  DstT dst;
-  TROWEXPAND(dst, src);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  SrcT src;
-  DstT dst;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TROWEXPAND(dst, src);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

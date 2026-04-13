@@ -908,19 +908,79 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/tile/ops/sync-and-config/tset-img2col-padding_zh.md` -->
+                <!-- Generated from `docs/isa/tile/ops/sync-and-config/tset-img2col-padding_zh.md` -->
 
-<h1 id="ptotset_img2col_padding">pto.tset_img2col_padding<a class="headerlink" href="#ptotset_img2col_padding" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="tset_img2col_padding">TSET_IMG2COL_PADDING<a class="headerlink" href="#tset_img2col_padding" title="Permanent link">&para;</a></h1>
+<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><img alt="TSET_IMG2COL_PADDING tile operation" src="../../../../../figures/isa/TSET_IMG2COL_PADDING.svg" /></p>
+<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>TSET_IMG2COL_PADDING</code> 把 <code>Img2colTileConfig</code> 里的 pad value 写入 IMG2COL 相关 padding 配置寄存器，供后续 <code>TIMG2COL</code> 一类操作在边界补值时使用。</p>
+<p>它解决的问题不是“pad 多大”，而是“边界外应该补什么值”。</p>
+<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>这条指令从配置 Tile 读取 <code>src.GetPadValue()</code>，然后把这个值编码成硬件需要的 padding 字段。</p>
+<p>当前 backend 的编码规则是：</p>
 <ul>
-<li><a href="../tset-img2col-padding/">对应英文页面</a></li>
-<li><a href="../../../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../TSET_IMG2COL_PADDING_zh/">现有中文指令说明</a></li>
-<li><a href="../../../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li>若元素宽度为 1 字节：把同一个字节复制两次后写入 padding 字段</li>
+<li>若元素宽度为 2 字节：按 16 位值写入</li>
+<li>若元素宽度为 4 字节：按 32 位值写入</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<p>在 A5 上，这条配置同样支持 A 侧和 B 侧两组寄存器。</p>
+<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>示意形式：</p>
+<pre><code class="language-text">tset_img2col_padding %cfg
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tset_img2col_padding %cfg : !pto.fmatrix_config -&gt; ()
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tset_img2col_padding ins(%cfg : !pto.fmatrix_config) outs()
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename ConvTileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TSET_IMG2COL_PADDING(ConvTileData &amp;src, WaitEvents &amp;... events);
+
+template &lt;typename ConvTileData, SetFmatrixMode FmatrixMode = SetFmatrixMode::FMATRIX_A_MANUAL, typename... WaitEvents&gt;
+PTO_INST RecordEvent TSET_IMG2COL_PADDING(ConvTileData &amp;src, WaitEvents &amp;... events);
+</code></pre>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>src</code> 应是有效的 IMG2COL 配置 Tile。</li>
+<li>这条指令只更新控制状态，不直接产生新的 tile 数据。</li>
+<li>通常应在同一执行流中先配置 padding，再发出依赖它的 <code>TIMG2COL</code>。</li>
+</ul>
+<h3 id="cpu">CPU 模拟器<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CPU 当前把这条指令实现为 no-op，不额外写入寄存器状态。</li>
+</ul>
+<h3 id="a2a3">A2/A3 实现<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A2/A3 直接把 <code>padValue</code> 编码后写入 padding 寄存器。</li>
+<li>这条路径没有区分 A/B 两组配置寄存器。</li>
+</ul>
+<h3 id="a5">A5 实现<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A5 仅在 <code>FMATRIX_A_MANUAL</code> 或 <code>FMATRIX_B_MANUAL</code> 时真正写寄存器。</li>
+<li><code>FMATRIX_A_MANUAL</code> 写 A 侧 padding 配置。</li>
+<li><code>FMATRIX_B_MANUAL</code> 写 B 侧 padding 配置。</li>
+</ul>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_set_img2col_padding(Img2colTileConfig&lt;uint16_t&gt;&amp; cfg) {
+  TSET_IMG2COL_PADDING(cfg);
+}
+</code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tsetfmatrix_zh/">TSETFMATRIX</a></li>
+<li><a href="../tset-img2col-rpt_zh/">TSET_IMG2COL_RPT</a></li>
+<li><a href="../../layout-and-rearrangement/timg2col_zh/">TIMG2COL</a></li>
+</ul>
               
             </div>
           </div><footer>

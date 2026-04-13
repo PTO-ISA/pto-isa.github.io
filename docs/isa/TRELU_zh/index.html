@@ -910,70 +910,13 @@
               
                 <!-- Generated from `docs/isa/TRELU_zh.md` -->
 
-<h1 id="trelu">TRELU<a class="headerlink" href="#trelu" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TRELU tile operation" src="../../figures/isa/TRELU.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>Tile 的逐元素 ReLU。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
-<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \max(\mathrm{src}_{i,j}, 0) \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = trelu %src : !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trelu %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trelu ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trelu %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trelu ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TRELU(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotrelu">pto.trelu<a class="headerlink" href="#ptotrelu" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/elementwise-tile-tile/trelu_zh/">pto.trelu</a>。</p>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>half</code>, <code>float</code>, <code>int32_t</code>.</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>Runtime: <code>src</code> and <code>dst</code> tiles should have the same <code>validRow/validCol</code>.</li>
+<li>指令集：<a href="../tile/elementwise-tile-tile_zh/">逐元素 Tile-Tile 指令集</a></li>
+<li>规范页：<a href="../tile/ops/elementwise-tile-tile/trelu_zh/">pto.trelu</a></li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>half</code>, <code>float</code>, <code>int32_t</code>.</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>Runtime: <code>src</code> and <code>dst</code> tiles should have the same <code>validRow/validCol</code>.</li>
-</ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain; <code>src/dst</code> are assumed to be compatible (not validated by explicit runtime checks in this op).</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT x, out;
-  TRELU(out, x);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

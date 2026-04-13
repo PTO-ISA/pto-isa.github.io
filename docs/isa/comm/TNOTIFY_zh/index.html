@@ -912,14 +912,14 @@
 
 <h1 id="tnotify">TNOTIFY<a class="headerlink" href="#tnotify" title="Permanent link">&para;</a></h1>
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>向远端 NPU 发送标志通知。用于 NPU 之间的轻量级同步，无需传输大量数据。</p>
+<p><code>TNOTIFY</code> 向远端 NPU 发送标志通知，用于在不搬运大量数据的前提下建立轻量级同步。</p>
 <h2 id="_2">数学语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>NotifyOp::Set</code> 时：</p>
-<div class="arithmatex">\[\mathrm{signal}^{\mathrm{remote}} = \mathrm{value}\]</div>
-<p><code>NotifyOp::AtomicAdd</code> 时：</p>
-<div class="arithmatex">\[\mathrm{signal}^{\mathrm{remote}} \mathrel{+}= \mathrm{value} \quad (\text{原子操作})\]</div>
+<p><code>NotifyOp::Set</code>：</p>
+<div class="arithmatex">\[ \mathrm{signal}^{\mathrm{remote}} = \mathrm{value} \]</div>
+<p><code>NotifyOp::AtomicAdd</code>：</p>
+<div class="arithmatex">\[ \mathrm{signal}^{\mathrm{remote}} \mathrel{+}= \mathrm{value} \]</div>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>PTO-AS 形式：</p>
 <pre><code class="language-text">tnotify %signal_remote, %value {op = #pto.notify_op&lt;Set&gt;} : (!pto.memref&lt;i32&gt;, i32)
 tnotify %signal_remote, %value {op = #pto.notify_op&lt;AtomicAdd&gt;} : (!pto.memref&lt;i32&gt;, i32)
 </code></pre>
@@ -930,65 +930,23 @@ PTO_INST void TNOTIFY(GlobalSignalData &amp;dstSignalData, int32_t value, Notify
 </code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>类型约束</strong>：<ul>
-<li><code>GlobalSignalData::DType</code> 必须为 <code>int32_t</code>（32 位信号）。</li>
-</ul>
-</li>
-<li><strong>内存约束</strong>：<ul>
-<li><code>dstSignalData</code> 必须指向远端地址（目标 NPU）。</li>
-<li><code>dstSignalData</code> 应 4 字节对齐。</li>
-</ul>
-</li>
-<li><strong>操作语义</strong>：<ul>
-<li><code>NotifyOp::Set</code>：直接存储到远端内存。</li>
-<li><code>NotifyOp::AtomicAdd</code>：使用 <code>st_atomic</code> 指令执行硬件原子加。</li>
-</ul>
-</li>
+<li><code>GlobalSignalData::DType</code> 必须为 <code>int32_t</code></li>
+<li><code>dstSignalData</code> 必须指向远端地址</li>
+<li><code>dstSignalData</code> 建议满足 4 字节对齐</li>
+<li><code>NotifyOp::Set</code> 表示直接写入</li>
+<li><code>NotifyOp::AtomicAdd</code> 表示原子加</li>
 </ul>
 <h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="set">基础 Set 通知<a class="headerlink" href="#set" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-void notify_set(__gm__ int32_t* remote_signal) {
+<h3 id="_6">基础通知<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">void notify_set(__gm__ int32_t* remote_signal) {
     comm::Signal sig(remote_signal);
-
-    // 将远端信号置为 1
     comm::TNOTIFY(sig, 1, comm::NotifyOp::Set);
 }
 </code></pre>
-<h3 id="_6">原子计数器自增<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-void atomic_increment(__gm__ int32_t* remote_counter) {
+<h3 id="_7">原子计数器自增<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">void atomic_increment(__gm__ int32_t* remote_counter) {
     comm::Signal counter(remote_counter);
-
-    // 对远端计数器原子加 1
     comm::TNOTIFY(counter, 1, comm::NotifyOp::AtomicAdd);
-}
-</code></pre>
-<h3 id="-">生产者-消费者模式<a class="headerlink" href="#-" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-// 生产者：数据就绪后发送通知
-void producer(__gm__ int32_t* remote_flag) {
-    // ... 生产数据 ...
-
-    comm::Signal flag(remote_flag);
-    comm::TNOTIFY(flag, 1, comm::NotifyOp::Set);
-}
-
-// 消费者：等待数据就绪
-void consumer(__gm__ int32_t* local_flag) {
-    comm::Signal flag(local_flag);
-    comm::TWAIT(flag, 1, comm::WaitCmp::EQ);
-
-    // ... 消费数据 ...
 }
 </code></pre>
               

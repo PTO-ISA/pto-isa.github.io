@@ -908,19 +908,86 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/instruction-surfaces/tile-instructions_zh.md` -->
+                <!-- Generated from `docs/isa/instruction-surfaces/tile-instructions_zh.md` -->
 
-<h1 id="tile-instruction-surface">Tile Instruction Surface<a class="headerlink" href="#tile-instruction-surface" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="tile">Tile 指令集<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h1>
+<p><code>pto.t*</code> 指令集覆盖以 tile 为中心的计算、搬运、重排、归约和同步。tile 的 shape、layout、role 与 valid region 都属于架构可见状态。</p>
+<h2 id="_1">指令集概览<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>同步与配置</td>
+<td>资源绑定、同步边和模式控制</td>
+</tr>
+<tr>
+<td>逐元素 Tile-Tile</td>
+<td>两个或多个 tile 之间的逐元素操作</td>
+</tr>
+<tr>
+<td>Tile-标量与立即数</td>
+<td>tile 与标量/立即数混合操作</td>
+</tr>
+<tr>
+<td>归约与扩展</td>
+<td>按行列做归约和广播式扩展</td>
+</tr>
+<tr>
+<td>内存与数据搬运</td>
+<td>GM 与 tile 之间的传输，含 gather/scatter</td>
+</tr>
+<tr>
+<td>矩阵与矩阵-向量</td>
+<td>GEMV、matmul 及其变体</td>
+</tr>
+<tr>
+<td>布局与重排</td>
+<td>reshape、transpose、extract、insert、img2col</td>
+</tr>
+<tr>
+<td>不规则与复杂</td>
+<td>sort、quant、print、partial 等</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">输入<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>Tile 指令集常见输入包括：</p>
 <ul>
-<li><a href="../tile-instructions/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
-<li><a href="../../../../manual/07-instructions_zh/">中文章节手册指令集概述</a></li>
+<li>源 tile</li>
+<li>目标 tile / tile buffer</li>
+<li>标量修饰符和立即数</li>
+<li>GM 视图</li>
+<li>可选事件链</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">输出<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>Tile 指令会产生：</p>
+<ul>
+<li>目标 tile 数据</li>
+<li>valid region 或布局解释变化</li>
+<li>同步边或资源状态更新</li>
+</ul>
+<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>dtype、shape、layout、role 与 valid region 都可能参与合法性判断。</li>
+<li>多输入 tile 操作必须明确说明 valid region 的组合关系。</li>
+<li>某些 tile 形式仅对特定 profile 可用，例如部分 MX 或 FP8 路径。</li>
+</ul>
+<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把域外数据当作稳定语义使用</li>
+<li>假设 tile 指令自动继承 vector 寄存器语义</li>
+<li>依赖未文档化的隐式广播、隐式 reshape 或隐式 valid-region 修复</li>
+</ul>
+<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
+<li><a href="../../tile/README_zh/">Tile 参考入口</a></li>
+</ul>
               
             </div>
           </div><footer>

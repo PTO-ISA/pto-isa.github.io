@@ -912,68 +912,56 @@
 
 <h1 id="tput">TPUT<a class="headerlink" href="#tput" title="Permanent link">&para;</a></h1>
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>远程写操作：将本地数据写入远端 NPU 的内存。数据通过 UB Tile 作为中间暂存缓冲区进行传输。</p>
-<p>当 GlobalTensor 超出 UB Tile 容量时，TPUT 将自动执行<strong>二维滑动</strong>——沿行（DIM_3）和列（DIM_4）分块以适配 Tile，并遍历所有外层维度（DIM_0、DIM_1、DIM_2）。</p>
+<p><code>TPUT</code> 是远程写原语：把当前 NPU 本地 GM 中的数据写到远端 NPU 的 GM。它通过 UB 中的暂存 Tile 完成 GM→UB→GM 路径。</p>
+<p>当 <code>GlobalTensor</code> 的行或列超出单个 UB Tile 容量时，<code>TPUT</code> 会自动沿 <code>DIM_3</code> 和 <code>DIM_4</code> 做二维滑动分块。</p>
 <h2 id="_2">数学语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>对有效区域内每个元素 <code>(i, j)</code>：</p>
-<div class="arithmatex">\[\mathrm{dst}^{\mathrm{remote}}_{i,j} = \mathrm{src}^{\mathrm{local}}_{i,j}\]</div>
-<p>数据流：<code>srcGlobalData（本地 GM）</code> → <code>stagingTileData（UB）</code> → <code>dstGlobalData（远端 GM）</code></p>
+<div class="arithmatex">\[ \mathrm{dst}^{\mathrm{remote}}_{i,j} = \mathrm{src}^{\mathrm{local}}_{i,j} \]</div>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>同步形式：</p>
+<p>PTO-AS 形式：</p>
 <pre><code class="language-text">tput %dst_remote, %src_local : (!pto.memref&lt;...&gt;, !pto.memref&lt;...&gt;)
 </code></pre>
-<p>降级时会为 GM→UB→GM 数据路径引入 UB 暂存 Tile；C++ 内建接口需要显式传入 <code>stagingTileData</code>（或 <code>pingTile</code> / <code>pongTile</code>）操作数。</p>
+<p>lowering 会为 GM→UB→GM 路径引入 UB 暂存 Tile，因此 C++ 接口要求显式传入 <code>stagingTileData</code>，或在双缓冲场景下传入 <code>pingTile</code> / <code>pongTile</code>。</p>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code></p>
-<h3 id="tile">单 Tile（自动分块）<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
+<p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
+<h3 id="tile">单暂存 Tile<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">template &lt;AtomicType atomicType = AtomicType::AtomicNone,
           typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TPUT(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
                           TileData &amp;stagingTileData, WaitEvents&amp;... events);
 </code></pre>
 <h3 id="_4">乒乓双缓冲<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<p>使用两个暂存 Tile，将相邻块的 TLOAD 与 TSTORE 重叠执行，隐藏 DMA 传输延迟。</p>
 <pre><code class="language-cpp">template &lt;AtomicType atomicType = AtomicType::AtomicNone,
           typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TPUT(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
                           TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
 </code></pre>
-<h3 id="_5">运行时原子类型<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<h3 id="_5">运行时原子模式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TPUT(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
                           TileData &amp;stagingTileData, AtomicType atomicType, WaitEvents&amp;... events);
 </code></pre>
 <h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="_7">类型约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>类型约束</strong>：<ul>
-<li><code>GlobalSrcData::RawDType</code> 必须等于 <code>GlobalDstData::RawDType</code>。</li>
-<li><code>TileData::DType</code> 必须等于 <code>GlobalSrcData::RawDType</code>。</li>
-<li><code>GlobalSrcData::layout</code> 必须等于 <code>GlobalDstData::layout</code>。</li>
+<li><code>GlobalSrcData::RawDType</code> 必须等于 <code>GlobalDstData::RawDType</code></li>
+<li><code>TileData::DType</code> 必须等于 <code>GlobalSrcData::RawDType</code></li>
+<li><code>GlobalSrcData::layout</code> 必须等于 <code>GlobalDstData::layout</code></li>
 </ul>
-</li>
-<li><strong>内存约束</strong>：<ul>
-<li><code>dstGlobalData</code> 必须指向远端地址（目标 NPU）。</li>
-<li><code>srcGlobalData</code> 必须指向本地地址（当前 NPU）。</li>
-<li><code>stagingTileData</code> / <code>pingTile</code> / <code>pongTile</code> 必须预先在统一缓冲区中分配。</li>
+<h3 id="_8">内存约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>dstGlobalData</code> 必须指向远端地址（目标 NPU）</li>
+<li><code>srcGlobalData</code> 必须指向本地地址（当前 NPU）</li>
+<li><code>stagingTileData</code>、<code>pingTile</code>、<code>pongTile</code> 必须预先在 UB 中分配</li>
 </ul>
-</li>
-<li><strong>有效区域</strong>：<ul>
-<li>传输大小由 <code>GlobalTensor</code> 的形状决定（自动分块以适配 Tile）。</li>
+<h3 id="_9">原子与双缓冲约束<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>当前接口支持 <code>AtomicNone</code> 与 <code>AtomicAdd</code></li>
+<li><code>pingTile</code> 与 <code>pongTile</code> 的类型和维度必须一致</li>
+<li>两者必须位于不重叠的 UB 偏移处</li>
 </ul>
-</li>
-<li><strong>原子操作</strong>：<ul>
-<li><code>atomicType</code> 支持 <code>AtomicNone</code> 和 <code>AtomicAdd</code>。</li>
-</ul>
-</li>
-<li><strong>乒乓约束</strong>：<ul>
-<li><code>pingTile</code> 和 <code>pongTile</code> 必须具有相同的类型和维度。</li>
-<li>必须位于不重叠的 UB 偏移处。</li>
-</ul>
-</li>
-</ul>
-<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<h3 id="_8">基础用法<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="_11">基础形式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/pto-inst.hpp&gt;
 
@@ -991,27 +979,28 @@ void example_tput(__gm__ T* local_data, __gm__ T* remote_addr) {
     TileT stagingTile;
     TASSIGN(stagingTile, 0);
 
-    // 基础远程写
     comm::TPUT(dstG, srcG, stagingTile);
-
-    // 带原子加的远程写
     comm::TPUT&lt;AtomicType::AtomicAdd&gt;(dstG, srcG, stagingTile);
 }
 </code></pre>
-<h3 id="_9">乒乓双缓冲<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<h3 id="_12">乒乓双缓冲<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">constexpr size_t tileUBBytes = ((64 * 64 * sizeof(float) + 1023) / 1024) * 1024;
 TileT pingTile(64, 64);
 TileT pongTile(64, 64);
 TASSIGN(pingTile, 0);
-TASSIGN(pongTile, tileUBBytes);  // 不重叠的 UB 区域
+TASSIGN(pongTile, tileUBBytes);
 
-// 将 TLOAD[i+1] 与 TSTORE[i] 重叠执行以提升流水线利用率
 comm::TPUT(dstG, srcG, pingTile, pongTile);
 </code></pre>
-<h3 id="_10">运行时原子类型<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// 在运行时而非编译期模板参数中选择原子类型
-comm::TPUT(dstG, srcG, stagingTile, AtomicType::AtomicAdd);
+<h3 id="_13">运行时指定原子模式<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">comm::TPUT(dstG, srcG, stagingTile, AtomicType::AtomicAdd);
 </code></pre>
+<h2 id="_14">相关页面<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../other/communication-and-runtime_zh/">通信与运行时</a></li>
+<li><a href="../TGET_zh/">TGET</a></li>
+<li><a href="../TSCATTER_zh/">TSCATTER</a></li>
+</ul>
               
             </div>
           </div><footer>

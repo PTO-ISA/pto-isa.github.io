@@ -908,18 +908,66 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/introduction/design-goals-and-boundaries_zh.md` -->
+                <!-- Generated from `docs/isa/introduction/design-goals-and-boundaries_zh.md` -->
 
-<h1 id="scope-and-boundaries">Scope And Boundaries<a class="headerlink" href="#scope-and-boundaries" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">范围与边界<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>PTO ISA 规范的覆盖范围，以及它与相邻层之间的边界如下。</p>
+<h2 id="pto-isa">PTO ISA 定义什么<a class="headerlink" href="#pto-isa" title="Permanent link">&para;</a></h2>
+<p>PTO ISA 定义合法 PTO 程序的架构可见含义，包括：</p>
 <ul>
-<li><a href="../design-goals-and-boundaries/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../manual/01-overview_zh/">中文章节手册概述</a></li>
+<li><code>pto.t*</code>、<code>pto.v*</code>、<code>pto.*</code> 及其他架构可见操作的语义</li>
+<li>tile、GlobalTensor、事件与显式同步的编程模型</li>
+<li>让执行对程序、模拟器和 backend 可见的机器模型与内存顺序规则</li>
+<li>在 CPU 仿真和受支持 Ascend NPU 目标之间保持稳定的合法指令集</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<p>如果两个受支持目标都接受同一个合法 PTO 程序，该程序的架构可见意义必须来自 PTO ISA，而不能由目标私自重定义。</p>
+<h2 id="target-profile">Target Profile 可以缩窄什么<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<p>PTO ISA 是稳定的，但不是无限制的。目标 profile 可以缩窄某个实现真正接受或高效支持的子集，例如：</p>
+<ul>
+<li>tile shape 或 tile rank</li>
+<li>数据类型与 layout 组合</li>
+<li>特定向量微指令形式</li>
+<li>同步变体或 memory space</li>
+<li>绑定到某一代硬件的指令子集</li>
+</ul>
+<p>这些限制只缩窄目标子集，不改变 PTO ISA 本身的语义。</p>
+<h2 id="pto-as">PTO-AS 增加什么<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 是 PTO ISA 的文本语法形式。它补充了：</p>
+<ul>
+<li>指令名拼写</li>
+<li>操作数顺序</li>
+<li>属性和修饰符写法</li>
+<li>解析、汇编和 round-trip 所需的文本约定</li>
+</ul>
+<p>因此 PTO-AS 是 PTO ISA 的表达层，而不是另一套语义不同的架构。</p>
+<h2 id="ptobc">PTOBC 增加什么<a class="headerlink" href="#ptobc" title="Permanent link">&para;</a></h2>
+<p>PTOBC 是 PTO 程序的分发和传输形式，用于缓存、打包、跨工具传递 PTO 程序，而不是立刻坍缩成某一代硬件的专用二进制。</p>
+<p>PTOBC 不重定义 ISA，它只是序列化承载 PTO 程序。</p>
+<h2 id="pto-isa_1">PTO ISA 不冻结什么<a class="headerlink" href="#pto-isa_1" title="Permanent link">&para;</a></h2>
+<p>本手册不会把所有编译器内部阶段或 backend lowering 细节冻结成公开契约。PTO ISA 不冻结：</p>
+<ul>
+<li>编译器内部 IR 结构</li>
+<li>pass 顺序</li>
+<li>backend 专用调度策略</li>
+<li>硬件私有流水线细节</li>
+<li>原生硬件指令的二进制编码</li>
+</ul>
+<p>这些内容属于编译器、汇编器、运行时和目标专属 backend 文档。</p>
+<h2 id="_2">规范来源顺序<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>当边界不清楚时，按以下顺序裁决：</p>
+<ol>
+<li>PTO ISA manual 与 per-op ISA 页面</li>
+<li>代码与验证器暴露出来的合法指令集</li>
+<li>PTO-AS / PTOBC 文档中的语法和分发规则</li>
+<li>backend profile 注释中的目标专属缩窄</li>
+</ol>
+<p>如果某个 backend 依赖的行为不在这条权威链中，它就只是 backend 要求，而不是 PTO ISA 保证。</p>
+<h2 id="_3">相关页面<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../what-is-pto-visa_zh/">什么是 PTO 虚拟 ISA</a></li>
+<li><a href="../../reference/source-of-truth_zh/">规范来源</a></li>
+<li><a href="../../reference/portability-and-target-profiles_zh/">可移植性与目标 Profile</a></li>
+</ul>
               
             </div>
           </div><footer>

@@ -908,18 +908,211 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/memory-model/consistency-baseline_zh.md` -->
+                <!-- Generated from `docs/isa/memory-model/consistency-baseline_zh.md` -->
 
-<h1 id="consistency-baseline">Consistency Baseline<a class="headerlink" href="#consistency-baseline" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">一致性基线<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>PTO 的内存模型建立在 <strong>显式数据移动</strong> 和 <strong>显式顺序</strong> 之上。基线保证刻意窄于“所有东西天然全局有序”。程序或所选指令集必须明确表达数据何时在不同阶段、不同指令集和不同 block 之间变得可见。</p>
+<h2 id="_2">内存空间<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>PTO 定义三类架构上不同的内存空间：</p>
+<table>
+<thead>
+<tr>
+<th>空间</th>
+<th>地址限定</th>
+<th>作用域</th>
+<th>可见性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>GM</strong></td>
+<td><code>__gm__</code></td>
+<td>全部 AI Core</td>
+<td>共享</td>
+</tr>
+<tr>
+<td><strong>UB</strong></td>
+<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
+<td>单个 AI Core</td>
+<td>core-local</td>
+</tr>
+<tr>
+<td><strong>Tile Buffer</strong></td>
+<td><code>!pto.tile_buf&lt;...&gt;</code></td>
+<td>单个 AI Core</td>
+<td>core-local，且带 pipeline 角色</td>
+</tr>
+</tbody>
+</table>
+<p>它们不能互换。数据必须显式在这些空间之间移动。</p>
+<h2 id="_3">顺序层级<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>PTO 定义三层顺序保证：</p>
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>含义</th>
+<th>范围</th>
+<th>如何建立</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Program Order</strong></td>
+<td>同一 tile buffer 或向量寄存器中的程序顺序</td>
+<td>单核心</td>
+<td>隐式</td>
+</tr>
+<tr>
+<td><strong>Event Order</strong></td>
+<td>不同 pipeline / buffer 之间的顺序</td>
+<td>block 内</td>
+<td><code>set_flag</code> / <code>wait_flag</code> 或 <code>RecordEvent</code></td>
+</tr>
+<tr>
+<td><strong>Barrier Order</strong></td>
+<td>多 block 之间的顺序</td>
+<td>grid 范围</td>
+<td>collective / barrier 类操作</td>
+</tr>
+</tbody>
+</table>
+<h3 id="program-order">Program Order<a class="headerlink" href="#program-order" title="Permanent link">&para;</a></h3>
+<p>同一 tile buffer 或同一向量寄存器中的操作按程序顺序排列，不需要额外同步。</p>
+<h3 id="event-order">Event Order<a class="headerlink" href="#event-order" title="Permanent link">&para;</a></h3>
+<p>不同 buffer 或不同 pipeline 之间的数据依赖必须通过事件建立：</p>
+<pre><code class="language-cpp">RecordEvent e0 = TLOAD(a, ga);
+RecordEvent e1 = TLOAD(b, gb);
+TMATMUL(c, a, b, e0, e1);
+</code></pre>
+<h3 id="barrier-order">Barrier Order<a class="headerlink" href="#barrier-order" title="Permanent link">&para;</a></h3>
+<p>多 block 之间的同步需要 grid 范围的 barrier 或 collective：</p>
+<pre><code class="language-mlir">pto.tbroadcast %tensor, %src : ...
+pto.twait
+</code></pre>
+<h2 id="pto">PTO 不自动保证的内容<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h2>
+<p>PTO <strong>不会</strong>自动保证：</p>
+<table>
+<thead>
+<tr>
+<th>不自动给出的保证</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每个跨 pipeline 写入立刻对所有消费者可见</td>
+<td>需要显式事件</td>
+</tr>
+<tr>
+<td>vector register、tile buffer、GM 共用一套隐式 fence 模型</td>
+<td>各空间有不同可见性</td>
+</tr>
+<tr>
+<td>某目标更强的顺序具有可移植性</td>
+<td>profile 的更强保证不自动外推</td>
+</tr>
+<tr>
+<td>UB 写入不经显式搬运就能被 GM 读取</td>
+<td>UB→GM 需要显式移动</td>
+</tr>
+<tr>
+<td>GM 写入不经显式搬运就能被 UB 读取</td>
+<td>GM→UB 需要显式移动</td>
+</tr>
+</tbody>
+</table>
+<h2 id="gm">GM 可见性<a class="headerlink" href="#gm" title="Permanent link">&para;</a></h2>
+<p>经由 <code>TSTORE</code> 或 <code>copy_ubuf_to_gm</code> 写入 GM 的数据，在以下条件满足后才对其他 block 的 GM 读取可见：</p>
+<ol>
+<li>本 block 中之前的 store 已完成</li>
+<li>所需 <code>mem_bar</code> / <code>pipe_barrier</code> / collective 同步已建立</li>
+<li>运行时确认完成</li>
+</ol>
+<p>跨 block 可见性的精确时间点是 implementation-defined，但顺序契约本身是架构保证。</p>
+<h2 id="ub">UB 可见性<a class="headerlink" href="#ub" title="Permanent link">&para;</a></h2>
+<p>UB 是 core-local 的，其他 core 无法直接看见。</p>
+<p>在同一 core 内：</p>
 <ul>
-<li><a href="../consistency-baseline/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../manual/11-memory-ordering-and-consistency_zh/">中文章节手册内存顺序与一致性</a></li>
+<li>UB 读会按程序顺序看见之前的 UB 写</li>
+<li>UB 读只有在对应 <code>wait_flag</code> 成功后，才应视为看见 <code>copy_gm_to_ubuf</code> 的结果</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="undefined-unspecified-implementation-defined">Undefined / Unspecified / Implementation-defined<a class="headerlink" href="#undefined-unspecified-implementation-defined" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>术语</th>
+<th>含义</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Undefined</strong></td>
+<td>行为故意不定义，任何结果都可能</td>
+<td>读取 tile 域外元素</td>
+</tr>
+<tr>
+<td><strong>Unspecified</strong></td>
+<td>ISA 不规定具体值或行为</td>
+<td>精确 cycle 数</td>
+</tr>
+<tr>
+<td><strong>Implementation-defined</strong></td>
+<td>由实现定义并应文档化</td>
+<td>A5 上 denormal 的 FTZ 行为</td>
+</tr>
+</tbody>
+</table>
+<h2 id="target-refinement">Target Refinement<a class="headerlink" href="#target-refinement" title="Permanent link">&para;</a></h2>
+<p>CPU、A2/A3 和 A5 可以在实现细节和支持子集上不同，但基线文档必须明确哪些顺序事实是可移植的：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>可移植性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>同一 tile buffer 内的程序顺序</td>
+<td>可移植</td>
+</tr>
+<tr>
+<td><code>set_flag</code> / <code>wait_flag</code> 建立的事件顺序</td>
+<td>可移植</td>
+</tr>
+<tr>
+<td><code>RecordEvent</code> 链接</td>
+<td>可移植</td>
+</tr>
+<tr>
+<td>collective 带来的 barrier 顺序</td>
+<td>CPU 不适用，A2/A3 与 A5 支持</td>
+</tr>
+<tr>
+<td>UB→GM 的隐式可见性</td>
+<td>不可移植；必须显式搬运</td>
+</tr>
+<tr>
+<td>A5 更强的顺序行为</td>
+<td>A5 专属，不可外推</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">不允许的情形<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把实现细节写成可移植内存模型</li>
+<li>用“通常有序”这种模糊语句替代明确顺序边</li>
+<li>把调度启发式混进内存模型保证</li>
+<li>在没有显式同步操作时声称跨 block 可见</li>
+</ul>
+<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../producer-consumer-ordering_zh/">生产者-消费者排序</a></li>
+<li><a href="../../machine-model/ordering-and-synchronization_zh/">顺序与同步</a></li>
+<li><a href="../../reference/portability-and-target-profiles_zh/">可移植性与目标 Profile</a></li>
+</ul>
               
             </div>
           </div><footer>

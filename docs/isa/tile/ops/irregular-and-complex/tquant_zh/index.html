@@ -912,13 +912,33 @@
 
 <h1 id="tquant">TQUANT<a class="headerlink" href="#tquant" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TQUANT tile operation" src="../figures/isa/TQUANT.svg" /></p>
+<p><img alt="TQUANT tile operation" src="../../../../../figures/isa/TQUANT.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>量化 Tile（例如 FP32 到 FP8），生成指数/缩放/最大值输出。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>除非另有说明, semantics are defined over the valid region and target-dependent behavior is marked as implementation-defined.</p>
+<p><code>TQUANT</code> 把高精度 Tile 量化成较低精度表示，并在需要时同时产出量化元数据。它不是一条单一模式的指令，而是一组按模板参数分化出来的量化接口。</p>
+<p>当前仓库里最重要的两类路径是：</p>
+<ul>
+<li><code>INT8_SYM / INT8_ASYM</code></li>
+<li><code>MXFP8</code></li>
+</ul>
+<h2 id="_3">模式<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="int8_sym">INT8_SYM<a class="headerlink" href="#int8_sym" title="Permanent link">&para;</a></h3>
+<p>对输入 <code>float32</code> Tile 做对称 INT8 量化：</p>
+<div class="arithmatex">\[ q = \mathrm{round}(x \cdot scale) \]</div>
+<p>结果写入 <code>int8_t</code> 目标 Tile。</p>
+<h3 id="int8_asym">INT8_ASYM<a class="headerlink" href="#int8_asym" title="Permanent link">&para;</a></h3>
+<p>对输入 <code>float32</code> Tile 做非对称 UINT8 量化：</p>
+<div class="arithmatex">\[ q = \mathrm{round}(x \cdot scale + offset) \]</div>
+<p>结果写入 <code>uint8_t</code> 目标 Tile。</p>
+<h3 id="mxfp8">MXFP8<a class="headerlink" href="#mxfp8" title="Permanent link">&para;</a></h3>
+<p>按组计算共享指数与缩放信息，再生成低精度输出，同时产出辅助元数据：</p>
+<ul>
+<li><code>exp</code></li>
+<li><code>max</code></li>
+<li><code>scaling</code></li>
+</ul>
+<p>在 CPU 模拟器里，<code>MXFP8</code> 还额外支持一条 NZ 辅助重排接口，用于生成 <code>exp_zz</code>。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -926,25 +946,105 @@
 <pre><code class="language-text">pto.tquant ins(%src, %qp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataExp, typename TileDataMax,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max, TileDataSrc *scaling, WaitEvents &amp;... events);
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
+                            TileDataSrc *scaling, WaitEvents &amp;... events);
 
 template &lt;auto quant_type, auto store_mode, typename TileDataOut, typename TileDataSrc, typename TileDataExp,
           typename TileDataMax, typename TileDataIdx, typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max, TileDataSrc *scaling, TileDataExp *exp_zz, TileDataIdx *vgather_idx, WaitEvents &amp;... events);
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
+                            TileDataSrc *scaling, TileDataExp *exp_zz, TileDataIdx *vgather_idx,
+                            WaitEvents &amp;... events);
 
 template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataPara, typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataPara &amp;scale, TileDataPara *offset = nullptr, WaitEvents &amp;... events);
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataPara &amp;scale,
+                            TileDataPara *offset = nullptr, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2/A3 实现<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <ul>
-<li>This instruction is currently implemented for specific targets (see <code>include/pto/npu/*/TQuant.hpp</code>).</li>
-<li>Input type requirements and output tile types are mode/target-dependent.</li>
+<li>A2/A3 当前只实现：</li>
+<li><code>INT8_SYM</code></li>
+<li><code>INT8_ASYM</code></li>
+<li>输入类型必须是 <code>float32_t</code>。</li>
+<li><code>INT8_SYM</code> 输出必须是 <code>int8_t</code>。</li>
+<li><code>INT8_ASYM</code> 输出必须是 <code>uint8_t</code>。</li>
+<li>A2/A3 的实现会先对输入做按行扩展乘法/加法，再通过中间 <code>TRESHAPE/TCVT</code> 路径完成量化。</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>See related examples in <code>docs/isa/</code> and <code>docs/coding/tutorials/</code>.</p>
+<h3 id="a5">A5 实现<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A5 实现：</li>
+<li><code>INT8_SYM</code></li>
+<li><code>INT8_ASYM</code></li>
+<li><code>MXFP8</code></li>
+<li><code>INT8_*</code> 路径输入同样要求 <code>float32_t</code>。</li>
+<li><code>MXFP8</code> 路径会输出：</li>
+<li>量化后的低精度结果 <code>dst</code></li>
+<li>共享指数 <code>exp</code></li>
+<li>每组绝对值最大值 <code>max</code></li>
+<li>每元素缩放值 <code>scaling</code></li>
+<li>A5 源码里还明确写了：</li>
+<li><code>E8M0</code> 指数默认按 ND 形式输出</li>
+<li>如果需要 ZZ 形式指数，应再借助 <code>TMOV</code> 等路径做后续转换</li>
+</ul>
+<h3 id="cpu">CPU 模拟器<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CPU 模拟器支持的模拟面比 NPU backend 更宽：</li>
+<li><code>INT8_SYM</code></li>
+<li><code>INT8_ASYM</code></li>
+<li><code>MXFP8</code></li>
+<li>以及 <code>MXFP8 + NZ</code> 辅助重排接口</li>
+<li>但 CPU 上能跑通，并不等于所有 NPU backend 都支持同一模式。</li>
+</ul>
+<h3 id="_6">使用建议<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>如果目标是 A2/A3，可把 <code>TQUANT</code> 理解为“INT8 量化指令族”。</li>
+<li>如果目标是 A5，才应把 <code>MXFP8</code> 当成主路径之一。</li>
+<li>如果你依赖 <code>exp_zz</code> 或 <code>vgather_idx</code> 这类接口，先确认目标 backend 是否真的实现了它，而不要只看通用 C++ 声明。</li>
+</ul>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="int8">对称 INT8<a class="headerlink" href="#int8" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_int8_sym() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Vec, int8_t, 16, 16&gt;;
+  using ParaT = Tile&lt;TileType::Vec, float, 16, 1&gt;;
+
+  SrcT src;
+  DstT dst;
+  ParaT scale;
+  TQUANT&lt;QuantType::INT8_SYM&gt;(dst, src, scale);
+}
+</code></pre>
+<h3 id="mxfp8_1">MXFP8<a class="headerlink" href="#mxfp8_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_mxfp8() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 32&gt;;
+  using DstT = Tile&lt;TileType::Vec, int8_t, 16, 32&gt;;
+  using ExpT = Tile&lt;TileType::Vec, uint8_t, 1, 16&gt;;
+  using MaxT = Tile&lt;TileType::Vec, float, 1, 16&gt;;
+
+  SrcT src, scaling;
+  DstT dst;
+  ExpT exp;
+  MaxT max;
+  TQUANT&lt;QuantType::MXFP8&gt;(dst, src, &amp;exp, &amp;max, &amp;scaling);
+}
+</code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../layout-and-rearrangement/tmov_zh/">TMOV</a></li>
+<li><a href="../../layout-and-rearrangement/tmov-fp_zh/">TMOV_FP</a></li>
+<li><a href="../../../irregular-and-complex_zh/">不规则与复杂指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

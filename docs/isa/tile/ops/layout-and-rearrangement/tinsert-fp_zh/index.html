@@ -912,13 +912,22 @@
 
 <h1 id="tinsert_fp">TINSERT_FP<a class="headerlink" href="#tinsert_fp" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TINSERT_FP tile operation" src="../figures/isa/TINSERT_FP.svg" /></p>
+<p><img alt="TINSERT_FP tile operation" src="../../../../../figures/isa/TINSERT_FP.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>带 fp/缩放 Tile 的插入（向量量化参数）。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>除非另有说明, semantics are defined over the valid region and target-dependent behavior is marked as implementation-defined.</p>
+<p><code>TINSERT_FP</code> 是 <code>TINSERT</code> 的向量量化版本：它把一个源 Tile 插入到目标 Tile 的某个子区域里，同时使用额外的 <code>fp</code> Tile 提供量化参数。</p>
+<p>这条指令不是通用“任意 Tile 插入”。当前真实 backend 路径主要面向“把 <code>Acc</code> Tile 的一块结果，按向量量化规则插入到 <code>Mat</code> Tile 的指定位置”。</p>
+<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>对最直观的结果可以这样理解：</p>
+<ol>
+<li>从 <code>src</code> 读取一个有效子块。</li>
+<li>依据 <code>fp</code> 提供的量化参数，把这块数据做向量量化或相关转换。</li>
+<li>把结果写到 <code>dst</code> 的 <code>(indexRow, indexCol)</code> 起始位置。</li>
+</ol>
+<p>若只看写入位置关系，它对应的是：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{indexRow + i,\; indexCol + j} = \mathrm{Convert}\!\left(\mathrm{src}_{i,j};\ \mathrm{fp}\right) \]</div>
+<p>其中 <code>Convert</code> 的具体形式由 backend 上的向量量化模式决定。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tinsert_fp %src, %fp, %idxrow, %idxcol : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, dtype, dtype) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -926,15 +935,65 @@
 <pre><code class="language-text">pto.tinsert_fp ins(%src, %fp, %idxrow, %idxcol : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, dtype, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TINSERT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
+PTO_INST RecordEvent TINSERT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow,
+                                uint16_t indexCol, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>Type/layout/location/shape legality is backend-dependent; treat implementation-specific notes as normative for that backend.</p>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>See related examples in <code>docs/isa/</code> and <code>docs/coding/tutorials/</code>.</p>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>indexRow + src.Rows</code> 不能超过 <code>dst.Rows</code>。</li>
+<li><code>indexCol + src.Cols</code> 不能超过 <code>dst.Cols</code>。</li>
+<li><code>fp</code> 的设计意图是承载缩放/量化参数，可移植代码应把它建成 <code>TileType::Scaling</code>。</li>
+</ul>
+<h3 id="a2a3">A2/A3 实现<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>这条路径基于 <code>CheckTMovAccToMat(...)</code>，因此：</li>
+<li><code>src</code> 必须来自 <code>Acc</code></li>
+<li><code>dst</code> 必须是 <code>Mat</code></li>
+<li><code>dst</code> fractal size 必须是 <code>512</code></li>
+<li><code>dst</code> 列宽字节数必须是 <code>32</code> 的倍数</li>
+<li><code>TINSERT_FP</code> 走的是向量量化版本，因此使用 <code>GetVectorPreQuantMode(...)</code>。</li>
+<li><code>FpTileData::Loc</code> 必须是 <code>TileType::Scaling</code>。</li>
+</ul>
+<h3 id="a5">A5 实现<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A5 也把这条指令实现为 <code>Acc -&gt; Mat</code> 的量化插入。</li>
+<li>额外要求：</li>
+<li><code>dst</code> 必须是 <code>TileType::Mat</code></li>
+<li><code>dst</code> 必须使用 <code>BLayout::ColMajor + SLayout::RowMajor</code></li>
+<li><code>src</code> 必须是 <code>float</code> 或 <code>int32_t</code> 的 <code>Acc</code></li>
+<li><code>FpTileData::Loc</code> 必须是 <code>TileType::Scaling</code>。</li>
+</ul>
+<h3 id="cpu">CPU 模拟器<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CPU 模拟器当前接受 <code>TINSERT_FP</code> 接口，但会忽略 <code>fp</code> 参数，退化为普通 <code>TINSERT</code>。</li>
+<li>因此，依赖 <code>fp</code> 数值的量化行为应以 NPU backend 为准。</li>
+</ul>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example() {
+  using SrcT = TileAcc&lt;float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Mat, int8_t, 32, 32, BLayout::ColMajor, -1, -1, SLayout::RowMajor, 512&gt;;
+  using FpT = Tile&lt;TileType::Scaling, uint64_t, 1, 16&gt;;
+
+  SrcT src;
+  DstT dst;
+  FpT fp;
+  TINSERT_FP(dst, src, fp, 0, 0);
+}
+</code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tinsert_zh/">TINSERT</a></li>
+<li><a href="../textract-fp_zh/">TEXTRACT_FP</a></li>
+<li><a href="../tmov-fp_zh/">TMOV_FP</a></li>
+</ul>
               
             </div>
           </div><footer>

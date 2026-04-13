@@ -908,18 +908,198 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/tile/elementwise-tile-tile_zh.md` -->
+                <!-- Generated from `docs/isa/tile/elementwise-tile-tile_zh.md` -->
 
-<h1 id="elementwise-tile-tile-family">Elementwise Tile-Tile Family<a class="headerlink" href="#elementwise-tile-tile-family" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="tile-tile">逐元素 Tile-Tile 指令集<a class="headerlink" href="#tile-tile" title="Permanent link">&para;</a></h1>
+<p>逐元素 Tile-Tile 操作按 lane 对两个或一个 tile 做逐元素运算。它们是 PTO 中最常用的 tile 计算类指令。</p>
+<h2 id="_1">操作<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>说明</th>
+<th>类别</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pto.tadd</code></td>
+<td>逐元素加法</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tabs</code></td>
+<td>逐元素绝对值</td>
+<td>Unary</td>
+</tr>
+<tr>
+<td><code>pto.tand</code></td>
+<td>逐元素按位与</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tor</code></td>
+<td>逐元素按位或</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tsub</code></td>
+<td>逐元素减法</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tmul</code></td>
+<td>逐元素乘法</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tmin</code></td>
+<td>逐元素最小值</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tmax</code></td>
+<td>逐元素最大值</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tcmp</code></td>
+<td>逐元素比较</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tdiv</code></td>
+<td>逐元素除法</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tshl</code> / <code>pto.tshr</code></td>
+<td>逐元素移位</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.txor</code></td>
+<td>逐元素按位异或</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tlog</code> / <code>pto.trecip</code> / <code>pto.texp</code> / <code>pto.tsqrt</code> / <code>pto.trsqrt</code></td>
+<td>一元数学运算</td>
+<td>Unary</td>
+</tr>
+<tr>
+<td><code>pto.tprelu</code> / <code>pto.trelu</code> / <code>pto.tneg</code> / <code>pto.tnot</code></td>
+<td>激活或一元变体</td>
+<td>Unary/Binary</td>
+</tr>
+<tr>
+<td><code>pto.taddc</code> / <code>pto.tsubc</code></td>
+<td>饱和加减</td>
+<td>Binary</td>
+</tr>
+<tr>
+<td><code>pto.tcvt</code></td>
+<td>逐元素类型转换</td>
+<td>Unary</td>
+</tr>
+<tr>
+<td><code>pto.tsel</code></td>
+<td>条件选择</td>
+<td>Ternary</td>
+</tr>
+<tr>
+<td><code>pto.trem</code> / <code>pto.tfmod</code></td>
+<td>余数 / 浮点模</td>
+<td>Binary</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>逐元素操作在目标 tile 的 valid region 上迭代：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{r,c} = f(\mathrm{src0}_{r,c}, \mathrm{src1}_{r,c}) \]</div>
+<p>对 <code>TSEL</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{r,c} = (\mathrm{cmp}_{r,c} \neq 0) ? \mathrm{src0}_{r,c} : \mathrm{src1}_{r,c} \]</div>
+<h2 id="valid-region">Valid Region 兼容性<a class="headerlink" href="#valid-region" title="Permanent link">&para;</a></h2>
+<p>所有逐元素 Tile-Tile 操作都以 <strong>目标 tile 的 valid region</strong> 为迭代域。</p>
 <ul>
-<li><a href="../elementwise-tile-tile/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li>会按相同 <code>(r, c)</code> 坐标读取源 tile</li>
+<li>若源 tile 在该坐标超出自身 valid region，则读取值属于 implementation-defined</li>
+<li>在没有单独文档化的情况下，不应依赖这些域外值</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">饱和变体<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>带 <code>_c</code> 后缀的变体使用饱和算术，而不是 wrap 算术：</p>
+<table>
+<thead>
+<tr>
+<th>基础操作</th>
+<th>饱和变体</th>
+<th>溢出行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TADD</code></td>
+<td><code>TADDC</code></td>
+<td>截断到类型上下界</td>
+</tr>
+<tr>
+<td><code>TSUB</code></td>
+<td><code>TSUBC</code></td>
+<td>截断到类型上下界</td>
+</tr>
+</tbody>
+</table>
+<h2 id="profile">目标 Profile 支持<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th style="text-align: center;">CPU</th>
+<th style="text-align: center;">A2/A3</th>
+<th style="text-align: center;">A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f32 / f16 / bf16</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>i8/u8, i16/u16, i32/u32, i64/u64</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>f8e4m3 / f8e5m2</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>layout、shape 和 valid-region 状态都会影响合法性</li>
+<li>源与目标 tile 的物理 shape 必须兼容</li>
+<li><code>TCMP</code> 产生谓词 tile，算术类产生数值 tile</li>
+<li><code>TCVT</code> 允许源和目标 dtype 不同，但必须落在文档化转换组内</li>
+<li>移位类要求第二操作数在元素位宽范围内</li>
+</ul>
+<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>假设存在隐式广播、隐式 reshape 或 valid-region 修复</li>
+<li>依赖源 tile 域外 lane 的确定值</li>
+<li>假设 <code>TADDC</code> / <code>TSUBC</code> 与非饱和版本对所有输入都位级一致</li>
+<li>使用超出元素位宽的 shift count</li>
+</ul>
+<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
+<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

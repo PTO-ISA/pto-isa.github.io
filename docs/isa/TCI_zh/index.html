@@ -910,81 +910,13 @@
               
                 <!-- Generated from `docs/isa/TCI_zh.md` -->
 
-<h1 id="tci">TCI<a class="headerlink" href="#tci" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TCI tile operation" src="../../figures/isa/TCI.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>生成连续整数序列到目标 Tile 中。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>For a linearized index <code>k</code> over the valid elements:</p>
+<h1 id="ptotci">pto.tci<a class="headerlink" href="#ptotci" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/irregular-and-complex/tci_zh/">pto.tci</a>。</p>
 <ul>
-<li>Ascending:</li>
+<li>指令集：<a href="../tile/irregular-and-complex_zh/">不规则与复杂指令集</a></li>
+<li>规范页：<a href="../tile/ops/irregular-and-complex/tci_zh/">pto.tci</a></li>
 </ul>
-<p>$$ \mathrm{dst}_{k} = S + k $$</p>
-<ul>
-<li>Descending:</li>
-</ul>
-<p>$$ \mathrm{dst}_{k} = S - k $$</p>
-<p>The linearization order depends on the tile layout (implementation-defined).</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = tci %S {descending = false} : !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tci %scalar {descending = false} : dtype -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tci ins(%scalar {descending = false} : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tci %scalar {descending = false} : dtype -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tci ins(%scalar {descending = false} : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileData, typename T, int descending, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>实现检查 (A2A3/A5)</strong>:<ul>
-<li><code>TileData::DType</code> must be exactly the same type as the scalar template parameter <code>T</code>.</li>
-<li><code>dst/scalar</code> element types must be identical, and must be one of: <code>int32_t</code>, <code>uint32_t</code>, <code>int16_t</code>, <code>uint16_t</code>.</li>
-<li><code>TileData::Cols != 1</code> (this is the condition enforced by the implementation).</li>
-</ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>The implementation uses <code>dst.GetValidCol()</code> as the sequence length and does not consult <code>dst.GetValidRow()</code>.</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto() {
-  using TileT = Tile&lt;TileType::Vec, int32_t, 1, 16&gt;;
-  TileT dst;
-  TCI&lt;TileT, int32_t, /*descending=*/0&gt;(dst, /*S=*/0);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, int32_t, 1, 16&gt;;
-  TileT dst;
-  TASSIGN(dst, 0x1000);
-  TCI&lt;TileT, int32_t, /*descending=*/1&gt;(dst, /*S=*/100);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

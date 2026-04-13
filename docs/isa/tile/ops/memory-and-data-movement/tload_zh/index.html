@@ -912,14 +912,15 @@
 
 <h1 id="tload">TLOAD<a class="headerlink" href="#tload" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TLOAD tile operation" src="../figures/isa/TLOAD.svg" /></p>
+<p><img alt="TLOAD tile operation" src="../../../../../figures/isa/TLOAD.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>从 GlobalTensor (GM) 加载数据到 Tile。</p>
+<p><code>TLOAD</code> 把 <code>GlobalTensor</code>（GM 视图）中的数据装入 Tile。它是 tile 数据路径进入本地缓冲的基本入口，因此除了元素值本身，合法的 shape、layout、valid region 和目标 profile 也都会影响这条指令能否成立。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Notation depends on the <code>GlobalTensor</code> shape/stride and the <code>Tile</code> layout. Conceptually (2D view, with a base offset):</p>
+<p>地址计算取决于 <code>GlobalTensor</code> 的 shape / stride 以及 Tile 的布局。用带基址偏移的二维视角表示时：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{r_0 + i,\; c_0 + j} \]</div>
+<p>其中 <code>r_0</code>、<code>c_0</code> 由 <code>GlobalTensor</code> 的当前视图和 tile 的装载位置决定。真正的传输大小由目标 Tile 的 valid region 决定，而不是由 Tile 的物理矩形尺寸决定。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -931,49 +932,52 @@
 <pre><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>int64_t</code>, <code>uint64_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
-<li>Destination tile location must be <code>TileType::Vec</code> or <code>TileType::Mat</code>.</li>
-<li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>.</li>
-<li>Runtime: all <code>src.GetShape(dim)</code> values and <code>dst.GetValidRow()/GetValidCol()</code> must be <code>&gt; 0</code>.</li>
-<li><code>TileType::Vec</code> loads only support matching layouts: ND-&gt;ND, DN-&gt;DN, NZ-&gt;NZ.</li>
-<li><code>TileType::Mat</code> loads support: ND-&gt;ND, DN-&gt;DN, NZ-&gt;NZ, plus ND-&gt;NZ and DN-&gt;ZN.</li>
-<li>For ND-&gt;NZ or DN-&gt;ZN: <code>GlobalData::staticShape[0..2] == 1</code> and <code>TileData::SFractalSize == 512</code>.</li>
-<li>For <code>int64_t/uint64_t</code>, only ND-&gt;ND or DN-&gt;DN are supported.</li>
+<li><code>sizeof(TileData::DType)</code> 必须与 <code>sizeof(GlobalData::DType)</code> 一致。</li>
+<li>实际传输大小取 <code>dst.GetValidRow()</code> 与 <code>dst.GetValidCol()</code>。</li>
+<li><code>src.GetShape(dim)</code> 以及 <code>dst.GetValidRow()/GetValidCol()</code> 在运行时都必须大于 <code>0</code>。</li>
 </ul>
-</li>
-<li>
-<p><strong>实现检查 (A5)</strong>:</p>
+<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>sizeof(TileData::DType)</code> must be <code>1</code>, <code>2</code>, <code>4</code>, or <code>8</code> bytes, and must match <code>sizeof(GlobalData::DType)</code>.</li>
-<li>For <code>int64_t/uint64_t</code>, <code>TileData::PadVal</code> must be <code>PadValue::Null</code> or <code>PadValue::Zero</code>.</li>
-<li><code>TileType::Vec</code> loads require one of the following layout pairs:</li>
-<li>ND with row-major + <code>SLayout::NoneBox</code> (ND-&gt;ND),</li>
-<li>DN with col-major + <code>SLayout::NoneBox</code> (DN-&gt;DN),</li>
-<li>NZ with <code>SLayout::RowMajor</code> (NZ-&gt;NZ).</li>
-<li>For row-major ND-&gt;ND with compile-time-known shapes, <code>TileData::ValidCol</code> must equal <code>GlobalData::staticShape[4]</code>, and <code>TileData::ValidRow</code> must equal the product of <code>GlobalData::staticShape[0..3]</code>.</li>
-<li><code>TileType::Mat</code> loads are additionally constrained by <code>TLoadCubeCheck</code> (e.g., only specific ND/DN/NZ conversions and L1-size limits).</li>
-<li><code>TileType::Mat</code> loads also handle loads for mx format, which include <code>MX_A_ZZ/MX_A_ND/MX_A_DN</code> to ZZ for scalarA and <code>MX_B_NN/MX_B_ND/MX_B_DN</code> to NN for scalarB.</li>
-<li>for <code>MX_A_ZZ/MX_B_NN</code>: <code>GlobalData::staticShape[3] == 16</code> and <code>GlobalData::staticShape[4] == 2</code>.</li>
-<li>for <code>MX_A_ND/MX_ADN/MX_B_ND/MX_B_DN</code>: <code>GlobalData::staticShape[0] == 1</code> and <code>GlobalData::staticShape[1] == 1</code> and <code>GlobalData::staticShape[4] == 2</code>.</li>
-<li>for scaleA, <code>dst.GetValidCol() % 2 == 0</code>.</li>
-<li>for scaleB, <code>dst.GetValidRow() % 2 == 0</code></li>
+<li><code>TileData::DType</code> 必须属于：
+  <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>int64_t</code>、<code>uint64_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
+<li>目标 Tile 的位置类型必须是 <code>TileType::Vec</code> 或 <code>TileType::Mat</code>。</li>
+<li><code>TileType::Vec</code> 仅支持布局完全匹配的装载：
+  <code>ND -&gt; ND</code>、<code>DN -&gt; DN</code>、<code>NZ -&gt; NZ</code>。</li>
+<li><code>TileType::Mat</code> 还支持 <code>ND -&gt; NZ</code> 与 <code>DN -&gt; ZN</code>。</li>
+<li>对 <code>ND -&gt; NZ</code> 或 <code>DN -&gt; ZN</code>：
+  <code>GlobalData::staticShape[0..2] == 1</code>，且 <code>TileData::SFractalSize == 512</code>。</li>
+<li>对 <code>int64_t/uint64_t</code>，仅支持 <code>ND -&gt; ND</code> 与 <code>DN -&gt; DN</code>。</li>
 </ul>
-</li>
-<li>
-<p><strong>有效区域</strong>:</p>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <ul>
-<li>The implementation uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the transfer size.</li>
+<li><code>sizeof(TileData::DType)</code> 必须为 <code>1</code>、<code>2</code>、<code>4</code> 或 <code>8</code> 字节，并与 <code>GlobalData::DType</code> 大小一致。</li>
+<li>对 <code>int64_t/uint64_t</code>，<code>TileData::PadVal</code> 必须是 <code>PadValue::Null</code> 或 <code>PadValue::Zero</code>。</li>
+<li><code>TileType::Vec</code> 仅支持以下布局对：</li>
+<li>ND + row-major + <code>SLayout::NoneBox</code></li>
+<li>DN + col-major + <code>SLayout::NoneBox</code></li>
+<li>NZ + <code>SLayout::RowMajor</code></li>
+<li>对编译期已知 shape 的 row-major ND-&gt;ND：</li>
+<li><code>TileData::ValidCol</code> 必须等于 <code>GlobalData::staticShape[4]</code></li>
+<li><code>TileData::ValidRow</code> 必须等于 <code>GlobalData::staticShape[0..3]</code> 的乘积</li>
+<li><code>TileType::Mat</code> 额外受 <code>TLoadCubeCheck</code> 限制，只允许特定 ND / DN / NZ 转换并受 L1 大小约束。</li>
+<li>A5 的 <code>TileType::Mat</code> 还覆盖 MX 格式装载：</li>
+<li><code>MX_A_ZZ/MX_A_ND/MX_A_DN -&gt; ZZ</code></li>
+<li><code>MX_B_NN/MX_B_ND/MX_B_DN -&gt; NN</code></li>
+<li>对 <code>MX_A_ZZ/MX_B_NN</code>：
+  <code>GlobalData::staticShape[3] == 16</code> 且 <code>GlobalData::staticShape[4] == 2</code>。</li>
+<li>对 <code>MX_A_ND/MX_A_DN/MX_B_ND/MX_B_DN</code>：
+  <code>GlobalData::staticShape[0] == 1</code>、<code>GlobalData::staticShape[1] == 1</code>、<code>GlobalData::staticShape[4] == 2</code>。</li>
+<li>对 scaleA，<code>dst.GetValidCol() % 2 == 0</code>；
+  对 scaleB，<code>dst.GetValidRow() % 2 == 0</code>。</li>
 </ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1009,6 +1013,12 @@ void example_manual(__gm__ T* in) {
   TLOAD(t, gin);
 }
 </code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../../memory-and-data-movement_zh/">内存与数据搬运指令集</a></li>
+<li><a href="../../../../programming-model/globaltensor-and-data-movement_zh/">GlobalTensor 与数据搬运</a></li>
+<li><a href="../../../../state-and-types/layout_zh/">布局参考</a></li>
+</ul>
               
             </div>
           </div><footer>

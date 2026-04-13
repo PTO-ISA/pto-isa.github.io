@@ -908,19 +908,110 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/tile/ops/layout-and-rearrangement/timg2col_zh.md` -->
+                <!-- Generated from `docs/isa/tile/ops/layout-and-rearrangement/timg2col_zh.md` -->
 
-<h1 id="ptotimg2col">pto.timg2col<a class="headerlink" href="#ptotimg2col" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="timg2col">TIMG2COL<a class="headerlink" href="#timg2col" title="Permanent link">&para;</a></h1>
+<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><img alt="TIMG2COL tile operation" src="../../../../../figures/isa/TIMG2COL.svg" /></p>
+<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>TIMG2COL</code> 把输入特征图 Tile 重排成卷积友好的列矩阵形式，是 PTO 里连接卷积样式输入布局与矩阵乘法路径的关键桥梁。</p>
+<p>这条指令不只是简单提取窗口。它同时综合了：</p>
 <ul>
-<li><a href="../timg2col/">对应英文页面</a></li>
-<li><a href="../../../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../TIMG2COL_zh/">现有中文指令说明</a></li>
-<li><a href="../../../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li>输入特征图几何信息</li>
+<li>kernel 大小</li>
+<li>stride / dilation</li>
+<li>padding</li>
+<li>channel 打包方式</li>
+<li>当前在逻辑 im2col 矩阵中的起始位置 <code>posM / posK</code></li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>把卷积输入展开成矩阵时，可以把输出矩阵看成按 <code>(m, k)</code> 编址：</p>
+<ul>
+<li><code>m</code> 选择输出空间位置</li>
+<li><code>k</code> 选择卷积核内的通道与空间偏移</li>
+</ul>
+<p><code>TIMG2COL</code> 会把源特征图中与 <code>(posM, posK)</code> 对应的卷积窗口元素，写到目标 Left Tile 中。若窗口越过输入边界，则写入 pad value。</p>
+<p>CPU 模拟器里的显式计算逻辑是：</p>
+<ul>
+<li>先根据 <code>stride / dilation / filter / pad</code> 推出输出位置 <code>(outRow, outCol)</code></li>
+<li>再根据 <code>kIndex</code> 推出 <code>(channelIndex, kernelH, kernelW)</code></li>
+<li>若映射回输入后的 <code>(inputH, inputW)</code> 越界，则写 <code>padValue</code></li>
+<li>否则读取源特征图相应元素</li>
+</ul>
+<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.timg2col %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.timg2col ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename TileData, typename ConvTileData, SetFmatrixMode FmatrixMode = SetFmatrixMode::FMATRIX_A_MANUAL,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TIMG2COL(TileData &amp;dst, ConvTileData &amp;src, uint16_t posM = 0, uint16_t posK = 0,
+                              WaitEvents&amp;... events);
+</code></pre>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>src</code> 必须是卷积配置/特征图 Tile，位置类型为 <code>TileType::Mat</code>。</li>
+<li>输入布局必须是 <code>NC1HWC0</code> 或 <code>NDC1HWC0</code>。</li>
+<li><code>dst</code> 必须是 <code>TileType::Left</code>。</li>
+<li><code>src</code> 与 <code>dst</code> 的元素类型必须一致。</li>
+<li><code>posM / posK</code> 不是像素坐标，而是逻辑 im2col 矩阵中的起始偏移。</li>
+</ul>
+<h3 id="a2a3">A2/A3 实现<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持的数据类型是：
+  <code>int8_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
+<li>A2/A3 的 <code>Left</code> 目标约束是：</li>
+<li><code>dst.SFractal == SLayout::RowMajor</code></li>
+<li><code>dst.isRowMajor == true</code></li>
+<li>当 <code>FmatrixMode</code> 为 <code>FMATRIX_A_AUTO</code> 或 <code>FMATRIX_B_AUTO</code> 时，A2/A3 会自动根据 <code>src</code> 的：</li>
+<li><code>fmapH / fmapW</code></li>
+<li><code>padList</code>
+  来设置 FMATRIX。</li>
+<li>A2/A3 的 <code>TIMG2COL</code> auto 路径<strong>不会</strong>顺手设置 repeat 和 padding 寄存器；如果后续路径依赖这些状态，应显式使用对应的 <code>TSET_*</code> 指令。</li>
+</ul>
+<h3 id="a5">A5 实现<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持的数据类型更宽，除 <code>int8_t/half/bfloat16_t/float</code> 外，还覆盖若干 <code>uint*</code> / <code>int*</code> 类型。</li>
+<li>A5 的 <code>Left</code> 目标约束是：</li>
+<li><code>dst.SFractal == SLayout::RowMajor</code></li>
+<li><code>dst.isRowMajor == false</code></li>
+<li>当 <code>FmatrixMode</code> 为 <code>FMATRIX_A_AUTO</code> 或 <code>FMATRIX_B_AUTO</code> 时，A5 会自动根据 <code>src</code> 的：</li>
+<li><code>fmapH / fmapW</code></li>
+<li><code>padList</code></li>
+<li><code>repeatStride / repeatTime / repeatMode / dstStride / dstMposition</code></li>
+<li><code>padValue</code>
+  一并设置 FMATRIX、repeat 和 padding 状态。</li>
+</ul>
+<h3 id="cpu">CPU 模拟器<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CPU 使用显式公式直接完成 im2col 展开。</li>
+<li>CPU 目前沿用与 A5 相同的 <code>Left</code> 目标布局约束：</li>
+<li><code>dst.SFractal == SLayout::RowMajor</code></li>
+<li><code>dst.isRowMajor == false</code></li>
+</ul>
+<p>这意味着 <code>TIMG2COL</code> 的 Left Tile 细节并不是所有目标完全一致，文档里必须按目标区分。</p>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+template &lt;typename LeftTile, typename ConvTile&gt;
+void example(LeftTile&amp; dst, ConvTile&amp; src) {
+  TIMG2COL(dst, src, /*posM=*/0, /*posK=*/0);
+}
+</code></pre>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../sync-and-config/tsetfmatrix_zh/">TSETFMATRIX</a></li>
+<li><a href="../../sync-and-config/tset-img2col-rpt_zh/">TSET_IMG2COL_RPT</a></li>
+<li><a href="../../sync-and-config/tset-img2col-padding_zh/">TSET_IMG2COL_PADDING</a></li>
+</ul>
               
             </div>
           </div><footer>

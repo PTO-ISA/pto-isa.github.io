@@ -908,18 +908,418 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/state-and-types/type-system_zh.md` -->
+                <!-- Generated from `docs/isa/state-and-types/type-system_zh.md` -->
 
-<h1 id="type-system">Type System<a class="headerlink" href="#type-system" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">类型系统<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>PTO 使用一套紧凑但架构可见的类型系统。合法性不会在原始类型名处结束。类型类别先说明当前操作数属于哪一类架构对象；layout、location、valid region 和目标 profile 等其他维度再决定该用法是否真的合法。</p>
+<h2 id="_2">元素类型<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>PTO 支持浮点、整数和若干专用数值类型。</p>
+<h3 id="_3">浮点类型<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>SSA 名称</th>
+<th>位宽</th>
+<th>说明</th>
+<th style="text-align: center;">A2/A3</th>
+<th style="text-align: center;">A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IEEE FP16</td>
+<td><code>f16</code> / <code>half</code></td>
+<td>16</td>
+<td>IEEE 754 半精度</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>BF16</td>
+<td><code>bf16</code> / <code>bfloat16_t</code></td>
+<td>16</td>
+<td>Brain float 16（8 位指数）</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>IEEE FP32</td>
+<td><code>f32</code></td>
+<td>32</td>
+<td>IEEE 754 单精度</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>FP8 E4M3</td>
+<td><code>f8e4m3</code> / <code>float8_e4m3_t</code></td>
+<td>8</td>
+<td>4 位指数、3 位尾数</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>FP8 E5M2</td>
+<td><code>f8e5m2</code> / <code>float8_e5m2_t</code></td>
+<td>8</td>
+<td>5 位指数、2 位尾数</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>HI Float8</td>
+<td><code>hifloat8_t</code></td>
+<td>8</td>
+<td>高精度 float8</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>Float4 E1M2x2</td>
+<td><code>float4_e1m2x2_t</code></td>
+<td>4</td>
+<td>4-bit float4，2x2 打包</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>Float4 E2M1x2</td>
+<td><code>float4_e2m1x2_t</code></td>
+<td>4</td>
+<td>4-bit float4，2x2 打包</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_4">整数类型<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>SSA 名称</th>
+<th>位宽</th>
+<th>有符号性</th>
+<th style="text-align: center;">A2/A3</th>
+<th style="text-align: center;">A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>int8</td>
+<td><code>i8</code></td>
+<td>8</td>
+<td>Signed</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>uint8</td>
+<td><code>u8</code></td>
+<td>8</td>
+<td>Unsigned</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>int16</td>
+<td><code>i16</code></td>
+<td>16</td>
+<td>Signed</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>uint16</td>
+<td><code>u16</code></td>
+<td>16</td>
+<td>Unsigned</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>int32</td>
+<td><code>i32</code></td>
+<td>32</td>
+<td>Signed</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>uint32</td>
+<td><code>u32</code></td>
+<td>32</td>
+<td>Unsigned</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>int64</td>
+<td><code>i64</code></td>
+<td>64</td>
+<td>Signed</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>uint64</td>
+<td><code>u64</code></td>
+<td>64</td>
+<td>Unsigned</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">向量宽度<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>向量寄存器宽度 <code>N</code> 由元素类型和目标 profile 决定：</p>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th style="text-align: center;">向量宽度 N</th>
+<th style="text-align: center;">每寄存器字节数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f32</td>
+<td style="text-align: center;">64</td>
+<td style="text-align: center;">256 B</td>
+<td>64 × 32-bit</td>
+</tr>
+<tr>
+<td>f16, bf16</td>
+<td style="text-align: center;">128</td>
+<td style="text-align: center;">256 B</td>
+<td>128 × 16-bit</td>
+</tr>
+<tr>
+<td>i16, u16</td>
+<td style="text-align: center;">128</td>
+<td style="text-align: center;">256 B</td>
+<td>128 × 16-bit</td>
+</tr>
+<tr>
+<td>i8, u8</td>
+<td style="text-align: center;">256</td>
+<td style="text-align: center;">256 B</td>
+<td>256 × 8-bit</td>
+</tr>
+<tr>
+<td>f8e4m3, f8e5m2</td>
+<td style="text-align: center;">256</td>
+<td style="text-align: center;">256 B</td>
+<td>256 × 8-bit</td>
+</tr>
+</tbody>
+</table>
+<p>向量宽度本身在各 profile 间可移植。差别在于 A5 原生执行向量指令，而 CPU / A2 / A3 通过模拟或桥接实现。</p>
+<h2 id="_6">向量寄存器类型<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>向量寄存器的 SSA 类型：</p>
+<pre><code class="language-text">!pto.vreg&lt;NxDTYPE&gt;
+</code></pre>
+<pre><code class="language-text">!pto.vreg&lt;64xf32&gt;   -- 64 lanes of f32
+!pto.vreg&lt;128xf16&gt;  -- 128 lanes of f16
+!pto.vreg&lt;256xi8&gt;   -- 256 lanes of i8
+</code></pre>
+<h2 id="tile-buffer">Tile Buffer 类型<a class="headerlink" href="#tile-buffer" title="Permanent link">&para;</a></h2>
+<p>Tile buffer 的 SSA 类型如下，完整参数见 <a href="../../programming-model/tiles-and-valid-regions_zh/">Tile 与有效区域</a>：</p>
+<pre><code class="language-text">!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+!pto.tile_buf&lt;loc=mat, bf16, 16, 16, RowMajor, NoneBox, None, Null&gt;
+!pto.tile_buf&lt;loc=left, int8, 16, 16, RowMajor, RowMajor, NZ, Null&gt;
+</code></pre>
+<h2 id="nan-inf">NaN 与 Inf 行为<a class="headerlink" href="#nan-inf" title="Permanent link">&para;</a></h2>
+<p>对浮点类型，PTO 以 IEEE 754 语义为基础，并保留以下 implementation-defined 变化点：</p>
+<table>
+<thead>
+<tr>
+<th>行为</th>
+<th>规则</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Quiet NaN 传播</td>
+<td>quiet NaN 输入得到 quiet NaN 输出</td>
+</tr>
+<tr>
+<td>Signaling NaN</td>
+<td>signaling NaN 可能先被硬件 quiet 化</td>
+</tr>
+<tr>
+<td>Inf 算术</td>
+<td>按 IEEE 754 要求产生和传播</td>
+</tr>
+<tr>
+<td>非规格化数</td>
+<td>硬件可选择 flush-to-zero</td>
+</tr>
+<tr>
+<td>舍入</td>
+<td>由 <code>rnd</code> 属性控制：<code>rne</code>、<code>rz</code>、<code>rp</code>、<code>rm</code></td>
+</tr>
+</tbody>
+</table>
+<p>FTZ 行为是 implementation-defined。<code>rnd</code> 属性控制那些会改变指数范围的操作的舍入方向，例如 <code>vcvt</code>。</p>
+<h2 id="_7">类型转换规则<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="_8">浮点到浮点<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>源</th>
+<th>目标</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f16 → bf16</td>
+<td>Conversion</td>
+<td>按位重解释，不做数值转换</td>
+</tr>
+<tr>
+<td>bf16 → f16</td>
+<td>Conversion</td>
+<td>按位重解释，不做数值转换</td>
+</tr>
+<tr>
+<td>f16/bf16 → f32</td>
+<td>Promotion</td>
+<td>扩展到 f32；可精确表示的值保持不变</td>
+</tr>
+<tr>
+<td>f32 → f16/bf16</td>
+<td>Narrowing</td>
+<td>按 <code>rnd</code> 舍入；NaN/Inf 遵循 IEEE 754</td>
+</tr>
+<tr>
+<td>f8 → f16/f32</td>
+<td>Promotion</td>
+<td>扩展；可精确表示的值保持不变</td>
+</tr>
+<tr>
+<td>f16/f32 → f8</td>
+<td>Narrowing</td>
+<td>按 <code>rnd</code> 舍入；可能溢出为 Inf</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_9">整数到整数<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>源</th>
+<th>目标</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>扩宽（如 i8 → i16）</td>
+<td>Zero/sign extend</td>
+<td>无符号零扩展；有符号符号扩展</td>
+</tr>
+<tr>
+<td>缩窄（如 i16 → i8）</td>
+<td>Truncation</td>
+<td>截断高位</td>
+</tr>
+<tr>
+<td>i32 → f32</td>
+<td>Conversion</td>
+<td>在 <code>[-2^24, 2^24]</code> 内精确；更大范围可能丢精度</td>
+</tr>
+<tr>
+<td>f32 → i32</td>
+<td>Conversion</td>
+<td>向零截断；可能溢出</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_10">浮点与整数之间<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>源</th>
+<th>目标</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f32 → i8/u8/i16/u16</td>
+<td>Narrowing</td>
+<td>截断；可能溢出</td>
+</tr>
+<tr>
+<td>f32 → i32/u32</td>
+<td>Narrowing</td>
+<td>截断；可能溢出</td>
+</tr>
+<tr>
+<td>i8/u8 → f32</td>
+<td>Promotion</td>
+<td>小范围精确；更大值可能丢精度</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_11">转换操作<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>指令集</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pto.tcvt</code></td>
+<td>Tile</td>
+<td>在 tile 上逐元素转换类型</td>
+</tr>
+<tr>
+<td><code>pto.vcvt</code></td>
+<td>Vector</td>
+<td>向量寄存器类型转换</td>
+</tr>
+<tr>
+<td><code>pto.vtrc</code></td>
+<td>Vector</td>
+<td>向量截断/舍入</td>
+</tr>
+<tr>
+<td><code>pto.vci</code></td>
+<td>Vector</td>
+<td>向整数压缩或索引式转换</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_12">约束<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../type-system/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../../../manual/03-state-and-types_zh/">中文章节手册状态与类型</a></li>
+<li>指令集页面必须明确列出允许的操作数/结果类别。</li>
+<li>类型错误必须与更深层的合法性错误区分开来，例如 shape、layout、location intent 或 target profile。</li>
+<li>向量指令文档必须显式说明向量寄存器、mask、指针和对齐状态。</li>
+<li>Tile 指令文档必须显式说明 tile role、shape 和 valid region 的交互。</li>
+<li>不存在隐式类型提升。<code>tadd(t, i8_tile, f32_immediate)</code> 之类形式在没有显式 <code>tcvt</code> 的情况下是非法的。</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_13">不允许的情形<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把类型类别检查误当成完整的 backend 合法性检查</li>
+<li>混淆标量状态与 tile / vector 有效载荷状态</li>
+<li>把 vector 和 tile 有效载荷类别写成可互换</li>
+<li>依赖隐式类型转换而非显式 <code>tcvt</code> / <code>vcvt</code></li>
+</ul>
+<h2 id="_14">相关页面<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../location-intent-and-legality_zh/">位置意图与合法性</a></li>
+<li><a href="../../instruction-families/README_zh/">指令族总览</a></li>
+<li><a href="../../reference/source-of-truth_zh/">规范来源</a></li>
+<li><a href="../../programming-model/tiles-and-valid-regions_zh/">Tile 与有效区域</a></li>
+</ul>
               
             </div>
           </div><footer>

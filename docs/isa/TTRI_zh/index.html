@@ -910,47 +910,13 @@
               
                 <!-- Generated from `docs/isa/TTRI_zh.md` -->
 
-<h1 id="ttri">TTRI<a class="headerlink" href="#ttri" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TTRI tile operation" src="../../figures/isa/TTRI.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>生成三角（下/上）掩码 Tile。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. Let <code>d = diagonal</code>.</p>
-<p>Lower-triangular (<code>isUpperOrLower=0</code>) conceptually produces:</p>
-<div class="arithmatex">\[
-\mathrm{dst}_{i,j} = \begin{cases}1 &amp; j \le i + d \\\\ 0 &amp; \text{otherwise}\end{cases}
-\]</div>
-<p>Upper-triangular (<code>isUpperOrLower=1</code>) conceptually produces:</p>
-<div class="arithmatex">\[
-\mathrm{dst}_{i,j} = \begin{cases}0 &amp; j &lt; i + d \\\\ 1 &amp; \text{otherwise}\end{cases}
-\]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.ttri %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.ttri ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.ttri %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.ttri ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileData, int isUpperOrLower, typename... WaitEvents&gt;
-PTO_INST RecordEvent TTRI(TileData &amp;dst, int diagonal, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptottri">pto.ttri<a class="headerlink" href="#ptottri" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/irregular-and-complex/ttri_zh/">pto.ttri</a>。</p>
 <ul>
-<li><code>isUpperOrLower</code> must be <code>0</code> (lower) or <code>1</code> (upper).</li>
-<li>Destination tile must be row-major on some targets (see <code>include/pto/npu/*/TTri.hpp</code>).</li>
+<li>指令集：<a href="../tile/irregular-and-complex_zh/">不规则与复杂指令集</a></li>
+<li>规范页：<a href="../tile/ops/irregular-and-complex/ttri_zh/">pto.ttri</a></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>See related examples in <code>docs/isa/</code> and <code>docs/coding/tutorials/</code>.</p>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

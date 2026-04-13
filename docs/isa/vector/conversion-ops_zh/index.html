@@ -908,18 +908,122 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/vector/conversion-ops_zh.md` -->
+                <!-- Generated from `docs/isa/vector/conversion-ops_zh.md` -->
 
-<h1 id="vector-families-conversion-ops">Vector Families: Conversion Ops<a class="headerlink" href="#vector-families-conversion-ops" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">转换操作指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>转换操作指令集覆盖向量层的数值类型转换、索引生成和保留浮点类型的截断/舍入。位宽变化、舍入、饱和和 lane 分区都属于架构可见约束。</p>
+<h2 id="_2">常见操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../conversion-ops/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li><code>pto.vci</code></li>
+<li><code>pto.vcvt</code></li>
+<li><code>pto.vtrc</code></li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">操作数模型<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%input</code>：源向量寄存器</li>
+<li><code>%result</code>：目标向量寄存器</li>
+<li><code>round_mode</code>：舍入模式</li>
+<li><code>sat</code>：饱和模式</li>
+<li><code>part</code>：偶数/奇数 lane 分区模式</li>
+</ul>
+<h2 id="_4">机制<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="ptovci"><code>pto.vci</code><a class="headerlink" href="#ptovci" title="Permanent link">&para;</a></h3>
+<p>根据标量索引或 seed 生成索引向量。它不是普通数值转换，而是索引生成。</p>
+<h3 id="ptovcvt"><code>pto.vcvt</code><a class="headerlink" href="#ptovcvt" title="Permanent link">&para;</a></h3>
+<p>在浮点与整数之间做类型转换，可带舍入、饱和和偶/奇 lane 放置。</p>
+<h3 id="ptovtrc"><code>pto.vtrc</code><a class="headerlink" href="#ptovtrc" title="Permanent link">&para;</a></h3>
+<p>把浮点值按指定舍入模式变成“整数值的浮点数”，但不改变元素类型。</p>
+<h2 id="_5">舍入模式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ROUND_R</code></td>
+<td>最近偶数</td>
+</tr>
+<tr>
+<td><code>ROUND_A</code></td>
+<td>远离零</td>
+</tr>
+<tr>
+<td><code>ROUND_F</code></td>
+<td>向负无穷</td>
+</tr>
+<tr>
+<td><code>ROUND_C</code></td>
+<td>向正无穷</td>
+</tr>
+<tr>
+<td><code>ROUND_Z</code></td>
+<td>向零</td>
+</tr>
+<tr>
+<td><code>ROUND_O</code></td>
+<td>Round to odd</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">饱和模式<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RS_ENABLE</code></td>
+<td>溢出时饱和</td>
+</tr>
+<tr>
+<td><code>RS_DISABLE</code></td>
+<td>不做饱和</td>
+</tr>
+</tbody>
+</table>
+<h2 id="part">Part 模式<a class="headerlink" href="#part" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PART_EVEN</code></td>
+<td>写入偶数 lane</td>
+</tr>
+<tr>
+<td><code>PART_ODD</code></td>
+<td>写入奇数 lane</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>只允许文档化的源/目标类型对</li>
+<li><code>PART_EVEN</code> / <code>PART_ODD</code> 只对位宽变化形式有意义</li>
+<li><code>vtrc</code> 不改变元素类型</li>
+<li>profile 会缩窄部分转换对和低精度支持</li>
+</ul>
+<h2 id="_8">不允许的情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>假设所有宽度变化转换都自动支持 pack/unpack 组合</li>
+<li>在没有文档说明的情况下使用未支持的源/目标类型组合</li>
+<li>把 <code>vci</code> 当作普通数值转换指令</li>
+</ul>
+<h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../state-and-types/type-system_zh/">类型系统</a></li>
+<li><a href="../vector-families_zh/">向量指令族</a></li>
+</ul>
               
             </div>
           </div><footer>

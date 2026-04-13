@@ -908,18 +908,114 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/tile/reduce-and-expand_zh.md` -->
+                <!-- Generated from `docs/isa/tile/reduce-and-expand_zh.md` -->
 
-<h1 id="reduce-and-expand-family">Reduce And Expand Family<a class="headerlink" href="#reduce-and-expand-family" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">归约与扩展指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>归约操作沿一个轴把二维 tile 折叠成一维结果；扩展操作则把一维 tile 沿一个轴广播成二维 tile。</p>
+<h2 id="_2">操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h3 id="_3">按行归约<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <ul>
-<li><a href="../reduce-and-expand/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li><code>pto.trowsum</code></li>
+<li><code>pto.trowprod</code></li>
+<li><code>pto.trowmax</code></li>
+<li><code>pto.trowmin</code></li>
+<li><code>pto.trowargmax</code></li>
+<li><code>pto.trowargmin</code></li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h3 id="_4">按列归约<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>pto.tcolsum</code></li>
+<li><code>pto.tcolprod</code></li>
+<li><code>pto.tcolmax</code></li>
+<li><code>pto.tcolmin</code></li>
+<li><code>pto.tcolargmax</code></li>
+<li><code>pto.tcolargmin</code></li>
+</ul>
+<h3 id="_5">按行扩展<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>pto.trowexpand</code></li>
+<li><code>pto.trowexpandadd</code></li>
+<li><code>pto.trowexpandsub</code></li>
+<li><code>pto.trowexpandmul</code></li>
+<li><code>pto.trowexpanddiv</code></li>
+<li><code>pto.trowexpandmax</code></li>
+<li><code>pto.trowexpandmin</code></li>
+<li><code>pto.trowexpandexpdif</code></li>
+</ul>
+<h3 id="_6">按列扩展<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>pto.tcolexpand</code></li>
+<li><code>pto.tcolexpandadd</code></li>
+<li><code>pto.tcolexpandsub</code></li>
+<li><code>pto.tcolexpandmul</code></li>
+<li><code>pto.tcolexpanddiv</code></li>
+<li><code>pto.tcolexpandmax</code></li>
+<li><code>pto.tcolexpandmin</code></li>
+<li><code>pto.tcolexpandexpdif</code></li>
+</ul>
+<h2 id="_7">机制<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="_8">归约<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>按行归约：</p>
+<div class="arithmatex">\[ \mathrm{dst}_r = \bigoplus_{c=0}^{C-1} \mathrm{src}_{r,c} \]</div>
+<p>按列归约：</p>
+<div class="arithmatex">\[ \mathrm{dst}_c = \bigoplus_{r=0}^{R-1} \mathrm{src}_{r,c} \]</div>
+<h3 id="_9">扩展<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<p>按行扩展：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{r,c} = \mathrm{src}_r \]</div>
+<p>按列扩展：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{r,c} = \mathrm{src}_c \]</div>
+<p>扩展变体会把广播值与第二输入 tile 做逐元素组合。</p>
+<h2 id="_10">输出形状<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>输入形状</th>
+<th>输出形状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>行归约</td>
+<td><code>(R, C)</code></td>
+<td><code>(R, 1)</code></td>
+</tr>
+<tr>
+<td>列归约</td>
+<td><code>(R, C)</code></td>
+<td><code>(1, C)</code></td>
+</tr>
+<tr>
+<td>行扩展</td>
+<td><code>(R, 1)</code></td>
+<td><code>(R, C)</code></td>
+</tr>
+<tr>
+<td>列扩展</td>
+<td><code>(1, C)</code></td>
+<td><code>(R, C)</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_11">约束<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>源 tile 的 valid region 决定归约域</li>
+<li><code>argmax/argmin</code> 变体输出索引 tile，而不是数值 tile</li>
+<li>归约目标 tile 在被归约轴上的 extent 必须为 <code>1</code></li>
+<li>扩展变体要求第二输入在被扩展轴长度上匹配</li>
+<li><code>expdif</code> 变体依赖指数差的特殊语义</li>
+</ul>
+<h2 id="_12">不允许的情形<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<ul>
+<li>在长度为 0 的轴上归约</li>
+<li>对不支持的元素类型使用 arg 变体</li>
+<li>用不匹配的扩展轴长度做 expand 变体</li>
+</ul>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
+<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

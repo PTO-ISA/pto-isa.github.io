@@ -910,93 +910,13 @@
               
                 <!-- Generated from `docs/isa/TCMPS_zh.md` -->
 
-<h1 id="tcmps">TCMPS<a class="headerlink" href="#tcmps" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TCMPS tile operation" src="../../figures/isa/TCMPS.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>将 Tile 与标量比较并写入逐元素比较结果。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
-<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \left(\mathrm{src}_{i,j}\ \mathrm{cmpMode}\ \mathrm{scalar}\right) \]</div>
-<p>The encoding/type of <code>dst</code> is implementation-defined (often a mask-like tile).</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = tcmps %src, %scalar {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcmps %src, %scalar {cmpMode = #pto&lt;cmp xx&gt;} : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcmps ins(%src, %scalar{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcmps %src, %scalar {cmpMode = #pto&lt;cmp xx&gt;} : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcmps ins(%src, %scalar{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/type.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename T, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCMPS(TileDataDst&amp; dst, TileDataSrc0&amp; src0, T src1, CmpMode cmpMode, WaitEvents&amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="ptotcmps">pto.tcmps<a class="headerlink" href="#ptotcmps" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/tile-scalar-and-immediate/tcmps_zh/">pto.tcmps</a>。</p>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>float</code>, <code>half</code>, <code>uint16_t</code>, <code>int16_t</code>.</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
+<li>指令集：<a href="../tile/tile-scalar-and-immediate_zh/">Tile-标量与立即数指令集</a></li>
+<li>规范页：<a href="../tile/ops/tile-scalar-and-immediate/tcmps_zh/">pto.tcmps</a></li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>float</code>, <code>half</code>, <code>uint16_t</code>, <code>int16_t</code>.</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
-</ul>
-</li>
-<li><strong>Common constraints</strong>:<ul>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>Runtime: <code>src0</code> and <code>dst</code> must have the same valid row/col.</li>
-</ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
-</ul>
-</li>
-<li><strong>Comparison modes</strong>:<ul>
-<li>Supports <code>CmpMode::EQ</code>, <code>CmpMode::NE</code>, <code>CmpMode::LT</code>, <code>CmpMode::GT</code>, <code>CmpMode::LE</code>, <code>CmpMode::GE</code>.</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, uint8_t, 16, 32, BLayout::RowMajor, -1, -1&gt;;
-  SrcT src;
-  DstT dst(16, 2);
-  TCMPS(dst, src, 0.0f, CmpMode::GT);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, uint8_t, 16, 32, BLayout::RowMajor, -1, -1&gt;;
-  SrcT src;
-  DstT dst(16, 2);
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TCMPS(dst, src, 0.0f, CmpMode::GT);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

@@ -916,10 +916,10 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>设置 HF32 变换模式（实现定义）。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>No direct tensor arithmetic is produced by this instruction. It updates target mode state used by subsequent instructions.</p>
+<p>该指令本身不产生直接的张量算术结果，而是更新供后续指令使用的目标模式状态。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <code>docs/assembly/PTO-AS.md</code>.</p>
-<p>Schematic form:</p>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>示意形式：</p>
 <pre><code class="language-text">tsethf32mode {enable = true, mode = ...}
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
@@ -929,15 +929,15 @@
 <pre><code class="language-text">pto.tsethf32mode ins({enable = true, mode = ...}) outs()
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;bool isEnable, RoundMode hf32TransMode = RoundMode::CAST_ROUND, typename... WaitEvents&gt;
 PTO_INST RecordEvent TSETHF32MODE(WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Available only when the corresponding backend capability macro is enabled.</li>
-<li>Exact mode values and hardware behavior are target-defined.</li>
-<li>This instruction has control-state side effects and should be ordered appropriately relative to dependent compute instructions.</li>
+<li>仅在对应 backend capability macro 启用时可用。</li>
+<li>精确模式取值和硬件行为由目标实现定义。</li>
+<li>该指令具有控制状态副作用，应与依赖它的计算指令建立正确顺序。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;

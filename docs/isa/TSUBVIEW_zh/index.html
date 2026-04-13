@@ -910,66 +910,13 @@
               
                 <!-- Generated from `docs/isa/TSUBVIEW_zh.md` -->
 
-<h1 id="tsubview">TSUBVIEW<a class="headerlink" href="#tsubview" title="Permanent link">&para;</a></h1>
-<h2 id="tile">Tile操作图例<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h2>
-<p><img alt="TSUBVIEW tile operation" src="../../figures/isa/TSUBVIEW.svg" /></p>
-<h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>表达一个Tile是另一个Tile的subview。</p>
-<h2 id="_2">数学表达<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h1 id="ptotsubview">pto.tsubview<a class="headerlink" href="#ptotsubview" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/sync-and-config/tsubview_zh/">pto.tsubview</a>。</p>
 <ul>
-<li><code>rowIdx</code>: 在<code>src</code>的有效区域内的起始行的索引。</li>
-<li><code>colIdx</code>: 在<code>src</code>的有效区域内的起始列的索引。</li>
+<li>指令集：<a href="../tile/sync-and-config_zh/">同步与配置指令集</a></li>
+<li>规范页：<a href="../tile/ops/sync-and-config/tsubview_zh/">pto.tsubview</a></li>
 </ul>
-<p>对于<code>dst</code>中有效区域内的每一个元素<code>(i, j)</code>：</p>
-<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{\mathrm{rowIdx} + i,\mathrm{colIdx} + j} \]</div>
-<h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>PTO-AS form: 详见 <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<p>TODO</p>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<p>TODO</p>
-<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>定义在 <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSUBVIEW(TileDataDst &amp;dst, TileDataSrc &amp;src, uint16_t rowIdx, uint16_t colIdx, WaitEvents&amp;... events);
-</code></pre>
-<h2 id="_4">限制<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>规定在<code>TSUBVIEW_IMPL</code>中:</p>
-<ul>
-<li><strong>Tile类型必须相同</strong>: <code>TileDataSrc::Loc == TileDataDst::Loc</code>.</li>
-<li><strong>输入和输出Tile的静态shape必须相同</strong>: <code>TileDataSrc::Rows == TileDataDst::Rows</code> and <code>TileDataSrc::Cols == TileDataDst::Cols</code>.</li>
-<li><strong>输入和输出Tile的BLayout必须相同</strong>: <code>TileDataSrc::BFractal == TileDataDst::BFractal</code>.</li>
-<li><strong>src的validRow和validCol必须大于等于dst的validRow和validCol</strong></li>
-</ul>
-<h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example() {
-  using Src = Tile&lt;TileType::Vec, float, 4, 64, BLayout::RowMajor, 4, 64&gt;;
-  using Dst = Tile&lt;TileType::Vec, float, 4, 64, BLayout::RowMajor, 2, 32&gt;;
-
-  Src src;
-  Dst dst0;
-  Dst dst1;
-  Dst dst2;
-  Dst dst3;
-
-  // e.g. split into four 2x32 subtiles
-  TSUBVIEW(dst0, src, 0, 0);
-  TSUBVIEW(dst1, src, 0, 32);
-  TSUBVIEW(dst2, src, 2, 0);
-  TSUBVIEW(dst3, src, 2, 32);
-}
-</code></pre>
-<h2 id="asm">ASM示例<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto模式<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<p>TODO</p>
-<h3 id="manual">Manual模式<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<p>TODO</p>
-<h3 id="pto">PTO汇编格式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<p>TODO</p>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

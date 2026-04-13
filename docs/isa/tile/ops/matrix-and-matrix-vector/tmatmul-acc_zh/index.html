@@ -912,20 +912,22 @@
 
 <h1 id="tmatmul_acc">TMATMUL_ACC<a class="headerlink" href="#tmatmul_acc" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TMATMUL_ACC tile operation" src="../figures/isa/TMATMUL_ACC.svg" /></p>
+<p><img alt="TMATMUL_ACC tile operation" src="../../../../../figures/isa/TMATMUL_ACC.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>带累加器输入的矩阵乘法（融合累加）。</p>
+<p><code>TMATMUL_ACC</code> 是“带累加器输入”的矩阵乘法版本。和 <code>TMATMUL</code> 相比，它不会把输出块当成从零开始的新结果，而是把已有累加器内容视为初值，再叠加一轮 <code>A * B</code>。</p>
+<p>在分块 GEMM 里，这通常就是 K 维循环中间阶段真正要用的形式。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let:</p>
+<p>设：</p>
 <ul>
 <li><code>M = aMatrix.GetValidRow()</code></li>
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>For <code>0 &lt;= i &lt; M</code> and <code>0 &lt;= j &lt; N</code>:</p>
-<div class="arithmatex">\[ \mathrm{C1}_{i,j} = \mathrm{C0}_{i,j} + \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
+<p>则：</p>
+<div class="arithmatex">\[ \mathrm{C}_{\text{out}, i,j} = \mathrm{C}_{\text{in}, i,j} + \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
+<p>这就是 <code>TMATMUL_ACC</code> 与 <code>TMATMUL</code> 的唯一核心差别：前者保留已有累加器值，后者把结果视为新生成块。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%acc1 = tmatmul.acc %acc0, %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -936,27 +938,39 @@
 <pre><code class="language-text">pto.tmatmul.acc ins(%c_in, %a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
+PTO_INST RecordEvent TMATMUL_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix,
+                                 WaitEvents &amp;... events);
 
 template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
+PTO_INST RecordEvent TMATMUL_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix,
+                                 WaitEvents &amp;... events);
 
 template &lt;AccPhase Phase = AccPhase::Unspecified, typename TileRes, typename TileLeft, typename TileRight,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL_ACC(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
 </code></pre>
+<p>最后一个便捷重载等价于把同一个累加器 Tile 同时作为输入和输出。</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li>All constraints from <code>TMATMUL</code> apply to the <code>(cOutMatrix, aMatrix, bMatrix)</code> triple.</li>
-<li><strong>Implementation notes (A2A3/A5)</strong>:<ul>
-<li><code>TMATMUL_ACC_IMPL</code> uses <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, and <code>bMatrix.GetValidCol()</code> for <code>m/k/n</code>.</li>
-<li><code>cInMatrix</code> is not validated by explicit assertions in the current implementations (target-defined behavior).</li>
+<li><code>TMATMUL</code> 的所有 shape、位置、dtype 和 target-profile 约束，在这里同样成立。</li>
+<li><code>m/k/n</code> 仍然取自 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code> 和 <code>bMatrix.GetValidCol()</code>。</li>
+<li>最稳妥、最可移植的用法，是让 <code>cInMatrix</code> 与 <code>cOutMatrix</code> 使用同一种 <code>Acc</code> Tile 类型，并且在需要时直接传同一个对象。</li>
 </ul>
-</li>
+<h3 id="_7">实现说明<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CPU 模拟器按接口字面语义工作：<code>cInMatrix</code> 作为显式输入累加器参与计算，结果写入 <code>cOutMatrix</code>。</li>
+<li>当前 NPU backend 的实现路径则更接近“对 <code>cOutMatrix</code> 本身继续累加”：</li>
+<li>A2/A3、A5 和 Kirin9030 的 <code>TMATMUL_ACC_IMPL</code> 都只把 <code>cOutMatrix</code> 传给底层 <code>mad</code> 路径</li>
+<li>也就是说，它们不会先把 <code>cInMatrix</code> 拷贝到 <code>cOutMatrix</code></li>
+<li>因而在实际代码里，最常见也最安全的写法就是直接使用共享累加器重载：</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">TMATMUL_ACC(acc, aTile, bTile);
+</code></pre>
+<p>如果你显式传入不同的 <code>cInMatrix</code> / <code>cOutMatrix</code>，CPU 和 NPU backend 当前可能表现不同。</p>
+<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -972,25 +986,27 @@ void example_auto() {
   TMATMUL_ACC(c1, c0, a, b);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<h3 id="_9">共享累加器写法<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-void example_manual() {
+void example_accumulate() {
   using A = TileLeft&lt;half, 16, 16&gt;;
   using B = TileRight&lt;half, 16, 16&gt;;
   using C = TileAcc&lt;float, 16, 16&gt;;
   A a;
   B b;
-  C c0, c1;
-  TASSIGN(a, 0x1000);
-  TASSIGN(b, 0x2000);
-  TASSIGN(c0, 0x3000);
-  TASSIGN(c1, 0x4000);
-  TMATMUL_ACC(c1, c0, a, b);
+  C acc;
+  TMATMUL_ACC(acc, a, b);
 }
 </code></pre>
+<h2 id="_10">相关页面<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tmatmul_zh/">TMATMUL</a></li>
+<li><a href="../tmatmul-bias_zh/">TMATMUL_BIAS</a></li>
+<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵向量指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

@@ -908,18 +908,44 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/scalar/shared-scf_zh.md` -->
+                <!-- Generated from `docs/isa/scalar/shared-scf_zh.md` -->
 
-<h1 id="scalar-and-control-families-shared-structured-control-flow">Scalar And Control Families: Shared Structured Control Flow<a class="headerlink" href="#scalar-and-control-families-shared-structured-control-flow" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">共享结构化控制流<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>PTO 源程序使用共享的 MLIR <code>scf</code> 操作来表达 tile / vector 区域外围的循环、分支和 loop-carried state。这些形式属于文档化的源层指令集，但不是 PTO 自定义助记符。</p>
+<h2 id="_2">摘要<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>共享结构化控制流给 PTO 提供了清晰且可分析的控制外壳，包括：</p>
 <ul>
-<li><a href="../shared-scf/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li><code>scf.for</code></li>
+<li><code>scf.if</code></li>
+<li><code>scf.while</code></li>
+<li><code>scf.condition</code></li>
+<li><code>scf.yield</code></li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p><code>scf</code> 围绕 PTO 区域工作，而不是替代 PTO 指令。它用于：</p>
+<ul>
+<li>在重复 tile / vector 工作外建立计数循环</li>
+<li>跨迭代携带标量或 tile 状态</li>
+<li>显式表达条件执行</li>
+<li>让分析和 lowering 看见结构化控制流</li>
+</ul>
+<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>控制流应保持结构化形式，除非需要更具体的架构可见机制</li>
+<li>区域携带值和分支结果必须通过 <code>scf.yield</code> 显式表示</li>
+<li><code>scf</code> 控制所需的谓词应来自共享标量指令，而不是未文档化的旁路状态</li>
+</ul>
+<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把 <code>scf</code> 写成 PTO 自定义助记符</li>
+<li>隐藏会影响 PTO 合法性的 loop-carried state</li>
+<li>用模糊 prose 代替结构化控制说明</li>
+</ul>
+<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../shared-arith_zh/">共享标量算术</a></li>
+<li><a href="../control-and-configuration_zh/">控制与配置</a></li>
+</ul>
               
             </div>
           </div><footer>

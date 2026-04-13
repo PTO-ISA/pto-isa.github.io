@@ -910,105 +910,13 @@
               
                 <!-- Generated from `docs/isa/TSYNC_zh.md` -->
 
-<h1 id="tsync">TSYNC<a class="headerlink" href="#tsync" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSYNC tile operation" src="../../figures/isa/TSYNC.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>同步 PTO 执行（等待事件或插入每操作流水线屏障）。</p>
+<h1 id="ptotsync">pto.tsync<a class="headerlink" href="#ptotsync" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页见 <a href="../tile/ops/sync-and-config/tsync_zh/">pto.tsync</a>。</p>
 <ul>
-<li><code>TSYNC(events...)</code> 等待一组显式事件令牌。</li>
-<li><code>TSYNC&lt;Op&gt;()</code> 为单个向量操作类插入流水线屏障。</li>
+<li>指令集：<a href="../tile/sync-and-config_zh/">同步与配置指令集</a></li>
+<li>规范页：<a href="../tile/ops/sync-and-config/tsync_zh/">pto.tsync</a></li>
 </ul>
-<p><code>include/pto/common/pto_instr.hpp</code> 中的许多内建函数在发射指令前会在内部调用 <code>TSYNC(events...)</code>。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>不适用。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>Event operand form:</p>
-<pre><code class="language-text">tsync %e0, %e1 : !pto.event&lt;...&gt;, !pto.event&lt;...&gt;
-</code></pre>
-<p>Single-op barrier form:</p>
-<pre><code class="language-text">tsync.op #pto.op&lt;TADD&gt;
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">// Level 1 (SSA) does not support explicit synchronization primitives.
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.record_event[src_op, dst_op, eventID]
-// 支持的op：TLOAD， TSTORE_ACC，TSTORE_VEC，TMOV_M2L，TMOV_M2S，TMOV_M2B，TMOV_M2V，TMOV_V2M，TMATMUL，TVEC
-pto.wait_event[src_op, dst_op, eventID]
-// 支持的op：TLOAD， TSTORE_ACC，TSTORE_VEC，TMOV_M2L，TMOV_M2S，TMOV_M2B，TMOV_M2V，TMOV_V2M，TMATMUL，TVEC
-pto.barrier(op)
-// 支持的op：TVEC,TMATMUL
-</code></pre>
-<p>在当前 PTO-DSL 前端流程中，<code>record_event</code> 和 <code>wait_event</code> 应视为 TSYNC 的低层形式。
-前端 kernel 通常不应手工编写事件连线，而应依赖 <code>ptoas --enable-insert-sync</code>
-自动插入同步。</p>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;Op OpCode&gt;
-PTO_INST void TSYNC();
-
-template &lt;typename... WaitEvents&gt;
-PTO_INST void TSYNC(WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>实现检查（<code>TSYNC&lt;Op&gt;()</code>）</strong>:</li>
-<li><code>TSYNC_IMPL&lt;Op&gt;()</code> 仅支持向量流水线操作（<code>include/pto/common/event.hpp</code> 中通过 <code>static_assert(pipe == PIPE_V)</code> 强制执行）。</li>
-<li><strong><code>TSYNC(events...)</code> 语义</strong>:</li>
-<li><code>TSYNC(events...)</code> 调用 <code>WaitAllEvents(events...)</code>，后者对每个事件令牌调用 <code>events.Wait()</code>。在auto模式下是no-op。</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_auto(__gm__ float* in) {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
-  using GStride = BaseShape2D&lt;float, 16, 16, Layout::ND&gt;;
-  using GT = GlobalTensor&lt;float, GShape, GStride, Layout::ND&gt;;
-
-  GT gin(in);
-  TileT t;
-  Event&lt;Op::TLOAD, Op::TADD&gt; e;
-  e = TLOAD(t, gin);
-  TSYNC(e);
-}
-</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT a, b, c;
-  Event&lt;Op::TADD, Op::TSTORE_VEC&gt; e;
-  e = TADD(c, a, b);
-  TSYNC&lt;Op::TADD&gt;();
-  TSYNC(e);
-}
-</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%result = pto.tsync ...
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%result = pto.tsync ...
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">tsync %e0, %e1 : !pto.event&lt;...&gt;, !pto.event&lt;...&gt;
-# AS Level 2 (DPS)
-pto.record_event[src_op, dst_op, eventID]
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>

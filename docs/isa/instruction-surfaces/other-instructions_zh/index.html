@@ -908,19 +908,67 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/mkdocs/src/docs/isa/instruction-surfaces/other-instructions_zh.md` -->
+                <!-- Generated from `docs/isa/instruction-surfaces/other-instructions_zh.md` -->
 
-<h1 id="other-instruction-surface">Other Instruction Surface<a class="headerlink" href="#other-instruction-surface" title="Permanent link">&para;</a></h1>
-<p>本页为自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="_1">其他指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>“其他”指令集覆盖不适合归入 tile、vector 或 scalar/control 主干的可见操作，包括跨 NPU 通信和若干支撑性操作。</p>
+<h2 id="_2">指令集概览<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>说明</th>
+<th>Profile</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>通信与运行时</td>
+<td>并行组上的点对点与集合通信</td>
+<td>A2/A3, A5</td>
+</tr>
+<tr>
+<td>非 ISA 与支撑操作</td>
+<td>tile 序列、量化、释放与辅助操作</td>
+<td>依操作而定</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">输入<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>这类指令集常见输入包括：</p>
 <ul>
-<li><a href="../other-instructions/">对应英文页面</a></li>
-<li><a href="../../../PTO-Virtual-ISA-Manual_zh/">中文手册入口</a></li>
-<li><a href="../../README_zh/">中文 ISA 指令参考入口</a></li>
-<li><a href="../../../../manual/07-instructions_zh/">中文章节手册指令集概述</a></li>
+<li>并行组句柄</li>
+<li>本地或远端 GM 视图</li>
+<li>暂存 tile</li>
+<li>tile 序列</li>
+<li>量化参数或控制参数</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_4">输出<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>其他指令集会产生：</p>
+<ul>
+<li>跨 rank 的数据传输结果</li>
+<li>集合归约结果</li>
+<li>tile 序列或量化表示的变化</li>
+<li>资源状态变化</li>
+</ul>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>通信操作必须遵守并行组一致性。</li>
+<li>支撑操作仍然必须遵守 PTO 的类型、形状和 profile 约束。</li>
+<li>不同操作的副作用差异较大，不能套用 tile 或 vector 的默认推理方式。</li>
+</ul>
+<h2 id="_6">不允许的情形<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把 CPU 仿真路径当作跨 NPU 通信 profile</li>
+<li>在不满足 profile 条件时使用 A5 专属支撑操作</li>
+<li>把 tile 序列操作误当成普通逐元素指令</li>
+</ul>
+<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../other/communication-and-runtime_zh/">通信与运行时</a></li>
+<li><a href="../../other/non-isa-and-supporting-ops_zh/">非 ISA 与支撑操作</a></li>
+<li><a href="../../instruction-families/other-families_zh/">其他指令族</a></li>
+</ul>
               
             </div>
           </div><footer>

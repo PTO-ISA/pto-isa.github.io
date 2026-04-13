@@ -912,21 +912,31 @@
 
 <h1 id="ttri">TTRI<a class="headerlink" href="#ttri" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TTRI tile operation" src="../figures/isa/TTRI.svg" /></p>
+<p><img alt="TTRI tile operation" src="../../../../../figures/isa/TTRI.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>生成三角（下/上）掩码 Tile。</p>
+<p><code>TTRI</code> 生成一个三角掩码 Tile。它不读取源 Tile，而是根据目标 Tile 的有效形状和 <code>diagonal</code> 参数直接在 <code>dst</code> 里写出上三角或下三角的 0/1 模式。</p>
+<p>这条指令常用于注意力 mask、三角区域约束或后续按位/乘法掩码场景。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. Let <code>d = diagonal</code>.</p>
-<p>Lower-triangular (<code>isUpperOrLower=0</code>) conceptually produces:</p>
+<p>设 <code>R = dst.GetValidRow()</code>、<code>C = dst.GetValidCol()</code>，<code>d = diagonal</code>。</p>
+<h3 id="isupperorlower-0">下三角形式 <code>isUpperOrLower = 0</code><a class="headerlink" href="#isupperorlower-0" title="Permanent link">&para;</a></h3>
 <div class="arithmatex">\[
-\mathrm{dst}_{i,j} = \begin{cases}1 &amp; j \le i + d \\\\ 0 &amp; \text{otherwise}\end{cases}
+\mathrm{dst}_{i,j} =
+\begin{cases}
+1 &amp; j \le i + d \\
+0 &amp; \text{否则}
+\end{cases}
 \]</div>
-<p>Upper-triangular (<code>isUpperOrLower=1</code>) conceptually produces:</p>
+<h3 id="isupperorlower-1">上三角形式 <code>isUpperOrLower = 1</code><a class="headerlink" href="#isupperorlower-1" title="Permanent link">&para;</a></h3>
 <div class="arithmatex">\[
-\mathrm{dst}_{i,j} = \begin{cases}0 &amp; j &lt; i + d \\\\ 1 &amp; \text{otherwise}\end{cases}
+\mathrm{dst}_{i,j} =
+\begin{cases}
+0 &amp; j &lt; i + d \\
+1 &amp; \text{否则}
+\end{cases}
 \]</div>
+<p><code>diagonal = 0</code> 表示主对角线；正值会把保留区域向右扩展，负值则会收缩。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.ttri %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -934,17 +944,36 @@
 <pre><code class="language-text">pto.ttri ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileData, int isUpperOrLower, typename... WaitEvents&gt;
 PTO_INST RecordEvent TTRI(TileData &amp;dst, int diagonal, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>isUpperOrLower</code> must be <code>0</code> (lower) or <code>1</code> (upper).</li>
-<li>Destination tile must be row-major on some targets (see <code>include/pto/npu/*/TTri.hpp</code>).</li>
+<li><code>isUpperOrLower</code> 只能是：</li>
+<li><code>0</code>：下三角</li>
+<li><code>1</code>：上三角</li>
+<li><code>dst</code> 必须是 row-major Tile。</li>
+<li>支持的数据类型随目标略有差异：</li>
+<li>CPU / A2A3：<code>int32_t</code>、<code>int16_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>half</code>、<code>float</code> 等</li>
+<li>A5：额外覆盖 <code>int8_t</code>、<code>uint8_t</code>、<code>bfloat16_t</code></li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>See related examples in <code>docs/isa/</code> and <code>docs/coding/tutorials/</code>.</p>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example() {
+  using MaskT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  MaskT mask;
+  TTRI&lt;MaskT, 0&gt;(mask, 0);  // lower triangular
+}
+</code></pre>
+<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../../../TCMP_zh/">TCMP</a></li>
+<li><a href="../../../irregular-and-complex_zh/">不规则与复杂指令集</a></li>
+</ul>
               
             </div>
           </div><footer>
