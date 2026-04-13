@@ -916,14 +916,14 @@
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>获取每列最大值对应行索引。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>设 <code>R = src.GetValidRow()</code> 且 <code>C = src.GetValidCol()</code>。对 <code>0 &lt;= j &lt; C</code>：</p>
+<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= j &lt; C</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{0,j} = \underset{0 \le i &lt; R}{\operatorname{argmax}} \; \mathrm{src}_{i,j} \]</div>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>PTO-AS 形式：参见 <code>docs/grammar/PTO-AS.md</code>.</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = tcolargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>lowering 过程中可能引入内部 scratch tile；C++ intrinsic 接口要求显式传入 <code>tmp</code> 操作数。</p>
+<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
 <h3 id="ir-level-1ssa">IR Level 1（SSA）<a class="headerlink" href="#ir-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -931,7 +931,7 @@
 <pre><code class="language-text">pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCOLARGMAX(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
 </code></pre>
@@ -943,11 +943,13 @@ PTO_INST RecordEvent TCOLARGMAX(TileDataOut&amp; dst, TileDataIn&amp; src, TileD
 <li><code>dst</code> 必须使用标准 ND 布局：行主且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
 <li>支持的目标元素类型：<code>uint32_t</code>、<code>int32_t</code>。</li>
 <li>编译时检查：<code>TileDataIn::ValidCol == 1 || TileDataIn::ValidCol == -1</code>。</li>
-<li>运行时检查：</li>
+<li>运行时检查：<ul>
 <li><code>src.GetValidRow() != 0</code></li>
 <li><code>src.GetValidCol() != 0</code></li>
 <li><code>dst.GetValidRow() == 1</code></li>
 <li><code>src.GetValidCol() == dst.GetValidCol()</code></li>
+</ul>
+</li>
 </ul>
 <h3 id="a2a3">A2A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1032,6 +1034,17 @@ void example_manual() {
 # IR Level 2 (DPS)
 pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
+<p></task_progress>
+- [x] Explore existing docs/isa for documentation style and format
+- [x] Read tcolargmax and tcolargmin A2A3 implementation in include/
+- [x] Read tcolargmax and tcolargmin A5 implementation in include/
+- [x] Read test cases for tcolargmax and tcolargmin
+- [x] Understand A2A3 vs A5 differences and tmp handling
+- [x] Write tcolargmax English documentation (docs/isa/TCOLARGMAX.md)
+- [x] Write tcolargmax Chinese documentation (docs/isa/TCOLARGMAX_zh.md)
+- [ ] Verify documentation completeness and accuracy
+</task_progress>
+</write_to_file></p>
               
             </div>
           </div><footer>

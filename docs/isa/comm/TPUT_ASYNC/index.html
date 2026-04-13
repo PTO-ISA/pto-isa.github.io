@@ -840,6 +840,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#asyncsession-construction">AsyncSession Construction</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#sdma-construction-default">SDMA Construction (default)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#urma-construction-npu_arch-3510-only">URMA Construction (NPU_ARCH 3510 only)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
     </li>
@@ -854,6 +860,8 @@
     <li class="toctree-l4"><a class="reference internal" href="#single-transfer">Single Transfer</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#batch-transfer-quiet-semantics">Batch Transfer (Quiet Semantics)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#urma-example-npu_arch-3510">URMA Example (NPU_ARCH 3510)</a>
     </li>
         </ul>
     </li>
@@ -947,13 +955,13 @@
 <ul>
 <li><code>engine</code>:<ul>
 <li><code>DmaEngine::SDMA</code> (default)</li>
-<li><code>DmaEngine::URMA</code> (todo)</li>
+<li><code>DmaEngine::URMA</code> (Ascend950, NPU_ARCH 3510 only)</li>
 </ul>
 </li>
 </ul>
 <blockquote>
-<p><strong>Important (SDMA path)</strong>
-<code>TPUT_ASYNC</code> with <code>DmaEngine::SDMA</code> currently supports <strong>only flat contiguous logical 1D tensors</strong>.
+<p><strong>Important (SDMA path)</strong><br />
+<code>TPUT_ASYNC</code> with <code>DmaEngine::SDMA</code> currently supports <strong>only flat contiguous logical 1D tensors</strong>.<br />
 Non-1D or non-contiguous layouts are not supported by the current SDMA async implementation.</p>
 </blockquote>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
@@ -966,19 +974,19 @@ PTO_INST AsyncEvent TPUT_ASYNC(GlobalDstData &amp;dstGlobalData, GlobalSrcData &
 <p><code>AsyncSession</code> is an engine-agnostic session object. Build once with
 <code>BuildAsyncSession&lt;engine&gt;()</code>, then pass to all async calls and event waits.
 The template <code>engine</code> parameter selects the DMA backend at compile time, making the
-code forward-compatible with future engines (URMA, CCU, etc.).</p>
+code forward-compatible with future engines (CCU, etc.).</p>
 <h2 id="asyncsession-construction">AsyncSession Construction<a class="headerlink" href="#asyncsession-construction" title="Permanent link">&para;</a></h2>
-<p>Use <code>BuildAsyncSession</code> from <code>include/pto/comm/async/async_event_impl.hpp</code>:</p>
+<p>Use <code>BuildAsyncSession</code> from <code>include/pto/comm/async/async_event_impl.hpp</code>.
+There are two overloads — one for SDMA and one for URMA — with different parameter lists.</p>
+<h3 id="sdma-construction-default">SDMA Construction (default)<a class="headerlink" href="#sdma-construction-default" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">template &lt;DmaEngine engine = DmaEngine::SDMA, typename ScratchTile&gt;
 PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
                                     __gm__ uint8_t *workspace,
                                     AsyncSession &amp;session,
                                     uint32_t syncId = 0,
-                                    const sdma::SdmaBaseConfig &amp;baseConfig = {1024 * 1024, 0, 1},
+                                    const sdma::SdmaBaseConfig &amp;baseConfig = {sdma::kDefaultSdmaBlockBytes, 0, 1},
                                     uint32_t channelGroupIdx = sdma::kAutoChannelGroupIdx);
 </code></pre>
-<p>The engine template parameter selects the backend (currently only SDMA).</p>
-<p>Parameters with defaults:</p>
 <table>
 <thead>
 <tr>
@@ -989,13 +997,28 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 </thead>
 <tbody>
 <tr>
+<td><code>scratchTile</code></td>
+<td>—</td>
+<td>UB scratch tile for SDMA control metadata (see <a href="#scratchtile-role">scratchTile Role</a>).</td>
+</tr>
+<tr>
+<td><code>workspace</code></td>
+<td>—</td>
+<td>GM pointer allocated by host-side <code>SdmaWorkspaceManager</code>.</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>—</td>
+<td>Output <code>AsyncSession</code> object.</td>
+</tr>
+<tr>
 <td><code>syncId</code></td>
 <td><code>0</code></td>
 <td>MTE3/MTE2 pipe sync event id (0-7). Override if kernel uses other pipe barriers on the same id.</td>
 </tr>
 <tr>
 <td><code>baseConfig</code></td>
-<td><code>{1024*1024, 0, 1}</code></td>
+<td><code>{kDefaultSdmaBlockBytes, 0, 1}</code></td>
 <td><code>{block_bytes, comm_block_offset, queue_num}</code>. Suitable for most single-queue transfers.</td>
 </tr>
 <tr>
@@ -1005,16 +1028,53 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 </tr>
 </tbody>
 </table>
+<h3 id="urma-construction-npu_arch-3510-only">URMA Construction (NPU_ARCH 3510 only)<a class="headerlink" href="#urma-construction-npu_arch-3510-only" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>URMA (User-level RDMA Memory Access) is a hardware-accelerated RDMA transport available on Ascend950 (NPU_ARCH 3510).</p>
+</blockquote>
+<pre><code class="language-cpp">#ifdef PTO_URMA_SUPPORTED
+template &lt;DmaEngine engine&gt;
+PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
+                                    uint32_t destRankId,
+                                    AsyncSession &amp;session);
+#endif
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>workspace</code></td>
+<td>GM pointer allocated by host-side <code>UrmaWorkspaceManager</code>.</td>
+</tr>
+<tr>
+<td><code>destRankId</code></td>
+<td>Remote PE rank id that this session communicates with. For <code>TPUT_ASYNC</code> this is the destination rank.</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>Output <code>AsyncSession</code> object.</td>
+</tr>
+</tbody>
+</table>
+<p>URMA does not require <code>scratchTile</code> — polling uses <code>ld_dev</code>/<code>st_dev</code> hardware intrinsics directly.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>GlobalSrcData::RawDType == GlobalDstData::RawDType</code></li>
 <li><code>GlobalSrcData::layout == GlobalDstData::layout</code></li>
-<li>SDMA path requires source tensor to be <strong>flat contiguous logical 1D only</strong></li>
-<li>workspace must be a valid GM pointer allocated by host-side <code>SdmaWorkspaceManager</code></li>
+<li>Both SDMA and URMA paths require source tensor to be <strong>flat contiguous logical 1D only</strong></li>
+<li>SDMA workspace must be a valid GM pointer allocated by host-side <code>SdmaWorkspaceManager</code></li>
+<li>URMA workspace must be a valid GM pointer allocated by host-side <code>UrmaWorkspaceManager</code></li>
+<li>URMA is only available on NPU_ARCH 3510 (Ascend950)</li>
+<li>The symmetric data buffer passed to <code>UrmaWorkspaceManager::Init()</code> must be backed by huge-page memory (allocate with <code>ACL_MEM_MALLOC_HUGE_ONLY</code>). The underlying MR registration requires huge-page backing; <code>ACL_MEM_MALLOC_HUGE_FIRST</code> may silently fall back to 4KB pages for small allocations, causing registration to fail</li>
 </ul>
 <p>If the 1D contiguous requirement is not met, current implementation returns an invalid async event (<code>handle == 0</code>).</p>
 <h2 id="scratchtile-role">scratchTile Role<a class="headerlink" href="#scratchtile-role" title="Permanent link">&para;</a></h2>
-<p><code>scratchTile</code> is <strong>not</strong> the payload staging buffer for user data.
+<p><code>scratchTile</code> is <strong>not</strong> the payload staging buffer for user data.<br />
 It is converted to <code>TmpBuffer</code> and used as temporary UB workspace for:</p>
 <ul>
 <li>writing/reading SDMA control words (flag, sq_tail, channel_info)</li>
@@ -1030,9 +1090,15 @@ It is converted to <code>TmpBuffer</code> and used as temporary UB workspace for
 </ul>
 <p>Recommended: <code>Tile&lt;TileType::Vec, uint8_t, 1, comm::sdma::UB_ALIGN_SIZE&gt;</code> (256B).</p>
 <h2 id="completion-semantics-quiet-semantics">Completion Semantics (Quiet Semantics)<a class="headerlink" href="#completion-semantics-quiet-semantics" title="Permanent link">&para;</a></h2>
-<p><code>TPUT_ASYNC</code> only submits data transfer SQEs without submitting a flag SQE. The flag SQE submission is deferred to the <code>Wait</code> call.</p>
+<p>The completion mechanism differs by engine, but user-facing quiet semantics are identical:</p>
 <ul>
-<li><code>event.Wait(session)</code> — submits a flag SQE and blocks until <strong>all async operations issued since the last Wait</strong> are complete</li>
+<li><strong>SDMA</strong>: <code>TPUT_ASYNC</code> only submits data transfer SQEs. The flag SQE is deferred to <code>Wait</code>, which polls the flag for completion.</li>
+<li>
+<p><strong>URMA</strong>: <code>TPUT_ASYNC</code> submits an RDMA WRITE WQE and rings the doorbell immediately. <code>Wait</code> polls the Completion Queue (CQ) until all expected CQEs have been consumed.</p>
+</li>
+<li>
+<p><code>event.Wait(session)</code> — blocks until <strong>all async operations issued since the last Wait</strong> are complete</p>
+</li>
 </ul>
 <p>This means after multiple <code>TPUT_ASYNC</code> calls, a single <code>Wait</code> on the last returned <code>AsyncEvent</code> drains all pending operations (similar to shmem's quiet semantics).</p>
 <p>After wait succeeds, all issued writes to <code>dstGlobalData</code> are complete.</p>
@@ -1097,6 +1163,34 @@ __global__ AICORE void BatchPut(__gm__ T *remoteDstBase, __gm__ T *localSrc,
         lastEvent = comm::TPUT_ASYNC(dstG, srcG, session);
     }
     (void)lastEvent.Wait(session);  // single Wait drains all pending ops
+}
+</code></pre>
+<h3 id="urma-example-npu_arch-3510">URMA Example (NPU_ARCH 3510)<a class="headerlink" href="#urma-example-npu_arch-3510" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+#include &lt;pto/common/pto_tile.hpp&gt;
+
+using namespace pto;
+
+template &lt;typename T&gt;
+__global__ AICORE void SimplePutUrma(__gm__ T *remoteDst, __gm__ T *localSrc,
+                                     __gm__ uint8_t *urmaWorkspace, uint32_t destRankId)
+{
+    using ShapeDyn = Shape&lt;DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC&gt;;
+    using StrideDyn = Stride&lt;DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC&gt;;
+    using GT = GlobalTensor&lt;T, ShapeDyn, StrideDyn, Layout::ND&gt;;
+
+    ShapeDyn shape(1, 1, 1, 1, 1024);
+    StrideDyn stride(1024, 1024, 1024, 1024, 1);
+    GT dstG(remoteDst, shape, stride);
+    GT srcG(localSrc, shape, stride);
+
+    comm::AsyncSession session;
+    if (!comm::BuildAsyncSession&lt;comm::DmaEngine::URMA&gt;(urmaWorkspace, destRankId, session)) {
+        return;
+    }
+
+    auto event = comm::TPUT_ASYNC&lt;comm::DmaEngine::URMA&gt;(dstG, srcG, session);
+    (void)event.Wait(session);
 }
 </code></pre>
               

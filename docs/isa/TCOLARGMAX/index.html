@@ -910,7 +910,7 @@
               
                 <!-- Generated from `docs/isa/TCOLARGMAX.md` -->
 
-<h1 id="ptotcolargmax">pto.tcolargmax<a class="headerlink" href="#ptotcolargmax" title="Permanent link">&para;</a></h1>
+<h1 id="tcolargmax">TCOLARGMAX<a class="headerlink" href="#tcolargmax" title="Permanent link">&para;</a></h1>
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
 <p><img alt="TCOLARGMAX tile operation" src="../../figures/isa/TCOLARGMAX.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
@@ -919,7 +919,7 @@
 <p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= j &lt; C</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{0,j} = \underset{0 \le i &lt; R}{\operatorname{argmax}} \; \mathrm{src}_{i,j} \]</div>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<p>PTO-AS form: see <code>docs/grammar/PTO-AS.md</code>.</p>
 <p>Synchronous form:</p>
 <pre><code class="language-text">%dst = tcolargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -943,11 +943,13 @@ PTO_INST RecordEvent TCOLARGMAX(TileDataOut&amp; dst, TileDataIn&amp; src, TileD
 <li><code>dst</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</li>
 <li>Supported destination element types: <code>uint32_t</code>, <code>int32_t</code>.</li>
 <li>Compile-time check: <code>TileDataIn::ValidCol == 1 || TileDataIn::ValidCol == -1</code>.</li>
-<li>Runtime checks:</li>
+<li>Runtime checks:<ul>
 <li><code>src.GetValidRow() != 0</code></li>
 <li><code>src.GetValidCol() != 0</code></li>
 <li><code>dst.GetValidRow() == 1</code></li>
 <li><code>src.GetValidCol() == dst.GetValidCol()</code></li>
+</ul>
+</li>
 </ul>
 <h3 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1032,6 +1034,17 @@ void example_manual() {
 # IR Level 2 (DPS)
 pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
+<p></task_progress>
+- [x] Explore existing docs/isa for documentation style and format
+- [x] Read tcolargmax and tcolargmin A2A3 implementation in include/
+- [x] Read tcolargmax and tcolargmin A5 implementation in include/
+- [x] Read test cases for tcolargmax and tcolargmin
+- [x] Understand A2A3 vs A5 differences and tmp handling
+- [x] Write tcolargmax English documentation (docs/isa/TCOLARGMAX.md)
+- [ ] Write tcolargmax Chinese documentation (docs/isa/TCOLARGMAX_zh.md)
+- [ ] Verify documentation completeness and accuracy
+</task_progress>
+</write_to_file></p>
               
             </div>
           </div><footer>

@@ -910,13 +910,113 @@
               
                 <!-- Generated from `docs/isa/TROWMIN_zh.md` -->
 
-<h1 id="ptotrowmin">pto.trowmin<a class="headerlink" href="#ptotrowmin" title="Permanent link">&para;</a></h1>
-<p>旧路径兼容入口。规范页见 <a href="../tile/ops/reduce-and-expand/trowmin_zh/">pto.trowmin</a>。</p>
+<h1 id="trowmin">TROWMIN<a class="headerlink" href="#trowmin" title="Permanent link">&para;</a></h1>
+<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><img alt="TROWMIN tile operation" src="../../figures/isa/TROWMIN.svg" /></p>
+<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>通过取列间最小值来归约每一行。</p>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>设 <code>R = src.GetValidRow()</code>，<code>C = src.GetValidCol()</code>。对 <code>0 &lt;= i &lt; R</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,0} = \min_{0 \le j &lt; C} \mathrm{src}_{i,j} \]</div>
+<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>同步形式：</p>
+<pre><code class="language-text">%dst = trowmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p>降低时可能引入内部临时 Tile；C++ 内建接口需要显式传入 <code>tmp</code> 操作数。</p>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.trowmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.trowmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
+PTO_INST RecordEvent TROWMIN(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
+</code></pre>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束或检查<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li>指令集：<a href="../tile/reduce-and-expand_zh/">归约与扩展指令集</a></li>
-<li>规范页：<a href="../tile/ops/reduce-and-expand/trowmin_zh/">pto.trowmin</a></li>
+<li><code>dst</code> 和 <code>src</code> 必须均为 <code>TileType::Vec</code>。</li>
+<li><code>src</code> 必须使用标准 ND 布局：行主且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
+<li><code>dst</code> 必须使用以下两种非分形布局之一：<ul>
+<li>ND 布局（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>），或</li>
+<li>列数严格为 1 的 DN 布局（<code>BLayout::ColMajor</code>、<code>SLayout::NoneBox</code>、<code>Cols == 1</code>）。</li>
 </ul>
-<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
+</li>
+<li><code>dst</code> 和 <code>src</code> 的元素类型必须一致。</li>
+<li>运行时有效区域检查：<ul>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
+</ul>
+</li>
+<li>内建接口签名要求显式传入 <code>tmp</code> 操作数。</li>
+</ul>
+<h3 id="a2a3">A2A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持的元素类型：<code>half</code>、<code>float</code>、<code>int32_t</code>、<code>int16_t</code>。</li>
+<li>实现同时接受 ND 输出和 <code>Cols == 1</code> 的 DN 输出。</li>
+<li>运行时检查遵循共享的行归约检查路径：<ul>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
+</ul>
+</li>
+<li>当前实现路径会将 <code>tmp</code> 传入后端调用，但本文档不额外补充 checked implementation 未显式约束的 <code>tmp</code> shape/layout 要求。</li>
+</ul>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Vec, float, 16, 1, BLayout::ColMajor&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  SrcT src;
+  DstT dst;
+  TmpT tmp;
+  TROWMIN(dst, src, tmp);
+}
+</code></pre>
+<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Vec, float, 16, 1, BLayout::ColMajor&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  SrcT src;
+  DstT dst;
+  TmpT tmp;
+  TASSIGN(src, 0x1000);
+  TASSIGN(dst, 0x2000);
+  TASSIGN(tmp, 0x3000);
+  TROWMIN(dst, src, tmp);
+}
+</code></pre>
+<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="_8">自动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
+%dst = pto.trowmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="_9">手动模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
+# 可选（当该指令包含 tile 操作数时）：
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+%dst = pto.trowmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = trowmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+# AS Level 2 (DPS)
+pto.trowmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
               
             </div>
           </div><footer>

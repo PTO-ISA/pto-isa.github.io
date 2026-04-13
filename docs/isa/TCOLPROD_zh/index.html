@@ -910,13 +910,96 @@
               
                 <!-- Generated from `docs/isa/TCOLPROD_zh.md` -->
 
-<h1 id="ptotcolprod">pto.tcolprod<a class="headerlink" href="#ptotcolprod" title="Permanent link">&para;</a></h1>
-<p>旧路径兼容入口。规范页见 <a href="../tile/ops/reduce-and-expand/tcolprod_zh/">pto.tcolprod</a>。</p>
+<h1 id="tcolprod">TCOLPROD<a class="headerlink" href="#tcolprod" title="Permanent link">&para;</a></h1>
+<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><img alt="TCOLPROD tile operation" src="../../figures/isa/TCOLPROD.svg" /></p>
+<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>通过跨行乘积来归约每一列。</p>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>设 <code>R = src.GetValidRow()</code>，<code>C = src.GetValidCol()</code>。对 <code>0 &lt;= j &lt; C</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{0,j} = \prod_{i=0}^{R-1} \mathrm{src}_{i,j} \]</div>
+<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>同步形式：</p>
+<pre><code class="language-text">%dst = tcolprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.tcolprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tcolprod ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCOLPROD(TileDataOut &amp;dst, TileDataIn &amp;src, WaitEvents &amp;... events);
+</code></pre>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">通用约束或检查<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
-<li>指令集：<a href="../tile/reduce-and-expand_zh/">归约与扩展指令集</a></li>
-<li>规范页：<a href="../tile/ops/reduce-and-expand/tcolprod_zh/">pto.tcolprod</a></li>
+<li><code>dst</code> 和 <code>src</code> 必须为 <code>TileType::Vec</code>。</li>
+<li><code>dst</code> 和 <code>src</code> 必须使用标准 ND 布局：行主且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
+<li><code>dst</code> 和 <code>src</code> 的元素类型必须一致。</li>
+<li>运行时检查：<ul>
+<li><code>src.GetValidCol() == dst.GetValidCol()</code></li>
 </ul>
-<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
+</li>
+<li>若 <code>src.GetValidRow() == 0</code> 或 <code>src.GetValidCol() == 0</code>，实现会直接返回。</li>
+</ul>
+<h3 id="a2a3">A2A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持的元素类型：<code>half</code>、<code>float</code>、<code>int16_t</code>、<code>int32_t</code>。</li>
+</ul>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持的元素类型：<code>half</code>、<code>float</code>、<code>bfloat16_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>。</li>
+</ul>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Vec, float, 1, 16&gt;;
+  SrcT src;
+  DstT dst;
+  TCOLPROD(dst, src);
+}
+</code></pre>
+<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Vec, float, 1, 16&gt;;
+  SrcT src;
+  DstT dst;
+  TASSIGN(src, 0x1000);
+  TASSIGN(dst, 0x2000);
+  TCOLPROD(dst, src);
+}
+</code></pre>
+<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="_8">自动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
+%dst = pto.tcolprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="_9">手动模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
+# 可选（当该指令包含 tile 操作数时）：
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+%dst = pto.tcolprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = tcolprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+# AS Level 2 (DPS)
+pto.tcolprod ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
               
             </div>
           </div><footer>

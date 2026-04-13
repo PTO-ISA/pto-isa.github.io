@@ -924,10 +924,10 @@
 <pre><code class="language-text">%dst = trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <p>降级可能引入内部临时 tile；C++ 内建函数需要显式的 <code>tmp</code> 操作数。</p>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.trowprod %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.trowprod ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建函数<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
@@ -940,14 +940,18 @@ PTO_INST RecordEvent TROWPROD(TileDataOut &amp;dst, TileDataIn &amp;src, TileDat
 <ul>
 <li><code>dst</code> 和 <code>src</code> 必须均为 <code>TileType::Vec</code>。</li>
 <li><code>src</code> 必须使用标准 ND 布局：行主且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
-<li><code>dst</code> 必须使用以下两种非分形布局之一：</li>
+<li><code>dst</code> 必须使用以下两种非分形布局之一：<ul>
 <li>ND 布局（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>），或</li>
 <li>列数严格为 1 的 DN 布局（<code>BLayout::ColMajor</code>、<code>SLayout::NoneBox</code>、<code>Cols == 1</code>）。</li>
+</ul>
+</li>
 <li><code>dst</code> 和 <code>src</code> 的元素类型必须一致。</li>
-<li>运行时有效区域检查：</li>
+<li>运行时有效区域检查：<ul>
 <li><code>src.GetValidRow() != 0</code></li>
 <li><code>src.GetValidCol() != 0</code></li>
 <li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
+</ul>
+</li>
 <li>内建接口签名要求显式传入 <code>tmp</code> 操作数。</li>
 </ul>
 <h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>

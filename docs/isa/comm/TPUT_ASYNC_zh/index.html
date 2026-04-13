@@ -919,7 +919,7 @@
 <ul>
 <li><code>engine</code>：<ul>
 <li><code>DmaEngine::SDMA</code>（默认）</li>
-<li><code>DmaEngine::URMA</code>（待实现）</li>
+<li><code>DmaEngine::URMA</code>（Ascend950，仅 NPU_ARCH 3510）</li>
 </ul>
 </li>
 </ul>
@@ -935,18 +935,19 @@
 PTO_INST AsyncEvent TPUT_ASYNC(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
                                const AsyncSession &amp;session, WaitEvents &amp;... events);
 </code></pre>
-<p><code>AsyncSession</code> 是引擎无关的会话对象。使用 <code>BuildAsyncSession&lt;engine&gt;()</code> 构建一次后，传递给所有异步调用和事件等待。模板参数 <code>engine</code> 在编译期选择 DMA 后端，使代码对未来引擎（URMA、CCU 等）保持前向兼容。</p>
+<p><code>AsyncSession</code> 是引擎无关的会话对象。使用 <code>BuildAsyncSession&lt;engine&gt;()</code> 构建一次后，传递给所有异步调用和事件等待。模板参数 <code>engine</code> 在编译期选择 DMA 后端，使代码对未来引擎（CCU 等）保持前向兼容。</p>
 <h2 id="asyncsession">AsyncSession 构建<a class="headerlink" href="#asyncsession" title="Permanent link">&para;</a></h2>
-<p>使用 <code>include/pto/comm/async/async_event_impl.hpp</code> 中的 <code>BuildAsyncSession</code>：</p>
+<p>使用 <code>include/pto/comm/async/async_event_impl.hpp</code> 中的 <code>BuildAsyncSession</code>。
+该函数有两个重载——分别用于 SDMA 和 URMA，参数列表不同。</p>
+<h3 id="sdma">SDMA 构建（默认）<a class="headerlink" href="#sdma" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">template &lt;DmaEngine engine = DmaEngine::SDMA, typename ScratchTile&gt;
 PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
                                     __gm__ uint8_t *workspace,
                                     AsyncSession &amp;session,
                                     uint32_t syncId = 0,
-                                    const sdma::SdmaBaseConfig &amp;baseConfig = {1024 * 1024, 0, 1},
+                                    const sdma::SdmaBaseConfig &amp;baseConfig = {sdma::kDefaultSdmaBlockBytes, 0, 1},
                                     uint32_t channelGroupIdx = sdma::kAutoChannelGroupIdx);
 </code></pre>
-<p>带默认值的参数说明：</p>
 <table>
 <thead>
 <tr>
@@ -957,13 +958,28 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 </thead>
 <tbody>
 <tr>
+<td><code>scratchTile</code></td>
+<td>—</td>
+<td>用于 SDMA 控制元数据的 UB scratch tile（参见 <a href="#scratchtile-的作用">scratchTile 的作用</a>）。</td>
+</tr>
+<tr>
+<td><code>workspace</code></td>
+<td>—</td>
+<td>由主机侧 <code>SdmaWorkspaceManager</code> 分配的 GM 指针。</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>—</td>
+<td>输出的 <code>AsyncSession</code> 对象。</td>
+</tr>
+<tr>
 <td><code>syncId</code></td>
 <td><code>0</code></td>
 <td>MTE3/MTE2 管道同步事件 ID（0-7）。若 kernel 在相同 ID 上使用了其他管道屏障，则需覆盖此值。</td>
 </tr>
 <tr>
 <td><code>baseConfig</code></td>
-<td><code>{1024*1024, 0, 1}</code></td>
+<td><code>{kDefaultSdmaBlockBytes, 0, 1}</code></td>
 <td><code>{block_bytes, comm_block_offset, queue_num}</code>。适用于大多数单队列传输场景。</td>
 </tr>
 <tr>
@@ -973,12 +989,49 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 </tr>
 </tbody>
 </table>
+<h3 id="urma-npu_arch-3510">URMA 构建（仅 NPU_ARCH 3510）<a class="headerlink" href="#urma-npu_arch-3510" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>URMA（User-level RDMA Memory Access）是 Ascend950（NPU_ARCH 3510）上的硬件加速 RDMA 传输引擎。</p>
+</blockquote>
+<pre><code class="language-cpp">#ifdef PTO_URMA_SUPPORTED
+template &lt;DmaEngine engine&gt;
+PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
+                                    uint32_t destRankId,
+                                    AsyncSession &amp;session);
+#endif
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>workspace</code></td>
+<td>由主机侧 <code>UrmaWorkspaceManager</code> 分配的 GM 指针。</td>
+</tr>
+<tr>
+<td><code>destRankId</code></td>
+<td>此会话通信的远端 PE rank id。对于 <code>TPUT_ASYNC</code>，这是数据写入的目标 rank。</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>输出的 <code>AsyncSession</code> 对象。</td>
+</tr>
+</tbody>
+</table>
+<p>URMA 不需要 <code>scratchTile</code>——轮询通过 <code>ld_dev</code>/<code>st_dev</code> 硬件原语直接操作。</p>
 <h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>GlobalSrcData::RawDType == GlobalDstData::RawDType</code></li>
 <li><code>GlobalSrcData::layout == GlobalDstData::layout</code></li>
-<li>SDMA 路径要求源 tensor 为<strong>扁平连续的逻辑一维</strong></li>
-<li>workspace 必须是由主机侧 <code>SdmaWorkspaceManager</code> 分配的有效 GM 指针</li>
+<li>SDMA 和 URMA 路径均要求源 tensor 为<strong>扁平连续的逻辑一维</strong></li>
+<li>SDMA workspace 必须是由主机侧 <code>SdmaWorkspaceManager</code> 分配的有效 GM 指针</li>
+<li>URMA workspace 必须是由主机侧 <code>UrmaWorkspaceManager</code> 分配的有效 GM 指针</li>
+<li>URMA 仅在 NPU_ARCH 3510（Ascend950）上可用</li>
+<li>传给 <code>UrmaWorkspaceManager::Init()</code> 的对称数据缓冲区必须由大页内存支撑（使用 <code>ACL_MEM_MALLOC_HUGE_ONLY</code> 分配）。底层 MR 注册要求大页背景；<code>ACL_MEM_MALLOC_HUGE_FIRST</code> 在小尺寸分配时可能静默回退到 4KB 小页，导致注册失败</li>
 </ul>
 <p>若不满足一维连续要求，当前实现返回无效 async event（<code>handle == 0</code>）。</p>
 <h2 id="scratchtile">scratchTile 的作用<a class="headerlink" href="#scratchtile" title="Permanent link">&para;</a></h2>
@@ -998,9 +1051,15 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 </ul>
 <p>推荐使用：<code>Tile&lt;TileType::Vec, uint8_t, 1, comm::sdma::UB_ALIGN_SIZE&gt;</code>（256B）。</p>
 <h2 id="quiet">完成语义（Quiet 语义）<a class="headerlink" href="#quiet" title="Permanent link">&para;</a></h2>
-<p><code>TPUT_ASYNC</code> 仅提交数据传输 SQE，不提交 flag SQE。flag SQE 的提交延迟到 <code>Wait</code> 调用时进行。</p>
+<p>不同引擎的底层完成机制不同，但用户侧的 quiet 语义行为一致：</p>
 <ul>
-<li><code>event.Wait(session)</code> — 提交 flag SQE 并阻塞，直到<strong>自上次 Wait 以来所有已发出的异步操作</strong>全部完成</li>
+<li><strong>SDMA</strong>：<code>TPUT_ASYNC</code> 仅提交数据传输 SQE，flag SQE 延迟到 <code>Wait</code> 时提交，通过轮询 flag 判断完成。</li>
+<li>
+<p><strong>URMA</strong>：<code>TPUT_ASYNC</code> 立即提交 RDMA WRITE WQE 并敲门铃。<code>Wait</code> 通过轮询 Completion Queue（CQ）等待所有预期的 CQE 被消费。</p>
+</li>
+<li>
+<p><code>event.Wait(session)</code> — 阻塞，直到<strong>自上次 Wait 以来所有已发出的异步操作</strong>全部完成</p>
+</li>
 </ul>
 <p>这意味着多次 <code>TPUT_ASYNC</code> 调用后，只需对最后一个返回的 <code>AsyncEvent</code> 调用一次 <code>Wait</code>，即可等待所有 pending 操作完成（类似 shmem 的 quiet 语义）。</p>
 <p>wait 成功后，所有已发出的 <code>dstGlobalData</code> 写入均已全部完成。</p>
@@ -1065,6 +1124,34 @@ __global__ AICORE void BatchPut(__gm__ T *remoteDstBase, __gm__ T *localSrc,
         lastEvent = comm::TPUT_ASYNC(dstG, srcG, session);
     }
     (void)lastEvent.Wait(session);  // 一次 Wait 等待所有 pending 操作
+}
+</code></pre>
+<h3 id="urma-npu_arch-3510_1">URMA 示例（NPU_ARCH 3510）<a class="headerlink" href="#urma-npu_arch-3510_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+#include &lt;pto/common/pto_tile.hpp&gt;
+
+using namespace pto;
+
+template &lt;typename T&gt;
+__global__ AICORE void SimplePutUrma(__gm__ T *remoteDst, __gm__ T *localSrc,
+                                     __gm__ uint8_t *urmaWorkspace, uint32_t destRankId)
+{
+    using ShapeDyn = Shape&lt;DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC&gt;;
+    using StrideDyn = Stride&lt;DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC, DYNAMIC&gt;;
+    using GT = GlobalTensor&lt;T, ShapeDyn, StrideDyn, Layout::ND&gt;;
+
+    ShapeDyn shape(1, 1, 1, 1, 1024);
+    StrideDyn stride(1024, 1024, 1024, 1024, 1);
+    GT dstG(remoteDst, shape, stride);
+    GT srcG(localSrc, shape, stride);
+
+    comm::AsyncSession session;
+    if (!comm::BuildAsyncSession&lt;comm::DmaEngine::URMA&gt;(urmaWorkspace, destRankId, session)) {
+        return;
+    }
+
+    auto event = comm::TPUT_ASYNC&lt;comm::DmaEngine::URMA&gt;(dstG, srcG, session);
+    (void)event.Wait(session);
 }
 </code></pre>
               

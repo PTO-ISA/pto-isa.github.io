@@ -910,7 +910,7 @@
               
                 <!-- Generated from `docs/isa/TROWPROD.md` -->
 
-<h1 id="ptotrowprod">pto.trowprod<a class="headerlink" href="#ptotrowprod" title="Permanent link">&para;</a></h1>
+<h1 id="trowprod">TROWPROD<a class="headerlink" href="#trowprod" title="Permanent link">&para;</a></h1>
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
 <p><img alt="TROWPROD tile operation" src="../../figures/isa/TROWPROD.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
@@ -919,7 +919,7 @@
 <p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,0} = \prod_{j=0}^{C-1} \mathrm{src}_{i,j} \]</div>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<p>PTO-AS form: see <a href="../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <p>Synchronous form:</p>
 <pre><code class="language-text">%dst = trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -940,14 +940,18 @@ PTO_INST RecordEvent TROWPROD(TileDataOut &amp;dst, TileDataIn &amp;src, TileDat
 <ul>
 <li><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code>.</li>
 <li><code>src</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</li>
-<li><code>dst</code> must use one of the following non-fractal layouts:</li>
+<li><code>dst</code> must use one of the following non-fractal layouts:<ul>
 <li>ND layout (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>), or</li>
 <li>DN layout with exactly one column (<code>BLayout::ColMajor</code>, <code>SLayout::NoneBox</code>, <code>Cols == 1</code>).</li>
+</ul>
+</li>
 <li><code>dst</code> and <code>src</code> must use the same element type.</li>
-<li>Runtime valid-region checks:</li>
+<li>Runtime valid-region checks:<ul>
 <li><code>src.GetValidRow() != 0</code></li>
 <li><code>src.GetValidCol() != 0</code></li>
 <li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
+</ul>
+</li>
 <li>The intrinsic signature requires an explicit <code>tmp</code> operand.</li>
 </ul>
 <h3 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>

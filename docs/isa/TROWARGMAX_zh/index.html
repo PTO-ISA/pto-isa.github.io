@@ -912,10 +912,116 @@
 
 <h1 id="ptotrowargmax">pto.trowargmax<a class="headerlink" href="#ptotrowargmax" title="Permanent link">&para;</a></h1>
 <p>旧路径兼容入口。规范页见 <a href="../tile/ops/reduce-and-expand/trowargmax_zh/">pto.trowargmax</a>。</p>
+<p><img alt="TROWARGMAX tile operation" src="../../figures/isa/TROWARGMAX.svg" /></p>
+<h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>获取每行最大值对应列索引。</p>
+<h2 id="_2">数学语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>设 <code>R = src.GetValidRow()</code>，<code>C = src.GetValidCol()</code>。对 <code>0 &lt;= i &lt; R</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,0} = \underset{0 \le j &lt; C}{\operatorname{argmax}} \; \mathrm{src}_{i,j} \]</div>
+<h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式：参见 <code>docs/grammar/PTO-AS.md</code>.</p>
+<p>同步形式：</p>
+<pre><code class="language-text">%dst = trowargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
+<h3 id="ir-level-1ssa">IR Level 1（SSA）<a class="headerlink" href="#ir-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.trowargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="ir-level-2dps">IR Level 2（DPS）<a class="headerlink" href="#ir-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.trowargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
+PTO_INST RecordEvent TROWARGMAX(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
+</code></pre>
+<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">通用约束或检查<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <ul>
-<li>指令集：<a href="../tile/reduce-and-expand_zh/">归约与扩展指令集</a></li>
-<li>规范页：<a href="../tile/ops/reduce-and-expand/trowargmax_zh/">pto.trowargmax</a></li>
+<li><code>dst</code> 和 <code>src</code> 必须为 <code>TileType::Vec</code>。</li>
+<li>支持的源元素类型：<code>half</code>、<code>float</code>。</li>
+<li>支持的目标元素类型：<code>uint32_t</code>、<code>int32_t</code>。</li>
+<li>运行时检查遵循共享的行归约检查路径：<ul>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
 </ul>
+</li>
+</ul>
+<h3 id="a2a3">A2A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>src</code> 必须使用标准 ND 布局：行主且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
+<li><code>dst</code> 通过共享的行归约索引检查路径约束，可使用以下任一非分形布局：<ul>
+<li>单列 DN 布局（<code>BLayout::ColMajor</code>、<code>Cols == 1</code>），或</li>
+<li>有效列数为 1 的 ND 布局。</li>
+</ul>
+</li>
+</ul>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>dst</code> 和 <code>src</code> 必须满足 <code>TRowArgMax</code> 使用的共享行归约索引检查路径。</li>
+<li>在已检查到的 A5 实现路径中，接口仍接收 <code>tmp</code>，但 <code>TROWARGMAX_IMPL</code> 实际并不使用它。</li>
+</ul>
+<h3 id="a3-tmptile">A3 <code>tmp</code>临时Tile相关说明<a class="headerlink" href="#a3-tmptile" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>tmp</code>临时Tile在<code>srcValidCol &lt;= ElementPerRepeat</code>时不使用，<code>srcValidCol &gt; ElementPerRepeat</code>时需要使用。</li>
+<li><code>tmp</code> tile的行数和<code>src</code> tile的行数相同。</li>
+<li>按以下公式根据<code>src</code> tile的<code>validCol</code>算出<code>tmp</code> tile所需stride：</li>
+</ul>
+<pre><code class="language-text">repeats = ceil(validCol / elementPerRepeat)
+stride = ceil(repeats * 2 / elementPerBlock) * elementPerBlock + ceil(repeats / elementPerBlock) * elementPerBlock
+</code></pre>
+<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Vec, uint32_t, 16, 1, BLayout::ColMajor&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  SrcT src;
+  DstT dst;
+  TmpT tmp;
+  TROWARGMAX(dst, src, tmp);
+}
+</code></pre>
+<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Vec, uint32_t, 16, 1, BLayout::ColMajor&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  SrcT src;
+  DstT dst;
+  TmpT tmp;
+  TASSIGN(src, 0x1000);
+  TASSIGN(dst, 0x2000);
+  TASSIGN(tmp, 0x3000);
+  TROWARGMAX(dst, src, tmp);
+}
+</code></pre>
+<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
+%dst = pto.trowargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
+# 可选（当该指令包含 tile 操作数时）：
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+%dst = pto.trowargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = trowargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+# IR Level 2 (DPS)
+pto.trowargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
 <p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
