@@ -832,11 +832,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#concatenate-two-16-bit-predicates">Concatenate two 16-bit predicates</a>
+    <li class="toctree-l4"><a class="reference internal" href="#c-usage">C++ usage</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ssa-form-combine-two-halves-for-full-32-bit-predicate">SSA form — combine two halves for full 32-bit predicate</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#round-trip-deinterleave-then-interleave">Round-trip deinterleave then interleave</a>
+    <li class="toctree-l4"><a class="reference internal" href="#ssa-form">SSA form</a>
     </li>
         </ul>
     </li>
@@ -957,28 +955,29 @@
 <h1 id="ptopintlv_b16">pto.pintlv_b16<a class="headerlink" href="#ptopintlv_b16" title="Permanent link">&para;</a></h1>
 <p><code>pto.pintlv_b16</code> is part of the <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Predicate interleave: merge two 16-bit predicate registers into one 32-bit predicate register by alternating bits.</p>
+<p>Interleave two predicate sources and materialize the lower and higher result halves as two predicate outputs.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.pintlv_b16</code> interleaves two 16-bit predicate registers into one 32-bit predicate by alternating bits from each source. This is the inverse of <code>pdintlv_b16</code> (which splits a 32-bit predicate into two 16-bit halves), but <code>pintlv_b16</code> specifically operates on 16-bit inputs.</p>
-<p>For two 16-bit predicates <code>src0</code>, <code>src1</code> and 0 ≤ i &lt; 16:</p>
-<div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{src0}_i $$
-$$ \mathrm{dst}_{i+16} = \mathrm{src1}_i \]</div>
-<p>This operation concatenates two 16-bit predicates into a 32-bit predicate register, preserving the lane-to-bit correspondence.</p>
+<p>The installed 3510 Bisheng CCE header exposes <code>pintlv_b16</code> as a four-operand, two-result helper:</p>
+<ul>
+<li><code>void pintlv_b16(vector_bool &amp;dst0, vector_bool &amp;dst1, vector_bool src0, vector_bool src1);</code></li>
+</ul>
+<p>The public call surface therefore models <code>pto.pintlv_b16</code> as a paired-result operation. <code>dst0</code> receives the lower interleaved half and <code>dst1</code> receives the upper interleaved half produced from <code>src0</code> and <code>src1</code>.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pintlv_b16 %dst, %src0, %src1 : !pto.mask, !pto.mask, !pto.mask
+<pre><code class="language-mlir">%dst0, %dst1 = pto.pintlv_b16 %src0, %src1 : !pto.mask, !pto.mask -&gt; !pto.mask, !pto.mask
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.pintlv_b16 %src0, %src1 : !pto.mask, !pto.mask -&gt; !pto.mask
+<pre><code class="language-mlir">%dst0, %dst1 = pto.pintlv_b16 %src0, %src1 : !pto.mask, !pto.mask -&gt; !pto.mask, !pto.mask
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.pintlv_b16 ins(%src0, %src1 : !pto.mask, !pto.mask) outs(%dst : !pto.mask)
+<pre><code class="language-mlir">pto.pintlv_b16 ins(%src0, %src1 : !pto.mask, !pto.mask) outs(%dst0, %dst1 : !pto.mask, !pto.mask)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">PTO_INST void PINTLV_B16(RegBuf&lt;predicate_t&gt;&amp; dst,
-                          const RegBuf&lt;predicate_t&gt;&amp; src0,
-                          const RegBuf&lt;predicate_t&gt;&amp; src1);
+<pre><code class="language-cpp">vector_bool dst0;
+vector_bool dst1;
+vector_bool src0;
+vector_bool src1;
+pintlv_b16(dst0, dst1, src0, src1);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -993,12 +992,12 @@ $$ \mathrm{dst}_{i+16} = \mathrm{src1}_i \]</div>
 <tr>
 <td><code>%src0</code></td>
 <td><code>!pto.mask</code></td>
-<td>Lower 16-bit source predicate</td>
+<td>First predicate source</td>
 </tr>
 <tr>
 <td><code>%src1</code></td>
 <td><code>!pto.mask</code></td>
-<td>Upper 16-bit source predicate</td>
+<td>Second predicate source</td>
 </tr>
 </tbody>
 </table>
@@ -1013,9 +1012,14 @@ $$ \mathrm{dst}_{i+16} = \mathrm{src1}_i \]</div>
 </thead>
 <tbody>
 <tr>
-<td><code>%dst</code></td>
+<td><code>%dst0</code></td>
 <td><code>!pto.mask</code></td>
-<td>32-bit concatenated predicate</td>
+<td>Lower result half returned by the interleave helper</td>
+</tr>
+<tr>
+<td><code>%dst1</code></td>
+<td><code>!pto.mask</code></td>
+<td>Upper result half returned by the interleave helper</td>
 </tr>
 </tbody>
 </table>
@@ -1023,14 +1027,12 @@ $$ \mathrm{dst}_{i+16} = \mathrm{src1}_i \]</div>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Source width</strong>: Both source predicates MUST be 16 bits. Other widths are <strong>illegal</strong>.</li>
-<li><strong>Destination width</strong>: The destination predicate is 32 bits.</li>
-<li><strong>Bit mapping</strong>: <code>dst[0..15] = src0[0..15]</code>, <code>dst[16..31] = src1[0..15]</code>.</li>
+<li>The installed public CCE helper for <code>pintlv_b16</code> returns two predicate results, not a single concatenated predicate value.</li>
+<li>Source and destination predicate widths must match the <code>_b16</code> variant selected by the instruction.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Illegal if source predicate widths are not 16 bits.</li>
-<li>Illegal if destination context does not expect a 32-bit predicate.</li>
+<li>Illegal if the selected target profile does not support the requested predicate-interleave form.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <table>
@@ -1044,51 +1046,35 @@ $$ \mathrm{dst}_{i+16} = \mathrm{src1}_i \]</div>
 </thead>
 <tbody>
 <tr>
-<td>Predicate interleave (b16)</td>
+<td>Predicate interleave helper</td>
 <td style="text-align: center;">Simulated</td>
+<td style="text-align: center;">Supported</td>
+<td style="text-align: center;">Supported</td>
+</tr>
+<tr>
+<td>Public two-result CCE surface</td>
+<td style="text-align: center;">Emulated</td>
 <td style="text-align: center;">Supported</td>
 <td style="text-align: center;">Supported</td>
 </tr>
 </tbody>
 </table>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="concatenate-two-16-bit-predicates">Concatenate two 16-bit predicates<a class="headerlink" href="#concatenate-two-16-bit-predicates" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
-using namespace pto;
-
-void concat_predicates(RegBuf&lt;predicate_t&gt;&amp; dst,
-                      const RegBuf&lt;predicate_t&gt;&amp; lo,
-                      const RegBuf&lt;predicate_t&gt;&amp; hi) {
-    PINTLV_B16(dst, lo, hi);
-}
+<h3 id="c-usage">C++ usage<a class="headerlink" href="#c-usage" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">vector_bool dst0;
+vector_bool dst1;
+vector_bool src0;
+vector_bool src1;
+pintlv_b16(dst0, dst1, src0, src1);
 </code></pre>
-<h3 id="ssa-form-combine-two-halves-for-full-32-bit-predicate">SSA form — combine two halves for full 32-bit predicate<a class="headerlink" href="#ssa-form-combine-two-halves-for-full-32-bit-predicate" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// %cmp_lo: comparison result for lanes 0-15
-// %cmp_hi: comparison result for lanes 16-31
-
-// Combine into full 32-bit predicate
-%full = pto.pintlv_b16 %cmp_lo, %cmp_hi : !pto.mask, !pto.mask -&gt; !pto.mask
-
-// Use for 32-lane predicated vector operation
-%result = pto.vsel %v_true, %v_false, %full : !pto.vreg&lt;32xf32&gt;, !pto.vreg&lt;32xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;32xf32&gt;
-</code></pre>
-<h3 id="round-trip-deinterleave-then-interleave">Round-trip deinterleave then interleave<a class="headerlink" href="#round-trip-deinterleave-then-interleave" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// %src32: 32-bit predicate
-
-// Split into two 16-bit halves
-%lo16, %hi16 = pto.pdintlv_b32 %src32 : !pto.mask -&gt; !pto.mask, !pto.mask
-
-// Modify %lo16 or %hi16 independently
-%lo16_mod = pto.pnot %lo16, %lo16 : !pto.mask, !pto.mask -&gt; !pto.mask
-
-// Re-concatenate
-%dst = pto.pintlv_b16 %lo16_mod, %hi16 : !pto.mask, !pto.mask -&gt; !pto.mask
+<h3 id="ssa-form">SSA form<a class="headerlink" href="#ssa-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%dst0, %dst1 = pto.pintlv_b16 %src0, %src1 : !pto.mask, !pto.mask -&gt; !pto.mask, !pto.mask
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>
 <li>Previous op in instruction set: <a href="../pdintlv-b8/">pto.pdintlv_b8</a></li>
-<li>Next op in instruction set: (none — last in instruction set)</li>
+<li>Next op in instruction set: (none - last in instruction set)</li>
 <li>Control-shell overview: <a href="../../../control-and-configuration/">Control and configuration</a></li>
 </ul>
               

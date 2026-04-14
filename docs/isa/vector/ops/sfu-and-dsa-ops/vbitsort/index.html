@@ -693,6 +693,8 @@
     </li>
         </ul>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
@@ -705,23 +707,13 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#basic-nms-style-top-k-selection">Basic NMS-style top-K selection</a>
+    <li class="toctree-l4"><a class="reference internal" href="#sort-one-32-element-group">Sort one 32-element group</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#batch-processing-of-multiple-32-element-groups">Batch processing of multiple 32-element groups</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#nms-pipeline-score-sort-select-top-k">NMS pipeline (score → sort → select top-K)</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#a5-latency">A5 Latency</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#a2a3-throughput">A2/A3 Throughput</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#execution-note">Execution Note</a>
+    <li class="toctree-l4"><a class="reference internal" href="#nms-style-pipeline-setup">NMS-style pipeline setup</a>
     </li>
         </ul>
     </li>
@@ -965,41 +957,23 @@
 <h1 id="ptovbitsort">pto.vbitsort<a class="headerlink" href="#ptovbitsort" title="Permanent link">&para;</a></h1>
 <p><code>pto.vbitsort</code> is part of the <a href="../../../sfu-and-dsa-ops/">SFU And DSA Instructions</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Sort 32 region proposals by score (descending) and materialize sorted proposal records into the destination buffer. Used for hardware-accelerated top-K selection (e.g., NMS — Non-Maximum Suppression).</p>
+<p>Sort 32 score/index pairs in descending score order and materialize the sorted records into UB.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vbitsort</code> is a UB-to-UB accelerator operation. It reads 32 score values from a source buffer, sorts them in <strong>descending order</strong> by score, and writes fixed-size records to the destination buffer. Each output record contains the original index and the score value.</p>
-<p><strong>Output record format</strong> (8 bytes per record):</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Bytes</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Upper 4 bytes</td>
-<td><code>[31:0]</code></td>
-<td>Original index</td>
-</tr>
-<tr>
-<td>Lower 4 bytes</td>
-<td><code>[31:0]</code></td>
-<td>Score value</td>
-</tr>
-</tbody>
-</table>
-<p>For <code>f16</code> score forms, the score occupies the lower 2 bytes of the 4-byte score field; the upper 2 bytes are reserved.</p>
-<p><strong>Sort order:</strong> Descending by score — the highest score is written to the lowest destination address. Equal-score ties preserve the earlier input proposal first (stable sort).</p>
-<p><strong>Repeat count:</strong> <code>%repeat_times</code> controls how many adjacent groups of 32 elements to process sequentially.</p>
+<p><code>pto.vbitsort</code> is a UB-to-UB accelerator operation. It reads score values from <code>%src</code>, uses <code>%indices</code> as the companion index stream, sorts the pairs by score in descending order, and writes packed output records to <code>%dest</code>.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-asm">vbitsort %dest, %src, %indices, %repeat_times : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, index
+<pre><code class="language-mlir">pto.vbitsort %dest, %src, %indices, %repeat_times : (!pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vbitsort %dest, %src, %indices, %repeat_times
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index
+<pre><code class="language-mlir">pto.vbitsort %dest, %src, %indices, %repeat_times : (!pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()
+</code></pre>
+<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
+<p>The installed Bisheng public intrinsic exposes both score-only and score-plus-index overloads; this page corresponds to the score-plus-index <code>VBS32</code> form.</p>
+<pre><code class="language-cpp">__ubuf__ float *dst;
+__ubuf__ float *scores;
+__ubuf__ unsigned int *indices;
+uint8_t repeat = 1;
+vbitsort(dst, scores, indices, repeat);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -1019,167 +993,57 @@
 <tr>
 <td><code>%src</code></td>
 <td><code>!pto.ptr&lt;T, ub&gt;</code></td>
-<td>UB source buffer containing scores to sort</td>
+<td>UB source buffer containing score values</td>
 </tr>
 <tr>
 <td><code>%indices</code></td>
 <td><code>!pto.ptr&lt;i32, ub&gt;</code></td>
-<td>UB index buffer — original indices paired with scores</td>
+<td>UB source buffer containing companion indices</td>
 </tr>
 <tr>
 <td><code>%repeat_times</code></td>
 <td><code>index</code></td>
-<td>Number of 32-element groups to process sequentially</td>
+<td>Number of adjacent 32-element groups to process</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Note:</strong> The index buffer and score buffer must be pre-populated with the data to be sorted. Each lane of 32 elements corresponds to one output record group.</p>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>This op writes UB memory directly and returns no SSA value. Each output record is 8 bytes:</p>
-<ul>
-<li>For <code>f32</code> scores: <code>[index: u32][score: f32]</code> — upper 4 bytes index, lower 4 bytes score</li>
-<li>For <code>f16</code> scores: <code>[index: u32][score: f16][reserved: u16]</code> — upper 4 bytes index, lower 2 bytes score, 2 reserved bytes</li>
-</ul>
+<p>This op writes UB memory directly and returns no SSA value. Each output record contains the original index together with the associated score, ordered by descending score.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
+<p>This operation mutates <code>%dest</code> in UB memory. It does not reserve buffers, signal events, or establish fences beyond the visible memory write.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Descending sort</strong>: Scores are sorted in <strong>descending</strong> order. The highest score appears at the lowest destination address.</li>
-<li><strong>Stable sort</strong>: Equal-score ties preserve the original input order.</li>
-<li><strong>UB-backed pointers</strong>: <code>%dest</code>, <code>%src</code>, and <code>%indices</code> MUST all be backed by UB-space pointers.</li>
-<li><strong>Alignment contract</strong>: Pointers SHOULD satisfy the backend alignment contract expected by the A5 <code>VBS32</code> instruction. Misaligned buffers may produce undefined results.</li>
-<li><strong>32-element groups</strong>: Each invocation processes exactly 32 score/index pairs. The <code>%repeat_times</code> parameter scales this to <code>32 × repeat_times</code> total elements.</li>
-<li><strong>UB-to-UB operation</strong>: This is a UB helper, not a pure <code>vreg -&gt; vreg</code> op. It does not use vector registers directly.</li>
+<li><code>%dest</code>, <code>%src</code>, and <code>%indices</code> MUST all refer to UB-backed storage.</li>
+<li>The hardware operation processes 32-element groups; <code>%repeat_times</code> scales that fixed group size.</li>
+<li>The page-level contract assumes descending score order.</li>
+<li>Buffer alignment and layout MUST satisfy the target-profile backend contract for the selected form.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Illegal if any pointer operand is not a UB-space pointer.</li>
-<li>Illegal if <code>%repeat_times</code> is zero or negative.</li>
+<li>The verifier rejects illegal pointer spaces or unsupported element types.</li>
+<li>Illegal repeat counts or malformed buffer contracts are target-profile-specific errors.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>This operation is A5-specific hardware acceleration (<code>VBS32</code>).</li>
-<li>CPU simulation may provide a software fallback that preserves the observable PTO semantics.</li>
-<li>Not available on A2/A3 profiles.</li>
+<li>This operation is documented as A5-oriented sort acceleration.</li>
+<li>CPU simulation may preserve the visible PTO contract with a software fallback.</li>
+<li>Availability on narrower profiles is target-specific and should not be assumed without profile documentation.</li>
 </ul>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="basic-nms-style-top-k-selection">Basic NMS-style top-K selection<a class="headerlink" href="#basic-nms-style-top-k-selection" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Pre-condition: 32 scores and their original indices in UB
-// %score_buf contains f32 scores
-// %idx_buf contains original indices (0-31)
-
-// Sort by score (descending), produce sorted index+score records
-pto.vbitsort %sorted_records, %score_buf, %idx_buf, %c1
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index
-</code></pre>
-<h3 id="batch-processing-of-multiple-32-element-groups">Batch processing of multiple 32-element groups<a class="headerlink" href="#batch-processing-of-multiple-32-element-groups" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Process 4 groups of 32 (total 128 elements)
-pto.vbitsort %dest0, %src0, %idx0, %c1
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index
-pto.vbitsort %dest1, %src1, %idx1, %c1
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index
-pto.vbitsort %dest2, %src2, %idx2, %c1
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index
-pto.vbitsort %dest3, %src3, %idx3, %c1
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index
-</code></pre>
-<h3 id="nms-pipeline-score-sort-select-top-k">NMS pipeline (score → sort → select top-K)<a class="headerlink" href="#nms-pipeline-score-sort-select-top-k" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// 1. Compute proposal scores
-pto.vmul %proposals, %scales, %mask : !pto.vreg&lt;128xf32&gt;, !pto.vreg&lt;128xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf32&gt;
-
-// 2. Copy to UB for sorting
-pto.copy_vreg_to_ub %score_ub, %proposals, %c128 : !pto.ptr&lt;f32, ub&gt;, !pto.vreg&lt;128xf32&gt;, index
-
-// 3. Initialize index buffer [0, 1, 2, ..., 127]
-%base_idx = pto.vci %c0 {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;128xi32&gt;
-pto.copy_vreg_to_ub %idx_ub, %base_idx, %c128 : !pto.ptr&lt;i32, ub&gt;, !pto.vreg&lt;128xi32&gt;, index
-
-// 4. Sort by score (descending) in groups of 32
-scf.for %g = %c0 to %c4 step %c1 {
-  // ... load group g ...
-  pto.vbitsort %sorted[%g], %scores[%g], %indices[%g], %c1
-      : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index
-}
-
-// 5. Select top-K (first few entries of sorted output are the highest-scoring)
-</code></pre>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Metric</th>
-<th>Value</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Per-invocation latency</td>
-<td>TBD</td>
-<td><code>VBS32</code> unit — cycles vary by data layout</td>
-</tr>
-<tr>
-<td>Per-repeat throughput</td>
-<td>4</td>
-<td><code>A2A3_RPT_4</code> equivalent (high-throughput unit)</td>
-</tr>
-<tr>
-<td>Pipeline interval</td>
-<td>18</td>
-<td><code>A2A3_INTERVAL</code></td>
-</tr>
-</tbody>
-</table>
-<h3 id="a2a3-throughput">A2/A3 Throughput<a class="headerlink" href="#a2a3-throughput" title="Permanent link">&para;</a></h3>
-<p>The cost model for <code>TSORT32</code> (which invokes <code>vbitsort</code> on the tile level) uses the following parameters:</p>
-<table>
-<thead>
-<tr>
-<th>Metric</th>
-<th>Value</th>
-<th>Constant</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Startup</td>
-<td>14</td>
-<td><code>A2A3_STARTUP_BINARY</code></td>
-</tr>
-<tr>
-<td>Completion</td>
-<td>14</td>
-<td><code>A2A3_COMPL_DUP_VCOPY</code></td>
-</tr>
-<tr>
-<td>Per-repeat</td>
-<td>4</td>
-<td><code>A2A3_RPT_4</code></td>
-</tr>
-<tr>
-<td>Pipeline interval</td>
-<td>18</td>
-<td><code>A2A3_INTERVAL</code></td>
-</tr>
-</tbody>
-</table>
-<p><strong>Repeat calculation</strong>: <code>repeatTimes = ceil(validCol / blockLen)</code> where <code>blockLen = 32</code>.</p>
-<p><strong>Example</strong>: Sorting 128 f32 elements (<code>repeatTimes = 4</code>):</p>
-<pre><code>total ≈ 14 + 14 + 4 × 4 + 3 × 18 = 28 + 16 + 54 = 98 cycles
+<p><code>pto.vbitsort</code> is a dedicated sort helper rather than a standard vector ALU opcode. For throughput-sensitive code, batch work in 32-element groups and keep the source and destination buffers in UB.</p>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<h3 id="sort-one-32-element-group">Sort one 32-element group<a class="headerlink" href="#sort-one-32-element-group" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.vbitsort %sorted_records, %score_buf, %idx_buf, %c1
+    : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()
 </code></pre>
-<h3 id="execution-note">Execution Note<a class="headerlink" href="#execution-note" title="Permanent link">&para;</a></h3>
-<p>The <code>VBS32</code> hardware unit is a dedicated sort accelerator. It processes 32 elements per invocation with hardware sorting (descending, stable). For best throughput, batch sort requests and ensure all buffers are 32-element aligned. Misaligned accesses may trigger the software fallback path.</p>
-<hr />
+<h3 id="nms-style-pipeline-setup">NMS-style pipeline setup<a class="headerlink" href="#nms-style-pipeline-setup" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%idx = pto.vci %c0 {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
+pto.copy_vreg_to_ub %idx_ub, %idx, %c64 : !pto.ptr&lt;i32, ub&gt;, !pto.vreg&lt;64xi32&gt;, index
+pto.vbitsort %sorted_records, %scores_ub, %idx_ub, %c1
+    : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()
+</code></pre>
 <h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<p><code>pto.vbitsort</code> is a hardware-accelerated sort helper designed for:</p>
-<ol>
-<li><strong>NMS (Non-Maximum Suppression)</strong>: Sort region proposals by confidence score, then select the top-K non-overlapping regions.</li>
-<li><strong>Top-K selection</strong>: Extract the K highest-scoring elements from a set of candidates.</li>
-<li><strong>Sorting-based kernels</strong>: Any kernel that benefits from sorting acceleration on fixed-size batches.</li>
-</ol>
-<p><strong>Performance note:</strong> The hardware <code>VBS32</code> unit processes exactly 32 elements per invocation. For best performance, organize data in 32-element aligned chunks.</p>
-<p><strong>Relationship with <code>pto.vmrgsort</code></strong>: <code>vbitsort</code> performs a descending sort of pre-computed scores/indices. <code>vmrgsort</code> merges already-sorted segments. Together they support parallel sort pipelines: partition → local sort (<code>vsort32</code>) → merge (<code>vmrgsort</code>), or score → sort (<code>vbitsort</code>) → select top-K.</p>
+<p><code>pto.vbitsort</code> is the score-ordering primitive in proposal and top-K style pipelines. The installed public C++ surface also exposes a score-only <code>VBS16</code> form, but this PTO page documents the score-plus-index form that preserves original element identity through the sorted output stream.</p>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../sfu-and-dsa-ops/">SFU And DSA Instructions</a></li>

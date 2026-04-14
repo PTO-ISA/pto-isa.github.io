@@ -967,14 +967,14 @@
 <p>The semaphore is a counter: incremented by <code>set_cross_core</code>, decremented by <code>wait_flag_dev</code>. A <code>wait_flag_dev</code> unblocks when the counter reaches zero.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">set_cross_core %core_id, %event_id : i64, i64
+<pre><code class="language-mlir">pto.set_cross_core %core_id, %event_id : i64, i64
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">pto.set_cross_core %core_id, %event_id : i64, i64
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">PTO_INST void SET_CROSS_CORE(int64_t core_id, int64_t event_id);
+<p>The installed 3510 public CCE headers do not expose a same-name <code>set_cross_core(...)</code> intrinsic. The shipped sync implementation uses the internal cross-core helper shown below.</p>
+<pre><code class="language-cpp">ffts_cross_core_sync(PIPE_MTE3, AscendC::GetffstMsg(0x02, AscendC::SYNC_AIC_AIV_FLAG));
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>

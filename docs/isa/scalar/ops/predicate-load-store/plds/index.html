@@ -963,7 +963,7 @@
 <p>The predicate register is updated atomically. All bits are meaningful only within the current element-type context; unused upper bits for narrower types are <strong>implementation-defined</strong>.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">plds %mask, %ub_ptr : !pto.mask, !pto.ptr&lt;i64, ub&gt;
+<pre><code class="language-mlir">%mask = pto.plds %ub_ptr : !pto.ptr&lt;i64, ub&gt; -&gt; !pto.mask
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%mask = pto.plds %ub_ptr : !pto.ptr&lt;i64, ub&gt; -&gt; !pto.mask
@@ -972,8 +972,11 @@
 <pre><code class="language-mlir">pto.plds ins(%ub_ptr : !pto.ptr&lt;i64, ub&gt;) outs(%mask : !pto.mask)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">PTO_INST void PLDS(RegBuf&lt;predicate_t&gt;&amp; dst, const Ptr&lt;ub_space_t, ub_t&gt;&amp; src);
+<pre><code class="language-cpp">vector_bool dst;
+__ubuf__ uint32_t *base;
+int32_t offset = 0;
+plds(dst, base, offset, __cce_simd::NORM);
+plds(dst, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>

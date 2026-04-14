@@ -806,7 +806,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#tail-mask-for-remainder-loop-f16bf16">Tail mask for remainder loop (f16/bf16)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#c-usage">C++ usage</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#ssa-form">SSA form</a>
     </li>
@@ -955,25 +955,22 @@
 <h1 id="ptopge_b16">pto.pge_b16<a class="headerlink" href="#ptopge_b16" title="Permanent link">&para;</a></h1>
 <p><code>pto.pge_b16</code> is part of the <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Generate a dynamic 16-bit predicate: lanes where the lane index is greater-than-or-equal to a scalar threshold.</p>
+<p>Construct a 16-bit predicate mask from a documented <code>Pat*</code> token.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.pge_b16</code> compares the lane index against a runtime scalar value and produces a predicate where active lanes satisfy <code>i ≥ scalar</code>.</p>
-<p>For lane index <code>i</code> (0 ≤ i &lt; 16) and scalar threshold <code>s</code>:</p>
-<div class="arithmatex">\[ \mathrm{mask}_i = \begin{cases} 1 &amp; \text{if } i \geq s \\ 0 &amp; \text{if } i &lt; s \end{cases} \]</div>
-<p>This operation is the scalar complement of <code>plt_b16</code>. It is used for tail-mask generation when the vector width is 16 (f16/bf16 with predicate packing context).</p>
+<p>The installed 3510 Bisheng CCE header exposes <code>pge_b16</code> as a pattern-token helper, not as a runtime scalar-threshold compare. The public call surface is <code>vector_bool pge_b16(T dist)</code> where <code>T</code> is one of the documented <code>__cce_simd::Pat*</code> marker types.</p>
+<p>This page therefore models <code>pto.pge_b16</code> as pattern-based predicate materialization: the chosen token determines which lanes are active in the returned predicate register.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pge_b16 %dst, %scalar : !pto.mask, i16
+<pre><code class="language-mlir">%mask = pto.pge_b16 &quot;PAT_VL8&quot; : !pto.mask
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.pge_b16 %scalar : i16 -&gt; !pto.mask
+<pre><code class="language-mlir">%mask = pto.pge_b16 &quot;PAT_VL8&quot; : !pto.mask
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.pge_b16 ins(%scalar : i16) outs(%mask : !pto.mask)
+<pre><code class="language-mlir">pto.pge_b16 &quot;PAT_VL8&quot; outs(%mask : !pto.mask)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">PTO_INST void PGE_B16(RegBuf&lt;predicate_t&gt;&amp; dst, int16_t scalar);
+<pre><code class="language-cpp">vector_bool mask = pge_b16(__cce_simd::PAT_VL8);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -986,9 +983,9 @@
 </thead>
 <tbody>
 <tr>
-<td><code>%scalar</code></td>
-<td><code>i16</code></td>
-<td>Lane-index threshold; lanes i ≥ scalar are active</td>
+<td><code>"PAT_*"</code></td>
+<td>string attribute</td>
+<td>Predicate-pattern token such as <code>PAT_ALL</code>, <code>PAT_ALLF</code>, <code>PAT_VL*</code>, <code>PAT_M3</code>, <code>PAT_M4</code>, <code>PAT_H</code>, or <code>PAT_Q</code></td>
 </tr>
 </tbody>
 </table>
@@ -1005,7 +1002,7 @@
 <tr>
 <td><code>%mask</code></td>
 <td><code>!pto.mask</code></td>
-<td>16-bit predicate with active lanes above threshold</td>
+<td>16-bit predicate generated from the selected pattern token</td>
 </tr>
 </tbody>
 </table>
@@ -1013,13 +1010,14 @@
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Scalar range</strong>: <code>scalar</code> MUST be in the range <code>[0, 16]</code>. Values outside this range produce all-1 (if scalar ≤ 0) or all-0 (if scalar ≥ 16) predicates.</li>
-<li><strong>Predicate width</strong>: The produced predicate is 16 bits wide. Programs that need wider predicates MUST use <code>ppack</code> to combine multiple <code>_b16</code> results.</li>
-<li><strong>No side effect on scalar</strong>: Unlike <code>plt_b16</code>, this operation does NOT modify the scalar operand.</li>
+<li>The installed public CCE API accepts documented <code>Pat*</code> marker types only; there is no public runtime-scalar overload for <code>pge_b16</code> in the shipped 3510 header.</li>
+<li>Programs must use a pattern token that is valid for the selected target profile.</li>
+<li>This operation materializes a predicate register only; it does not update any scalar input in place.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Illegal if <code>scalar</code> is outside the range <code>[0, 16]</code> for the target profile.</li>
+<li>Illegal if the pattern token is not supported by the selected target profile.</li>
+<li>Illegal if the result is consumed in a predicate-width context that the selected backend does not support.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <table>
@@ -1033,41 +1031,25 @@
 </thead>
 <tbody>
 <tr>
-<td>Dynamic predicate generation</td>
+<td>Pattern-token predicate generation</td>
 <td style="text-align: center;">Simulated</td>
 <td style="text-align: center;">Supported</td>
 <td style="text-align: center;">Supported</td>
 </tr>
 <tr>
-<td>16-bit predicate width</td>
+<td>Public CCE surface</td>
+<td style="text-align: center;">Emulated</td>
 <td style="text-align: center;">Supported</td>
 <td style="text-align: center;">Supported</td>
-<td style="text-align: center;">Supported</td>
-</tr>
-<tr>
-<td>Scalar range enforcement</td>
-<td style="text-align: center;">Enforced</td>
-<td style="text-align: center;">Enforced</td>
-<td style="text-align: center;">Enforced</td>
 </tr>
 </tbody>
 </table>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="tail-mask-for-remainder-loop-f16bf16">Tail mask for remainder loop (f16/bf16)<a class="headerlink" href="#tail-mask-for-remainder-loop-f16bf16" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
-using namespace pto;
-
-void generate_tail_mask(RegBuf&lt;predicate_t&gt;&amp; dst, int16_t remainder) {
-    // remainder lanes active (i &gt;= (16 - remainder))
-    PGE_B16(dst, 16 - remainder);
-}
+<h3 id="c-usage">C++ usage<a class="headerlink" href="#c-usage" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">vector_bool mask = pge_b16(__cce_simd::PAT_VL8);
 </code></pre>
 <h3 id="ssa-form">SSA form<a class="headerlink" href="#ssa-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// %rem holds the remainder count
-%tail = pto.pge_b16 %rem : i16 -&gt; !pto.mask
-
-// Use in predicated vector operation on f16 (128 lanes = 8 × 16-bit predicates)
-%result = pto.vsel %v_true, %v_false, %tail : !pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf16&gt;
+<pre><code class="language-mlir">%mask = pto.pge_b16 &quot;PAT_VL8&quot; : !pto.mask
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>

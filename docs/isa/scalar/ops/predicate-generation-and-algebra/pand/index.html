@@ -962,7 +962,7 @@
 <p>The third operand (<code>%mask</code>) in the syntax is an optional masking predicate for the scalar and control instructions; the core boolean operation is <code>src0 AND src1</code>.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pand %dst, %src0, %src1 : !pto.mask, !pto.mask, !pto.mask
+<pre><code class="language-mlir">%dst = pto.pand %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%dst = pto.pand %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
@@ -971,11 +971,11 @@
 <pre><code class="language-mlir">pto.pand ins(%src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask) outs(%dst : !pto.mask)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">PTO_INST void PAND(RegBuf&lt;predicate_t&gt;&amp; dst,
-                    const RegBuf&lt;predicate_t&gt;&amp; src0,
-                    const RegBuf&lt;predicate_t&gt;&amp; src1,
-                    const RegBuf&lt;predicate_t&gt;&amp; mask);
+<pre><code class="language-cpp">vector_bool dst;
+vector_bool src0;
+vector_bool src1;
+vector_bool mask;
+pand(dst, src0, src1, mask);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>

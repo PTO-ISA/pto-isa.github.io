@@ -965,16 +965,16 @@
 <p>The consumer pipeline holds the buffer until a matching <code>rls_buf</code> is issued. Buffer IDs use program order and the double-buffering protocol to implicitly resolve RAW and WAR dependencies — no explicit event IDs are required.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">get_buf %buf_id, &quot;PIPE_*&quot;, %mode : i64, i64
+<pre><code class="language-mlir">pto.get_buf %buf_id, &quot;PIPE_*&quot;, %mode : i64, i64
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">pto.get_buf %buf_id, &quot;PIPE_*&quot;, %mode : i64, i64
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">PTO_INST void GET_BUF(int64_t buf_id,
-                      pipe_t consumer_pipe,
-                      int64_t mode);
+<pre><code class="language-cpp">pipe_t pipe = PIPE_S;
+uint64_t bufId = 0;
+bool mode = true;
+get_buf(pipe, bufId, mode);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>

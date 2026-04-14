@@ -812,9 +812,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#software-pipelined-remainder-loop-f16bf16">Software-pipelined remainder loop (f16/bf16)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#c-usage">C++ usage</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#chained-remainder-loop">Chained remainder loop</a>
+    <li class="toctree-l4"><a class="reference internal" href="#ssa-form">SSA form</a>
     </li>
         </ul>
     </li>
@@ -955,26 +955,23 @@
 <h1 id="ptoplt_b16">pto.plt_b16<a class="headerlink" href="#ptoplt_b16" title="Permanent link">&para;</a></h1>
 <p><code>pto.plt_b16</code> is part of the <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Generate a dynamic 16-bit predicate with lane index less-than comparison, and atomically decrement the scalar operand.</p>
+<p>Generate a 16-bit tail predicate from a runtime element count and update the scalar through a post-update reference.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.plt_b16</code> compares the lane index against a runtime scalar value and produces a predicate where active lanes satisfy <code>i &lt; scalar</code>, then decrements the scalar by 16.</p>
-<p>For lane index <code>i</code> (0 ≤ i &lt; 16) and scalar threshold <code>s</code>:</p>
-<div class="arithmatex">\[ \mathrm{mask}_i = \begin{cases} 1 &amp; \text{if } i &lt; s \\ 0 &amp; \text{if } i \geq s \end{cases} $$
-$$ s_{\mathrm{out}} = s - 16 \]</div>
+<p>The installed 3510 Bisheng CCE header exposes <code>plt_b16</code> as <code>vector_bool plt_b16(uint32_t &amp;scalar, __cce_simd::POST_UPDATE)</code>. The call returns a predicate mask and writes the updated scalar value back through the reference argument.</p>
+<p>In practice, this is the public CCE helper used for remainder-mask generation: the returned mask enables the currently active lanes, and the scalar reference carries the post-update state into the next step.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">plt_b16 %dst, %scalar_in : !pto.mask, i16 -&gt; !pto.mask, i16
+<pre><code class="language-mlir">%mask, %scalar_out = pto.plt_b16 %scalar_in {post_update} : i32 -&gt; !pto.mask, i32
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask, %scalar_out = pto.plt_b16 %scalar_in : i16 -&gt; !pto.mask, i16
+<pre><code class="language-mlir">%mask, %scalar_out = pto.plt_b16 %scalar_in {post_update} : i32 -&gt; !pto.mask, i32
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.plt_b16 ins(%scalar_in : i16) outs(%mask, %scalar_out : !pto.mask, i16)
+<pre><code class="language-mlir">pto.plt_b16 ins(%scalar_in : i32) outs(%mask, %scalar_out : !pto.mask, i32)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">PTO_INST void PLT_B16(RegBuf&lt;predicate_t&gt;&amp; dst,
-                      int16_t&amp; scalar_inout);
+<pre><code class="language-cpp">uint32_t scalar = elementCount;
+vector_bool mask = plt_b16(scalar, __cce_simd::POST_UPDATE);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -988,8 +985,13 @@ $$ s_{\mathrm{out}} = s - 16 \]</div>
 <tbody>
 <tr>
 <td><code>%scalar_in</code></td>
-<td><code>i16</code></td>
-<td>Lane-index threshold; lanes i &lt; scalar_in are active</td>
+<td><code>i32</code></td>
+<td>Runtime element count carried into the predicate generator</td>
+</tr>
+<tr>
+<td><code>post_update</code></td>
+<td>attribute</td>
+<td>Indicates the public CCE post-update form that writes <code>scalar_out</code> back through the reference</td>
 </tr>
 </tbody>
 </table>
@@ -1006,29 +1008,29 @@ $$ s_{\mathrm{out}} = s - 16 \]</div>
 <tr>
 <td><code>%mask</code></td>
 <td><code>!pto.mask</code></td>
-<td>16-bit predicate with active lanes below threshold</td>
+<td>16-bit predicate generated from the current scalar value</td>
 </tr>
 <tr>
 <td><code>%scalar_out</code></td>
-<td><code>i16</code></td>
-<td>Decremented scalar: <code>scalar_in - 16</code></td>
+<td><code>i32</code></td>
+<td>Scalar value after the intrinsic's post-update step</td>
 </tr>
 </tbody>
 </table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The scalar operand is <strong>modified in place</strong>: <code>scalar_out = scalar_in - 16</code>.</li>
+<li>The public CCE call updates the scalar reference argument in place.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Scalar range</strong>: <code>scalar_in</code> MUST be in the range <code>[0, 16]</code>. After subtraction, <code>scalar_out</code> may be negative.</li>
-<li><strong>Chain requirement</strong>: Programs MUST use <code>scalar_out</code> from one iteration as <code>scalar_in</code> of the next. Breaking the chain produces <strong>implementation-defined</strong> predicates.</li>
-<li><strong>Predicate width</strong>: The produced predicate is 16 bits wide. For wider predicates, use <code>ppack</code>.</li>
+<li>The installed public CCE surface for <code>plt_b16</code> uses a <code>uint32_t &amp;</code> scalar plus <code>__cce_simd::POST_UPDATE</code>.</li>
+<li>Programs that chain multiple <code>plt_b16</code> calls must thread the updated scalar value forward explicitly.</li>
+<li>The returned predicate width is fixed by the <code>_b16</code> suffix.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Illegal if <code>scalar_in</code> is outside the range <code>[0, 16]</code> for the target profile.</li>
-<li>Illegal if the scalar chain is broken.</li>
+<li>Illegal if the selected target profile does not support the requested predicate width.</li>
+<li>Illegal if the post-update scalar state is consumed in a way that breaks the required chaining discipline.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <table>
@@ -1042,45 +1044,26 @@ $$ s_{\mathrm{out}} = s - 16 \]</div>
 </thead>
 <tbody>
 <tr>
-<td>Dynamic predicate generation</td>
+<td>Tail-predicate helper</td>
 <td style="text-align: center;">Simulated</td>
 <td style="text-align: center;">Supported</td>
 <td style="text-align: center;">Supported</td>
 </tr>
 <tr>
-<td>Scalar decrement</td>
-<td style="text-align: center;">Simulated</td>
-<td style="text-align: center;">Supported</td>
-<td style="text-align: center;">Supported</td>
-</tr>
-<tr>
-<td>16-bit predicate width</td>
-<td style="text-align: center;">Supported</td>
+<td>Public post-update scalar form</td>
+<td style="text-align: center;">Emulated</td>
 <td style="text-align: center;">Supported</td>
 <td style="text-align: center;">Supported</td>
 </tr>
 </tbody>
 </table>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="software-pipelined-remainder-loop-f16bf16">Software-pipelined remainder loop (f16/bf16)<a class="headerlink" href="#software-pipelined-remainder-loop-f16bf16" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
-using namespace pto;
-
-void process_remainder(int16_t&amp; rem, RegBuf&lt;predicate_t&gt;&amp; mask) {
-    // rem = remainder count
-    // predicate: lanes 0..(rem-1) active
-    // rem = rem - 16
-    PLT_B16(mask, rem);
-}
+<h3 id="c-usage">C++ usage<a class="headerlink" href="#c-usage" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">uint32_t scalar = elementCount;
+vector_bool mask = plt_b16(scalar, __cce_simd::POST_UPDATE);
 </code></pre>
-<h3 id="chained-remainder-loop">Chained remainder loop<a class="headerlink" href="#chained-remainder-loop" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Iteration 1: rem = 28
-//   mask: 16 lanes active, rem_out = 12
-%mask1, %rem1 = pto.plt_b16 %rem0 : i16 -&gt; !pto.mask, i16
-
-// Iteration 2: rem = 12
-//   mask: 12 lanes active, rem_out = -4
-%mask2, %rem2 = pto.plt_b16 %rem1 : i16 -&gt; !pto.mask, i16
+<h3 id="ssa-form">SSA form<a class="headerlink" href="#ssa-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%mask, %scalar_out = pto.plt_b16 %scalar_in {post_update} : i32 -&gt; !pto.mask, i32
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>

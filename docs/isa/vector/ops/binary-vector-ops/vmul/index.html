@@ -526,6 +526,16 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -539,30 +549,6 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax_1">Syntax</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs_1">Inputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs_1">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects_1">Side Effects</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#constraints_1">Constraints</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions_1">Exceptions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions_1">Target-Profile Restrictions</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#a5-latency">A5 Latency</a>
@@ -573,7 +559,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#c-semantics">C Semantics</a>
+    <li class="toctree-l4"><a class="reference internal" href="#c-style-semantics">C-style semantics</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mlir-form">MLIR form</a>
     </li>
         </ul>
     </li>
@@ -975,49 +963,29 @@
 <h1 id="ptovmul">pto.vmul<a class="headerlink" href="#ptovmul" title="Permanent link">&para;</a></h1>
 <p><code>pto.vmul</code> is part of the <a href="../../../binary-vector-ops/">Binary Vector Instructions</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> is the lane-wise product.</p>
+<p>Lane-wise multiplication of two vector registers under a predicate mask.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vmul</code> is a <code>pto.v*</code> compute operation. It applies its semantics to active lanes, obeys the instruction set operand model, and returns its results in vector-register or mask form.</p>
+<p><code>pto.vmul</code> is a <code>pto.v*</code> compute operation. It multiplies <code>%lhs</code> and <code>%rhs</code> element-by-element on active lanes and returns the product vector. The PTO contract for this page uses zeroing predication: lanes masked off by <code>%mask</code> produce zero in <code>%result</code>.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%result = pto.vmul %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
-<p>Documented A5 types or forms: <code>i16-i32, f16, bf16, f32 (**NOT** i8/u8)</code>.</p>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%lhs</code> and <code>%rhs</code> are multiplied lane-wise; <code>%mask</code> selects
-  active lanes.</p>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> is the lane-wise product.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
-<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>The current A5 profile excludes <code>i8/u8</code>
-  forms from this instruction set.</p>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
-<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
-</ul>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Documented A5 coverage: <code>i16-i32, f16, bf16, f32 (**NOT** i8/u8)</code>.</li>
-<li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
-</ul>
-<h2 id="syntax_1">Syntax<a class="headerlink" href="#syntax_1" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-asm">vmul %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;
+<pre><code class="language-mlir">%result = pto.vmul %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vmul %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
+<pre><code class="language-mlir">%result = pto.vmul %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">pto.vmul ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
-    outs(%result : !pto.vreg&lt;NxT&gt;)
+         outs(%result : !pto.vreg&lt;NxT&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">PTO_VMUL_IMPL(result, lhs, rhs, mask);
+<p>The installed Bisheng public intrinsic is <code>vmul(...)</code>; use an explicit predicate mode when you want the PTO zeroing behavior described on this page.</p>
+<pre><code class="language-cpp">vector_f32 dst;
+vector_f32 src0;
+vector_f32 src1;
+vector_bool mask;
+vmul(dst, src0, src1, mask, __cce_simd::MODE_ZEROING);
 </code></pre>
-<h2 id="inputs_1">Inputs<a class="headerlink" href="#inputs_1" title="Permanent link">&para;</a></h2>
+<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1035,17 +1003,17 @@
 <tr>
 <td><code>%rhs</code></td>
 <td><code>!pto.vreg&lt;NxT&gt;</code></td>
-<td>Second source vector (multiplied with <code>%lhs</code> lane-wise)</td>
+<td>Second source vector</td>
 </tr>
 <tr>
 <td><code>%mask</code></td>
 <td><code>!pto.mask&lt;G&gt;</code></td>
-<td>Predication mask; inactive lanes produce zero</td>
+<td>Predicate mask; active lanes are multiplied, inactive lanes are zeroed</td>
 </tr>
 </tbody>
 </table>
-<p>Documented A5 types: <code>i16-i32</code>, <code>f16</code>, <code>bf16</code>, <code>f32</code> (<strong>NOT</strong> <code>i8</code>/<code>u8</code>).</p>
-<h2 id="expected-outputs_1">Expected Outputs<a class="headerlink" href="#expected-outputs_1" title="Permanent link">&para;</a></h2>
+<p>Documented A5 types or forms: <code>i16-i32</code>, <code>f16</code>, <code>bf16</code>, <code>f32</code> (<strong>not</strong> <code>i8</code> / <code>u8</code>).</p>
+<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1062,24 +1030,25 @@
 </tr>
 </tbody>
 </table>
-<h2 id="side-effects_1">Side Effects<a class="headerlink" href="#side-effects_1" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
-<h2 id="constraints_1">Constraints<a class="headerlink" href="#constraints_1" title="Permanent link">&para;</a></h2>
+<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
+<p>This operation has no architectural side effect beyond producing its destination vector register. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
+<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Source and result element types MUST match.</li>
-<li>The A5 profile excludes <code>i8</code>/<code>u8</code> forms from this instruction set.</li>
-<li><code>mask[i] == 0</code> lanes in the result are set to zero (zero-merge predication model).</li>
+<li><code>%lhs</code>, <code>%rhs</code>, and <code>%result</code> MUST have the same vector shape and element type.</li>
+<li><code>%mask</code> MUST be legal for the selected vector width.</li>
+<li>The documented A5 profile excludes <code>i8</code> / <code>u8</code> forms for this operation.</li>
+<li>Inactive lanes follow the zeroing semantics described by this PTO page.</li>
 </ul>
-<h2 id="exceptions_1">Exceptions<a class="headerlink" href="#exceptions_1" title="Permanent link">&para;</a></h2>
+<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
-<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
+<li>Any additional illegality stated in the <a href="../../../binary-vector-ops/">Binary Vector Instructions</a> page is also part of the contract.</li>
 </ul>
-<h2 id="target-profile-restrictions_1">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions_1" title="Permanent link">&para;</a></h2>
+<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Documented A5 coverage: <code>i16-i32</code>, <code>f16</code>, <code>bf16</code>, <code>f32</code> (<strong>NOT</strong> <code>i8</code>/<code>u8</code>).</li>
-<li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
+<li>Documented A5 coverage: <code>i16-i32</code>, <code>f16</code>, <code>bf16</code>, <code>f32</code>.</li>
+<li>CPU simulation and A2/A3-class targets may emulate the visible PTO contract in software.</li>
+<li>Code that depends on exact latency or element-type coverage should treat that dependency as target-profile-specific.</li>
 </ul>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
@@ -1151,18 +1120,20 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="c-semantics">C Semantics<a class="headerlink" href="#c-semantics" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] * src1[i];
+<h3 id="c-style-semantics">C-style semantics<a class="headerlink" href="#c-style-semantics" title="Permanent link">&para;</a></h3>
+<pre><code class="language-c">for (int i = 0; i &lt; N; ++i)
+  dst[i] = mask[i] ? lhs[i] * rhs[i] : 0;
 </code></pre>
-<p>Integer overflow follows the target-defined behavior. Predicated lanes (where <code>mask[i] == 0</code>) produce zero in the destination.</p>
+<h3 id="mlir-form">MLIR form<a class="headerlink" href="#mlir-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%prod = pto.vmul %x, %y, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../binary-vector-ops/">Binary Vector Instructions</a></li>
 <li>Previous op in instruction set: <a href="../vsub/">pto.vsub</a></li>
 <li>Next op in instruction set: <a href="../vdiv/">pto.vdiv</a></li>
+<li>Vector instruction overview: <a href="../../../../instruction-surfaces/vector-instructions/">Vector Instructions</a></li>
 </ul>
               
             </div>

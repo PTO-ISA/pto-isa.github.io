@@ -830,9 +830,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#separate-two-8-bit-predicate-contexts">Separate two 8-bit predicate contexts</a>
+    <li class="toctree-l4"><a class="reference internal" href="#c-usage">C++ usage</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ssa-form-two-phase-predicate-processing">SSA form — two-phase predicate processing</a>
+    <li class="toctree-l4"><a class="reference internal" href="#ssa-form">SSA form</a>
     </li>
         </ul>
     </li>
@@ -955,28 +955,29 @@
 <h1 id="ptopdintlv_b8">pto.pdintlv_b8<a class="headerlink" href="#ptopdintlv_b8" title="Permanent link">&para;</a></h1>
 <p><code>pto.pdintlv_b8</code> is part of the <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Predicate deinterleave: split one 16-bit predicate register into two 8-bit predicate registers by separating alternating bits.</p>
+<p>Deinterleave two predicate sources and materialize the lower and higher result halves as two predicate outputs.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.pdintlv_b8</code> deinterleaves a 16-bit predicate register into two 8-bit predicates by distributing alternating bits. Lane <code>i</code> from the lower half goes to the first output; lane <code>i</code> from the upper half goes to the second output.</p>
-<p>For a 16-bit predicate <code>src</code> and 0 ≤ i &lt; 8:</p>
-<div class="arithmatex">\[ \mathrm{dst0}_i = \mathrm{src}_i $$
-$$ \mathrm{dst1}_i = \mathrm{src}_{i+8} \]</div>
-<p>This operation is used when processing 16-bit-wide data with two independent 8-bit predicate contexts, or when separating even/odd lane groups for multi-step processing.</p>
+<p>The installed 3510 Bisheng CCE header exposes <code>pdintlv_b8</code> as a four-operand, two-result helper:</p>
+<ul>
+<li><code>void pdintlv_b8(vector_bool &amp;dst0, vector_bool &amp;dst1, vector_bool src0, vector_bool src1);</code></li>
+</ul>
+<p>The public call surface therefore models <code>pto.pdintlv_b8</code> as a paired-result operation. <code>dst0</code> receives the lower deinterleaved half and <code>dst1</code> receives the upper deinterleaved half produced from <code>src0</code> and <code>src1</code>.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pdintlv_b8 %dst0, %dst1, %src : !pto.mask, !pto.mask, !pto.mask
+<pre><code class="language-mlir">%dst0, %dst1 = pto.pdintlv_b8 %src0, %src1 : !pto.mask, !pto.mask -&gt; !pto.mask, !pto.mask
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst0, %dst1 = pto.pdintlv_b8 %src : !pto.mask -&gt; !pto.mask, !pto.mask
+<pre><code class="language-mlir">%dst0, %dst1 = pto.pdintlv_b8 %src0, %src1 : !pto.mask, !pto.mask -&gt; !pto.mask, !pto.mask
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.pdintlv_b8 ins(%src : !pto.mask) outs(%dst0, %dst1 : !pto.mask, !pto.mask)
+<pre><code class="language-mlir">pto.pdintlv_b8 ins(%src0, %src1 : !pto.mask, !pto.mask) outs(%dst0, %dst1 : !pto.mask, !pto.mask)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">PTO_INST void PDINTLV_B8(RegBuf&lt;predicate_t&gt;&amp; dst0,
-                         RegBuf&lt;predicate_t&gt;&amp; dst1,
-                         const RegBuf&lt;predicate_t&gt;&amp; src);
+<pre><code class="language-cpp">vector_bool dst0;
+vector_bool dst1;
+vector_bool src0;
+vector_bool src1;
+pdintlv_b8(dst0, dst1, src0, src1);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -989,9 +990,14 @@ $$ \mathrm{dst1}_i = \mathrm{src}_{i+8} \]</div>
 </thead>
 <tbody>
 <tr>
-<td><code>%src</code></td>
+<td><code>%src0</code></td>
 <td><code>!pto.mask</code></td>
-<td>16-bit source predicate register</td>
+<td>First predicate source</td>
+</tr>
+<tr>
+<td><code>%src1</code></td>
+<td><code>!pto.mask</code></td>
+<td>Second predicate source</td>
 </tr>
 </tbody>
 </table>
@@ -1008,12 +1014,12 @@ $$ \mathrm{dst1}_i = \mathrm{src}_{i+8} \]</div>
 <tr>
 <td><code>%dst0</code></td>
 <td><code>!pto.mask</code></td>
-<td>Lower 8 bits: <code>src[0..7]</code></td>
+<td>Lower result half returned by the deinterleave helper</td>
 </tr>
 <tr>
 <td><code>%dst1</code></td>
 <td><code>!pto.mask</code></td>
-<td>Upper 8 bits: <code>src[8..15]</code></td>
+<td>Upper result half returned by the deinterleave helper</td>
 </tr>
 </tbody>
 </table>
@@ -1021,13 +1027,12 @@ $$ \mathrm{dst1}_i = \mathrm{src}_{i+8} \]</div>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Source width</strong>: The source predicate MUST be 16 bits. Sources of other widths are <strong>illegal</strong>.</li>
-<li><strong>Destination width</strong>: Both destination predicates are 8 bits.</li>
-<li><strong>Relationship</strong>: <code>pdintlv_b8</code> is the inverse of <code>pintlv_b16</code>.</li>
+<li>The installed public CCE helper for <code>pdintlv_b8</code> returns two predicate results, not a single input-to-two-output split from one predicate operand.</li>
+<li>Source and destination predicate widths must match the <code>_b8</code> variant selected by the instruction.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Illegal if the source predicate width is not 16 bits.</li>
+<li>Illegal if the selected target profile does not support the requested predicate-deinterleave form.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <table>
@@ -1041,35 +1046,29 @@ $$ \mathrm{dst1}_i = \mathrm{src}_{i+8} \]</div>
 </thead>
 <tbody>
 <tr>
-<td>Predicate deinterleave (b8)</td>
+<td>Predicate deinterleave helper</td>
 <td style="text-align: center;">Simulated</td>
+<td style="text-align: center;">Supported</td>
+<td style="text-align: center;">Supported</td>
+</tr>
+<tr>
+<td>Public two-result CCE surface</td>
+<td style="text-align: center;">Emulated</td>
 <td style="text-align: center;">Supported</td>
 <td style="text-align: center;">Supported</td>
 </tr>
 </tbody>
 </table>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="separate-two-8-bit-predicate-contexts">Separate two 8-bit predicate contexts<a class="headerlink" href="#separate-two-8-bit-predicate-contexts" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
-using namespace pto;
-
-void split_predicate(RegBuf&lt;predicate_t&gt;&amp; dst0,
-                     RegBuf&lt;predicate_t&gt;&amp; dst1,
-                     const RegBuf&lt;predicate_t&gt;&amp; src16) {
-    PDINTLV_B8(dst0, dst1, src16);
-}
+<h3 id="c-usage">C++ usage<a class="headerlink" href="#c-usage" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">vector_bool dst0;
+vector_bool dst1;
+vector_bool src0;
+vector_bool src1;
+pdintlv_b8(dst0, dst1, src0, src1);
 </code></pre>
-<h3 id="ssa-form-two-phase-predicate-processing">SSA form — two-phase predicate processing<a class="headerlink" href="#ssa-form-two-phase-predicate-processing" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// %src16: 16-bit predicate from some comparison
-
-// Phase 1: process lower 8 lanes
-%lo, %hi = pto.pdintlv_b8 %src16 : !pto.mask -&gt; !pto.mask, !pto.mask
-
-// Use %lo for first phase of vector computation
-%result_lo = pto.vsel %v_a_lo, %v_b_lo, %lo : !pto.vreg&lt;8xf32&gt;, !pto.vreg&lt;8xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;8xf32&gt;
-
-// Use %hi for second phase of vector computation
-%result_hi = pto.vsel %v_a_hi, %v_b_hi, %hi : !pto.vreg&lt;8xf32&gt;, !pto.vreg&lt;8xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;8xf32&gt;
+<h3 id="ssa-form">SSA form<a class="headerlink" href="#ssa-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%dst0, %dst1 = pto.pdintlv_b8 %src0, %src1 : !pto.mask, !pto.mask -&gt; !pto.mask, !pto.mask
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>

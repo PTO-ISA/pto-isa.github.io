@@ -965,14 +965,16 @@
 <p><strong>Key advantage over A2A3</strong>: A5's <code>wait_intra_core</code> enables finer-grained parallelism where multiple pipelines can be in different synchronization states simultaneously.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">wait_intra_core %pipe, %sem_id : i64, i64
+<pre><code class="language-mlir">pto.wait_intra_core %pipe, %sem_id : i64, i64
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">pto.wait_intra_core %pipe, %sem_id : i64, i64
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">PTO_INST void WAIT_INTRA_CORE(pipe_t wait_pipe, int64_t sem_id);
+<p>The installed 3510 public CCE headers spell this operation as <code>wait_intra_block(...)</code>. The PTO page keeps the <code>wait_intra_core</code> ISA name, but the call surface below is the public Bisheng entry point that is actually shipped.</p>
+<pre><code class="language-cpp">pipe_t pipe = PIPE_V;
+uint64_t syncId = 0;
+wait_intra_block(pipe, syncId);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>

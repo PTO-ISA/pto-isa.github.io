@@ -964,7 +964,7 @@ $$ \mathrm{WRITE\_UB}_{64}(\mathrm{addr}, mask) \]</div>
 <p>The predicate register is read atomically. Only bits within the current element-type predicate width are transferred.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pst %mask, %ub_ptr[%areg], &quot;DIST&quot; : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32
+<pre><code class="language-mlir">pto.pst %mask, %ub_ptr, %areg, &quot;DIST&quot; : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">pto.pst %mask, %ub_ptr, %areg, &quot;DIST&quot; : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32
@@ -973,11 +973,10 @@ $$ \mathrm{WRITE\_UB}_{64}(\mathrm{addr}, mask) \]</div>
 <pre><code class="language-mlir">pto.pst ins(%mask, %ub_ptr, %areg, &quot;DIST&quot; : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">PTO_INST void PST(RegBuf&lt;predicate_t&gt;&amp; src,
-                   const Ptr&lt;ub_space_t, ub_t&gt;&amp; base,
-                   int32_t areg,
-                   const char* dist = &quot;PK&quot;);
+<pre><code class="language-cpp">vector_bool src;
+__ubuf__ uint32_t *base;
+vector_address offset;
+pst(src, base, offset, __cce_simd::NORM);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
