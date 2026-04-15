@@ -453,11 +453,15 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#timing-disclosure">Timing Disclosure</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#dual-loads-deinterleave">Dual Loads (Deinterleave)</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -973,6 +977,32 @@
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
 <li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
 </ul>
+<h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
+<h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
+<p>The current public VPTO timing sources for <code>pto.vldus</code> are <code>~/visa.txt</code> and <code>PTOAS/docs/vpto-spec.md</code> on the latest fetched <code>feature_vpto_backend</code> branch.
+It does <strong>not</strong> publish a standalone numeric latency for <code>pto.vldus</code>, but it does publish the throughput contract for the <code>pto.vldas</code>-primed unaligned load stream that <code>pto.vldus</code> participates in.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Source Basis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A5 standalone latency</td>
+<td>Not publicly published</td>
+<td>Current public VPTO timing material</td>
+</tr>
+<tr>
+<td>Stream throughput with matching <code>pto.vldas</code> primer</td>
+<td>One CPI for each subsequent unaligned load instruction</td>
+<td>Public ISA timing note for the primed unaligned-load stream</td>
+</tr>
+</tbody>
+</table>
+<p>When documentation or scheduling depends on the throughput claim, treat it as a property of the <strong>primed unaligned-load stream</strong>, not as an isolated latency guarantee for <code>pto.vldus</code> alone.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <pre><code class="language-mlir">%align = pto.vldas %ub : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
 %vec, %align2, %ub2 = pto.vldus %ub, %align : !pto.ptr&lt;f32, ub&gt;, !pto.align -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align, !pto.ptr&lt;f32, ub&gt;
@@ -982,7 +1012,6 @@
 <pre><code class="language-mlir">%align = pto.vldas %ub : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
 %vec, %align2, %ub2 = pto.vldus %ub, %align : !pto.ptr&lt;f32, ub&gt;, !pto.align -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align, !pto.ptr&lt;f32, ub&gt;
 </code></pre>
-<h2 id="dual-loads-deinterleave">Dual Loads (Deinterleave)<a class="headerlink" href="#dual-loads-deinterleave" title="Permanent link">&para;</a></h2>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../vector-load-store/">Vector Load Store</a></li>

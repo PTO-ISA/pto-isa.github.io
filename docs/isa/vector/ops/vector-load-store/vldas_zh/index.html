@@ -920,7 +920,33 @@
 <li>UB 地址空间与对齐要求必须满足。</li>
 <li>DMA 与向量计算之间的顺序边必须显式建立。</li>
 </ul>
-<h2 id="_3">相关页面<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p><code>pto.vldas</code> 当前可公开对齐的 VPTO 时序来源是 <code>~/visa.txt</code> 与 <code>PTOAS</code> <code>feature_vpto_backend</code> 分支上的 <code>docs/vpto-spec.md</code>。
+这些来源<strong>没有</strong>给出 <code>pto.vldas</code> 本身的独立数字时延，但 <code>visa.txt</code> 对它所引导的非对齐加载流给出了明确吞吐约束。</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>取值</th>
+<th>来源依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A5 初始化指令时延</td>
+<td>公开来源未给出</td>
+<td><code>visa.txt</code>、<code>PTOAS/docs/vpto-spec.md</code></td>
+</tr>
+<tr>
+<td>后续非对齐加载吞吐</td>
+<td>同一流中的后续非对齐加载指令达到 one-CPI</td>
+<td><code>visa.txt</code> §7.5 <code>VLDAS</code></td>
+</tr>
+</tbody>
+</table>
+<p>因此，<code>pto.vldas</code> 的公开时序语义应理解为<strong>流初始化指令</strong>：已披露的是后续非对齐加载流的吞吐，而不是该 setup 指令自身的独立周期常数。</p>
+<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../../vector-load-store_zh/">向量加载存储指令集</a></li>
 </ul>
