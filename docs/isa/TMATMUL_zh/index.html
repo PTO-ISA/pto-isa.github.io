@@ -910,13 +910,117 @@
               
                 <!-- Generated from `docs/isa/TMATMUL_zh.md` -->
 
-<h1 id="ptotmatmul">pto.tmatmul<a class="headerlink" href="#ptotmatmul" title="Permanent link">&para;</a></h1>
-<p>旧路径兼容入口。规范页见 <a href="../tile/ops/matrix-and-matrix-vector/tmatmul_zh/">pto.tmatmul</a>。</p>
+<h1 id="tmatmul">TMATMUL<a class="headerlink" href="#tmatmul" title="Permanent link">&para;</a></h1>
+<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><img alt="TMATMUL tile operation" src="../../figures/isa/TMATMUL.svg" /></p>
+<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>矩阵乘法 (GEMM)，生成累加器/输出 Tile。</p>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>设：</p>
 <ul>
-<li>指令集：<a href="../tile/matrix-and-matrix-vector_zh/">矩阵与矩阵-向量指令集</a></li>
-<li>规范页：<a href="../tile/ops/matrix-and-matrix-vector/tmatmul_zh/">pto.tmatmul</a></li>
+<li><code>M = aMatrix.GetValidRow()</code></li>
+<li><code>K = aMatrix.GetValidCol()</code></li>
+<li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
+<p>对于 <code>0 &lt;= i &lt; M</code> 和 <code>0 &lt;= j &lt; N</code>（有效矩阵乘法域中的输出元素）：</p>
+<div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
+<p>精确的累加器行为和数据类型提升由目标/实现定义。</p>
+<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>同步形式：</p>
+<pre><code class="language-text">%acc = tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%c = pto.tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tmatmul ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
+
+template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
+</code></pre>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
+<li>支持的 <code>(CType, AType, BType)</code> 三元组：</li>
+<li><code>(int32_t, int8_t, int8_t)</code></li>
+<li><code>(float, half, half)</code></li>
+<li><code>(float, float, float)</code></li>
+<li><code>(float, bfloat16_t, bfloat16_t)</code></li>
+<li>静态形状约束：<code>TileLeft::Rows == TileRes::Rows</code>、<code>TileLeft::Cols == TileRight::Rows</code>、<code>TileRight::Cols == TileRes::Cols</code>。</li>
+<li>Tile 位置：<code>TileLeft::Loc == Left</code>、<code>TileRight::Loc == Right</code>、<code>TileRes::Loc == Acc</code>。</li>
+<li>运行时：<code>m/k/n</code>（取自 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code>、<code>bMatrix.GetValidCol()</code>）必须在 <code>[1, 4095]</code> 范围内。</li>
+</ul>
+</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
+<li>累加器类型必须是 <code>int32_t</code> 或 <code>float</code>。</li>
+<li>如果是 <code>int32_t</code>：<code>AType == int8_t</code> 且 <code>BType == int8_t</code>。</li>
+<li>如果是 <code>float</code>：支持 <code>half/bfloat16_t/float</code> 和选定的 fp8 对（目标定义）。</li>
+<li>静态形状约束：<code>TileLeft::Rows == TileRes::Rows</code>、<code>TileLeft::Cols == TileRight::Rows</code>、<code>TileRight::Cols == TileRes::Cols</code>。</li>
+<li>强制执行分形/布局约束：</li>
+<li>Left：<code>Loc == Left</code>、<code>!isRowMajor</code>、<code>SFractal == RowMajor</code></li>
+<li>Right：<code>Loc == Right</code>、<code>isRowMajor</code>、<code>SFractal == ColMajor</code></li>
+<li>Acc：<code>Loc == Acc</code>、<code>!isRowMajor</code>、<code>SFractal == RowMajor</code></li>
+<li>运行时：<code>m/k/n</code>（取自 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code>、<code>bMatrix.GetValidCol()</code>）必须在 <code>[1, 4095]</code> 范围内。</li>
+</ul>
+</li>
+</ul>
+<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto() {
+  using A = TileLeft&lt;half, 16, 16&gt;;
+  using B = TileRight&lt;half, 16, 16&gt;;
+  using C = TileAcc&lt;float, 16, 16&gt;;
+  A a;
+  B b;
+  C c;
+  TMATMUL(c, a, b);
+}
+</code></pre>
+<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual() {
+  using A = TileLeft&lt;half, 16, 16&gt;;
+  using B = TileRight&lt;half, 16, 16&gt;;
+  using C = TileAcc&lt;float, 16, 16&gt;;
+  A a;
+  B b;
+  C c;
+  TASSIGN(a, 0x1000);
+  TASSIGN(b, 0x2000);
+  TASSIGN(c, 0x3000);
+  TMATMUL(c, a, b);
+}
+</code></pre>
+<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
+%c = pto.tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
+# 可选（当该指令包含 tile 操作数时）：
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+%c = pto.tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%acc = tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+# AS Level 2 (DPS)
+pto.tmatmul ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
+</code></pre>
               
             </div>
           </div><footer>

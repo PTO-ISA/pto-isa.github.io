@@ -823,11 +823,9 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">TGET</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#math-semantics">Math Semantics</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#auto-chunking-2d-sliding">Auto-Chunking (2D Sliding)</a>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
     </li>
@@ -840,26 +838,14 @@
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#type-constraints">Type constraints</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#memory-constraints">Memory constraints</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ping-pong-constraints">Ping-pong constraints</a>
-    </li>
-        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#basic-usage">Basic usage</a>
+    <li class="toctree-l4"><a class="reference internal" href="#basic-usage">Basic Usage</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#large-tensor-with-auto-chunking">Large tensor with auto-chunking</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ping-pong-double-buffering_1">Ping-pong double buffering</a>
+    <li class="toctree-l4"><a class="reference internal" href="#ping-pong-double-buffering_1">Ping-pong Double Buffering</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
     </ul>
                 </li>
@@ -952,71 +938,74 @@
               
                 <!-- Generated from `docs/isa/comm/TGET.md` -->
 
-<h1 id="ptotget-tget">pto.tget / TGET<a class="headerlink" href="#ptotget-tget" title="Permanent link">&para;</a></h1>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Remote read operation: copies data from a remote NPU's global memory (GM) to local GM. <code>pto.tget</code> is the IR spelling; <code>TGET</code> is the C++ intrinsic spelling — both refer to the same operation.</p>
-<p>Data is transferred via a staging tile in the Unified Buffer (UB) as an intermediate buffer. The complete data path is:</p>
-<pre><code>remote GM ──► staging tile (UB) ──► local GM
-</code></pre>
-<h2 id="math-semantics">Math Semantics<a class="headerlink" href="#math-semantics" title="Permanent link">&para;</a></h2>
+<h1 id="tget">TGET<a class="headerlink" href="#tget" title="Permanent link">&para;</a></h1>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Remote read operation: read remote NPU's data to local memory. Data is transferred via a UB tile as intermediate staging buffer.</p>
+<p>When the GlobalTensor exceeds the UB tile capacity, TGET automatically performs <strong>2D sliding</strong>: chunking rows (DIM_3) and columns (DIM_4) to fit each chunk into the tile, iterating over all outer dimensions (DIM_0, DIM_1, DIM_2).</p>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
 <p>For each element <code>(i, j)</code> in the valid region:</p>
 <div class="arithmatex">\[ \mathrm{dst}^{\mathrm{local}}_{i,j} = \mathrm{src}^{\mathrm{remote}}_{i,j} \]</div>
-<h2 id="auto-chunking-2d-sliding">Auto-Chunking (2D Sliding)<a class="headerlink" href="#auto-chunking-2d-sliding" title="Permanent link">&para;</a></h2>
-<p>When the <code>GlobalTensor</code> exceeds the UB tile capacity in rows or columns, <code>TGET</code> automatically performs <strong>2D sliding</strong> — chunking along rows (DIM_3) and columns (DIM_4) to fit each chunk into the tile, iterating over all outer dimensions (DIM_0, DIM_1, DIM_2).</p>
-<p>The author does not need to manually partition the transfer. The staging tile size determines the chunk granularity.</p>
+<p>Data flow: <code>srcGlobalData (remote GM)</code> -&gt;<code>stagingTileData (UB)</code> -&gt;<code>dstGlobalData (local GM)</code></p>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
-<p>PTO-AS form (IR/assembly spelling):</p>
-<pre><code class="language-text">pto.tget %dst_local, %src_remote : (!pto.memref&lt;...&gt;, !pto.memref&lt;...&gt;)
+<p>PTO-AS form: see <a href="../../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
+<p>Synchronous form:</p>
+<pre><code class="language-text">tget %dst_local, %src_remote : (!pto.memref&lt;...&gt;, !pto.memref&lt;...&gt;)
 </code></pre>
-<p>The lowering introduces a UB staging tile for the GM→UB→GM data path. The C++ intrinsic requires an explicit <code>stagingTileData</code> (or <code>pingTile</code>/<code>pongTile</code>) operand.</p>
+<p>Lowering introduces UB staging tile(s) for the GM→UB→GM data path; the C++ intrinsic requires explicit <code>stagingTileData</code> (or <code>pingTile</code> / <code>pongTile</code>) operand(s).</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code>.</p>
+<p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code></p>
 <h3 id="single-tile-auto-chunking">Single-tile (auto-chunking)<a class="headerlink" href="#single-tile-auto-chunking" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGET(GlobalDstData &amp;dstGlobalData,
-                          GlobalSrcData &amp;srcGlobalData,
-                          TileData &amp;stagingTileData,
-                          WaitEvents&amp;... events);
+PTO_INST RecordEvent TGET(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
+                          TileData &amp;stagingTileData, WaitEvents&amp;... events);
 </code></pre>
 <h3 id="ping-pong-double-buffering">Ping-pong double buffering<a class="headerlink" href="#ping-pong-double-buffering" title="Permanent link">&para;</a></h3>
-<p>Uses two staging tiles to overlap DMA transfers for adjacent chunks, hiding transfer latency behind computation.</p>
+<p>Uses two staging tiles to overlap TLOAD and TSTORE for adjacent chunks, hiding one DMA transfer behind the other.</p>
 <pre><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGET(GlobalDstData &amp;dstGlobalData,
-                          GlobalSrcData &amp;srcGlobalData,
-                          TileData &amp;pingTile,
-                          TileData &amp;pongTile,
-                          WaitEvents&amp;... events);
+PTO_INST RecordEvent TGET(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
+                          TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
 </code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<h3 id="type-constraints">Type constraints<a class="headerlink" href="#type-constraints" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>GlobalSrcData::RawDType</code> must equal <code>GlobalDstData::RawDType</code></li>
-<li><code>TileData::DType</code> must equal <code>GlobalSrcData::RawDType</code></li>
-<li><code>GlobalSrcData::layout</code> must equal <code>GlobalDstData::layout</code></li>
+<li><strong>Type constraints</strong>:<ul>
+<li><code>GlobalSrcData::RawDType</code> must equal <code>GlobalDstData::RawDType</code>.</li>
+<li><code>TileData::DType</code> must equal <code>GlobalSrcData::RawDType</code>.</li>
+<li><code>GlobalSrcData::layout</code> must equal <code>GlobalDstData::layout</code>.</li>
 </ul>
-<h3 id="memory-constraints">Memory constraints<a class="headerlink" href="#memory-constraints" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>srcGlobalData</code> must point to a remote address (on the source NPU)</li>
-<li><code>dstGlobalData</code> must point to a local address (on the current NPU)</li>
-<li>Staging tile(s) must be pre-allocated in UB</li>
+</li>
+<li><strong>Memory constraints</strong>:<ul>
+<li><code>srcGlobalData</code> must point to remote address (on source NPU).</li>
+<li><code>dstGlobalData</code> must point to local address (on current NPU).</li>
+<li><code>stagingTileData</code> / <code>pingTile</code> / <code>pongTile</code> must be pre-allocated in Unified Buffer.</li>
 </ul>
-<h3 id="ping-pong-constraints">Ping-pong constraints<a class="headerlink" href="#ping-pong-constraints" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>pingTile</code> and <code>pongTile</code> must have identical type and dimensions</li>
-<li>They must reside at non-overlapping UB offsets</li>
+</li>
+<li><strong>Valid region</strong>:<ul>
+<li>Transfer size is determined by <code>GlobalTensor</code> shape (auto-chunked to fit tile).</li>
+</ul>
+</li>
+<li><strong>Ping-pong</strong>:<ul>
+<li><code>pingTile</code> and <code>pongTile</code> must have the same type and dimensions.</li>
+<li>Must reside at non-overlapping UB offsets.</li>
+</ul>
+</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="basic-usage">Basic usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h3>
+<h3 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
 template &lt;typename T&gt;
-void remote_read(__gm__ T* local_data, __gm__ T* remote_addr) {
-    using TileT   = Tile&lt;TileType::Vec, T, 16, 16&gt;;
-    using GShape  = Shape&lt;1, 1, 1, 16, 16&gt;;
+void example_tget(__gm__ T* local_data, __gm__ T* remote_addr) {
+    using TileT = Tile&lt;TileType::Vec, T, 16, 16&gt;;
+    using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
     using GStride = BaseShape2D&lt;T, 16, 16, Layout::ND&gt;;
+    /*
+    If the globalTensor is larger than UB Tile, TGET will perform 2D sliding automatically.
+    using GShape = Shape&lt;1, 1, 1, 4096, 4096&gt;;
+    using GStride = BaseShape2D&lt;T, 4096, 4096, Layout::ND&gt;;
+    */
     using GTensor = GlobalTensor&lt;T, GShape, GStride, Layout::ND&gt;;
 
     GTensor srcG(remote_addr);
@@ -1024,41 +1013,20 @@ void remote_read(__gm__ T* local_data, __gm__ T* remote_addr) {
     TileT stagingTile;
     TASSIGN(stagingTile, 0);
 
-    // Remote read: remote GM -&gt; staging tile -&gt; local GM
+    // Basic remote read
     comm::TGET(dstG, srcG, stagingTile);
 }
 </code></pre>
-<h3 id="large-tensor-with-auto-chunking">Large tensor with auto-chunking<a class="headerlink" href="#large-tensor-with-auto-chunking" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// GlobalTensor larger than UB tile: 2D sliding is automatic
-using GShape  = Shape&lt;1, 1, 1, 4096, 4096&gt;;
-using GStride = BaseShape2D&lt;T, 4096, 4096, Layout::ND&gt;;
-using GTensor = GlobalTensor&lt;T, GShape, GStride, Layout::ND&gt;;
-
-GTensor srcG(remote_addr);
-GTensor dstG(local_data);
-TileT stagingTile(64, 64);   // chunk size = 64x64
-TASSIGN(stagingTile, 0);
-
-// TGET automatically chunks the 4096x4096 transfer into 64x64 tiles
-comm::TGET(dstG, srcG, stagingTile);
-</code></pre>
-<h3 id="ping-pong-double-buffering_1">Ping-pong double buffering<a class="headerlink" href="#ping-pong-double-buffering_1" title="Permanent link">&para;</a></h3>
+<h3 id="ping-pong-double-buffering_1">Ping-pong Double Buffering<a class="headerlink" href="#ping-pong-double-buffering_1" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">constexpr size_t tileUBBytes = ((64 * 64 * sizeof(float) + 1023) / 1024) * 1024;
 TileT pingTile(64, 64);
 TileT pongTile(64, 64);
 TASSIGN(pingTile, 0);
-TASSIGN(pongTile, tileUBBytes);  // non-overlapping UB offsets
+TASSIGN(pongTile, tileUBBytes);  // Non-overlapping UB region
 
-// Overlaps TGET[i+1] with TGET[i] for better pipeline utilization
+// Overlaps TLOAD[i+1] with TSTORE[i] for better pipeline utilization
 comm::TGET(dstG, srcG, pingTile, pongTile);
 </code></pre>
-<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../../other/communication-and-runtime/">Communication And Runtime</a> — Instruction set overview</li>
-<li><a href="../TPUT/">TPUT</a> — Remote write (inverse operation)</li>
-<li><a href="../TBROADCAST/">TBROADCAST</a> — Broadcast from one NPU to all</li>
-<li><a href="../TGATHER/">TGATHER</a> — Gather from all NPUs to one</li>
-</ul>
               
             </div>
           </div><footer>
