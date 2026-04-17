@@ -695,8 +695,6 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
@@ -709,17 +707,19 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
+    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#timing-disclosure">Timing Disclosure</a>
+    <li class="toctree-l4"><a class="reference internal" href="#merge-4-sorted-segments">Merge 4 sorted segments</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#sort-preparation-pipeline">Sort preparation pipeline</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+    <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#merge-four-sorted-ub-segments">Merge four sorted UB segments</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-latency">A5 Latency</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#sort-then-merge-pipeline">Sort-then-merge pipeline</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-throughput">A2/A3 Throughput</a>
     </li>
         </ul>
     </li>
@@ -854,6 +854,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -961,22 +982,25 @@
 <h1 id="ptovmrgsort">pto.vmrgsort<a class="headerlink" href="#ptovmrgsort" title="Permanent link">&para;</a></h1>
 <p><code>pto.vmrgsort</code> is part of the <a href="../../../sfu-and-dsa-ops/">SFU And DSA Instructions</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Merge four pre-sorted UB segments into one sorted UB destination.</p>
+<p>Merge-sort 4 pre-sorted input vectors.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vmrgsort</code> is a UB-to-UB merge accelerator. The concrete public mnemonic exposed by the installed Bisheng headers is <code>vmrgsort4</code>, which merges four sorted sources according to the configuration word supplied by <code>%config</code>.</p>
+<p><code>pto.vmrgsort</code> performs a 4-way merge sort. It takes 4 pre-sorted input vectors from UB memory, merges them into a single sorted output vector, and writes the result back to UB.</p>
+<p><strong>Key properties:</strong>
+- Inputs MUST be pre-sorted in ascending (or descending, per <code>%config</code>) order
+- Exactly 4 input segments are merged
+- The operation is stable: equal elements retain their relative order from the original inputs
+- Sort order is controlled by the <code>%config</code> control word</p>
+<p><strong>Control word (<code>%config</code>):</strong>
+- Encodes sort order direction (ASC/DESC)
+- May encode element width and comparison mode
+- See the target-profile specification for the full bit-field layout</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config : (!pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64) -&gt; ()
+<pre><code class="language-asm">vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config : (!pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64) -&gt; ()
-</code></pre>
-<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>The installed Bisheng public intrinsic spelling is <code>vmrgsort4(...)</code>; one common overload takes an array of four UB source pointers plus a packed configuration word.</p>
-<pre><code class="language-cpp">__ubuf__ float *dst;
-__ubuf__ float *src[4];
-uint64_t config;
-vmrgsort4(dst, src, config);
+<pre><code class="language-mlir">pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config
+    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -991,103 +1015,136 @@ vmrgsort4(dst, src, config);
 <tr>
 <td><code>%dest</code></td>
 <td><code>!pto.ptr&lt;T, ub&gt;</code></td>
-<td>UB destination buffer for merged output</td>
+<td>UB destination pointer for merged output</td>
 </tr>
 <tr>
 <td><code>%src0</code></td>
 <td><code>!pto.ptr&lt;T, ub&gt;</code></td>
-<td>First pre-sorted source segment</td>
+<td>First pre-sorted input segment</td>
 </tr>
 <tr>
 <td><code>%src1</code></td>
 <td><code>!pto.ptr&lt;T, ub&gt;</code></td>
-<td>Second pre-sorted source segment</td>
+<td>Second pre-sorted input segment</td>
 </tr>
 <tr>
 <td><code>%src2</code></td>
 <td><code>!pto.ptr&lt;T, ub&gt;</code></td>
-<td>Third pre-sorted source segment</td>
+<td>Third pre-sorted input segment</td>
 </tr>
 <tr>
 <td><code>%src3</code></td>
 <td><code>!pto.ptr&lt;T, ub&gt;</code></td>
-<td>Fourth pre-sorted source segment</td>
+<td>Fourth pre-sorted input segment</td>
 </tr>
 <tr>
 <td><code>%count</code></td>
 <td><code>i64</code></td>
-<td>Element count per source segment in the PTO surface</td>
+<td>Number of valid elements per input segment</td>
 </tr>
 <tr>
 <td><code>%config</code></td>
 <td><code>i64</code></td>
-<td>Packed configuration word controlling sort/merge behavior</td>
+<td>Sort order and comparison mode control word</td>
 </tr>
 </tbody>
 </table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>This op writes merged results to <code>%dest</code> in UB memory and returns no SSA value.</p>
+<p>This op writes UB memory directly and returns no SSA value. The sorted result is written to <code>%dest</code>.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation mutates <code>%dest</code> in UB memory. It does not reserve buffers, signal events, or establish fences beyond the visible destination write.</p>
+<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li>All four source segments MUST already be sorted according to the order encoded by <code>%config</code>.</li>
-<li>All pointers MUST target UB storage and agree on element type <code>T</code>.</li>
-<li><code>%config</code> is target-profile-specific; code that depends on its bit layout is not portable without profile documentation.</li>
-<li>The PTO family name on this page is <code>pto.vmrgsort</code>, but the concrete documented form is <code>pto.vmrgsort4</code>.</li>
+<li><strong>Pre-sorted inputs</strong>: ALL four input segments MUST be pre-sorted in the order specified by <code>%config</code>. Feeding unsorted data produces undefined output.</li>
+<li><strong>Same sort order</strong>: All four input segments MUST use the same sort order and comparison mode as encoded in <code>%config</code>.</li>
+<li><strong>Same element type</strong>: All inputs and the destination MUST use the same element type <code>T</code>.</li>
+<li><strong>UB address space</strong>: All pointers MUST have address space <code>ub</code>.</li>
+<li><strong>Single active predicate</strong>: Loading a new predicate does not implicitly save a prior predicate. Programs that need to preserve predicate state MUST save it first.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The verifier rejects illegal pointer spaces or unsupported element types.</li>
-<li>Misaligned buffers or illegal configuration layouts are target-profile-specific errors.</li>
+<li>Illegal if any input pointer is not a UB-space pointer.</li>
+<li>Illegal if the effective address (base + areg * 8) is not 64-bit aligned.</li>
+<li>Illegal if the <code>dist</code> attribute value is not in the allowed set for this form.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>A5 is the most detailed concrete profile in the current manual for this family.</li>
-<li>CPU simulation may preserve the visible merge behavior with a software fallback.</li>
-<li>Availability and exact configuration encoding on other profiles are target-specific.</li>
+<li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
+<li>The <code>config</code> word layout and supported element types are profile-specific.</li>
 </ul>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<h3 id="merge-4-sorted-segments">Merge 4 sorted segments<a class="headerlink" href="#merge-4-sorted-segments" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">// Pre-condition: four sorted arrays in UB
+// %sorted_a, %sorted_b, %sorted_c, %sorted_d each contain sorted data
+
+// Merge all four into one sorted output
+pto.vmrgsort4 %dest,
+               %sorted_a, %sorted_b, %sorted_c, %sorted_d,
+               %count, %config
+    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;,
+       !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64
+</code></pre>
+<h3 id="sort-preparation-pipeline">Sort preparation pipeline<a class="headerlink" href="#sort-preparation-pipeline" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">// Step 1: Sort each segment independently (e.g., using vsort32)
+pto.vsort32 %sorted_a, %unsorted_a, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
+pto.vsort32 %sorted_b, %unsorted_b, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
+pto.vsort32 %sorted_c, %unsorted_c, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
+pto.vsort32 %sorted_d, %unsorted_d, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
+
+// Step 2: Merge the 4 sorted segments
+pto.vmrgsort4 %dest,
+               %sorted_a, %sorted_b, %sorted_c, %sorted_d,
+               %count, %config
+    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;,
+       !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64
+</code></pre>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
-<p>The current public VPTO timing material for PTO micro instructions remains limited.
-For <code>pto.vmrgsort</code>, those public sources describe the instruction semantics, operand legality, and pipeline placement, but they do <strong>not</strong> publish a numeric latency or steady-state throughput.</p>
+<h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
+<p>SFU operations have higher latency than standard arithmetic ops. Consult the target profile's performance model for cycle-accurate estimates.</p>
+<h3 id="a2a3-throughput">A2/A3 Throughput<a class="headerlink" href="#a2a3-throughput" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
+<th></th>
 <th>Metric</th>
-<th>Status</th>
-<th>Source Basis</th>
+<th>Value</th>
+<th>Constant</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>A5 latency</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
+<td></td>
+<td>Startup latency</td>
+<td>14</td>
+<td><code>A2A3_STARTUP_BINARY</code></td>
 </tr>
 <tr>
-<td>Steady-state throughput</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
+<td></td>
+<td>Completion latency</td>
+<td>26</td>
+<td><code>A2A3_COMPL_FP32_EXP</code></td>
+</tr>
+<tr>
+<td></td>
+<td>Per-repeat throughput</td>
+<td>2</td>
+<td><code>A2A3_RPT_2</code></td>
+</tr>
+<tr>
+<td></td>
+<td>Pipeline interval</td>
+<td>18</td>
+<td><code>A2A3_INTERVAL</code></td>
 </tr>
 </tbody>
 </table>
-<p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vmrgsort</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="merge-four-sorted-ub-segments">Merge four sorted UB segments<a class="headerlink" href="#merge-four-sorted-ub-segments" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vmrgsort4 %dest, %sorted_a, %sorted_b, %sorted_c, %sorted_d, %count, %config
-    : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64) -&gt; ()
-</code></pre>
-<h3 id="sort-then-merge-pipeline">Sort-then-merge pipeline<a class="headerlink" href="#sort-then-merge-pipeline" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vsort32 %sorted_a, %unsorted_a, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
-pto.vsort32 %sorted_b, %unsorted_b, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
-pto.vsort32 %sorted_c, %unsorted_c, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
-pto.vsort32 %sorted_d, %unsorted_d, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
-pto.vmrgsort4 %dest, %sorted_a, %sorted_b, %sorted_c, %sorted_d, %count, %config
-    : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64) -&gt; ()
-</code></pre>
+<hr />
 <h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<p><code>pto.vmrgsort</code> is the merge-stage companion to local sort helpers such as <code>pto.vsort32</code>. The installed C++ surface includes several overload families, including packed-address and list-driven forms, but the page-level PTO contract stays focused on the visible four-way merge behavior.</p>
+<p><code>pto.vmrgsort</code> is a UB-to-UB accelerator operation. Unlike pure <code>vreg -&gt; vreg</code> ops that operate on vector registers, this instruction moves data directly between UB locations with hardware-accelerated merge logic.</p>
+<p>The 4-way merge pattern is common in:
+- <strong>Parallel sort</strong>: Partition data into 4 segments, sort each with <code>vsort32</code>, then merge
+- <strong>K-way merge</strong>: Merge results from independent sorted streams
+- <strong>Top-K selection</strong>: Find the K smallest/largest elements across multiple sources</p>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../sfu-and-dsa-ops/">SFU And DSA Instructions</a></li>

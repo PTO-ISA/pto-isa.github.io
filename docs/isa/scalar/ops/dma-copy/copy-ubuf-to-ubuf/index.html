@@ -745,6 +745,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -759,40 +765,6 @@
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#burst-stride-pad-model">Burst / Stride / Pad Model</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#key-terms">Key Terms</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#alignment-constraints">Alignment Constraints</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#2d-diagram-gmub-ptocopy_gm_to_ubuf">2D Diagram: GM→UB (pto.copy_gm_to_ubuf)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#2d-diagram-ubgm-ptocopy_ubuf_to_gm">2D Diagram: UB→GM (pto.copy_ubuf_to_gm)</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#multi-level-loop-semantics-c-code">Multi-Level Loop Semantics (C Code)</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#gmub-full-loop">GM→UB Full Loop</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ubgm-full-loop">UB→GM Full Loop</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#example-1-gmub-load-a-3232-f32-tile-simple-case">Example 1: GM→UB — Load a 32×32 f32 Tile (Simple Case)</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#example-2-gmub-load-a-2d-tile-from-a-larger-matrix">Example 2: GM→UB — Load a 2D Tile from a Larger Matrix</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#example-3-gmub-load-with-padding">Example 3: GM→UB — Load with Padding</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#example-4-ubgm-store-a-3232-f32-tile-simple-case">Example 4: UB→GM — Store a 32×32 f32 Tile (Simple Case)</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#example-5-ubgm-store-a-2d-tile-back-to-a-larger-matrix">Example 5: UB→GM — Store a 2D Tile Back to a Larger Matrix</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#example-6-gmub-with-multi-level-loop-batch-of-tiles">Example 6: GM→UB with Multi-Level Loop (Batch of Tiles)</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -865,6 +837,27 @@
                   <li class="toctree-l1"><a class="reference internal" href="../../../shared-arith/">Shared Arithmetic</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../shared-scf/">Shared SCF</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
@@ -973,735 +966,106 @@
 <h1 id="ptocopy_ubuf_to_ubuf">pto.copy_ubuf_to_ubuf<a class="headerlink" href="#ptocopy_ubuf_to_ubuf" title="Permanent link">&para;</a></h1>
 <p><code>pto.copy_ubuf_to_ubuf</code> is part of the <a href="../../../dma-copy/">DMA Copy</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Copy within Unified Buffer.</p>
+<p>Execute a DMA transfer between two Unified Buffer regions.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.copy_ubuf_to_ubuf</code> is a <code>pto.*</code> control/configuration operation. It changes ordering, buffer, event, or DMA-visible state that later payload work depends on. The portable guarantee is the dependency/configuration effect, while concrete pipe/event spaces remain target-profile details.</p>
+<p>The DMA engine reads <code>%n_burst</code> rows from <code>%source</code> and writes them to <code>%dest</code>. <code>%len_burst</code> controls the contiguous byte count copied per row, while <code>%src_stride</code> and <code>%dst_stride</code> specify the row-to-row start offsets for the copy. This form is useful when the producer and consumer both operate in UB space but a DMA-style row copy is still preferred over vector payload instructions.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64, i64, i64, i64
+</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p>The inputs are the architecture-visible control operands shown in the syntax: pipe ids, event ids, buffer ids, loop/stride values, pointers, or configuration words used to drive later execution.</p>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>This form is primarily defined by the side effect it has on control state, predicate state, or memory. It does not publish a new payload SSA result beyond any explicit state outputs shown in the syntax.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation updates control, synchronization, or DMA configuration state. Depending on the form, it may stall a stage, establish a producer-consumer edge, reserve or release a buffer token, or configure later copy behavior.</p>
-<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>This operation inherits the legality and operand-shape rules of its instruction set overview. Any target-specific narrowing of element types, distributions, pipe/event spaces, or configuration tuples must be stated by the selected target profile.</p>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>It is illegal to use unsupported pipe ids, event ids, buffer ids, or configuration tuples for the selected target profile.</li>
-<li>Waiting on state that was never established by a matching producer or prior configuration is an illegal PTO program.</li>
-</ul>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>CPU simulation preserves the visible dependency/configuration contract, but it may not expose every low-level hazard that motivates the form on hardware targets.</li>
-<li>A2/A3 and A5 profiles may use different concrete pipe, DMA, predicate, or event spaces. Portable code must rely on the documented PTO contract plus the selected target profile.</li>
-</ul>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride
-    : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64 x5
-</code></pre>
-<pre><code>burst    = lenBurst contiguous bytes transferred per row
-stride   = distance (bytes) from start of row[r] to start of row[r+1]
-pad      = ub_stride - lenBurst, padded to the 32B alignment boundary
-</code></pre>
-<pre><code>GM (source, `!pto.ptr&lt;T, gm&gt;`):
-
-          |&lt;--- src_stride (start-to-start) ---&gt;|
-          |&lt;- len_burst -&gt;|                     |
-Row 0:    [##DATA########]......................|
-Row 1:    [##DATA########]......................|
-Row 2:    [##DATA########]......................|
-          ...
-Row N-1:  [##DATA########]
-
-UB (destination, `!pto.ptr&lt;T, ub&gt;`, 32B-aligned):
-
-          |&lt;---------- dst_stride (32B-aligned) ----------&gt;|
-          |&lt;- len_burst -&gt;|&lt;- pad (to 32B boundary) -&gt;|    |
-Row 0:    [##DATA########][000000 PAD 000000000000000]
-Row 1:    [##DATA########][000000 PAD 000000000000000]
-Row 2:    [##DATA########][000000 PAD 000000000000000]
-          ...
-Row N-1:  [##DATA########][000000 PAD 000000000000000]
-
-N = n_burst
-stride = start of row[r] to start of row[r+1]
-pad    = filled with pad_val to 32B boundary (data_select_bit=true)
-[DATA] = valid data transferred by DMA
-[PAD]  = pad_val fill (set via set_mov_pad_val)
-</code></pre>
-<pre><code>UB (source, `!pto.ptr&lt;T, ub&gt;`, 32B-aligned start addr):
-
-          |&lt;---------- src_stride (32B-aligned) ---------&gt;|
-          |&lt;- len_burst -&gt;|&lt;-- pad (ignored on read) --&gt;| |
-Row 0:    [##DATA########][000 pad 000000000000000000]
-Row 1:    [##DATA########][000 pad 000000000000000000]
-Row 2:    [##DATA########][000 pad 000000000000000000]
-          ...
-Row N-1:  [##DATA########][000 pad 000000000000000000]
-
-GM (destination, `!pto.ptr&lt;T, gm&gt;`):
-
-          |&lt;--- dst_stride (start-to-start) ---&gt;|
-          |&lt;- len_burst -&gt;|                     |
-Row 0:    [##DATA########]......................|
-Row 1:    [##DATA########]......................|
-Row 2:    [##DATA########]......................|
-          ...
-Row N-1:  [##DATA########]
-
-N = n_burst
-MTE3 reads only len_burst bytes from each UB row (de-padding).
-Only len_burst bytes are written to each GM row.
-</code></pre>
-<pre><code class="language-c">// C equivalent of what the HW executes:
-for (int j = 0; j &lt; loop2_count; j++) {                // HW outer loop
-    uint8_t *gm1 = gm_src + j * loop2_src_stride;
-    uint8_t *ub1 = ub_dst + j * loop2_dst_stride;
-
-    for (int k = 0; k &lt; loop1_count; k++) {            // HW inner loop
-        uint8_t *gm2 = gm1 + k * loop1_src_stride;
-        uint8_t *ub2 = ub1 + k * loop1_dst_stride;
-
-        for (int r = 0; r &lt; n_burst; r++) {            // burst engine
-            memcpy(ub2 + r * dst_stride,               //   UB dest row
-                   gm2 + r * src_stride,               //   GM src row
-                   len_burst);                          //   contiguous bytes
-            if (data_select_bit)
-                memset(ub2 + r * dst_stride + len_burst,
-                       pad_val, dst_stride - len_burst);
-        }
-    }
-}
-</code></pre>
-<pre><code class="language-c">// C equivalent:
-for (int j = 0; j &lt; loop2_count; j++) {
-    uint8_t *ub1 = ub_src + j * loop2_src_stride;
-    uint8_t *gm1 = gm_dst + j * loop2_dst_stride;
-
-    for (int k = 0; k &lt; loop1_count; k++) {
-        uint8_t *ub2 = ub1 + k * loop1_src_stride;
-        uint8_t *gm2 = gm1 + k * loop1_dst_stride;
-
-        for (int r = 0; r &lt; n_burst; r++) {
-            memcpy(gm2 + r * dst_stride,               //   GM dest row
-                   ub2 + r * src_stride,               //   UB src row
-                   len_burst);                          //   contiguous bytes
-        }
-    }
-}
-</code></pre>
-<pre><code>GM layout (32 × 32 f32, contiguous):
-
-    |&lt;- len_burst = 128B (32 × 4) -&gt;|
-    |&lt;- src_stride = 128B ---------&gt;|
-    +--[#######TILE#######]--+  row 0
-    +--[#######TILE#######]--+  row 1
-    ...
-    +--[#######TILE#######]--+  row 31
-
-UB layout (32 × 32 f32, 32B-aligned, contiguous):
-
-    |&lt;- dst_stride = 128B (32B-aligned) -&gt;|
-    +--[#######TILE#######]--+  row 0
-    +--[#######TILE#######]--+  row 1
-    ...
-    +--[#######TILE#######]--+  row 31
-
-    len_burst   = 32 × 4 = 128 bytes
-    src_stride  = 128 bytes (contiguous rows)
-    dst_stride  = 128 bytes (already 32B-aligned, no padding)
-</code></pre>
-<pre><code class="language-mlir">// Simple 2D load — no multi-level loops needed
-pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
-
-pto.copy_gm_to_ubuf %arg0, %ub_in,
-    %c0_i64,       // sid = 0
-    %c32_i64,      // n_burst = 32 (32 rows)
-    %c128_i64,     // len_burst = 128 bytes per row
-    %c0_i64,       // left_padding = 0
-    %c0_i64,       // right_padding = 0
-    %false,        // data_select_bit = false
-    %c0_i64,       // l2_cache_ctl = 0
-    %c128_i64,     // src_stride = 128 bytes
-    %c128_i64      // dst_stride = 128 bytes
-    : !pto.ptr&lt;f32, gm&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64, i64,
-      i64, i64, i1, i64, i64, i64
-</code></pre>
-<pre><code>GM layout (1024 × 512 f16):
-
-    col 0          col 128               col 512
-    |              |                     |
-    +--[###TILE###]+.....................+  row R
-    +--[###TILE###]+.....................+  row R+1
-    ...
-    +--[###TILE###]+.....................+  row R+63
-
-    |&lt;--------- src_stride = 1024B -----------&gt;|
-    |&lt;-len_burst=256B-&gt;|
-
-    len_burst   = 128 × 2 = 256 bytes (128 f16 elements)
-    src_stride  = 512 × 2 = 1024 bytes (start-to-start, full GM row)
-
-UB layout (64 × 128 f16, 32B-aligned, contiguous):
-
-    +--[###TILE###]--+  row 0  (256 bytes, 32B-aligned, no pad)
-    +--[###TILE###]--+  row 1
-    ...
-    +--[###TILE###]--+  row 63
-
-    dst_stride = 256 bytes (= len_burst, already 32B-aligned, no padding)
-</code></pre>
-<pre><code class="language-mlir">// Simple 2D load — no multi-level loops needed
-pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
-pto.set_loop1_stride_outtoub %c0_i64, %c0_i64 : i64, i64
-pto.set_loop2_stride_outtoub %c0_i64, %c0_i64 : i64, i64
-
-pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr,
-    %c0_i64,       // sid = 0
-    %c64_i64,      // n_burst = 64 (64 rows)
-    %c256_i64,     // len_burst = 256 bytes per row
-    %c0_i64,       // left_padding = 0
-    %c0_i64,       // right_padding = 0
-    %false,        // data_select_bit = false
-    %c0_i64,       // l2_cache_ctl = 0
-    %c1024_i64,    // src_stride = 1024 bytes (full matrix row)
-    %c256_i64      // dst_stride = 256 bytes (tile row)
-    : !pto.ptr&lt;f16, gm&gt;, !pto.ptr&lt;f16, ub&gt;, i64, i64, i64,
-      i64, i64, i1, i64, i64, i64
-</code></pre>
-<pre><code>GM (100 cols valid, contiguous):
-
-    |&lt;-len_burst=200B-&gt;|
-    |&lt;- src_stride=200B (start-to-start) -&gt;|
-    +--[####DATA####]-+  row 0
-    +--[####DATA####]-+  row 1
-    ...
-    +--[####DATA####]-+  row 63
-
-UB (128 cols wide, 32B-aligned, padded):
-
-    |&lt;--------- dst_stride = 256B (32B-aligned) ---------&gt;|
-    |&lt;-len_burst=200B-&gt;|&lt;---- pad = 56B to 32B boundary -&gt;|
-    +--[####DATA####]-+[0000000 PAD 0000000000000000000000]+  row 0
-    +--[####DATA####]-+[0000000 PAD 0000000000000000000000]+  row 1
-    ...
-    +--[####DATA####]-+[0000000 PAD 0000000000000000000000]+  row 63
-
-    len_burst   = 100 × 2 = 200 bytes
-    src_stride  = 200 bytes (start-to-start, contiguous in GM)
-    dst_stride  = 128 × 2 = 256 bytes (32B-aligned tile width in UB)
-    pad         = 256 - 200 = 56 bytes (padded to 32B boundary with pad_val)
-</code></pre>
-<pre><code class="language-mlir">pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
-pto.set_loop1_stride_outtoub %c0_i64, %c0_i64 : i64, i64
-pto.set_loop2_stride_outtoub %c0_i64, %c0_i64 : i64, i64
-
-pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr,
-    %c0_i64,       // sid = 0
-    %c64_i64,      // n_burst = 64
-    %c200_i64,     // len_burst = 200 bytes
-    %c0_i64,       // left_padding = 0
-    %c0_i64,       // right_padding = 0
-    %true,         // data_select_bit = true (enable padding)
-    %c0_i64,       // l2_cache_ctl = 0
-    %c200_i64,     // src_stride = 200 bytes
-    %c256_i64      // dst_stride = 256 bytes (32B-aligned)
-    : !pto.ptr&lt;f16, gm&gt;, !pto.ptr&lt;f16, ub&gt;, i64, i64, i64,
-      i64, i64, i1, i64, i64, i64
-</code></pre>
-<pre><code>UB (source, 32B-aligned, 32 × 32 f32):
-
-    |&lt;- src_stride = 128B (32B-aligned) -&gt;|
-    |&lt;- len_burst = 128B -&gt;|
-    +--[#######TILE#######]---+  row 0
-    +--[#######TILE#######]---+  row 1
-    ...
-    +--[#######TILE#######]---+  row 31
-
-    (no padding here — len_burst == src_stride)
-
-GM (dest, 32 × 32 f32):
-
-    |&lt;- dst_stride = 128B -&gt;|
-    |&lt;- len_burst = 128B --&gt;|
-    +--[#######TILE#######]---+  row 0
-    +--[#######TILE#######]---+  row 1
-    ...
-    +--[#######TILE#######]---+  row 31
-</code></pre>
-<pre><code class="language-mlir">// Configure MTE3 strides
-pto.set_loop_size_ubtoout %c1_i64, %c1_i64 : i64, i64
-
-pto.copy_ubuf_to_gm %ub_out, %arg1,
-    %c0_i64,       // sid = 0
-    %c32_i64,      // n_burst = 32
-    %c128_i64,     // len_burst = 128 bytes
-    %c0_i64,       // reserved = 0
-    %c128_i64,     // dst_stride = 128 bytes
-    %c128_i64      // src_stride = 128 bytes
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, gm&gt;, i64, i64, i64, i64, i64, i64
-</code></pre>
-<pre><code>UB (source, 32B-aligned, 64 × 128 f16):
-
-    |&lt;- src_stride = 256B (32B-aligned) -&gt;|
-    |&lt;- len_burst = 256B -&gt;|
-    +--[#####TILE#####]---+  row 0
-    +--[#####TILE#####]---+  row 1
-    ...
-    +--[#####TILE#####]---+  row 63
-
-    (no padding here — len_burst == src_stride)
-
-GM (dest, into 1024 × 512 matrix):
-
-    |&lt;----------- dst_stride = 1024B (start-to-start) ---------&gt;|
-    |&lt;- len_burst = 256B -&gt;|                                    |
-    col 0          col 128                              col 512
-    +--[#####TILE#####]---+.............................+  row R
-    +--[#####TILE#####]---+.............................+  row R+1
-    ...
-    +--[#####TILE#####]---+.............................+  row R+63
-
-    MTE3 reads len_burst bytes from each 32B-aligned UB row,
-    writes only len_burst bytes per GM row (stride controls row spacing).
-</code></pre>
-<pre><code class="language-mlir">// Configure MTE3 strides
-pto.set_loop_size_ubtoout %c1_i64, %c1_i64 : i64, i64
-pto.set_loop1_stride_ubtoout %c0_i64, %c0_i64 : i64, i64
-pto.set_loop2_stride_ubtoout %c0_i64, %c0_i64 : i64, i64
-
-pto.copy_ubuf_to_gm %ub_ptr, %gm_ptr,
-    %c0_i64,       // sid = 0
-    %c64_i64,      // n_burst = 64
-    %c256_i64,     // len_burst = 256 bytes
-    %c0_i64,       // reserved = 0
-    %c1024_i64,    // dst_stride = 1024 bytes (GM row)
-    %c256_i64      // src_stride = 256 bytes (UB row)
-    : !pto.ptr&lt;f16, ub&gt;, !pto.ptr&lt;f16, gm&gt;, i64, i64, i64, i64, i64, i64
-</code></pre>
-<pre><code>GM [4, 8, 128] f16 (contiguous):        UB (4 tiles laid out sequentially):
-
-    batch 0: 8 rows × 256 bytes          [batch 0: 8×128][batch 1: 8×128]
-    batch 1: 8 rows × 256 bytes          [batch 2: 8×128][batch 3: 8×128]
-    batch 2: 8 rows × 256 bytes
-    batch 3: 8 rows × 256 bytes          loop1 src_stride = 2048 bytes (8 × 256)
-                                          loop1 dst_stride = 2048 bytes (8 × 256)
-    Each batch = 8 × 256 = 2048 bytes     loop1_count = 4 (iterate over batches)
-</code></pre>
-<pre><code class="language-mlir">// loop1_count = 4 batches, loop2_count = 1 (not used)
-pto.set_loop_size_outtoub %c4_i64, %c1_i64 : i64, i64
-
-// loop1 stride: advance by one batch (2048 bytes) in both GM and UB
-pto.set_loop1_stride_outtoub %c2048_i64, %c2048_i64 : i64, i64
-pto.set_loop2_stride_outtoub %c0_i64, %c0_i64 : i64, i64
-
-pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr,
-    %c0_i64,       // sid = 0
-    %c8_i64,       // n_burst = 8 rows per batch
-    %c256_i64,     // len_burst = 256 bytes per row
-    %c0_i64,       // left_padding = 0
-    %c0_i64,       // right_padding = 0
-    %false,        // data_select_bit = false
-    %c0_i64,       // l2_cache_ctl = 0
-    %c256_i64,     // src_stride = 256 (contiguous rows)
-    %c256_i64      // dst_stride = 256 (contiguous rows)
-    : !pto.ptr&lt;f16, gm&gt;, !pto.ptr&lt;f16, ub&gt;, i64, i64, i64,
-      i64, i64, i1, i64, i64, i64
-</code></pre>
-<pre><code>loop1 iter 0: gm_ptr + 0×2048 → ub_ptr + 0×2048, DMA 8 rows × 256B
-loop1 iter 1: gm_ptr + 1×2048 → ub_ptr + 1×2048, DMA 8 rows × 256B
-loop1 iter 2: gm_ptr + 2×2048 → ub_ptr + 2×2048, DMA 8 rows × 256B
-loop1 iter 3: gm_ptr + 3×2048 → ub_ptr + 3×2048, DMA 8 rows × 256B
-</code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride
-    : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64 x5
-</code></pre>
-<p><strong>Parameters:</strong></p>
 <table>
 <thead>
 <tr>
-<th>Parameter</th>
+<th>Operand</th>
+<th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>%source</code></td>
+<td>%source</td>
+<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
 <td>UB source pointer</td>
 </tr>
 <tr>
-<td><code>%dest</code></td>
+<td>%dest</td>
+<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
 <td>UB destination pointer</td>
 </tr>
 <tr>
-<td><code>%sid</code></td>
-<td>Stream ID</td>
+<td>%sid</td>
+<td><code>i64</code></td>
+<td>DMA stream identifier</td>
 </tr>
 <tr>
-<td><code>%n_burst</code></td>
-<td>Number of bursts</td>
+<td>%n_burst</td>
+<td><code>i64</code></td>
+<td>Number of burst rows to transfer</td>
 </tr>
 <tr>
-<td><code>%len_burst</code></td>
-<td>Length per burst</td>
+<td>%len_burst</td>
+<td><code>i64</code></td>
+<td>Contiguous byte count transferred per row</td>
 </tr>
 <tr>
-<td><code>%src_stride</code></td>
-<td>Source stride</td>
+<td>%src_stride</td>
+<td><code>i64</code></td>
+<td>UB source row-to-row start offset in bytes</td>
 </tr>
 <tr>
-<td><code>%dst_stride</code></td>
-<td>Destination stride</td>
+<td>%dst_stride</td>
+<td><code>i64</code></td>
+<td>UB destination row-to-row start offset in bytes</td>
 </tr>
 </tbody>
 </table>
-<h2 id="burst-stride-pad-model">Burst / Stride / Pad Model<a class="headerlink" href="#burst-stride-pad-model" title="Permanent link">&para;</a></h2>
-<p>All A5 DMA addresses are <strong>stride-based</strong>: stride is the distance from the start of one row to the start of the next row (<code>stride &gt;= lenBurst</code>). There is no separate "gap" parameter.</p>
-<h3 id="key-terms">Key Terms<a class="headerlink" href="#key-terms" title="Permanent link">&para;</a></h3>
-<pre><code>burst    = lenBurst contiguous bytes transferred per row
-stride   = distance (bytes) from start of row[r] to start of row[r+1]
-pad      = ub_stride - lenBurst, padded to the 32B alignment boundary
-</code></pre>
-<h3 id="alignment-constraints">Alignment Constraints<a class="headerlink" href="#alignment-constraints" title="Permanent link">&para;</a></h3>
+<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td><code>—</code></td>
+<td>This form does not return SSA values; it writes data into Unified Buffer memory.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
+<p>Reads UB-visible storage, writes UB-visible storage, and consumes the active UB DMA state for the selected target profile.</p>
+<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>UB addresses</strong> (both source and destination) must be <strong>32-byte aligned</strong>.</li>
-<li><strong>GM→UB padding</strong>: When <code>data_select_bit = true</code>, each UB row is padded from <code>lenBurst</code> up to the <strong>32B-aligned boundary</strong> of <code>ub_stride</code> with <code>pad_val</code> (set via <code>set_mov_pad_val</code>). This ensures every UB row starts at a 32B-aligned offset.</li>
-<li><strong>UB→GM de-padding</strong>: MTE3 reads <code>lenBurst</code> bytes from each 32B-aligned UB row (skipping any padding that was added during load), writing only valid data to GM. This effectively strips padding on store.</li>
+<li>Source and destination regions MUST both satisfy the UB alignment rules of the selected target profile.</li>
+<li><code>%len_burst</code> MUST fit within both the source and destination row stride.</li>
+<li>If source and destination alias, portable code MUST provide ordering that avoids implementation-defined overlap behavior.</li>
 </ul>
-<h3 id="2d-diagram-gmub-ptocopy_gm_to_ubuf">2D Diagram: GM→UB (pto.copy_gm_to_ubuf)<a class="headerlink" href="#2d-diagram-gmub-ptocopy_gm_to_ubuf" title="Permanent link">&para;</a></h3>
-<pre><code>GM (source, `!pto.ptr&lt;T, gm&gt;`):
-
-          |&lt;--- src_stride (start-to-start) ---&gt;|
-          |&lt;- len_burst -&gt;|                     |
-Row 0:    [##DATA########]......................|
-Row 1:    [##DATA########]......................|
-Row 2:    [##DATA########]......................|
-          ...
-Row N-1:  [##DATA########]
-
-UB (destination, `!pto.ptr&lt;T, ub&gt;`, 32B-aligned):
-
-          |&lt;---------- dst_stride (32B-aligned) ----------&gt;|
-          |&lt;- len_burst -&gt;|&lt;- pad (to 32B boundary) -&gt;|    |
-Row 0:    [##DATA########][000000 PAD 000000000000000]
-Row 1:    [##DATA########][000000 PAD 000000000000000]
-Row 2:    [##DATA########][000000 PAD 000000000000000]
-          ...
-Row N-1:  [##DATA########][000000 PAD 000000000000000]
-
-N = n_burst
-stride = start of row[r] to start of row[r+1]
-pad    = filled with pad_val to 32B boundary (data_select_bit=true)
-[DATA] = valid data transferred by DMA
-[PAD]  = pad_val fill (set via set_mov_pad_val)
-</code></pre>
-<h3 id="2d-diagram-ubgm-ptocopy_ubuf_to_gm">2D Diagram: UB→GM (pto.copy_ubuf_to_gm)<a class="headerlink" href="#2d-diagram-ubgm-ptocopy_ubuf_to_gm" title="Permanent link">&para;</a></h3>
-<pre><code>UB (source, `!pto.ptr&lt;T, ub&gt;`, 32B-aligned start addr):
-
-          |&lt;---------- src_stride (32B-aligned) ---------&gt;|
-          |&lt;- len_burst -&gt;|&lt;-- pad (ignored on read) --&gt;| |
-Row 0:    [##DATA########][000 pad 000000000000000000]
-Row 1:    [##DATA########][000 pad 000000000000000000]
-Row 2:    [##DATA########][000 pad 000000000000000000]
-          ...
-Row N-1:  [##DATA########][000 pad 000000000000000000]
-
-GM (destination, `!pto.ptr&lt;T, gm&gt;`):
-
-          |&lt;--- dst_stride (start-to-start) ---&gt;|
-          |&lt;- len_burst -&gt;|                     |
-Row 0:    [##DATA########]......................|
-Row 1:    [##DATA########]......................|
-Row 2:    [##DATA########]......................|
-          ...
-Row N-1:  [##DATA########]
-
-N = n_burst
-MTE3 reads only len_burst bytes from each UB row (de-padding).
-Only len_burst bytes are written to each GM row.
-</code></pre>
-<h2 id="multi-level-loop-semantics-c-code">Multi-Level Loop Semantics (C Code)<a class="headerlink" href="#multi-level-loop-semantics-c-code" title="Permanent link">&para;</a></h2>
-<p>The full DMA transfer is a nested loop. The HW loop registers (set before the copy) control the outer levels, and the copy instruction parameters control the innermost burst level.</p>
-<h3 id="gmub-full-loop">GM→UB Full Loop<a class="headerlink" href="#gmub-full-loop" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">// C equivalent of what the HW executes:
-for (int j = 0; j &lt; loop2_count; j++) {                // HW outer loop
-    uint8_t *gm1 = gm_src + j * loop2_src_stride;
-    uint8_t *ub1 = ub_dst + j * loop2_dst_stride;
-
-    for (int k = 0; k &lt; loop1_count; k++) {            // HW inner loop
-        uint8_t *gm2 = gm1 + k * loop1_src_stride;
-        uint8_t *ub2 = ub1 + k * loop1_dst_stride;
-
-        for (int r = 0; r &lt; n_burst; r++) {            // burst engine
-            memcpy(ub2 + r * dst_stride,               //   UB dest row
-                   gm2 + r * src_stride,               //   GM src row
-                   len_burst);                          //   contiguous bytes
-            if (data_select_bit)
-                memset(ub2 + r * dst_stride + len_burst,
-                       pad_val, dst_stride - len_burst);
-        }
-    }
-}
-</code></pre>
-<h3 id="ubgm-full-loop">UB→GM Full Loop<a class="headerlink" href="#ubgm-full-loop" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">// C equivalent:
-for (int j = 0; j &lt; loop2_count; j++) {
-    uint8_t *ub1 = ub_src + j * loop2_src_stride;
-    uint8_t *gm1 = gm_dst + j * loop2_dst_stride;
-
-    for (int k = 0; k &lt; loop1_count; k++) {
-        uint8_t *ub2 = ub1 + k * loop1_src_stride;
-        uint8_t *gm2 = gm1 + k * loop1_dst_stride;
-
-        for (int r = 0; r &lt; n_burst; r++) {
-            memcpy(gm2 + r * dst_stride,               //   GM dest row
-                   ub2 + r * src_stride,               //   UB src row
-                   len_burst);                          //   contiguous bytes
-        }
-    }
-}
-</code></pre>
-<h2 id="example-1-gmub-load-a-3232-f32-tile-simple-case">Example 1: GM→UB — Load a 32×32 f32 Tile (Simple Case)<a class="headerlink" href="#example-1-gmub-load-a-3232-f32-tile-simple-case" title="Permanent link">&para;</a></h2>
-<p>Load a 32×32 f32 tile from GM into UB. This matches the <code>abs_kernel_2d</code> test case.</p>
-<pre><code>GM layout (32 × 32 f32, contiguous):
-
-    |&lt;- len_burst = 128B (32 × 4) -&gt;|
-    |&lt;- src_stride = 128B ---------&gt;|
-    +--[#######TILE#######]--+  row 0
-    +--[#######TILE#######]--+  row 1
-    ...
-    +--[#######TILE#######]--+  row 31
-
-UB layout (32 × 32 f32, 32B-aligned, contiguous):
-
-    |&lt;- dst_stride = 128B (32B-aligned) -&gt;|
-    +--[#######TILE#######]--+  row 0
-    +--[#######TILE#######]--+  row 1
-    ...
-    +--[#######TILE#######]--+  row 31
-
-    len_burst   = 32 × 4 = 128 bytes
-    src_stride  = 128 bytes (contiguous rows)
-    dst_stride  = 128 bytes (already 32B-aligned, no padding)
-</code></pre>
-<pre><code class="language-mlir">// Simple 2D load — no multi-level loops needed
-pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
-
-pto.copy_gm_to_ubuf %arg0, %ub_in,
-    %c0_i64,       // sid = 0
-    %c32_i64,      // n_burst = 32 (32 rows)
-    %c128_i64,     // len_burst = 128 bytes per row
-    %c0_i64,       // left_padding = 0
-    %c0_i64,       // right_padding = 0
-    %false,        // data_select_bit = false
-    %c0_i64,       // l2_cache_ctl = 0
-    %c128_i64,     // src_stride = 128 bytes
-    %c128_i64      // dst_stride = 128 bytes
-    : !pto.ptr&lt;f32, gm&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64, i64,
-      i64, i64, i1, i64, i64, i64
-</code></pre>
-<h2 id="example-2-gmub-load-a-2d-tile-from-a-larger-matrix">Example 2: GM→UB — Load a 2D Tile from a Larger Matrix<a class="headerlink" href="#example-2-gmub-load-a-2d-tile-from-a-larger-matrix" title="Permanent link">&para;</a></h2>
-<p>Load a 64×128 tile (f16) from a 1024×512 matrix in GM into UB.</p>
-<pre><code>GM layout (1024 × 512 f16):
-
-    col 0          col 128               col 512
-    |              |                     |
-    +--[###TILE###]+.....................+  row R
-    +--[###TILE###]+.....................+  row R+1
-    ...
-    +--[###TILE###]+.....................+  row R+63
-
-    |&lt;--------- src_stride = 1024B -----------&gt;|
-    |&lt;-len_burst=256B-&gt;|
-
-    len_burst   = 128 × 2 = 256 bytes (128 f16 elements)
-    src_stride  = 512 × 2 = 1024 bytes (start-to-start, full GM row)
-
-UB layout (64 × 128 f16, 32B-aligned, contiguous):
-
-    +--[###TILE###]--+  row 0  (256 bytes, 32B-aligned, no pad)
-    +--[###TILE###]--+  row 1
-    ...
-    +--[###TILE###]--+  row 63
-
-    dst_stride = 256 bytes (= len_burst, already 32B-aligned, no padding)
-</code></pre>
-<pre><code class="language-mlir">// Simple 2D load — no multi-level loops needed
-pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
-pto.set_loop1_stride_outtoub %c0_i64, %c0_i64 : i64, i64
-pto.set_loop2_stride_outtoub %c0_i64, %c0_i64 : i64, i64
-
-pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr,
-    %c0_i64,       // sid = 0
-    %c64_i64,      // n_burst = 64 (64 rows)
-    %c256_i64,     // len_burst = 256 bytes per row
-    %c0_i64,       // left_padding = 0
-    %c0_i64,       // right_padding = 0
-    %false,        // data_select_bit = false
-    %c0_i64,       // l2_cache_ctl = 0
-    %c1024_i64,    // src_stride = 1024 bytes (full matrix row)
-    %c256_i64      // dst_stride = 256 bytes (tile row)
-    : !pto.ptr&lt;f16, gm&gt;, !pto.ptr&lt;f16, ub&gt;, i64, i64, i64,
-      i64, i64, i1, i64, i64, i64
-</code></pre>
-<h2 id="example-3-gmub-load-with-padding">Example 3: GM→UB — Load with Padding<a class="headerlink" href="#example-3-gmub-load-with-padding" title="Permanent link">&para;</a></h2>
-<p>Load 100 valid columns from GM into a 128-wide UB tile (f16). The remaining 28 columns are zero-padded.</p>
-<pre><code>GM (100 cols valid, contiguous):
-
-    |&lt;-len_burst=200B-&gt;|
-    |&lt;- src_stride=200B (start-to-start) -&gt;|
-    +--[####DATA####]-+  row 0
-    +--[####DATA####]-+  row 1
-    ...
-    +--[####DATA####]-+  row 63
-
-UB (128 cols wide, 32B-aligned, padded):
-
-    |&lt;--------- dst_stride = 256B (32B-aligned) ---------&gt;|
-    |&lt;-len_burst=200B-&gt;|&lt;---- pad = 56B to 32B boundary -&gt;|
-    +--[####DATA####]-+[0000000 PAD 0000000000000000000000]+  row 0
-    +--[####DATA####]-+[0000000 PAD 0000000000000000000000]+  row 1
-    ...
-    +--[####DATA####]-+[0000000 PAD 0000000000000000000000]+  row 63
-
-    len_burst   = 100 × 2 = 200 bytes
-    src_stride  = 200 bytes (start-to-start, contiguous in GM)
-    dst_stride  = 128 × 2 = 256 bytes (32B-aligned tile width in UB)
-    pad         = 256 - 200 = 56 bytes (padded to 32B boundary with pad_val)
-</code></pre>
-<pre><code class="language-mlir">pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
-pto.set_loop1_stride_outtoub %c0_i64, %c0_i64 : i64, i64
-pto.set_loop2_stride_outtoub %c0_i64, %c0_i64 : i64, i64
-
-pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr,
-    %c0_i64,       // sid = 0
-    %c64_i64,      // n_burst = 64
-    %c200_i64,     // len_burst = 200 bytes
-    %c0_i64,       // left_padding = 0
-    %c0_i64,       // right_padding = 0
-    %true,         // data_select_bit = true (enable padding)
-    %c0_i64,       // l2_cache_ctl = 0
-    %c200_i64,     // src_stride = 200 bytes
-    %c256_i64      // dst_stride = 256 bytes (32B-aligned)
-    : !pto.ptr&lt;f16, gm&gt;, !pto.ptr&lt;f16, ub&gt;, i64, i64, i64,
-      i64, i64, i1, i64, i64, i64
-</code></pre>
-<h2 id="example-4-ubgm-store-a-3232-f32-tile-simple-case">Example 4: UB→GM — Store a 32×32 f32 Tile (Simple Case)<a class="headerlink" href="#example-4-ubgm-store-a-3232-f32-tile-simple-case" title="Permanent link">&para;</a></h2>
-<p>Store a 32×32 f32 tile from UB back to GM. This matches the <code>abs_kernel_2d</code> test case.</p>
-<pre><code>UB (source, 32B-aligned, 32 × 32 f32):
-
-    |&lt;- src_stride = 128B (32B-aligned) -&gt;|
-    |&lt;- len_burst = 128B -&gt;|
-    +--[#######TILE#######]---+  row 0
-    +--[#######TILE#######]---+  row 1
-    ...
-    +--[#######TILE#######]---+  row 31
-
-    (no padding here — len_burst == src_stride)
-
-GM (dest, 32 × 32 f32):
-
-    |&lt;- dst_stride = 128B -&gt;|
-    |&lt;- len_burst = 128B --&gt;|
-    +--[#######TILE#######]---+  row 0
-    +--[#######TILE#######]---+  row 1
-    ...
-    +--[#######TILE#######]---+  row 31
-</code></pre>
-<pre><code class="language-mlir">// Configure MTE3 strides
-pto.set_loop_size_ubtoout %c1_i64, %c1_i64 : i64, i64
-
-pto.copy_ubuf_to_gm %ub_out, %arg1,
-    %c0_i64,       // sid = 0
-    %c32_i64,      // n_burst = 32
-    %c128_i64,     // len_burst = 128 bytes
-    %c0_i64,       // reserved = 0
-    %c128_i64,     // dst_stride = 128 bytes
-    %c128_i64      // src_stride = 128 bytes
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, gm&gt;, i64, i64, i64, i64, i64, i64
-</code></pre>
-<h2 id="example-5-ubgm-store-a-2d-tile-back-to-a-larger-matrix">Example 5: UB→GM — Store a 2D Tile Back to a Larger Matrix<a class="headerlink" href="#example-5-ubgm-store-a-2d-tile-back-to-a-larger-matrix" title="Permanent link">&para;</a></h2>
-<p>Store a 64×128 tile (f16) from UB back to a 1024×512 GM matrix at an offset.</p>
-<pre><code>UB (source, 32B-aligned, 64 × 128 f16):
-
-    |&lt;- src_stride = 256B (32B-aligned) -&gt;|
-    |&lt;- len_burst = 256B -&gt;|
-    +--[#####TILE#####]---+  row 0
-    +--[#####TILE#####]---+  row 1
-    ...
-    +--[#####TILE#####]---+  row 63
-
-    (no padding here — len_burst == src_stride)
-
-GM (dest, into 1024 × 512 matrix):
-
-    |&lt;----------- dst_stride = 1024B (start-to-start) ---------&gt;|
-    |&lt;- len_burst = 256B -&gt;|                                    |
-    col 0          col 128                              col 512
-    +--[#####TILE#####]---+.............................+  row R
-    +--[#####TILE#####]---+.............................+  row R+1
-    ...
-    +--[#####TILE#####]---+.............................+  row R+63
-
-    MTE3 reads len_burst bytes from each 32B-aligned UB row,
-    writes only len_burst bytes per GM row (stride controls row spacing).
-</code></pre>
-<pre><code class="language-mlir">// Configure MTE3 strides
-pto.set_loop_size_ubtoout %c1_i64, %c1_i64 : i64, i64
-pto.set_loop1_stride_ubtoout %c0_i64, %c0_i64 : i64, i64
-pto.set_loop2_stride_ubtoout %c0_i64, %c0_i64 : i64, i64
-
-pto.copy_ubuf_to_gm %ub_ptr, %gm_ptr,
-    %c0_i64,       // sid = 0
-    %c64_i64,      // n_burst = 64
-    %c256_i64,     // len_burst = 256 bytes
-    %c0_i64,       // reserved = 0
-    %c1024_i64,    // dst_stride = 1024 bytes (GM row)
-    %c256_i64      // src_stride = 256 bytes (UB row)
-    : !pto.ptr&lt;f16, ub&gt;, !pto.ptr&lt;f16, gm&gt;, i64, i64, i64, i64, i64, i64
-</code></pre>
-<h2 id="example-6-gmub-with-multi-level-loop-batch-of-tiles">Example 6: GM→UB with Multi-Level Loop (Batch of Tiles)<a class="headerlink" href="#example-6-gmub-with-multi-level-loop-batch-of-tiles" title="Permanent link">&para;</a></h2>
-<p>Load 4 batches of 8×128 tiles from a [4, 8, 128] f16 tensor using loop1.</p>
-<pre><code>GM [4, 8, 128] f16 (contiguous):        UB (4 tiles laid out sequentially):
-
-    batch 0: 8 rows × 256 bytes          [batch 0: 8×128][batch 1: 8×128]
-    batch 1: 8 rows × 256 bytes          [batch 2: 8×128][batch 3: 8×128]
-    batch 2: 8 rows × 256 bytes
-    batch 3: 8 rows × 256 bytes          loop1 src_stride = 2048 bytes (8 × 256)
-                                          loop1 dst_stride = 2048 bytes (8 × 256)
-    Each batch = 8 × 256 = 2048 bytes     loop1_count = 4 (iterate over batches)
-</code></pre>
-<pre><code class="language-mlir">// loop1_count = 4 batches, loop2_count = 1 (not used)
-pto.set_loop_size_outtoub %c4_i64, %c1_i64 : i64, i64
-
-// loop1 stride: advance by one batch (2048 bytes) in both GM and UB
-pto.set_loop1_stride_outtoub %c2048_i64, %c2048_i64 : i64, i64
-pto.set_loop2_stride_outtoub %c0_i64, %c0_i64 : i64, i64
-
-pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr,
-    %c0_i64,       // sid = 0
-    %c8_i64,       // n_burst = 8 rows per batch
-    %c256_i64,     // len_burst = 256 bytes per row
-    %c0_i64,       // left_padding = 0
-    %c0_i64,       // right_padding = 0
-    %false,        // data_select_bit = false
-    %c0_i64,       // l2_cache_ctl = 0
-    %c256_i64,     // src_stride = 256 (contiguous rows)
-    %c256_i64      // dst_stride = 256 (contiguous rows)
-    : !pto.ptr&lt;f16, gm&gt;, !pto.ptr&lt;f16, ub&gt;, i64, i64, i64,
-      i64, i64, i1, i64, i64, i64
-</code></pre>
-<p>Execution trace:</p>
-<pre><code>loop1 iter 0: gm_ptr + 0×2048 → ub_ptr + 0×2048, DMA 8 rows × 256B
-loop1 iter 1: gm_ptr + 1×2048 → ub_ptr + 1×2048, DMA 8 rows × 256B
-loop1 iter 2: gm_ptr + 2×2048 → ub_ptr + 2×2048, DMA 8 rows × 256B
-loop1 iter 3: gm_ptr + 3×2048 → ub_ptr + 3×2048, DMA 8 rows × 256B
+<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The verifier rejects illegal operand shapes, unsupported pipe or event identifiers, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
+<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
+</ul>
+<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>CPU simulation preserves the visible copy contract but may not expose all DMA overlap hazards.</li>
+<li>A2/A3 and A5 may narrow supported element sizes, row widths, or overlap behavior.</li>
+</ul>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64, i64, i64, i64
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../dma-copy/">DMA Copy</a></li>
 <li>Previous op in instruction set: <a href="../copy-ubuf-to-gm/">pto.copy_ubuf_to_gm</a></li>
+<li>Next op in instruction set: (none)</li>
 <li>Control-shell overview: <a href="../../../control-and-configuration/">Control and configuration</a></li>
 </ul>
               

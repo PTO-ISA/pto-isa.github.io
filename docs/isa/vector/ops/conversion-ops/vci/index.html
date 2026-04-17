@@ -595,11 +595,13 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#c-semantics">C Semantics</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
     </li>
@@ -613,17 +615,23 @@
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#execution-model">Execution Model</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-execution">A5 Execution</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#a2a3-throughput">A2/A3 Throughput</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#execution-note">Execution Note</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#generate-ascending-indices">Generate ascending indices</a>
+    <li class="toctree-l4"><a class="reference internal" href="#generate-ascending-indices-common-use-for-gatherscatter">Generate ascending indices (common use for gather/scatter)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#generate-descending-indices">Generate descending indices</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#prepare-gather-indices">Prepare gather indices</a>
+    <li class="toctree-l4"><a class="reference internal" href="#use-with-gather-indexed-load">Use with gather (indexed load)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#use-with-vsort32-argsort">Use with vsort32 (argsort)</a>
     </li>
         </ul>
     </li>
@@ -860,6 +868,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -967,24 +996,18 @@
 <h1 id="ptovci">pto.vci<a class="headerlink" href="#ptovci" title="Permanent link">&para;</a></h1>
 <p><code>pto.vci</code> is part of the <a href="../../../conversion-ops/">Conversion Ops</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Generate a vector of lane indices from a scalar seed.</p>
+<p>Standalone contract page for <code>pto.vci</code>.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vci</code> materializes a vector whose elements are derived from the scalar seed <code>%index</code> and the selected ordering mode. In the common ascending form, lane <code>i</code> receives <code>index + i</code>; in the descending form, lane <code>i</code> receives <code>index - i</code>.</p>
+<p><code>pto.vci</code> is an index-generation operation. It produces a vector of indices starting from the scalar seed <code>%index</code> and incrementing or decrementing by 1 per lane. The generated indices are used to support indexed access patterns (gather/scatter) and argsort preparation.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%indices = pto.vci %index {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
+<pre><code class="language-asm">vci %index, %mask {order = &quot;ORDER&quot;} : !pto.vreg&lt;Nxi32&gt; -&gt; !pto.vreg&lt;Nxi32&gt;
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%indices = pto.vci %index {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">pto.vci ins(%index : i32) outs(%indices : !pto.vreg&lt;64xi32&gt;) {order = &quot;ASC&quot;}
-</code></pre>
-<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>The installed Bisheng public intrinsic uses <code>__cce_simd::INC_ORDER</code> / <code>__cce_simd::DEC_ORDER</code> tokens rather than the PTO string attribute.</p>
-<pre><code class="language-cpp">vector_s32 dst;
-int32_t index = 0;
-vci(dst, index, __cce_simd::INC_ORDER);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -998,8 +1021,13 @@ vci(dst, index, __cce_simd::INC_ORDER);
 <tbody>
 <tr>
 <td><code>%index</code></td>
-<td><code>i32</code></td>
-<td>Scalar seed used to generate the first lane value</td>
+<td>scalar <code>i32</code></td>
+<td>Scalar seed or base index for index generation</td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
+<td>Predication mask (optional in some forms); inactive lanes may produce zero or preserve existing values</td>
 </tr>
 </tbody>
 </table>
@@ -1015,8 +1043,8 @@ vci(dst, index, __cce_simd::INC_ORDER);
 <tbody>
 <tr>
 <td><code>order</code></td>
-<td><code>"ASC"</code>, <code>"DESC"</code></td>
-<td>Selects increasing or decreasing lane numbering</td>
+<td><code>"ASC"</code> / <code>"DESC"</code></td>
+<td>Sort order for index generation; <code>ASC</code> generates increasing indices, <code>DESC</code> generates decreasing</td>
 </tr>
 </tbody>
 </table>
@@ -1031,54 +1059,111 @@ vci(dst, index, __cce_simd::INC_ORDER);
 </thead>
 <tbody>
 <tr>
-<td><code>%indices</code></td>
-<td><code>!pto.vreg&lt;64xi32&gt;</code></td>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;Nxi32&gt;</code></td>
 <td>Generated index vector</td>
 </tr>
 </tbody>
 </table>
+<h3 id="c-semantics">C Semantics<a class="headerlink" href="#c-semantics" title="Permanent link">&para;</a></h3>
+<pre><code class="language-c">// ASC order: indices = base, base+1, base+2, ..., base+N-1
+// DESC order: indices = base, base-1, base-2, ..., base-(N-1)
+</code></pre>
+<p>The <code>%index</code> scalar is the starting value; each lane <code>i</code> produces <code>base + i</code> (ASC) or <code>base - i</code> (DESC).</p>
+<p>This is an index-generation family, not a numeric conversion. <code>ORDER</code> and the result element type together determine how indices are generated.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA result. It does not reserve buffers, signal events, or establish fences.</p>
+<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>%index</code> MUST have a type compatible with the selected result element type.</li>
-<li><code>order</code> MUST be one of the documented values.</li>
-<li>The visible PTO contract on this page is index generation; target-specific lowering may use helper forms with different concrete element types.</li>
+<li><code>%result</code> uses an integer element type (<code>i32</code> in the common form).</li>
+<li>The scalar <code>%index</code> type matches the result element type.</li>
+<li>The <code>order</code> attribute is required when using sorted index generation.</li>
+<li>For the standard form, <code>N</code> (lane count) is derived from the result type.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The verifier rejects illegal operand shapes, unsupported element types, and invalid <code>order</code> values.</li>
-<li>Any additional illegality stated in the <a href="../../../conversion-ops/">Conversion Ops</a> page is also part of the contract.</li>
+<li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
+<li>Illegal <code>order</code> values are rejected by the verifier.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>A5 is the most detailed concrete profile in the current manual.</li>
-<li>Under the current documented A5 contract, <code>pto.vci</code> does not map to a sampled vector <code>RV_*</code> compute event in <code>veccore0</code> trace.</li>
-<li>CPU simulation and A2/A3-class targets may realize the same visible behavior with software or helper-lowered implementations.</li>
+<li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
+<li>Under the current documented A5 profile contract, <code>pto.vci</code> maps to hardware trace with no vector <code>RV_*</code> in sampled <code>veccore0</code> trace.</li>
 </ul>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="execution-model">Execution Model<a class="headerlink" href="#execution-model" title="Permanent link">&para;</a></h3>
-<p><code>pto.vci</code> is an index-materialization helper executed inside <code>pto.vecscope</code>. It is typically dominated by setup and lane generation rather than a standard vector ALU pipeline.</p>
+<p><code>pto.vci</code> is an index-generation operation executed within a <code>pto.vecscope</code> region. It produces lane-wise index values without invoking the Vector Core's main ALU — the latency is dominated by mask setup and predicate generation rather than compute units.</p>
+<h3 id="a5-execution">A5 Execution<a class="headerlink" href="#a5-execution" title="Permanent link">&para;</a></h3>
+<p>On A5, <code>pto.vci</code> maps to hardware trace with no sampled <code>RV_*</code> in the <code>veccore0</code> trace — it is implemented in the predicate/materialization layer, not as a standard vector compute instruction.</p>
 <h3 id="a2a3-throughput">A2/A3 Throughput<a class="headerlink" href="#a2a3-throughput" title="Permanent link">&para;</a></h3>
-<p><code>vci</code> does not have a direct binary/unary cost-table entry in the current A2/A3 summary. Treat it as target-profile-specific helper work rather than a standard arithmetic RV opcode.</p>
+<p><code>vci</code> does not map to a direct CCE vector instruction in the A2/A3 cost model. It is compiled as a scalar index-generation loop within the vecscope:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Startup</td>
+<td>~10 cycles</td>
+<td>mask setup + loop overhead</td>
+</tr>
+<tr>
+<td>Per-element</td>
+<td>O(1)</td>
+<td>simple arithmetic per lane</td>
+</tr>
+<tr>
+<td>Complexity</td>
+<td>O(N)</td>
+<td>one operation per output lane</td>
+</tr>
+</tbody>
+</table>
+<p>The actual throughput depends on the surrounding loop structure and the number of iterations in the vecscope.</p>
+<h3 id="execution-note">Execution Note<a class="headerlink" href="#execution-note" title="Permanent link">&para;</a></h3>
+<p><code>vci</code> is commonly used to initialize index buffers for gather/scatter operations and argsort:</p>
+<pre><code class="language-mlir">// Initialize ascending index buffer: [0, 1, 2, 3, ..., 63] for 64-element gather
+%base_idx = pto.vci %c0 {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
+// Generates: [0, 1, 2, 3, ..., 63] in lane 0
+</code></pre>
+<hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="generate-ascending-indices">Generate ascending indices<a class="headerlink" href="#generate-ascending-indices" title="Permanent link">&para;</a></h3>
+<h3 id="generate-ascending-indices-common-use-for-gatherscatter">Generate ascending indices (common use for gather/scatter)<a class="headerlink" href="#generate-ascending-indices-common-use-for-gatherscatter" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%indices = pto.vci %c0 {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
+// Result: [0, 1, 2, 3, ..., 63]
 </code></pre>
 <h3 id="generate-descending-indices">Generate descending indices<a class="headerlink" href="#generate-descending-indices" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%indices = pto.vci %c63 {order = &quot;DESC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
+// Result: [63, 62, 61, 60, ..., 0]
 </code></pre>
-<h3 id="prepare-gather-indices">Prepare gather indices<a class="headerlink" href="#prepare-gather-indices" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%idx = pto.vci %c0 {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
+<h3 id="use-with-gather-indexed-load">Use with gather (indexed load)<a class="headerlink" href="#use-with-gather-indexed-load" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">// Generate indices, then use for indexed load
+%idx = pto.vci %c0 {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
 %data = pto.vgather2 %ub_table[%c0], %idx {dist = &quot;DIST&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 </code></pre>
+<h3 id="use-with-vsort32-argsort">Use with vsort32 (argsort)<a class="headerlink" href="#use-with-vsort32-argsort" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">// Generate ascending indices as sort keys
+%indices = pto.vci %c0 {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
+pto.vsort32 %sorted_indices, %indices, %config : !pto.ptr&lt;i32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, i64
+</code></pre>
 <h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<p><code>pto.vci</code> is most commonly used to initialize sequential index vectors for gather/scatter pipelines, ranking kernels, and sort-key preparation. The installed public C++ intrinsic also exposes concrete overloads beyond the common <code>i32</code> PTO example, but the page-level PTO contract remains lane-index generation from a scalar seed.</p>
+<p><code>pto.vci</code> generates lane indices from a scalar seed. The two primary use cases are:</p>
+<ol>
+<li><strong>Indexed access</strong>: Generate indices for <code>vgather2</code> / <code>vscatter</code> operations to access arbitrary elements.</li>
+<li><strong>Argsort preparation</strong>: Generate sequential indices before sorting, then rearrange data based on sorted indices.</li>
+</ol>
+<p>The generated indices are stable across invocations for the same <code>%index</code> seed, making them suitable as sort keys for indirect sort operations.</p>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../conversion-ops/">Conversion Ops</a></li>
+<li>Previous op in instruction set: <a href="./">pto.vci</a> (self-referential; see also <a href="../vcvt/">pto.vcvt</a>)</li>
 <li>Next op in instruction set: <a href="../vcvt/">pto.vcvt</a></li>
-<li>Vector instruction overview: <a href="../../../../instruction-surfaces/vector-instructions/">Vector Instructions</a></li>
+<li>Related index-generation: <a href="../../sfu-and-dsa-ops/vsort32/">pto.vsort32</a> — argsort using index vectors</li>
+<li>Related gather/scatter: <a href="../../vector-load-store/vgather2/">pto.vgather2</a>, <a href="../../vector-load-store/vscatter/">pto.vscatter</a></li>
 </ul>
               
             </div>

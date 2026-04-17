@@ -602,6 +602,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -622,10 +628,6 @@
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#per-vlane-group-reductions">Per-VLane (Group) Reductions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -842,6 +844,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -949,24 +972,63 @@
 <h1 id="ptovcmin">pto.vcmin<a class="headerlink" href="#ptovcmin" title="Permanent link">&para;</a></h1>
 <p><code>pto.vcmin</code> is part of the <a href="../../../reduction-ops/">Reduction Instructions</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Find min element with argmin. Result value + index in lane 0.</p>
+<p>Full-vector minimum reduction with argmin information packed into the low result lanes.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vcmin</code> is a <code>pto.v*</code> compute operation. It applies its semantics to active lanes, obeys the instruction set operand model, and returns its results in vector-register or mask form.</p>
+<p>The instruction scans all active lanes and finds the minimum value. The low result lanes carry the minimum and its lane index using the form defined by the selected target profile; the remaining result lanes are zero-filled.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vcmin %dst, %src, %mask : !pto.vreg&lt;NxT&gt;
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vcmin %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
-<p>Documented A5 types or forms: <code>i16-i32, f16, f32</code>.</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%input</code> is the source vector and <code>%mask</code> selects participating
-  lanes.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%input</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Source vector register to reduce</td>
+</tr>
+<tr>
+<td>%mask</td>
+<td><code>!pto.mask</code></td>
+<td>Predicate mask; inactive lanes do not participate</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> carries the reduction result in the low destination
-  positions.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%result</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Low result lanes carry the minimum value and its lane index; other lanes are zero-filled</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
+<p>This operation has no architectural side effect beyond producing its destination values. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>As with <code>pto.vcmax</code>, the exact value/index
-  packing depends on the chosen form and MUST be preserved consistently.</p>
+<ul>
+<li>The exact value/index packing MUST follow the selected target profile.</li>
+<li>If all predicate bits are zero, the result follows the instruction family zero-fill convention.</li>
+<li>The mask width MUST match <code>N</code>.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
@@ -974,9 +1036,8 @@
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Documented A5 coverage: <code>i16-i32, f16, f32</code>.</li>
+<li>Documented A5 coverage: <code>i16-i32</code>, <code>f16</code>, <code>f32</code>.</li>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
 </ul>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
@@ -1005,34 +1066,20 @@ For <code>pto.vcmin</code>, those public sources describe the instruction semant
 </table>
 <p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vcmin</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">T mn = INF; int idx = 0;
+<pre><code class="language-c">T mn = INF;
+int idx = 0;
 for (int i = 0; i &lt; N; i++)
-    if (src[i] &lt; mn) { mn = src[i]; idx = i; }
-dst_val[0] = mn;
-dst_idx[0] = idx;
+    if (mask[i] &amp;&amp; src[i] &lt; mn) { mn = src[i]; idx = i; }
+result_value = mn;
+result_index = idx;
 </code></pre>
-<pre><code>vreg layout (f32 example, 64 elements total):
-VLane 0: [0..7]   VLane 1: [8..15]  VLane 2: [16..23] VLane 3: [24..31]
-VLane 4: [32..39] VLane 5: [40..47] VLane 6: [48..55] VLane 7: [56..63]
-</code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">T mn = INF; int idx = 0;
-for (int i = 0; i &lt; N; i++)
-    if (src[i] &lt; mn) { mn = src[i]; idx = i; }
-dst_val[0] = mn;
-dst_idx[0] = idx;
-</code></pre>
-<h2 id="per-vlane-group-reductions">Per-VLane (Group) Reductions<a class="headerlink" href="#per-vlane-group-reductions" title="Permanent link">&para;</a></h2>
-<p>The vector register is organized as <strong>8 VLanes</strong> of 32 bytes each. Group reductions operate within each VLane independently.</p>
-<pre><code>vreg layout (f32 example, 64 elements total):
-VLane 0: [0..7]   VLane 1: [8..15]  VLane 2: [16..23] VLane 3: [24..31]
-VLane 4: [32..39] VLane 5: [40..47] VLane 6: [48..55] VLane 7: [56..63]
+<pre><code class="language-mlir">%result = pto.vcmin %input, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../reduction-ops/">Reduction Instructions</a></li>
 <li>Previous op in instruction set: <a href="../vcmax/">pto.vcmax</a></li>
-<li>Next op in instruction set: <a href="../vcgadd/">pto.vcgadd</a></li>
+<li>Next op in instruction set: <a href="../vcgmax/">pto.vcgmax</a></li>
 </ul>
               
             </div>

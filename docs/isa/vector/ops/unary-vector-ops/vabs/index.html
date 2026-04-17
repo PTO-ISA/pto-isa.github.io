@@ -492,6 +492,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -846,6 +852,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -955,16 +982,54 @@
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <p><code>%result</code> receives the lane-wise absolute values.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vabs</code> is a <code>pto.v*</code> compute operation. It applies its semantics to active lanes, obeys the instruction set operand model, and returns its results in vector-register or mask form.</p>
+<p><code>pto.vabs</code> computes the lane-wise absolute value. For each lane <code>i</code> where the predicate is true, <code>dst[i] = abs(src[i])</code>. Inactive lanes leave the destination unchanged.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vabs %result, %input, %mask
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vabs %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
 <p>Documented A5 types or forms: <code>i8-i32, f16, f32</code>.</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%input</code> supplies the source lanes and <code>%mask</code> selects which lanes
-  participate.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%input</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Source vector register; read at each active lane <code>i</code></td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>Predicate mask; lanes where mask bit is 1 (true) are active</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> receives the lane-wise absolute values.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Lane-wise absolute values: <code>dst[i] = abs(src[i])</code> on active lanes; inactive lanes are unmodified</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>

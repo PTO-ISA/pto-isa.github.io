@@ -703,6 +703,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -717,8 +723,6 @@
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -834,6 +838,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -941,44 +966,85 @@
 <h1 id="ptoset_flag">pto.set_flag<a class="headerlink" href="#ptoset_flag" title="Permanent link">&para;</a></h1>
 <p><code>pto.set_flag</code> is part of the <a href="../../../pipeline-sync/">Pipeline Sync</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Signal event from source pipe to destination pipe.</p>
+<p>Signal an event from one pipeline to another pipeline.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.set_flag</code> is a <code>pto.*</code> control/configuration operation. It changes ordering, buffer, event, or DMA-visible state that later payload work depends on. The portable guarantee is the dependency/configuration effect, while concrete pipe/event spaces remain target-profile details.</p>
+<p><code>pto.set_flag</code> marks the named event as produced by the source pipeline and visible to the destination pipeline. It is the producer half of the explicit event protocol used to connect MTE, vector, and other execution stages.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">set_flag[&quot;SRC_PIPE&quot;, &quot;DST_PIPE&quot;, &quot;EVENT_ID&quot;]
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">pto.set_flag[&quot;SRC_PIPE&quot;, &quot;DST_PIPE&quot;, &quot;EVENT_ID&quot;]
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p>The inputs are the architecture-visible control operands shown in the syntax: pipe ids, event ids, buffer ids, loop/stride values, pointers, or configuration words used to drive later execution.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SRC_PIPE</code></td>
+<td>pipe identifier</td>
+<td>Pipeline that produces the event</td>
+</tr>
+<tr>
+<td><code>DST_PIPE</code></td>
+<td>pipe identifier</td>
+<td>Pipeline that is allowed to consume the event</td>
+</tr>
+<tr>
+<td><code>EVENT_ID</code></td>
+<td>event identifier</td>
+<td>Named event slot used for the producer-consumer edge</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>This form is primarily defined by the side effect it has on control state, predicate state, or memory. It does not publish a new payload SSA result beyond any explicit state outputs shown in the syntax.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td><code>—</code></td>
+<td>This form does not return SSA values; it updates pipeline-event state.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation updates control, synchronization, or DMA configuration state. Depending on the form, it may stall a stage, establish a producer-consumer edge, reserve or release a buffer token, or configure later copy behavior.</p>
+<p>Signals the named event, making later <code>pto.wait_flag</code> operations on the matching <code>(SRC_PIPE, DST_PIPE, EVENT_ID)</code> tuple eligible to unblock.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>This operation inherits the legality and operand-shape rules of its instruction set overview. Any target-specific narrowing of element types, distributions, pipe/event spaces, or configuration tuples must be stated by the selected target profile.</p>
+<ul>
+<li>The selected pipe identifiers and event identifier MUST be valid for the selected target profile.</li>
+<li>The event protocol is directional: the producer and consumer pipe roles matter.</li>
+<li>Portable code MUST pair event signaling with the corresponding wait in the intended dependency chain.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>It is illegal to use unsupported pipe ids, event ids, buffer ids, or configuration tuples for the selected target profile.</li>
-<li>Waiting on state that was never established by a matching producer or prior configuration is an illegal PTO program.</li>
+<li>The verifier rejects illegal operand shapes, unsupported pipe or event identifiers, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
+<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>CPU simulation preserves the visible dependency/configuration contract, but it may not expose every low-level hazard that motivates the form on hardware targets.</li>
-<li>A2/A3 and A5 profiles may use different concrete pipe, DMA, predicate, or event spaces. Portable code must rely on the documented PTO contract plus the selected target profile.</li>
+<li>CPU simulation preserves the visible event protocol but may not expose all low-level hazards that motivate it on hardware.</li>
+<li>A2/A3 and A5 may use different concrete pipe and event spaces; portable code must rely on the documented PTO contract plus the selected target profile.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">set_flag(src_pipe, dst_pipe, event_id);
-</code></pre>
-<pre><code class="language-mlir">pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
-</code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">set_flag(src_pipe, dst_pipe, event_id);
-</code></pre>
-<p><strong>Example:</strong> After MTE2 completes GM→UB transfer, signal Vector pipe:</p>
 <pre><code class="language-mlir">pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../pipeline-sync/">Pipeline Sync</a></li>
+<li>Previous op in instruction set: (none)</li>
 <li>Next op in instruction set: <a href="../wait-flag/">pto.wait_flag</a></li>
 <li>Control-shell overview: <a href="../../../control-and-configuration/">Control and configuration</a></li>
 </ul>

@@ -648,6 +648,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -668,8 +674,6 @@
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -840,6 +844,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -947,23 +972,67 @@
 <h1 id="ptovpack">pto.vpack<a class="headerlink" href="#ptovpack" title="Permanent link">&para;</a></h1>
 <p><code>pto.vpack</code> is part of the <a href="../../../data-rearrangement/">Data Rearrangement</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Narrowing pack — two wide vectors to one narrow vector.</p>
+<p>Pack two wide vectors into one narrower vector.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vpack</code> is a <code>pto.v*</code> compute operation. It applies its semantics to active lanes, obeys the instruction set operand model, and returns its results in vector-register or mask form.</p>
+<p><code>pto.vpack</code> narrows the two source vectors and concatenates the narrowed halves into one destination vector. The exact narrowing mode is controlled by <code>%part</code> and the selected target profile.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vpack %dst, %src0, %src1, %part
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vpack %src0, %src1, %part : !pto.vreg&lt;NxT_wide&gt;, !pto.vreg&lt;NxT_wide&gt;, index -&gt; !pto.vreg&lt;2NxT_narrow&gt;
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%src0</code> and <code>%src1</code> are wide source vectors and <code>%part</code> selects
-  the packing submode.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%src0</td>
+<td><code>!pto.vreg&lt;NxT_wide&gt;</code></td>
+<td>First wide source vector</td>
+</tr>
+<tr>
+<td>%src1</td>
+<td><code>!pto.vreg&lt;NxT_wide&gt;</code></td>
+<td>Second wide source vector</td>
+</tr>
+<tr>
+<td>%part</td>
+<td><code>index</code></td>
+<td>Packing mode or submode selector</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> is the packed narrow vector.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%result</td>
+<td><code>!pto.vreg&lt;2NxT_narrow&gt;</code></td>
+<td>Packed narrow vector built from both sources</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
+<p>This operation has no architectural side effect beyond producing its destination values. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Packing is a narrowing conversion. Source
-  values that do not fit the destination width follow the truncation semantics
-  of the selected packing mode.</p>
+<ul>
+<li>Packing is a narrowing conversion; values that do not fit the destination width follow the truncation or saturation behavior of the selected form.</li>
+<li>Lowering MUST preserve the destination ordering between the first and second source halves.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
@@ -972,7 +1041,7 @@
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
+<li>Code that depends on an instruction-set-specific packing, selector, or permutation mode should treat that dependency as target-profile-specific unless the manual states cross-target portability explicitly.</li>
 </ul>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
@@ -1001,16 +1070,8 @@ For <code>pto.vpack</code>, those public sources describe the instruction semant
 </table>
 <p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vpack</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">// e.g., two vreg&lt;64xi32&gt; → one vreg&lt;128xi16&gt;
-for (int i = 0; i &lt; N; i++) {
-    dst[i]     = truncate(src0[i]);
-    dst[N + i] = truncate(src1[i]);
-}
-</code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">// e.g., two vreg&lt;64xi32&gt; → one vreg&lt;128xi16&gt;
-for (int i = 0; i &lt; N; i++) {
-    dst[i]     = truncate(src0[i]);
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++) {
+    dst[i] = truncate(src0[i]);
     dst[N + i] = truncate(src1[i]);
 }
 </code></pre>

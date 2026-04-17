@@ -652,6 +652,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -665,17 +671,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#timing-disclosure">Timing Disclosure</a>
-    </li>
-        </ul>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#typical-usage">Typical Usage</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -842,6 +838,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -949,21 +966,62 @@
 <h1 id="ptovzunpack">pto.vzunpack<a class="headerlink" href="#ptovzunpack" title="Permanent link">&para;</a></h1>
 <p><code>pto.vzunpack</code> is part of the <a href="../../../data-rearrangement/">Data Rearrangement</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Zero-extending unpack — narrow to wide (half).</p>
+<p>Unpack one half of a narrow vector with zero extension.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vzunpack</code> is a <code>pto.v*</code> compute operation. It applies its semantics to active lanes, obeys the instruction set operand model, and returns its results in vector-register or mask form.</p>
+<p><code>pto.vzunpack</code> widens one selected half of the source vector. Each narrow element is zero-extended into the wider destination element type.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vzunpack %dst, %src, %part
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vzunpack %src, %part : !pto.vreg&lt;NxT_narrow&gt;, index -&gt; !pto.vreg&lt;N/2xT_wide&gt;
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%src</code> is the packed narrow vector and <code>%part</code> selects which half
-  is unpacked.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%src</td>
+<td><code>!pto.vreg&lt;NxT_narrow&gt;</code></td>
+<td>Packed narrow source vector</td>
+</tr>
+<tr>
+<td>%part</td>
+<td><code>index</code></td>
+<td>Selector for which half of the source vector to unpack</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> is the widened vector.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%result</td>
+<td><code>!pto.vreg&lt;N/2xT_wide&gt;</code></td>
+<td>Widened vector with zero extension</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
+<p>This operation has no architectural side effect beyond producing its destination values. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>This is the zero-extending unpack instruction set.</p>
+<ul>
+<li>The selected half and widening mode MUST be supported by the target profile.</li>
+<li>The widening behavior is zero-extending.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
@@ -972,82 +1030,11 @@
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
+<li>Code that depends on an instruction-set-specific packing, selector, or permutation mode should treat that dependency as target-profile-specific unless the manual states cross-target portability explicitly.</li>
 </ul>
-<h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
-<p>The current public VPTO timing material for PTO micro instructions remains limited.
-For <code>pto.vzunpack</code>, those public sources describe the instruction semantics, operand legality, and pipeline placement, but they do <strong>not</strong> publish a numeric latency or steady-state throughput.</p>
-<table>
-<thead>
-<tr>
-<th>Metric</th>
-<th>Status</th>
-<th>Source Basis</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>A5 latency</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
-</tr>
-<tr>
-<td>Steady-state throughput</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
-</tr>
-</tbody>
-</table>
-<p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vzunpack</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <pre><code class="language-c">for (int i = 0; i &lt; N/2; i++)
     dst[i] = zero_extend(src[part_offset + i]);
-</code></pre>
-<pre><code class="language-mlir">// AoS → SoA conversion using deinterleave
-%even, %odd = pto.vdintlv %interleaved0, %interleaved1
-    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;
-
-// Filter: keep only elements passing condition
-%pass_mask = pto.vcmps %values, %threshold, %all, &quot;gt&quot;
-    : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
-%compacted = pto.vsqz %values, %pass_mask
-    : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-
-// Sliding window sum
-%prev_window = pto.vslide %curr, %prev, %c1
-    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, i16 -&gt; !pto.vreg&lt;64xf32&gt;
-%window_sum = pto.vadd %curr, %prev_window, %all
-    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-
-// Type narrowing via pack
-%packed_i16 = pto.vpack %wide0_i32, %wide1_i32, %c0
-    : !pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, index -&gt; !pto.vreg&lt;128xi16&gt;
-</code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N/2; i++)
-    dst[i] = zero_extend(src[part_offset + i]);
-</code></pre>
-<h2 id="typical-usage">Typical Usage<a class="headerlink" href="#typical-usage" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">// AoS → SoA conversion using deinterleave
-%even, %odd = pto.vdintlv %interleaved0, %interleaved1
-    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;
-
-// Filter: keep only elements passing condition
-%pass_mask = pto.vcmps %values, %threshold, %all, &quot;gt&quot;
-    : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
-%compacted = pto.vsqz %values, %pass_mask
-    : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-
-// Sliding window sum
-%prev_window = pto.vslide %curr, %prev, %c1
-    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, i16 -&gt; !pto.vreg&lt;64xf32&gt;
-%window_sum = pto.vadd %curr, %prev_window, %all
-    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-
-// Type narrowing via pack
-%packed_i16 = pto.vpack %wide0_i32, %wide1_i32, %c0
-    : !pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, index -&gt; !pto.vreg&lt;128xi16&gt;
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>

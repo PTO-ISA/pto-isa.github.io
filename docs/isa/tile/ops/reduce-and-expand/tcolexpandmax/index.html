@@ -338,6 +338,10 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
@@ -848,6 +852,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -957,7 +982,7 @@
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <p>Column-wise broadcast max with per-column scalar vector.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Column-wise broadcast max: take <code>max(src0, src1)</code> where <code>src1</code> provides one scalar per column. It operates on tile payloads rather than scalar control state, and its legality is constrained by tile shape, layout, valid-region, and target-profile support.</p>
+<p>Column-wise broadcast max: take <code>max(src0, src1)</code> where <code>src1</code> provides one scalar per column.</p>
 <p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. Let <code>s_j</code> be the per-column scalar taken from <code>src1</code> (one value per column).</p>
 <p>For <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
 <div class="arithmatex">\[
@@ -1019,7 +1044,41 @@ PTO_INST RecordEvent TCOLEXPANDMAX(TileDataDst &amp;dst, TileDataSrc0 &amp;src0,
 </li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<p>See related examples in <code>docs/isa/</code> and <code>docs/coding/tutorials/</code>.</p>
+<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using ColVecT = Tile&lt;TileType::Vec, float, 1, 16, BLayout::RowMajor&gt;;
+  SrcT src0;
+  DstT dst;
+  ColVecT src1;
+  // Col-expand-max: each column of dst = max(src0.col, src1.col_scalar)
+  TCOLEXPANDMAX(dst, src0, src1);
+}
+</code></pre>
+<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using ColVecT = Tile&lt;TileType::Vec, float, 1, 16, BLayout::RowMajor&gt;;
+  SrcT src0;
+  DstT dst;
+  ColVecT src1;
+  TASSIGN(src0, 0x1000);
+  TASSIGN(dst, 0x2000);
+  TASSIGN(src1, 0x3000);
+  // Col-expand-max in manual mode
+  TCOLEXPANDMAX(dst, src0, src1);
+}
+</code></pre>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
 %dst = pto.tcolexpandmax %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;

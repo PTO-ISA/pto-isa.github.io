@@ -589,6 +589,14 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
@@ -601,15 +609,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#timing-disclosure">Timing Disclosure</a>
-    </li>
-        </ul>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -838,6 +838,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -945,61 +966,81 @@
 <h1 id="ptovtrc">pto.vtrc<a class="headerlink" href="#ptovtrc" title="Permanent link">&para;</a></h1>
 <p><code>pto.vtrc</code> is part of the <a href="../../../conversion-ops/">Conversion Ops</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Standalone contract page for <code>pto.vtrc</code>.</p>
+<p>Round or truncate each lane while keeping the vector element type unchanged.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vtrc</code> belongs to the <code>pto.v*</code> conversion instruction set. It changes vector element interpretation, width, rounding, saturation, or index-generation state without leaving the vector-register model.</p>
+<p><code>pto.vtrc</code> applies a target-selected rounding mode to each active lane of the source vector. Unlike <code>pto.vcvt</code>, it does not change the destination element type; instead it rounds the existing element representation in place, which is useful for operations such as floor, round-to-zero, or round-to-nearest on floating-point vectors.</p>
+<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vtrc %dst, %src, &quot;ROUND_MODE&quot;
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vtrc %input, &quot;ROUND_MODE&quot; : !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;
+</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p>This operation follows the operand model of the <a href="../../../conversion-ops/">Conversion Ops</a> instruction set: SSA vector values carry payloads, masks gate active lanes when present, and instruction-set-specific attributes select rounding, selection, distribution, or fused-mode behavior.</p>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>This form is primarily defined by the side effect it has on control state, predicate state, or memory. It does not publish a new payload SSA result beyond any explicit state outputs shown in the syntax.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
-<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>This operation inherits the legality and operand-shape rules of its instruction set overview. Any target-specific narrowing of element types, distributions, pipe/event spaces, or configuration tuples must be stated by the selected target profile.</p>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
-</ul>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
-</ul>
-<h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
-<p>The current public VPTO timing material for PTO micro instructions remains limited.
-For <code>pto.vtrc</code>, those public sources describe the instruction semantics, operand legality, and pipeline placement, but they do <strong>not</strong> publish a numeric latency or steady-state throughput.</p>
 <table>
 <thead>
 <tr>
-<th>Metric</th>
-<th>Status</th>
-<th>Source Basis</th>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>A5 latency</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
+<td>%input</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Source vector register</td>
 </tr>
 <tr>
-<td>Steady-state throughput</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
+<td><code>ROUND_MODE</code></td>
+<td>enum</td>
+<td>Rounding selector such as round-to-zero, floor, ceil, or round-to-nearest as supported by the target profile</td>
 </tr>
 </tbody>
 </table>
-<p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vtrc</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
+<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%result</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Rounded or truncated vector result with the same element type as the source</td>
+</tr>
+</tbody>
+</table>
+<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
+<p>This operation has no architectural side effect beyond producing its destination vector register. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
+<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>pto.vtrc</code> preserves the vector width and element type of the source.</li>
+<li>The selected <code>ROUND_MODE</code> MUST be supported by the chosen target profile.</li>
+<li>Lowering MUST preserve the lane-wise rounding semantics documented by the selected form.</li>
+</ul>
+<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The verifier rejects illegal operand shapes, unsupported element types, and unsupported rounding-mode attributes.</li>
+<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
+</ul>
+<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
+<li>Code that depends on a specific rounding mode should treat that dependency as target-profile-specific unless the manual states cross-target portability explicitly.</li>
+</ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.vtrc
+<pre><code class="language-mlir">%rounded = pto.vtrc %input, &quot;ROUND_R&quot; : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 </code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<p>The instruction set overview carries the remaining shared rules for this operation.</p>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../conversion-ops/">Conversion Ops</a></li>
 <li>Previous op in instruction set: <a href="../vcvt/">pto.vcvt</a></li>
+<li>Rounding-related conversion: <a href="../vcvt/">pto.vcvt</a></li>
 </ul>
               
             </div>

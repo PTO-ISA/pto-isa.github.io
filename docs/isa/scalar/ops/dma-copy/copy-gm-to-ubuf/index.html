@@ -741,6 +741,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -755,8 +761,6 @@
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -833,6 +837,27 @@
                   <li class="toctree-l1"><a class="reference internal" href="../../../shared-arith/">Shared Arithmetic</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../shared-scf/">Shared SCF</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
@@ -941,97 +966,121 @@
 <h1 id="ptocopy_gm_to_ubuf">pto.copy_gm_to_ubuf<a class="headerlink" href="#ptocopy_gm_to_ubuf" title="Permanent link">&para;</a></h1>
 <p><code>pto.copy_gm_to_ubuf</code> is part of the <a href="../../../dma-copy/">DMA Copy</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>DMA transfer from Global Memory (<code>!pto.ptr&lt;T, gm&gt;</code>) to Unified Buffer (<code>!pto.ptr&lt;T, ub&gt;</code>).</p>
+<p>Execute a DMA transfer from Global Memory into Unified Buffer using the current GM→UB loop and stride configuration.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.copy_gm_to_ubuf</code> is a <code>pto.*</code> control/configuration operation. It changes ordering, buffer, event, or DMA-visible state that later payload work depends on. The portable guarantee is the dependency/configuration effect, while concrete pipe/event spaces remain target-profile details.</p>
+<p>The DMA engine reads <code>%n_burst</code> rows from <code>%gm_src</code> and writes them to <code>%ub_dst</code>. <code>%len_burst</code> controls the contiguous byte count copied per row. <code>%left_padding</code>, <code>%right_padding</code>, and <code>%data_select_bit</code> control whether the destination row is padded beyond the copied byte range. <code>%src_stride</code> and <code>%dst_stride</code> specify the row-to-row start offsets for this copy invocation.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">copy_gm_to_ubuf %gm_src, %ub_dst, %sid, %n_burst, %len_burst, %left_padding, %right_padding, %data_select_bit, %l2_cache_ctl, %src_stride, %dst_stride
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.copy_gm_to_ubuf %gm_src, %ub_dst, %sid, %n_burst, %len_burst, %left_padding, %right_padding, %data_select_bit, %l2_cache_ctl, %src_stride, %dst_stride : !pto.ptr&lt;T, gm&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64, i64, i64, i64, i1, i64, i64, i64
+</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p>The inputs are the architecture-visible control operands shown in the syntax: pipe ids, event ids, buffer ids, loop/stride values, pointers, or configuration words used to drive later execution.</p>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>This form is primarily defined by the side effect it has on control state, predicate state, or memory. It does not publish a new payload SSA result beyond any explicit state outputs shown in the syntax.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation updates control, synchronization, or DMA configuration state. Depending on the form, it may stall a stage, establish a producer-consumer edge, reserve or release a buffer token, or configure later copy behavior.</p>
-<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>This operation inherits the legality and operand-shape rules of its instruction set overview. Any target-specific narrowing of element types, distributions, pipe/event spaces, or configuration tuples must be stated by the selected target profile.</p>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>It is illegal to use unsupported pipe ids, event ids, buffer ids, or configuration tuples for the selected target profile.</li>
-<li>Waiting on state that was never established by a matching producer or prior configuration is an illegal PTO program.</li>
-</ul>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>CPU simulation preserves the visible dependency/configuration contract, but it may not expose every low-level hazard that motivates the form on hardware targets.</li>
-<li>A2/A3 and A5 profiles may use different concrete pipe, DMA, predicate, or event spaces. Portable code must rely on the documented PTO contract plus the selected target profile.</li>
-</ul>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.copy_gm_to_ubuf %gm_src, %ub_dst,
-    %sid, %n_burst, %len_burst, %left_padding, %right_padding,
-    %data_select_bit, %l2_cache_ctl, %src_stride, %dst_stride
-    : !pto.ptr&lt;T, gm&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64, i64,
-      i64, i64, i1, i64, i64, i64
-</code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.copy_gm_to_ubuf %gm_src, %ub_dst,
-    %sid, %n_burst, %len_burst, %left_padding, %right_padding,
-    %data_select_bit, %l2_cache_ctl, %src_stride, %dst_stride
-    : !pto.ptr&lt;T, gm&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64, i64,
-      i64, i64, i1, i64, i64, i64
-</code></pre>
-<p><strong>Parameters:</strong></p>
 <table>
 <thead>
 <tr>
-<th>Parameter</th>
+<th>Operand</th>
+<th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>%gm_src</code></td>
-<td>GM source pointer (<code>!pto.ptr&lt;T, gm&gt;</code>)</td>
+<td>%gm_src</td>
+<td><code>!pto.ptr&lt;T, gm&gt;</code></td>
+<td>GM source pointer</td>
 </tr>
 <tr>
-<td><code>%ub_dst</code></td>
-<td>UB destination pointer (<code>!pto.ptr&lt;T, ub&gt;</code>, 32B-aligned)</td>
+<td>%ub_dst</td>
+<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
+<td>UB destination pointer</td>
 </tr>
 <tr>
-<td><code>%sid</code></td>
-<td>Stream ID (usually 0)</td>
+<td>%sid</td>
+<td><code>i64</code></td>
+<td>DMA stream identifier</td>
 </tr>
 <tr>
-<td><code>%n_burst</code></td>
-<td>Number of burst rows (innermost loop count)</td>
+<td>%n_burst</td>
+<td><code>i64</code></td>
+<td>Number of burst rows to transfer</td>
 </tr>
 <tr>
-<td><code>%len_burst</code></td>
-<td>Contiguous bytes transferred per burst row</td>
+<td>%len_burst</td>
+<td><code>i64</code></td>
+<td>Contiguous byte count transferred per row</td>
 </tr>
 <tr>
-<td><code>%left_padding</code></td>
-<td>Left padding count (bytes)</td>
+<td>%left_padding</td>
+<td><code>i64</code></td>
+<td>Left padding byte count applied in the destination row</td>
 </tr>
 <tr>
-<td><code>%right_padding</code></td>
-<td>Right padding count (bytes)</td>
+<td>%right_padding</td>
+<td><code>i64</code></td>
+<td>Right padding byte count applied in the destination row</td>
 </tr>
 <tr>
-<td><code>%data_select_bit</code></td>
-<td>Padding / data-select control bit (<code>i1</code>)</td>
+<td>%data_select_bit</td>
+<td><code>i1</code></td>
+<td>Controls whether padding bytes are materialized according to the configured pad behavior</td>
 </tr>
 <tr>
-<td><code>%l2_cache_ctl</code></td>
-<td>L2 cache allocate control (TBD — controls whether DMA allocates in L2 cache)</td>
+<td>%l2_cache_ctl</td>
+<td><code>i64</code></td>
+<td>Target-specific L2 cache allocation hint</td>
 </tr>
 <tr>
-<td><code>%src_stride</code></td>
-<td>GM source stride: start-to-start distance between consecutive burst rows (bytes)</td>
+<td>%src_stride</td>
+<td><code>i64</code></td>
+<td>GM row-to-row start offset in bytes</td>
 </tr>
 <tr>
-<td><code>%dst_stride</code></td>
-<td>UB destination stride: start-to-start distance between consecutive burst rows (bytes, 32B-aligned)</td>
+<td>%dst_stride</td>
+<td><code>i64</code></td>
+<td>UB row-to-row start offset in bytes</td>
 </tr>
 </tbody>
 </table>
+<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td><code>—</code></td>
+<td>This form does not return SSA values; it writes data into Unified Buffer memory.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
+<p>Reads GM-visible storage, writes UB-visible storage, and consumes the active GM→UB loop and stride configuration.</p>
+<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%ub_dst</code> MUST satisfy the UB alignment requirements of the selected target profile.</li>
+<li><code>%len_burst</code> MUST fit within the configured row stride and DMA limits of the selected target profile.</li>
+<li>If padding is enabled, the padded destination footprint MUST still fit in the destination UB region.</li>
+</ul>
+<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The verifier rejects illegal operand shapes, unsupported pipe or event identifiers, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
+<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
+</ul>
+<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>CPU simulation preserves the visible copy contract but may not expose all DMA overlap hazards.</li>
+<li>A2/A3 and A5 may narrow supported element sizes, row widths, or cache-control semantics.</li>
+</ul>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mlir">pto.copy_gm_to_ubuf %gm_src, %ub_dst, %sid, %n_burst, %len_burst, %left_padding, %right_padding, %data_select_bit, %l2_cache_ctl, %src_stride, %dst_stride : !pto.ptr&lt;f32, gm&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64, i64, i64, i64, i1, i64, i64, i64
+</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../dma-copy/">DMA Copy</a></li>

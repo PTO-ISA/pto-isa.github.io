@@ -618,6 +618,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -638,8 +644,6 @@
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -840,6 +844,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -947,23 +972,74 @@
 <h1 id="ptovcmp">pto.vcmp<a class="headerlink" href="#ptovcmp" title="Permanent link">&para;</a></h1>
 <p><code>pto.vcmp</code> is part of the <a href="../../../compare-select/">Compare And Select</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Element-wise comparison, output predicate mask.</p>
+<p>Element-wise vector-to-vector comparison that produces a predicate mask.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vcmp</code> is a <code>pto.v*</code> compute operation. It applies its semantics to active lanes, obeys the instruction set operand model, and returns its results in vector-register or mask form.</p>
+<p>For each lane <code>i</code> where <code>%seed[i]</code> is true, <code>result[i]</code> is set to the outcome of applying <code>CMP_MODE</code> to <code>src0[i]</code> and <code>src1[i]</code>. Lanes disabled by <code>%seed</code> produce a zero bit in the result mask.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vcmp %dst, %src0, %src1, %seed, &quot;CMP_MODE&quot; : !pto.mask
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vcmp %src0, %src1, %seed, &quot;CMP_MODE&quot; : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.mask
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%src0</code>, <code>%src1</code>, and <code>%seed</code>; <code>CMP_MODE</code> selects the comparison
-  predicate.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%src0</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Left-hand vector operand</td>
+</tr>
+<tr>
+<td>%src1</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Right-hand vector operand</td>
+</tr>
+<tr>
+<td>%seed</td>
+<td><code>!pto.mask</code></td>
+<td>Incoming predicate mask that limits which lanes are compared</td>
+</tr>
+<tr>
+<td><code>CMP_MODE</code></td>
+<td>enum</td>
+<td>Comparison predicate such as <code>eq</code>, <code>ne</code>, <code>lt</code>, <code>le</code>, <code>gt</code>, or <code>ge</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> is the generated predicate mask.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%result</td>
+<td><code>!pto.mask</code></td>
+<td>Predicate mask whose active bits record the comparison result</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
+<p>This operation has no architectural side effect beyond producing its destination values. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Only lanes enabled by <code>%seed</code> participate.
-  Integer and floating-point comparisons follow their own element-type-specific
-  comparison rules.</p>
+<ul>
+<li><code>%src0</code> and <code>%src1</code> MUST have the same vector width <code>N</code> and element type <code>T</code>.</li>
+<li>The seed mask width MUST match <code>N</code>.</li>
+<li>Floating-point and integer comparisons follow the element-type-specific comparison rules of the selected target profile.
+Supported compare modes are <code>eq</code>, <code>ne</code>, <code>lt</code>, <code>le</code>, <code>gt</code>, and <code>ge</code>.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
@@ -972,7 +1048,7 @@
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
+<li>Code that depends on an implicit predicate source or a target-specific encoding variant should treat that dependency as target-profile-specific unless the manual states cross-target portability explicitly.</li>
 </ul>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
@@ -1002,61 +1078,14 @@ For <code>pto.vcmp</code>, those public sources describe the instruction semanti
 <p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vcmp</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    if (seed[i])
-        dst[i] = (src0[i] CMP src1[i]) ? 1 : 0;
+    result[i] = seed[i] ? cmp(src0[i], src1[i], CMP_MODE) : 0;
 </code></pre>
-<pre><code class="language-mlir">%all_active = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
-%lt_mask = pto.vcmp %a, %b, %all_active, &quot;lt&quot; : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
-// lt_mask[i] = 1 if a[i] &lt; b[i]
-</code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    if (seed[i])
-        dst[i] = (src0[i] CMP src1[i]) ? 1 : 0;
-</code></pre>
-<p><strong>Compare modes:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Mode</th>
-<th>Operation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>eq</code></td>
-<td>Equal (==)</td>
-</tr>
-<tr>
-<td><code>ne</code></td>
-<td>Not equal (!=)</td>
-</tr>
-<tr>
-<td><code>lt</code></td>
-<td>Less than (&lt;)</td>
-</tr>
-<tr>
-<td><code>le</code></td>
-<td>Less than or equal (&lt;=)</td>
-</tr>
-<tr>
-<td><code>gt</code></td>
-<td>Greater than (&gt;)</td>
-</tr>
-<tr>
-<td><code>ge</code></td>
-<td>Greater than or equal (&gt;=)</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Example:</strong></p>
-<pre><code class="language-mlir">%all_active = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
-%lt_mask = pto.vcmp %a, %b, %all_active, &quot;lt&quot; : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
-// lt_mask[i] = 1 if a[i] &lt; b[i]
+<pre><code class="language-mlir">%lt_mask = pto.vcmp %a, %b, %all_active, &quot;lt&quot; : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../compare-select/">Compare And Select</a></li>
+<li>Previous op in instruction set: (none)</li>
 <li>Next op in instruction set: <a href="../vcmps/">pto.vcmps</a></li>
 </ul>
               

@@ -668,6 +668,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -683,13 +689,21 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#timing-disclosure">Timing Disclosure</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-latency">A5 Latency</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-throughput">A2/A3 Throughput</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#fused-add-relu">Fused add + ReLU</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
+    <li class="toctree-l4"><a class="reference internal" href="#mlir-form">MLIR form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#c-intrinsic">C++ intrinsic</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -840,6 +854,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -947,22 +982,78 @@
 <h1 id="ptovaddrelu">pto.vaddrelu<a class="headerlink" href="#ptovaddrelu" title="Permanent link">&para;</a></h1>
 <p><code>pto.vaddrelu</code> is part of the <a href="../../../sfu-and-dsa-ops/">SFU And DSA Instructions</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Fused add + ReLU.</p>
+<p>Fused add + ReLU: computes addition followed by ReLU in a single fused operation.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vaddrelu</code> is a specialized <code>pto.v*</code> operation. It exposes fused, widening, or domain-specific hardware behavior through one stable virtual mnemonic so the instruction set can be reasoned about at the ISA level.</p>
+<p>Fused add + ReLU: <code>dst[i] = max(0, lhs[i] + rhs[i])</code>. Computes addition followed by ReLU in a single fused operation. This combines two separate ops into one hardware instruction, eliminating an intermediate register write and improving throughput.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%result = pto.vaddrelu %lhs, %rhs : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vaddrelu %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;
 </code></pre>
-<p>Documented A5 types or forms: <code>f16, f32</code>.</p>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vaddrelu %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
+</code></pre>
+<p>Documented A5 types: <code>f16, f32</code>.</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%lhs</code> and <code>%rhs</code> are the two addends.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td><code>%lhs</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Left-hand source vector register</td>
+</tr>
+<tr>
+<td></td>
+<td><code>%rhs</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Right-hand source vector register</td>
+</tr>
+<tr>
+<td></td>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>Predicate mask; lanes where mask bit is 1 are active</td>
+</tr>
+</tbody>
+</table>
+<p>Both source registers MUST have the same element type and the same vector width <code>N</code>. The mask width MUST match <code>N</code>.</p>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> is the fused add-then-ReLU result.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Fused add-then-ReLU result on active lanes</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
+<p>This operation has no architectural side effect beyond producing its destination vector register. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Floating-point element types only on the
-  current documented instruction set.</p>
+<ul>
+<li><strong>Type match</strong>: <code>%lhs</code>, <code>%rhs</code>, and <code>%result</code> MUST have identical element types.</li>
+<li><strong>Width match</strong>: All three registers MUST have the same vector width <code>N</code>.</li>
+<li><strong>Mask width</strong>: <code>%mask</code> MUST have width equal to <code>N</code>.</li>
+<li><strong>Active lanes</strong>: Only lanes where the mask bit is 1 (true) participate in the computation.</li>
+<li><strong>Floating-point only</strong>: Fused add-ReLU is defined for floating-point element types on the current documented instruction set.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
@@ -975,38 +1066,62 @@
 <li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
 </ul>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
-<p>The current public VPTO timing material for PTO micro instructions remains limited.
-For <code>pto.vaddrelu</code>, those public sources describe the instruction semantics, operand legality, and pipeline placement, but they do <strong>not</strong> publish a numeric latency or steady-state throughput.</p>
+<h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
+<p>SFU operations have higher latency than standard arithmetic ops. Consult the target profile's performance model for cycle-accurate estimates.</p>
+<h3 id="a2a3-throughput">A2/A3 Throughput<a class="headerlink" href="#a2a3-throughput" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
+<th></th>
 <th>Metric</th>
-<th>Status</th>
-<th>Source Basis</th>
+<th>Value</th>
+<th>Constant</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>A5 latency</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
+<td></td>
+<td>Startup latency</td>
+<td>14</td>
+<td><code>A2A3_STARTUP_BINARY</code></td>
 </tr>
 <tr>
-<td>Steady-state throughput</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
+<td></td>
+<td>Completion latency</td>
+<td>26</td>
+<td><code>A2A3_COMPL_FP32_EXP</code></td>
+</tr>
+<tr>
+<td></td>
+<td>Per-repeat throughput</td>
+<td>2</td>
+<td><code>A2A3_RPT_2</code></td>
+</tr>
+<tr>
+<td></td>
+<td>Pipeline interval</td>
+<td>18</td>
+<td><code>A2A3_INTERVAL</code></td>
 </tr>
 </tbody>
 </table>
-<p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vaddrelu</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
+<hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<h3 id="fused-add-relu">Fused add + ReLU<a class="headerlink" href="#fused-add-relu" title="Permanent link">&para;</a></h3>
 <pre><code class="language-c">for (int i = 0; i &lt; N; i++)
     dst[i] = max(src0[i] + src1[i], 0);
 </code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = max(src0[i] + src1[i], 0);
+<h3 id="mlir-form">MLIR form<a class="headerlink" href="#mlir-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vaddrelu %lhs, %rhs, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<h3 id="c-intrinsic">C++ intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+Mask&lt;64&gt; mask;
+mask.set_all(true);
+
+VADDRELU(vdst, va, vb, mask);
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>

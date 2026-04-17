@@ -604,6 +604,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -619,13 +625,21 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#timing-disclosure">Timing Disclosure</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-latency-and-throughput">A5 Latency and Throughput</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#c-scalar-pseudocode">C — Scalar Pseudocode</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
+    <li class="toctree-l4"><a class="reference internal" href="#mlir-ssa-form">MLIR — SSA Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mlir-dps-form">MLIR — DPS Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#typical-usage-softmax-row-sum">Typical Usage — Softmax Row Sum</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -840,6 +854,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -947,24 +982,70 @@
 <h1 id="ptovcgadd">pto.vcgadd<a class="headerlink" href="#ptovcgadd" title="Permanent link">&para;</a></h1>
 <p><code>pto.vcgadd</code> is part of the <a href="../../../reduction-ops/">Reduction Instructions</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Sum within each VLane. 8 results at indices 0, 8, 16, 24, 32, 40, 48, 56 (for f32).</p>
+<p>Lane-group reduction that sums within each 32-byte VLane group, writing one result per group to its lane-0 position and zeroing all other lanes in each group.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vcgadd</code> is a <code>pto.v*</code> compute operation. It applies its semantics to active lanes, obeys the instruction set operand model, and returns its results in vector-register or mask form.</p>
+<p>Reduces elements within each 32-byte VLane group independently, using a tree-reduction strategy implemented by the hardware. The result of each group's reduction is written to lane 0 of that group; all other lanes in each group are zeroed.</p>
+<p>For a 128-element vector with 32-byte VLane groups (4-byte <code>f32</code> → 8 elements per VLane):</p>
+<div class="arithmatex">\[ \mathrm{dst}_{g \times 8} = \sum_{i=0}^{7} \mathrm{src}_{g \times 8 + i} \]</div>
+<p>for each VLane group <code>g</code> in <code>0 .. 7</code>. All other lanes <code>(g × 8 + 1 .. g × 8 + 7)</code> are zeroed.</p>
+<p>Inactive lanes are treated as zero.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vcgadd %dst, %src, %mask : !pto.vreg&lt;NxT&gt;
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vcgadd %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
-<p>Documented A5 types or forms: <code>i16-i32, f16, f32</code>.</p>
+<p>Supported element types on A5: <code>i16-i32</code>, <code>f16</code>, <code>f32</code>.</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%input</code> is the source vector and <code>%mask</code> selects participating
-  lanes.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Role</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%input</code></td>
+<td>Source vector</td>
+<td>Vector register holding the values to reduce; lanes are reduced within their VLane group</td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td>Predicate mask</td>
+<td>Selects which lanes participate in the reduction; inactive lanes contribute zero</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> contains one sum per 32-byte VLane group, written
-  contiguously into the low slot of each group.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Result vector: lane 0 of each VLane group holds the group sum; all other lanes in each group are zeroed</td>
+</tr>
+</tbody>
+</table>
+<p>For a 128-element <code>f32</code> vector: results appear at indices <code>0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120</code> (one per 32-byte VLane group). Note that for a 128-element f32 vector, there are 16 VLane groups, but the hardware may produce results at a different stride depending on the microarchitecture.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
+<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>This is a per-32-byte VLane-group reduction.
-  Inactive lanes are treated as zero.</p>
+<ul>
+<li><strong>VLane granularity</strong>: Reduction operates within 32-byte VLane groups; results are written to lane 0 of each group.</li>
+<li><strong>Inactive lanes</strong>: Inactive lanes are treated as zero.</li>
+<li><strong>All lanes inactive in a group</strong>: If all predicate bits are zero within a group, that group's lane 0 result is zero.</li>
+<li><strong>Type support</strong>: Only <code>i16-i32</code>, <code>f16</code>, <code>f32</code> are supported on A5.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
@@ -972,38 +1053,17 @@
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Documented A5 coverage: <code>i16-i32, f16, f32</code>.</li>
+<li>Documented A5 coverage: <code>i16-i32</code>, <code>f16</code>, <code>f32</code>.</li>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
 <li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
 </ul>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
-<p>The current public VPTO timing material for PTO micro instructions remains limited.
-For <code>pto.vcgadd</code>, those public sources describe the instruction semantics, operand legality, and pipeline placement, but they do <strong>not</strong> publish a numeric latency or steady-state throughput.</p>
-<table>
-<thead>
-<tr>
-<th>Metric</th>
-<th>Status</th>
-<th>Source Basis</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>A5 latency</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
-</tr>
-<tr>
-<td>Steady-state throughput</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
-</tr>
-</tbody>
-</table>
-<p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vcgadd</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
+<h3 id="a5-latency-and-throughput">A5 Latency and Throughput<a class="headerlink" href="#a5-latency-and-throughput" title="Permanent link">&para;</a></h3>
+<p>Vector lane-group reduction latency and throughput are target-specific. Lane-group reductions (<code>vcgadd</code>) typically have lower latency than full-vector reductions (<code>vcadd</code>) because each VLane group reduces independently and in parallel.</p>
+<hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">int K = N / 8;  // elements per VLane
+<h3 id="c-scalar-pseudocode">C — Scalar Pseudocode<a class="headerlink" href="#c-scalar-pseudocode" title="Permanent link">&para;</a></h3>
+<pre><code class="language-c">int K = N / 8;  // elements per VLane group (8 for f32)
 for (int g = 0; g &lt; 8; g++) {
     T sum = 0;
     for (int i = 0; i &lt; K; i++)
@@ -1012,25 +1072,33 @@ for (int g = 0; g &lt; 8; g++) {
     for (int i = 1; i &lt; K; i++)
         dst[g*K + i] = 0;
 }
-// For f32: results at dst[0], dst[8], dst[16], dst[24], dst[32], dst[40], dst[48], dst[56]
+// For f32 128-element vector: results at dst[0], dst[8], dst[16], dst[24],
+// dst[32], dst[40], dst[48], dst[56], dst[64], dst[72], dst[80], dst[88],
+// dst[96], dst[104], dst[112], dst[120]
 </code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">int K = N / 8;  // elements per VLane
-for (int g = 0; g &lt; 8; g++) {
-    T sum = 0;
-    for (int i = 0; i &lt; K; i++)
-        sum += src[g*K + i];
-    dst[g*K] = sum;
-    for (int i = 1; i &lt; K; i++)
-        dst[g*K + i] = 0;
-}
-// For f32: results at dst[0], dst[8], dst[16], dst[24], dst[32], dst[40], dst[48], dst[56]
+<h3 id="mlir-ssa-form">MLIR — SSA Form<a class="headerlink" href="#mlir-ssa-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">// Lane-group sum reduction: one result per 32-byte VLane
+%result = pto.vcgadd %input, %mask : !pto.vreg&lt;128xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf32&gt;
+</code></pre>
+<h3 id="mlir-dps-form">MLIR — DPS Form<a class="headerlink" href="#mlir-dps-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.vcgadd ins(%input, %mask : !pto.vreg&lt;128xf32&gt;, !pto.mask)
+            outs(%result : !pto.vreg&lt;128xf32&gt;)
+</code></pre>
+<h3 id="typical-usage-softmax-row-sum">Typical Usage — Softmax Row Sum<a class="headerlink" href="#typical-usage-softmax-row-sum" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">// Compute row-wise softmax: step 1 — compute exp and lane-group sum
+%exp = pto.vexpdiff %row, %c0 : !pto.vreg&lt;128xf32&gt;, f32 -&gt; !pto.vreg&lt;128xf32&gt;
+%mask = pto vidu %c128 : i1 -&gt; !pto.mask
+%sum = pto.vcgadd %exp, %mask : !pto.vreg&lt;128xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf32&gt;
+// %sum[0,8,16,...] holds per-VLane exp sums for normalization
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../reduction-ops/">Reduction Instructions</a></li>
 <li>Previous op in instruction set: <a href="../vcmin/">pto.vcmin</a></li>
 <li>Next op in instruction set: <a href="../vcgmax/">pto.vcgmax</a></li>
+<li>Related reduction: <a href="../vcadd/">pto.vcadd</a> — full-vector reduction</li>
+<li>Related reduction: <a href="../vcmax/">pto.vcmax</a> — full-vector max</li>
+<li>Related reduction: <a href="../vcgmax/">pto.vcgmax</a> — lane-group max</li>
 </ul>
               
             </div>

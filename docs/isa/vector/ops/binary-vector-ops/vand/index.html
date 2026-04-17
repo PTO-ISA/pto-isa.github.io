@@ -534,6 +534,14 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -549,13 +557,25 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
         <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-latency">A5 Latency</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-throughput">A2/A3 Throughput</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#performance_1">Performance</a>
+        <ul>
     <li class="toctree-l4"><a class="reference internal" href="#timing-disclosure">Timing Disclosure</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#c-semantics">C Semantics</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
+    <li class="toctree-l4"><a class="reference internal" href="#mlir-usage">MLIR Usage</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -840,6 +860,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -947,33 +988,165 @@
 <h1 id="ptovand">pto.vand<a class="headerlink" href="#ptovand" title="Permanent link">&para;</a></h1>
 <p><code>pto.vand</code> is part of the <a href="../../../binary-vector-ops/">Binary Vector Instructions</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> is the lane-wise bitwise AND.</p>
+<p>Lane-wise bitwise AND: <code>dst[i] = lhs[i] &amp; rhs[i]</code> for each active lane.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vand</code> is a <code>pto.v*</code> compute operation. It applies its semantics to active lanes, obeys the instruction set operand model, and returns its results in vector-register or mask form.</p>
+<p>Computes the lane-wise bitwise AND of two source vector registers. For each lane <code>i</code> where the predicate is true:</p>
+<div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{lhs}_i \,\&amp;\, \mathrm{rhs}_i \]</div>
+<p>Inactive lanes leave the destination unchanged. This is an integer-only operation.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%result = pto.vand %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vand %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;
 </code></pre>
-<p>Documented A5 types or forms: <code>all integer types</code>.</p>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vand %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
+</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.vand ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
+          outs(%result : !pto.vreg&lt;NxT&gt;)
+</code></pre>
+<p>Supported element types: all integer types (<code>i8</code>–<code>i64</code>, <code>u8</code>–<code>u64</code>).</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%lhs</code>, <code>%rhs</code>, and <code>%mask</code> as above.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%lhs</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Left-hand source vector register</td>
+</tr>
+<tr>
+<td><code>%rhs</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Right-hand source vector register</td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>Predicate mask; lanes where mask bit is 1 are active</td>
+</tr>
+</tbody>
+</table>
+<p>Both source registers MUST have the same integer element type and the same vector width <code>N</code>. The mask width MUST match <code>N</code>.</p>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> is the lane-wise bitwise AND.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Lane-wise bitwise AND: <code>dst[i] = lhs[i] &amp; rhs[i]</code> on active lanes; inactive lanes are unmodified</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
+<p>This operation has no architectural side effect beyond producing its destination vector register. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Integer element types only.</p>
+<ul>
+<li><strong>Type</strong>: Integer element types only (no floating-point).</li>
+<li><strong>Type match</strong>: <code>%lhs</code>, <code>%rhs</code>, and <code>%result</code> MUST have identical element types.</li>
+<li><strong>Width match</strong>: All three registers MUST have the same vector width <code>N</code>.</li>
+<li><strong>Mask width</strong>: <code>%mask</code> MUST have width equal to <code>N</code>.</li>
+<li><strong>Active lanes</strong>: Only lanes where the mask bit is 1 participate.</li>
+<li><strong>Inactive lanes</strong>: Destination elements at inactive lanes are unmodified.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
-<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
+<li>The verifier rejects non-integer element types, type mismatches, width mismatches, or mask width mismatches.</li>
+<li>Any additional illegality stated in the <a href="../../../binary-vector-ops/">Binary Vector Instructions</a> instruction set page is also part of the contract.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Documented A5 coverage: <code>all integer types</code>.</li>
-<li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Element Type</th>
+<th style="text-align: center;">CPU Simulator</th>
+<th style="text-align: center;">A2/A3</th>
+<th style="text-align: center;">A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Integer types</td>
+<td style="text-align: center;">Simulated</td>
+<td style="text-align: center;">Simulated</td>
+<td style="text-align: center;">Supported</td>
+</tr>
+</tbody>
+</table>
+<p>A5 is the primary concrete profile for the vector instructions.</p>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
+<h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Element Type</th>
+<th>Latency (cycles)</th>
+<th>A5 RV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td><code>i32</code></td>
+<td>7</td>
+<td><code>RV_VAND</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a2a3-throughput">A2/A3 Throughput<a class="headerlink" href="#a2a3-throughput" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Metric</th>
+<th>Value</th>
+<th>Constant</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Startup latency</td>
+<td>14</td>
+<td><code>A2A3_STARTUP_BINARY</code></td>
+</tr>
+<tr>
+<td></td>
+<td>Completion latency</td>
+<td>17</td>
+<td><code>A2A3_COMPL_INT_BINOP</code></td>
+</tr>
+<tr>
+<td></td>
+<td>Per-repeat throughput</td>
+<td>2</td>
+<td><code>A2A3_RPT_2</code></td>
+</tr>
+<tr>
+<td></td>
+<td>Pipeline interval</td>
+<td>18</td>
+<td><code>A2A3_INTERVAL</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="performance_1">Performance<a class="headerlink" href="#performance_1" title="Permanent link">&para;</a></h2>
 <h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
 <p>The current public VPTO timing material for PTO micro instructions remains limited.
 For <code>pto.vand</code>, those public sources describe the instruction semantics, operand legality, and pipeline placement, but they do <strong>not</strong> publish a numeric latency or steady-state throughput.</p>
@@ -1000,12 +1173,17 @@ For <code>pto.vand</code>, those public sources describe the instruction semanti
 </table>
 <p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vand</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<h3 id="c-semantics">C Semantics<a class="headerlink" href="#c-semantics" title="Permanent link">&para;</a></h3>
 <pre><code class="language-c">for (int i = 0; i &lt; N; i++)
     dst[i] = src0[i] &amp; src1[i];
 </code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] &amp; src1[i];
+<h3 id="mlir-usage">MLIR Usage<a class="headerlink" href="#mlir-usage" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">// Bitwise AND of two integer vectors
+%result = pto.vand %a, %b, %active : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xi32&gt;
+
+// Mask out specific bits: keep only bits 0-7
+%mask = pto.vbroadcast %c255 : i32 -&gt; !pto.vreg&lt;64xi32&gt;
+%masked = pto.vand %data, %mask, %active : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xi32&gt;
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>

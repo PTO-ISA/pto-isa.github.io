@@ -707,6 +707,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -721,8 +727,6 @@
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -834,6 +838,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -941,59 +966,76 @@
 <h1 id="ptopipe_barrier">pto.pipe_barrier<a class="headerlink" href="#ptopipe_barrier" title="Permanent link">&para;</a></h1>
 <p><code>pto.pipe_barrier</code> is part of the <a href="../../../pipeline-sync/">Pipeline Sync</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Drain all pending ops in the specified pipe. All previously issued operations on that pipe complete before any subsequent operation begins.</p>
+<p>Drain all previously issued work in one pipeline before allowing later work on that same pipeline to begin.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.pipe_barrier</code> is a <code>pto.*</code> control/configuration operation. It changes ordering, buffer, event, or DMA-visible state that later payload work depends on. The portable guarantee is the dependency/configuration effect, while concrete pipe/event spaces remain target-profile details.</p>
+<p><code>pto.pipe_barrier</code> forces completion of the named pipeline's outstanding work. It is the simplest ordering primitive when the hazard is confined to one pipeline and no explicit cross-pipeline event identity is required.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pipe_barrier &quot;PIPE_*&quot;
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">pto.pipe_barrier &quot;PIPE_*&quot;
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p>The inputs are the architecture-visible control operands shown in the syntax: pipe ids, event ids, buffer ids, loop/stride values, pointers, or configuration words used to drive later execution.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PIPE_*</code></td>
+<td>pipe identifier</td>
+<td>Pipeline whose outstanding work must retire before later work begins</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>This form is primarily defined by the side effect it has on control state, predicate state, or memory. It does not publish a new payload SSA result beyond any explicit state outputs shown in the syntax.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td><code>—</code></td>
+<td>This form does not return SSA values; it establishes an ordering point on the named pipeline.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation updates control, synchronization, or DMA configuration state. Depending on the form, it may stall a stage, establish a producer-consumer edge, reserve or release a buffer token, or configure later copy behavior.</p>
+<p>Stalls the named pipeline until its previously issued operations retire. Later operations issued to that pipeline are ordered after the barrier.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>This operation inherits the legality and operand-shape rules of its instruction set overview. Any target-specific narrowing of element types, distributions, pipe/event spaces, or configuration tuples must be stated by the selected target profile.</p>
+<ul>
+<li>The selected pipe identifier MUST be valid for the selected target profile.</li>
+<li>This barrier orders work within one pipeline; cross-pipeline producer-consumer edges still require the appropriate event or buffer protocol.</li>
+<li>Portable code SHOULD use the narrowest ordering primitive that matches the hazard.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>It is illegal to use unsupported pipe ids, event ids, buffer ids, or configuration tuples for the selected target profile.</li>
-<li>Waiting on state that was never established by a matching producer or prior configuration is an illegal PTO program.</li>
+<li>The verifier rejects illegal operand shapes, unsupported pipe or event identifiers, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
+<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>CPU simulation preserves the visible dependency/configuration contract, but it may not expose every low-level hazard that motivates the form on hardware targets.</li>
-<li>A2/A3 and A5 profiles may use different concrete pipe, DMA, predicate, or event spaces. Portable code must rely on the documented PTO contract plus the selected target profile.</li>
+<li>CPU simulation preserves the visible ordering contract but may not expose every pipeline hazard that motivates the barrier on hardware.</li>
+<li>A2/A3 and A5 may differ in the exact pipe set that can be named.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">pipe_barrier(pipe);
-</code></pre>
-<pre><code class="language-mlir">// Both stores target the same GM address — order matters!
-pto.copy_ubuf_to_gm %ub_partial_0, %gm_result, ...
-// Without pipe_barrier, MTE3 could execute the second copy before the first
-// completes, producing a non-deterministic result at %gm_result.
-pto.pipe_barrier &quot;PIPE_MTE3&quot;
-// After barrier: first copy is guaranteed complete. Second copy overwrites deterministically.
-pto.copy_ubuf_to_gm %ub_partial_1, %gm_result, ...
-</code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">pipe_barrier(pipe);
-</code></pre>
-<p><strong>Pipe identifiers:</strong> <code>PIPE_MTE2</code>, <code>PIPE_V</code>, <code>PIPE_MTE3</code></p>
-<p><strong>Example:</strong> Two back-to-back <code>copy_ubuf_to_gm</code> calls writing to the same GM address. Without a barrier, MTE3 may reorder them and the final GM value is non-deterministic:</p>
-<pre><code class="language-mlir">// Both stores target the same GM address — order matters!
-pto.copy_ubuf_to_gm %ub_partial_0, %gm_result, ...
-// Without pipe_barrier, MTE3 could execute the second copy before the first
-// completes, producing a non-deterministic result at %gm_result.
-pto.pipe_barrier &quot;PIPE_MTE3&quot;
-// After barrier: first copy is guaranteed complete. Second copy overwrites deterministically.
-pto.copy_ubuf_to_gm %ub_partial_1, %gm_result, ...
+<pre><code class="language-mlir">pto.pipe_barrier &quot;PIPE_MTE3&quot;
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../pipeline-sync/">Pipeline Sync</a></li>
 <li>Previous op in instruction set: <a href="../wait-flag/">pto.wait_flag</a></li>
-<li>Next op in instruction set: <a href="../get-buf/">pto.get_buf</a></li>
+<li>Next op in instruction set: <a href="../mem-bar/">pto.mem_bar</a></li>
 <li>Control-shell overview: <a href="../../../control-and-configuration/">Control and configuration</a></li>
 </ul>
               

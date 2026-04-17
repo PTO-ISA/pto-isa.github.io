@@ -578,6 +578,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -598,10 +604,6 @@
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#typical-usage">Typical Usage</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -842,6 +844,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -949,23 +972,78 @@
 <h1 id="ptovsubcs">pto.vsubcs<a class="headerlink" href="#ptovsubcs" title="Permanent link">&para;</a></h1>
 <p><code>pto.vsubcs</code> is part of the <a href="../../../vec-scalar-ops/">Vector-Scalar Instructions</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Subtract with borrow-in and borrow-out.</p>
+<p>Lane-wise subtract with explicit borrow-in and borrow-out masks.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vsubcs</code> is a <code>pto.v*</code> compute operation. It applies its semantics to active lanes, obeys the instruction set operand model, and returns its results in vector-register or mask form.</p>
+<p>For each active lane <code>i</code>, <code>diff = lhs[i] - rhs[i] - borrow_in[i]</code>, <code>result[i] = low_bits(diff)</code>, and <code>borrow[i] = borrow_out(diff)</code>. The borrow chain is lane-local in the PTO surface: each lane consumes one incoming borrow bit and produces one outgoing borrow bit.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vsubcs %dst, %borrow_out, %lhs, %rhs, %borrow_in, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask
+</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result, %borrow = pto.vsubcs %lhs, %rhs, %borrow_in, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;, !pto.mask
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%lhs</code> and <code>%rhs</code> are the value vectors, <code>%borrow_in</code> is the
-  incoming borrow predicate, and <code>%mask</code> selects active lanes.</p>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%lhs</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Minuend vector</td>
+</tr>
+<tr>
+<td>%rhs</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Subtrahend vector</td>
+</tr>
+<tr>
+<td>%borrow_in</td>
+<td><code>!pto.mask</code></td>
+<td>Incoming borrow bit per lane</td>
+</tr>
+<tr>
+<td>%mask</td>
+<td><code>!pto.mask</code></td>
+<td>Predicate mask; only lanes with mask bit 1 participate</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> is the arithmetic result and <code>%borrow</code> is the
-  borrow-out predicate.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%result</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Lane-wise arithmetic result on the active lanes</td>
+</tr>
+<tr>
+<td>%borrow</td>
+<td><code>!pto.mask</code></td>
+<td>Borrow-out bit produced for each active lane</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
+<p>This operation has no architectural side effect beyond producing its destination values. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>This is the scalar-extended borrow-chain
-  instruction set and SHOULD be treated as an unsigned integer operation.</p>
+<ul>
+<li>Borrow-chain forms are defined for integer element types.</li>
+<li><code>%lhs</code>, <code>%rhs</code>, and <code>%result</code> MUST have the same vector width <code>N</code> and element type <code>T</code>.</li>
+<li><code>%borrow_in</code>, <code>%borrow</code>, and <code>%mask</code> MUST all have width <code>N</code>.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
@@ -973,8 +1051,8 @@
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
+<li>Treat this form as an unsigned integer borrow-chain unless a target profile documents a wider legal domain.</li>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
 </ul>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
@@ -1004,47 +1082,19 @@ For <code>pto.vsubcs</code>, those public sources describe the instruction seman
 <p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vsubcs</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <pre><code class="language-c">for (int i = 0; i &lt; N; i++) {
-    dst[i] = src0[i] - src1[i] - borrow_in[i];
-    borrow_out[i] = (src0[i] &lt; src1[i] + borrow_in[i]);
+    if (!mask[i]) continue;
+    uint64_t rhs_total = (uint64_t)rhs[i] + borrow_in[i];
+    result[i] = lhs[i] - rhs_total;
+    borrow[i] = lhs[i] &lt; rhs_total;
 }
 </code></pre>
-<pre><code class="language-mlir">// Add bias to all elements
-%biased = pto.vadds %activation, %bias_scalar, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-
-// Scale by constant
-%scaled = pto.vmuls %input, %scale, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-
-// Clamp to [0, 255] for uint8 quantization
-%clamped_low = pto.vmaxs %input, %c0, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-%clamped = pto.vmins %clamped_low, %c255, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-
-// Shift right by fixed amount
-%shifted = pto.vshrs %data, %c4, %mask : !pto.vreg&lt;64xi32&gt;, i32, !pto.mask -&gt; !pto.vreg&lt;64xi32&gt;
-</code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++) {
-    dst[i] = src0[i] - src1[i] - borrow_in[i];
-    borrow_out[i] = (src0[i] &lt; src1[i] + borrow_in[i]);
-}
-</code></pre>
-<h2 id="typical-usage">Typical Usage<a class="headerlink" href="#typical-usage" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">// Add bias to all elements
-%biased = pto.vadds %activation, %bias_scalar, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-
-// Scale by constant
-%scaled = pto.vmuls %input, %scale, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-
-// Clamp to [0, 255] for uint8 quantization
-%clamped_low = pto.vmaxs %input, %c0, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-%clamped = pto.vmins %clamped_low, %c255, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-
-// Shift right by fixed amount
-%shifted = pto.vshrs %data, %c4, %mask : !pto.vreg&lt;64xi32&gt;, i32, !pto.mask -&gt; !pto.vreg&lt;64xi32&gt;
+<pre><code class="language-mlir">%result, %borrow = pto.vsubcs %lhs, %rhs, %borrow_in, %mask : !pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask, !pto.mask -&gt; !pto.vreg&lt;64xi32&gt;, !pto.mask
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../vec-scalar-ops/">Vector-Scalar Instructions</a></li>
 <li>Previous op in instruction set: <a href="../vaddcs/">pto.vaddcs</a></li>
+<li>Next op in instruction set: (none)</li>
 </ul>
               
             </div>

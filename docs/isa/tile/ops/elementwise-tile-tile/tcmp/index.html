@@ -182,10 +182,6 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
@@ -852,6 +848,27 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../scalar/shared-scf/">Shared SCF</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >PTO Micro-Instruction Reference</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/">Overview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/block-dim-query/">BlockDim Query</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/pointer-operations/">Pointer Operations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/vecscope/">Vector Execution Scope</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../scalar/ops/micro-instruction/align-type/">Alignment State Type</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
               <ul>
@@ -976,12 +993,6 @@
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tcmp ins(%src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcmp ins(%src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/type.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
@@ -1024,15 +1035,59 @@ PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataS
 </tbody>
 </table>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src0</code> is the first source tile (left-hand side of comparison).</li>
-<li><code>src1</code> is the second source tile (right-hand side of comparison).</li>
-<li><code>dst</code> names the destination predicate tile.</li>
-<li><code>cmpMode</code> specifies the comparison predicate.</li>
-<li>The operation iterates over <code>dst</code>'s valid region; <code>src0</code> and <code>src1</code> are sampled at the same coordinates.</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Role</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%src0</code></td>
+<td>Left tile</td>
+<td>First source tile; read at <code>(i, j)</code> for each <code>(i, j)</code> in <code>dst</code> valid region</td>
+</tr>
+<tr>
+<td><code>%src1</code></td>
+<td>Right tile</td>
+<td>Second source tile; read at <code>(i, j)</code> for each <code>(i, j)</code> in <code>dst</code> valid region</td>
+</tr>
+<tr>
+<td><code>%dst</code></td>
+<td>Predicate mask tile</td>
+<td>Destination tile receiving the packed predicate mask</td>
+</tr>
+<tr>
+<td><code>cmpMode</code></td>
+<td>Comparison predicate</td>
+<td>One of <code>EQ</code>, <code>NE</code>, <code>LT</code>, <code>LE</code>, <code>GT</code>, <code>GE</code></td>
+</tr>
+<tr>
+<td><code>WaitEvents...</code></td>
+<td>Optional synchronisation</td>
+<td><code>RecordEvent</code> tokens to wait on before issuing the operation</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> carries the packed predicate mask tile. The mask encoding is target-defined; programs MUST NOT make assumptions about the bit layout.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%dst</code></td>
+<td><code>!pto.tile&lt;...&gt;</code></td>
+<td>Destination predicate tile; all <code>(i, j)</code> in its valid region contain the comparison result as a packed predicate mask after the operation</td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the predicate tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
