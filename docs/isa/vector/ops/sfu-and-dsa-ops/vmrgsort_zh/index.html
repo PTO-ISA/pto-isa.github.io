@@ -932,8 +932,18 @@
                 <!-- Generated from `docs/isa/vector/ops/sfu-and-dsa-ops/vmrgsort_zh.md` -->
 
 <h1 id="ptovmrgsort">pto.vmrgsort<a class="headerlink" href="#ptovmrgsort" title="Permanent link">&para;</a></h1>
-<p>执行 merge sort 变体。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vmrgsort</code> 属于<a href="../../../sfu-and-dsa-ops_zh/">SFU 与 DSA 操作</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>把 4 路已经排好序的输入段做归并排序。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vmrgsort</code> 执行的是 4 路 merge。它从 UB 里读取 4 个已经排好序的输入段，按 <code>%config</code> 指定的顺序归并成一条有序输出流，再写回 <code>%dest</code>。</p>
+<p>关键性质：</p>
+<ul>
+<li>4 路输入必须事先已经按同一顺序排好</li>
+<li>归并过程稳定，相等元素保持原始相对顺序</li>
+<li><code>%config</code> 控制升序 / 降序及比较模式</li>
+</ul>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-asm">vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64
 </code></pre>
@@ -941,13 +951,113 @@
 <pre><code class="language-mlir">pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config
     : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64
 </code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%dest</code></td>
+<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
+<td>归并结果写回的 UB 目标指针</td>
+</tr>
+<tr>
+<td><code>%src0..%src3</code></td>
+<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
+<td>四路预排序输入段</td>
+</tr>
+<tr>
+<td><code>%count</code></td>
+<td><code>i64</code></td>
+<td>每一路输入段中的有效元素个数</td>
+</tr>
+<tr>
+<td><code>%config</code></td>
+<td><code>i64</code></td>
+<td>控制升 / 降序与比较模式的配置字</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>某些操作只在特定 profile 或元素类型上受支持。</li>
-<li>lowering 不能把专用语义退化为未文档化的普通算术组合。</li>
+<li>这条指令没有 SSA 结果；归并后的有序输出写回 <code>%dest</code></li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令会直接读写 UB 内存。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>四路输入都必须已经按 <code>%config</code> 指定的顺序排好。</li>
+<li>四路输入必须使用相同的排序方向和比较模式。</li>
+<li>所有输入与输出必须使用相同的元素类型 <code>T</code>。</li>
+<li>所有指针都必须位于 UB 地址空间。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>任一输入不是 UB 指针都属于非法。</li>
+<li>有效地址若不满足对齐要求则非法。</li>
+<li>约束部分列出的额外非法情形，同样属于 <code>pto.vmrgsort</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+<li><code>%config</code> 的位域布局与支持的元素类型属于 profile 相关语义。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p>当前手册未给出 <code>vmrgsort4</code> 的独立周期级条目。</p>
+<h3 id="a2a3">A2/A3 吞吐<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p>仓内 costmodel 为 <code>vmrgsort4</code> 记录了独立桶：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数值</th>
+<th>常量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>14</td>
+<td><code>A2A3_STARTUP_BINARY</code></td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td><code>A2A3_COMPL_DUP_VCOPY</code></td>
+<td>costmodel 常量</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>6</td>
+<td><code>A2A3_RPT_6</code></td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18</td>
+<td><code>A2A3_INTERVAL</code></td>
+</tr>
+</tbody>
+</table>
+<p>测试注释还给出了一个更直观的经验公式：</p>
+<ul>
+<li>多源（2/3/4 路）合并：<code>vmrgsort4(1) = startup(14) + 1*2 ≈ 16</code></li>
+<li>单源场景：<code>vmrgsort4(R) = 14 + R*2</code></li>
+</ul>
+<p>这说明 <code>vmrgsort4</code> 在代价模型里是明显的“归并专用路径”，不应按普通逐元素向量算术估算。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mlir">pto.vmrgsort4 %dest,
+               %sorted_a, %sorted_b, %sorted_c, %sorted_d,
+               %count, %config
+    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;,
+      !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64
+</code></pre>
+<h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vmrgsort</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -972,9 +1082,11 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vmrgsort</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../sfu-and-dsa-ops_zh/">SFU 与 DSA 指令集</a></li>
+<li>指令集总览：<a href="../../../sfu-and-dsa-ops_zh/">SFU 与 DSA 操作</a></li>
+<li>上一条指令：<a href="../vsort32_zh/">pto.vsort32</a></li>
+<li>下一条指令：<a href="../vbitsort_zh/">pto.vbitsort</a></li>
 </ul>
               
             </div>

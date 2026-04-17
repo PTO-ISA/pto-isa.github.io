@@ -934,80 +934,178 @@
 <h1 id="tile">Tile 指令集<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h1>
 <p><code>pto.t*</code> 指令集覆盖以 tile 为中心的计算、搬运、重排、归约和同步。tile 的 shape、layout、role 与 valid region 都属于架构可见状态。</p>
 <h2 id="_1">指令集概览<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>Tile 指令作用在 tile 上。与向量寄存器或纯标量寄存器不同，tile 自带以下元数据：</p>
+<ul>
+<li>shape</li>
+<li>layout</li>
+<li>role / location intent</li>
+<li>valid region</li>
+</ul>
+<p>因此，Tile 指令的输出不只是“一个数值结果”，还可能是：</p>
+<ul>
+<li>新的 tile payload</li>
+<li>valid region 的解释变化</li>
+<li>资源绑定状态</li>
+<li>明确的同步边</li>
+</ul>
+<h2 id="_2">数据流<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<pre><code class="language-text">GlobalMemory
+    │
+    │  TLOAD: GM → local tile buffer
+    ▼
+Tile Buffer ──► Tile Compute ──► Tile Buffer ──► TSTORE: Tile Buffer → GM
+(Vec/Mat/Acc)    (pto.tadd, TMATMUL, 等)          (Vec/Mat/Acc)
+</code></pre>
+<h2 id="_3">指令分类<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>类别</th>
 <th>说明</th>
+<th>示例</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>同步与配置</td>
-<td>资源绑定、同步边和模式控制</td>
+<td>资源绑定、事件建立、tile 侧配置</td>
+<td><code>tassign</code>、<code>tsync</code>、<code>tsettf32mode</code>、<code>tset_img2col_rpt</code></td>
 </tr>
 <tr>
 <td>逐元素 Tile-Tile</td>
-<td>两个或多个 tile 之间的逐元素操作</td>
+<td>tile 与 tile 之间的逐元素运算</td>
+<td><code>tadd</code>、<code>tmul</code>、<code>tcmp</code>、<code>tcvt</code>、<code>tsel</code>、<code>trelu</code></td>
 </tr>
 <tr>
 <td>Tile-标量与立即数</td>
-<td>tile 与标量/立即数混合操作</td>
+<td>tile 与标量 / 立即数混合运算</td>
+<td><code>tadds</code>、<code>tmuls</code>、<code>tlrelu</code>、<code>tcmps</code></td>
 </tr>
 <tr>
 <td>归约与扩展</td>
-<td>按行列做归约和广播式扩展</td>
+<td>按行 / 列归约或广播扩展</td>
+<td><code>trowsum</code>、<code>tcolmax</code>、<code>trowexpand</code>、<code>tcolexpand</code></td>
 </tr>
 <tr>
 <td>内存与数据搬运</td>
-<td>GM 与 tile 之间的传输，含 gather/scatter</td>
+<td>GM↔tile 搬运、gather / scatter、fix-pipe store</td>
+<td><code>tload</code>、<code>tstore</code>、<code>tstore_fp</code>、<code>mgather</code>、<code>mscatter</code></td>
 </tr>
 <tr>
 <td>矩阵与矩阵-向量</td>
-<td>GEMV、matmul 及其变体</td>
+<td>GEMV、matmul 及变体</td>
+<td><code>tgemv</code>、<code>tgemv_mx</code>、<code>tmatmul</code>、<code>tmatmul_acc</code>、<code>tmatmul_bias</code></td>
 </tr>
 <tr>
 <td>布局与重排</td>
 <td>reshape、transpose、extract、insert、img2col</td>
+<td><code>tmov</code>、<code>ttrans</code>、<code>treshape</code>、<code>textract</code>、<code>tinsert</code>、<code>timg2col</code></td>
 </tr>
 <tr>
 <td>不规则与复杂</td>
-<td>sort、quant、print、partial 等</td>
+<td>排序、量化、打印、partial 类操作</td>
+<td><code>tmrgsort</code>、<code>tsort32</code>、<code>tquant</code>、<code>thistogram</code>、<code>tprint</code></td>
 </tr>
 </tbody>
 </table>
-<h2 id="_2">输入<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>Tile 指令集常见输入包括：</p>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>Tile 指令常见输入包括：</p>
 <ul>
-<li>源 tile</li>
-<li>目标 tile / tile buffer</li>
+<li>源 tile（只读）</li>
+<li>目标 tile / tile buffer（写入或读写）</li>
 <li>标量修饰符和立即数</li>
-<li>GM 视图</li>
-<li>可选事件链</li>
+<li>GM 视图（<code>!pto.partition_tensor_view&lt;...&gt;</code>）</li>
+<li>可选事件链（<code>RecordEvent</code> 或 <code>WaitEvents...</code>）</li>
 </ul>
-<h2 id="_3">输出<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>Tile 指令会产生：</p>
 <ul>
-<li>目标 tile 数据</li>
+<li>目标 tile payload</li>
 <li>valid region 或布局解释变化</li>
-<li>同步边或资源状态更新</li>
+<li>显式状态更新（例如地址绑定）</li>
+<li>同步边</li>
 </ul>
-<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>架构副作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>内存与数据搬运</td>
+<td>读写 GM 可见数据</td>
+</tr>
+<tr>
+<td>同步与配置</td>
+<td>建立同步边或绑定 tile 地址</td>
+</tr>
+<tr>
+<td>不规则与复杂</td>
+<td>可能产生调试输出或修改分配状态</td>
+</tr>
+</tbody>
+</table>
+<h2 id="valid-region">Valid Region 模型<a class="headerlink" href="#valid-region" title="Permanent link">&para;</a></h2>
+<p>所有逐元素 tile 操作都以 <strong>目标 tile 的 valid region</strong> 为迭代域。对目标 valid region 内的每个 <code>(r, c)</code>：</p>
 <ul>
-<li>dtype、shape、layout、role 与 valid region 都可能参与合法性判断。</li>
-<li>多输入 tile 操作必须明确说明 valid region 的组合关系。</li>
-<li>某些 tile 形式仅对特定 profile 可用，例如部分 MX 或 FP8 路径。</li>
+<li>会读取每个源 tile 对应位置 <code>(r, c)</code> 的元素</li>
+<li>即使源 tile 自己的 valid region 不覆盖该位置，也仍然会去读，只是结果属于实现定义</li>
+<li>程序不能依赖源 tile 域外值的具体内容，除非该操作页明确说明了行为</li>
 </ul>
-<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>完整模型见 <a href="../../programming-model/tiles-and-valid-regions_zh/">Tile 与有效区域</a>。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li>把域外数据当作稳定语义使用</li>
-<li>假设 tile 指令自动继承 vector 寄存器语义</li>
-<li>依赖未文档化的隐式广播、隐式 reshape 或隐式 valid-region 修复</li>
+<li>tile 合法性从来不只取决于 dtype；shape、layout、role、valid region 都可能参与判断。</li>
+<li>多输入 tile 指令必须明确说明 valid region 如何组合。</li>
+<li>部分 tile 形式受 profile 限制：MX block-scale tile（<code>Left</code>、<code>Right</code>、<code>ScaleLeft</code>、<code>ScaleRight</code>）是 A5 专属；FP8 / FP4 家族元素类型也是 A5 专属。</li>
+<li><code>tsethf32mode</code> 与 <code>tsetfmatrix</code> 虽然名字保留 <code>t</code> 前缀，但在手册中归类到标量 / 控制路径，因为它们修改的是标量可见模式状态，而不是 tile payload。</li>
+<li>Tile 指令不会自动继承向量寄存器语义。</li>
+<li>不存在默认广播；所有源 tile 的 shape 都必须和目标 tile 的使用方式兼容。</li>
 </ul>
-<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_8">不允许的情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>把 valid region 外的值当作稳定语义使用</li>
+<li>假设 tile 指令天然继承 vector lane 语义</li>
+<li>依赖未文档化的隐式广播、隐式 reshape、隐式 valid-region 修复</li>
+<li>在 CPU 或 A2A3 上使用 MX block-scale tile</li>
+<li>在 CPU 或 A2A3 上使用 FP8 / FP4 家族元素类型</li>
+</ul>
+<h2 id="_9">语法<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="pto-as">PTO-AS 形式<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
+<pre><code class="language-asm">tadd %dst, %src0, %src1 : !pto.tile&lt;f32, 16, 16&gt;
+</code></pre>
+<h3 id="ssa-as-level-1">SSA 形式（AS Level 1）<a class="headerlink" href="#ssa-as-level-1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%dst = pto.tadd %src0, %src1
+    : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;)
+    -&gt; !pto.tile&lt;f32, 16, 16&gt;
+</code></pre>
+<h3 id="dps-as-level-2">DPS 形式（AS Level 2）<a class="headerlink" href="#dps-as-level-2" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
+          outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)
+</code></pre>
+<p>完整语法见 <a href="../../syntax-and-operands/assembly-model_zh/">汇编拼写与操作数</a>。</p>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+template &lt;typename TileDst, typename TileSrc0, typename TileSrc1&gt;
+PTO_INST RecordEvent TADD(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; src1);
+
+template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TLOAD(TileData&amp; dst, GlobalData&amp; src, WaitEvents&amp;... events);
+
+template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMATMUL(TileRes&amp; cMatrix, TileLeft&amp; aMatrix, TileRight&amp; bMatrix,
+                             WaitEvents&amp;... events);
+</code></pre>
+<h2 id="_10">相关页面<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
 <li><a href="../../tile/README_zh/">Tile 参考入口</a></li>
+<li><a href="../../reference/format-of-instruction-descriptions_zh/">指令描述格式</a></li>
 </ul>
               
             </div>

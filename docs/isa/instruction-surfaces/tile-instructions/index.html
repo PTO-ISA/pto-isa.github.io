@@ -976,9 +976,9 @@
 <h3 id="data-flow">Data Flow<a class="headerlink" href="#data-flow" title="Permanent link">&para;</a></h3>
 <pre><code>GlobalMemory
     │
-    │  TLOAD: GM → UB → Tile Buffer
+    │  TLOAD: GM → local tile buffer
     ▼
-Tile Buffer ──► Tile Compute ──► Tile Buffer ──► TSTORE: Tile Buffer → UB → GM
+Tile Buffer ──► Tile Compute ──► Tile Buffer ──► TSTORE: Tile Buffer → GM
 (Vec/Mat/Acc)    (pto.tadd, TMATMUL, etc.)       (Vec/Mat/Acc)
 </code></pre>
 <h2 id="instruction-classes">Instruction Classes<a class="headerlink" href="#instruction-classes" title="Permanent link">&para;</a></h2>
@@ -993,8 +993,8 @@ Tile Buffer ──► Tile Compute ──► Tile Buffer ──► TSTORE: Tile 
 <tbody>
 <tr>
 <td>Sync and Config</td>
-<td>Resource binding, event setup, mode control</td>
-<td><code>tassign</code>, <code>tsync</code>, <code>tsethf32mode</code>, <code>tsetfmatrix</code></td>
+<td>Resource binding, event setup, tile-local config</td>
+<td><code>tassign</code>, <code>tsync</code>, <code>tsettf32mode</code>, <code>tset_img2col_rpt</code></td>
 </tr>
 <tr>
 <td>Elementwise Tile-Tile</td>
@@ -1013,7 +1013,7 @@ Tile Buffer ──► Tile Compute ──► Tile Buffer ──► TSTORE: Tile 
 </tr>
 <tr>
 <td>Memory and Data Movement</td>
-<td>GM↔tile transfer, gather/scatter</td>
+<td>GM↔tile transfer, gather/scatter, fix-pipe store variants</td>
 <td><code>tload</code>, <code>tstore</code>, <code>tstore_fp</code>, <code>mgather</code>, <code>mscatter</code></td>
 </tr>
 <tr>
@@ -1085,7 +1085,8 @@ Tile Buffer ──► Tile Compute ──► Tile Buffer ──► TSTORE: Tile 
 <ul>
 <li><strong>Tile legality</strong> depends on more than dtype; shape, layout, role, and valid region all matter.</li>
 <li>Operations with multiple tiles must define valid-region interaction explicitly.</li>
-<li>Some tile instruction set are profile-gated: MX format tiles (<code>Left</code>/<code>Right</code>) are A5-only; FP8 types are A5-only.</li>
+<li>Some tile instruction set are profile-gated: MX block-scale tiles (<code>Left</code>, <code>Right</code>, <code>ScaleLeft</code>, <code>ScaleRight</code>) are A5-only; FP8/FP4-family element types are A5-only.</li>
+<li><code>tsethf32mode</code> and <code>tsetfmatrix</code> are documented in the scalar/control lane even though their historic API names still carry the <code>t</code> prefix; they configure scalar-visible mode state rather than tile payload state.</li>
 <li>Tile instructions do <strong>not</strong> inherit vector-register semantics; they operate on architecturally visible tile state.</li>
 <li>No implicit broadcasting: all source tiles must have shapes compatible with the destination tile.</li>
 </ul>

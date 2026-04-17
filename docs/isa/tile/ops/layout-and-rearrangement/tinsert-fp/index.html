@@ -980,9 +980,9 @@
 <h1 id="ptotinsert_fp">pto.tinsert_fp<a class="headerlink" href="#ptotinsert_fp" title="Permanent link">&para;</a></h1>
 <p><code>pto.tinsert_fp</code> is part of the <a href="../../../layout-and-rearrangement/">Layout And Rearrangement</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Insert with fp/scaling tile (vector-quantization parameters).</p>
+<p>Insert through the fix-pipe path using an auxiliary <code>fp</code> tile.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Vector-quantization variant of <code>TINSERT</code> that also takes an <code>fp</code> (scaling) tile. It belongs to the tile instructions and carries architecture-visible behavior that is not reducible to a plain elementwise compute pattern.</p>
+<p>Fix-pipe variant of <code>TINSERT</code> that also takes an auxiliary <code>fp</code> tile. The <code>_fp</code> suffix means <strong>fix pipe</strong>, not floating point. The backend uses the auxiliary tile to program the FPC sideband state before the insert executes.</p>
 <p>Unless otherwise specified, semantics are defined over the valid region and target-dependent behavior is marked as implementation-defined.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
@@ -1007,14 +1007,14 @@ PTO_INST RecordEvent TINSERT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTi
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code> is the source tile.</li>
-<li><code>fp</code> is the scaling tile for vector quantization.</li>
+<li><code>fp</code> is the auxiliary fix-pipe tile consumed by the backend FPC path.</li>
 <li><code>indexRow</code> is the starting row offset in <code>dst</code>.</li>
 <li><code>indexCol</code> is the starting column offset in <code>dst</code>.</li>
 <li><code>dst</code> names the destination tile. The operation iterates over src's valid region.</li>
 <li><code>reluMode</code> (optional): specifies ReLU mode.</li>
 </ul>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the result of inserting <code>src</code> into <code>dst</code> at position (indexRow, indexCol), converted using <code>fp</code> scaling parameters.</p>
+<p><code>dst</code> holds the result of inserting <code>src</code> into <code>dst</code> at position <code>(indexRow, indexCol)</code> through the fix-pipe path configured by the auxiliary <code>fp</code> tile.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>

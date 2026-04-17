@@ -84,7 +84,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#cpu-simulator">CPU Simulator</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#a2a3-profile">A2/A3 Profile</a>
+    <li class="toctree-l3"><a class="reference internal" href="#a2a3-profile">A2A3 Profile</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#a5-profile">A5 Profile</a>
     </li>
@@ -991,15 +991,13 @@
 │  │  - Control flow, address calculation               │ │
 │  │  - System query: GetBlockIdx, GetSubBlockIdx, ...│ │
 │  ├────────────────────────────────────────────────────┤ │
-│  │  Unified Buffer (UB) — 256 KB on-chip SRAM         │ │
-│  │  - GM↔tile DMA staging area                      │ │
-│  │  - Shared by all tile buffers and vector regs       │ │
-│  ├────────────────────────────────────────────────────┤ │
-│  │  Tile Register File                                │ │
+│  │  Local Tile Buffers                                │ │
 │  │  ┌──────────┬──────────┬──────────┬──────────┐   │ │
-│  │  │ Vec slots│ Mat slots│ Acc slots│Scalar slt│   │ │
-│  │  │ 16×16×N │ 16×16×N │ 16×16×N │   1×1    │   │ │
+│  │  │ Vec / UB │  L0A     │  L0B     │   L0C    │   │ │
+│  │  │ vector   │  left    │  right   │   acc    │   │ │
 │  │  └────┬─────┴────┬─────┴────┬─────┴──────────┘   │ │
+│  │  Tile registers are the ISA abstraction over      │ │
+│  │  these role-specific tile buffers.                │ │
 │  ├───────┼──────────┼──────────┼───────────────────┤ │
 │  │  ┌────▼────┐ ┌───▼───┐ ┌────▼────┐              │ │
 │  │  │ Vector  │ │Matrix │ │  DMA    │              │ │
@@ -1046,13 +1044,13 @@
 <td><code>GetBlockIdx()</code>, <code>GetBlockNum()</code>, <code>GetSubBlockIdx()</code></td>
 </tr>
 <tr>
-<td><strong>Unified Buffer (UB)</strong></td>
-<td>256 KB on-chip SRAM; shared staging area for GM↔tile DMA</td>
+<td><strong>Vector tile buffer (hardware UB)</strong></td>
+<td>256 KB on-chip SRAM used by <code>TileType::Vec</code> and by the vector micro-instruction path</td>
 <td><code>!pto.ptr&lt;T, ub&gt;</code></td>
 </tr>
 <tr>
-<td><strong>Tile Register File</strong></td>
-<td>On-chip tile buffer storage, typed by <code>TileType</code></td>
+<td><strong>Local tile buffers</strong></td>
+<td>Role-specific local storage: <code>Left</code>→L0A, <code>Right</code>→L0B, <code>Acc</code>→L0C, scale tiles on the corresponding side buffers</td>
 <td><code>!pto.tile_buf&lt;...&gt;</code></td>
 </tr>
 <tr>
@@ -1073,7 +1071,7 @@
 </tbody>
 </table>
 <h2 id="vector-register-architecture-vlane">Vector Register Architecture (VLane)<a class="headerlink" href="#vector-register-architecture-vlane" title="Permanent link">&para;</a></h2>
-<p>On A5 (Ascend 9xx-class), the vector register is organized as <strong>8 VLanes</strong> of 32 bytes each. A VLane is the atomic unit for group reduction operations.</p>
+<p>On A5 (Ascend 950 PR / DT), the vector register is organized as <strong>8 VLanes</strong> of 32 bytes each. A VLane is the atomic unit for group reduction operations.</p>
 <pre><code>vreg (256 bytes total):
 ┌─────────┬─────────┬─────────┬─────┬─────────┬─────────┐
 │ VLane 0 │ VLane 1 │ VLane 2 │ ... │ VLane 6 │ VLane 7 │
@@ -1127,21 +1125,21 @@
 <tbody>
 <tr>
 <td><code>MTE1</code></td>
-<td>GM → UB</td>
+<td>GM → vector tile buffer</td>
 <td>Optional: explicit prefetch</td>
 <td>Pre-stage data before vector load</td>
 </tr>
 <tr>
 <td><code>MTE2</code></td>
-<td>GM → UB</td>
-<td>Load staging: GM→UB→tile buffer (via TLOAD)</td>
-<td>DMA copy: GM→UB (via <code>copy_gm_to_ubuf</code>)</td>
+<td>GM → local tile buffer</td>
+<td>Load staging into the selected local tile buffer (via <code>TLOAD</code>)</td>
+<td>DMA copy: GM→vector tile buffer (via <code>copy_gm_to_ubuf</code>)</td>
 </tr>
 <tr>
 <td><code>MTE3</code></td>
-<td>UB → GM</td>
-<td>Store: tile→UB→GM (via TSTORE)</td>
-<td>DMA copy: UB→GM (via <code>copy_ubuf_to_gm</code>)</td>
+<td>local tile buffer → GM</td>
+<td>Store from the selected local tile buffer (via <code>TSTORE</code>)</td>
+<td>DMA copy: vector tile buffer → GM (via <code>copy_ubuf_to_gm</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -1193,25 +1191,26 @@
 <li>UB is allocated from heap memory</li>
 <li>The UB size is configurable via build flags</li>
 </ul>
-<h3 id="a2a3-profile">A2/A3 Profile<a class="headerlink" href="#a2a3-profile" title="Permanent link">&para;</a></h3>
-<p>The <strong>A2/A3 profile</strong> targets Ascend 2/3-class NPUs. These targets support:</p>
+<h3 id="a2a3-profile">A2A3 Profile<a class="headerlink" href="#a2a3-profile" title="Permanent link">&para;</a></h3>
+<p>The <strong>A2A3 profile</strong> targets Ascend 910B and Ascend 910C. These targets support:</p>
 <ul>
 <li>Full <code>pto.t*</code> tile instructions on hardware</li>
 <li><code>pto.v*</code> vector instructions emulated through a tile-vector bridge (<code>SimdTileToMemrefOp</code>, <code>SimdVecScopeOp</code>)</li>
 <li>Hardware matmul via the Matrix Multiply Unit (CUBE)</li>
 <li>Fractal layout support on hardware, but with software fallback paths</li>
-<li>UB: 256 KB per AI Core</li>
+<li>Vector tile buffer (hardware UB): 256 KB per AI Core</li>
 <li>Vector width: N=64 (f32), N=128 (f16/bf16), N=256 (i8)</li>
 <li>Support for <code>textract</code> compact modes (ND2NZ, NZ2ND, ND, ND2NZ2)</li>
 </ul>
 <h3 id="a5-profile">A5 Profile<a class="headerlink" href="#a5-profile" title="Permanent link">&para;</a></h3>
-<p>The <strong>A5 profile</strong> targets Ascend 9xx-class NPUs (Ascend 910, 910B, 920, etc.). These targets support:</p>
+<p>The <strong>A5 profile</strong> targets Ascend 950 PR and Ascend 950 DT. These targets support:</p>
 <ul>
 <li>Full <code>pto.t*</code> tile instructions on hardware</li>
 <li>Full native <code>pto.v*</code> vector instructions on the vector pipeline</li>
 <li>Hardware matmul with MX format support (int8 input → int32 accumulator)</li>
 <li>Full fractal layout support (NZ, ZN, FR, RN) on hardware</li>
-<li>UB: 256 KB per AI Core</li>
+<li>Vector tile buffer (hardware UB): 256 KB per AI Core</li>
+<li>MX block-scale formats with explicit <code>TileLeftScale</code> and <code>TileRightScale</code></li>
 <li>FP8 support: <code>float8_e4m3_t</code> (E4M3) and <code>float8_e5m3fn</code> (E5M2)</li>
 <li>Native vector unaligned store (<code>vstu</code> / <code>vstus</code>) and alignment state threading</li>
 <li>Block-scoped collective communication primitives (<code>TBROADCAST</code>, <code>TGET</code>, <code>TPUT</code>, etc.)</li>
@@ -1223,7 +1222,7 @@
 <tr>
 <th>Feature</th>
 <th style="text-align: center;">CPU Simulator</th>
-<th style="text-align: center;">A2/A3 Profile</th>
+<th style="text-align: center;">A2A3 Profile</th>
 <th style="text-align: center;">A5 Profile</th>
 </tr>
 </thead>
@@ -1259,7 +1258,7 @@
 <td style="text-align: center;">Full hardware</td>
 </tr>
 <tr>
-<td>UB size</td>
+<td>Vector tile buffer size</td>
 <td style="text-align: center;">Configurable</td>
 <td style="text-align: center;">256 KB/core</td>
 <td style="text-align: center;">256 KB/core</td>

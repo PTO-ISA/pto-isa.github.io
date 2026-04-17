@@ -984,9 +984,9 @@
 <h1 id="ptotmatmul_mx">pto.tmatmul_mx<a class="headerlink" href="#ptotmatmul_mx" title="Permanent link">&para;</a></h1>
 <p><code>pto.tmatmul_mx</code> is part of the <a href="../../../matrix-and-matrix-vector/">Matrix And Matrix Vector</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Matrix multiply (GEMM) with additional scaling tiles for mixed-precision / quantized matmul on supported targets.</p>
+<p>Matrix multiply (GEMM) in an MX block-scale format, with explicit left and right scale tiles.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Matrix multiply (GEMM) with additional scaling tiles for mixed-precision / quantized matmul on supported targets.</p>
+<p>Matrix multiply (GEMM) in an MX block-scale format.</p>
 <p>This instruction is currently implemented on A5 (see <code>include/pto/npu/a5/TMatmul.hpp</code>). It operates on tile payloads rather than scalar control state, and its legality is constrained by tile shape, layout, valid-region, and target-profile support.</p>
 <p>Let:</p>
 <ul>
@@ -994,9 +994,9 @@
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>Conceptually, the result corresponds to a matrix multiply over the effective matmul domain (<code>0 &lt;= i &lt; M</code>, <code>0 &lt;= j &lt; N</code>), with the scaling tiles <code>aScaleMatrix</code> / <code>bScaleMatrix</code> configuring implementation-defined mixed-precision behavior:</p>
+<p>Conceptually, the result corresponds to a matrix multiply over the effective matmul domain (<code>0 &lt;= i &lt; M</code>, <code>0 &lt;= j &lt; N</code>), with the scale tiles <code>aScaleMatrix</code> / <code>bScaleMatrix</code> carrying the block-scale metadata required by the MX format:</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p>The exact role of <code>aScaleMatrix</code> / <code>bScaleMatrix</code> (and any dequant/quant semantics) is target-defined.</p>
+<p>In current <code>pto-isa</code> code, <code>TileLeft</code> maps to L0A, <code>TileRight</code> maps to L0B, <code>TileLeftScale</code> maps to the L0A-side scale buffer, and <code>TileRightScale</code> maps to the L0B-side scale buffer. MX block-scale forms are therefore a five-buffer contract (<code>Left</code>, <code>ScaleLeft</code>, <code>Right</code>, <code>ScaleRight</code>, <code>Acc</code>) rather than a plain two-input matmul.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Synchronous forms (conceptual):</p>
@@ -1065,15 +1065,15 @@ PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>a</code> is the left operand tile (must be TileLeft location).</li>
-<li><code>aScale</code> is the left scaling tile for mixed-precision reconstruction.</li>
+<li><code>aScale</code> is the left scale tile for the MX block-scale format.</li>
 <li><code>b</code> is the right operand tile (must be TileRight location).</li>
-<li><code>bScale</code> is the right scaling tile for mixed-precision reconstruction.</li>
+<li><code>bScale</code> is the right scale tile for the MX block-scale format.</li>
 <li><code>bias</code> (optional): bias tile (must be TileType::Bias).</li>
 <li><code>cIn</code> (optional): input accumulator tile for accumulation variants.</li>
 <li><code>dst</code> names the destination accumulator tile. The operation iterates over dst's valid region.</li>
 </ul>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the mx matrix multiply result with mixed-precision scaling applied.</p>
+<p><code>dst</code> holds the MX block-scale matrix multiply result.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>

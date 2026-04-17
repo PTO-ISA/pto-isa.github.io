@@ -931,44 +931,204 @@
               
                 <!-- Generated from `docs/isa/vector/sfu-and-dsa-ops_zh.md` -->
 
-<h1 id="sfu-dsa">SFU 与 DSA 指令集<a class="headerlink" href="#sfu-dsa" title="Permanent link">&para;</a></h1>
-<p>这组指令覆盖特殊函数、融合形式和某些领域专用的向量操作。它们通常比普通算术更窄，也更容易受 profile 缩窄影响。</p>
-<h2 id="_1">常见操作<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h1 id="sfu-dsa">向量指令集：SFU 与 DSA 操作<a class="headerlink" href="#sfu-dsa" title="Permanent link">&para;</a></h1>
+<p>这里定义 PTO ISA 中那些既不是普通二元算术、也不是单纯 load/store 的向量特化操作。它们覆盖特殊函数、融合算子、扩宽乘加、索引生成，以及少量直接作用在向量 tile buffer 上的专用加速器操作。</p>
+<blockquote>
+<p><strong>类别：</strong> 特殊函数单元与领域专用加速器操作
+<strong>流水线：</strong> <code>PIPE_V</code> / SFU</p>
+</blockquote>
+<p>这类操作通常比通用算术更窄，也更强依赖目标平台特性。因此页面会明确写出它们是否只在 A5（Ascend 950 PR / DT）上稳定存在，以及 lowering 时哪些语义不能被拆散。</p>
+<hr />
+<h2 id="_1">通用操作数模型<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>pto.vprelu</code></li>
-<li><code>pto.vexpdiff</code></li>
-<li><code>pto.vaxpy</code></li>
-<li><code>pto.vaddrelu</code> / <code>pto.vsubrelu</code></li>
-<li><code>pto.vaddreluconv</code> / <code>pto.vmulconv</code></li>
-<li><code>pto.vmull</code> / <code>pto.vmula</code></li>
-<li><code>pto.vtranspose</code></li>
-<li><code>pto.vsort32</code></li>
-<li><code>pto.vmrgsort</code></li>
-<li><code>pto.vbitsort</code></li>
+<li><code>%input</code>、<code>%lhs</code>、<code>%rhs</code>、<code>%acc</code>、<code>%alpha</code>：不同指令使用的源 SSA 值</li>
+<li><code>%mask</code>：谓词操作数 <code>Pg</code></li>
+<li><code>%result</code>：目标 SSA 值</li>
 </ul>
-<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>这些操作通常属于以下几类：</p>
+<p>这一页混合了几种底层形态：</p>
 <ul>
-<li>特殊函数变体</li>
-<li>融合算术 + 激活</li>
-<li>领域专用重排或排序</li>
-<li>向量层的扩宽乘加</li>
+<li>纯 <code>vreg -&gt; vreg</code> 形式</li>
+<li>“计算 + 转换”融合形式</li>
+<li>直接在向量 tile buffer 上工作的 UB-to-UB 帮助指令</li>
 </ul>
-<h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>因此每条指令的小节都会单独写明自己属于哪种存储模型。</p>
+<hr />
+<h2 id="_2">融合激活<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h3 id="ptovlrelu"><code>pto.vlrelu</code><a class="headerlink" href="#ptovlrelu" title="Permanent link">&para;</a></h3>
 <ul>
-<li>某些操作只支持特定元素类型</li>
-<li>某些融合形式或排序形式只在 A5 profile 上稳定支持</li>
-<li>lowering 必须保留这些操作的专用语义，不能随意拆成“差不多等价”的普通算术</li>
+<li><strong>语法：</strong> <code>%result = pto.vlrelu %input, %alpha, %mask : !pto.vreg&lt;NxT&gt;, T, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>A5 类型：</strong> f16、f32</li>
+<li><strong>语义：</strong> Leaky ReLU，斜率由标量 <code>%alpha</code> 给出。</li>
 </ul>
-<h2 id="_4">不允许的情形<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = (src[i] &gt;= 0) ? src[i] : alpha * src[i];
+</code></pre>
+<h3 id="ptovprelu"><code>pto.vprelu</code><a class="headerlink" href="#ptovprelu" title="Permanent link">&para;</a></h3>
 <ul>
-<li>把 profile 专属 SFU/DSA 形式写成所有目标的通用路径</li>
-<li>省略融合形式带来的额外语义约束</li>
+<li><strong>语法：</strong> <code>%result = pto.vprelu %input, %alpha : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>A5 类型：</strong> f16、f32</li>
+<li><strong>语义：</strong> Parametric ReLU，斜率是逐元素向量。</li>
 </ul>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = (src[i] &gt;= 0) ? src[i] : alpha[i] * src[i];
+</code></pre>
+<h3 id="ptovexpdiff"><code>pto.vexpdiff</code><a class="headerlink" href="#ptovexpdiff" title="Permanent link">&para;</a></h3>
 <ul>
-<li><a href="../vector-families_zh/">向量指令族</a></li>
-<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
+<li><strong>语法：</strong> <code>%result = pto.vexpdiff %input, %max : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>A5 类型：</strong> f16、f32</li>
+<li><strong>语义：</strong> 计算 <code>exp(x - max)</code> 的融合形式，典型用途是数值稳定版 softmax。</li>
+</ul>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = expf(src[i] - max[i]);
+</code></pre>
+<p>这类融合形式的意义不只是“少一条指令”，还包括把数值路径固定成硬件期望的顺序。</p>
+<hr />
+<h2 id="_3">融合计算 + 转换<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="ptovaddrelu"><code>pto.vaddrelu</code><a class="headerlink" href="#ptovaddrelu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vaddrelu %lhs, %rhs : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>A5 类型：</strong> f16、f32</li>
+<li><strong>语义：</strong> 先相加，再过 ReLU。</li>
+</ul>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = max(src0[i] + src1[i], 0);
+</code></pre>
+<h3 id="ptovsubrelu"><code>pto.vsubrelu</code><a class="headerlink" href="#ptovsubrelu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vsubrelu %lhs, %rhs : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>A5 类型：</strong> f16、f32</li>
+<li><strong>语义：</strong> 先相减，再过 ReLU。</li>
+</ul>
+<h3 id="ptovaxpy"><code>pto.vaxpy</code><a class="headerlink" href="#ptovaxpy" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vaxpy %src0, %src1, %alpha : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, T -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>A5 类型：</strong> f16、f32</li>
+<li><strong>语义：</strong> 执行 AXPY：<code>alpha * src0 + src1</code>。</li>
+</ul>
+<h3 id="ptovaddreluconv"><code>pto.vaddreluconv</code><a class="headerlink" href="#ptovaddreluconv" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vaddreluconv %lhs, %rhs : !pto.vreg&lt;NxT0&gt;, !pto.vreg&lt;NxT0&gt; -&gt; !pto.vreg&lt;MxT1&gt;</code></li>
+<li><strong>语义：</strong> 先做加法和 ReLU，再执行类型转换。</li>
+</ul>
+<p>合法性重点在于：</p>
+<ul>
+<li>并不是任意源 / 目标类型对都支持</li>
+<li>舍入、饱和、打包方式由这条融合指令定义，不能随便拆成普通 <code>vadd</code>、<code>vrelu</code>、<code>vcvt</code></li>
+</ul>
+<h3 id="ptovmulconv"><code>pto.vmulconv</code><a class="headerlink" href="#ptovmulconv" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vmulconv %lhs, %rhs : !pto.vreg&lt;NxT0&gt;, !pto.vreg&lt;NxT0&gt; -&gt; !pto.vreg&lt;MxT1&gt;</code></li>
+<li><strong>语义：</strong> 先乘法，再做硬件支持的类型转换。</li>
+</ul>
+<p>这类形式的关键不是“乘法后再转型”这么简单，而是它把转换时机、舍入和打包路径锁定成一个不可随意改写的硬件语义。</p>
+<hr />
+<h2 id="_4">扩展算术<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="ptovmull"><code>pto.vmull</code><a class="headerlink" href="#ptovmull" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%low, %high = pto.vmull %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>A5 类型：</strong> i32 / u32 的原生 32×32→64 扩宽乘</li>
+<li><strong>语义：</strong> 返回扩宽乘积的低半部分和高半部分。</li>
+</ul>
+<pre><code class="language-c">for (int i = 0; i &lt; 64; i++) {
+    int64_t r = (int64_t)src0_i32[i] * (int64_t)src1_i32[i];
+    dst_lo[i] = (int32_t)(r &amp; 0xFFFFFFFF);
+    dst_hi[i] = (int32_t)(r &gt;&gt; 32);
+}
+</code></pre>
+<h3 id="ptovmula"><code>pto.vmula</code><a class="headerlink" href="#ptovmula" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vmula %acc, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 乘加融合。</li>
+</ul>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    if (mask[i])
+        dst[i] = acc[i] + lhs[i] * rhs[i];
+</code></pre>
+<p><code>vmula</code> 不是总能用 <code>vmul + vadd</code> 替代。它是否保留更强的融合时序、舍入路径或吞吐特征，属于必须被后端保真的部分。</p>
+<hr />
+<h2 id="_5">索引生成<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="ptovci"><code>pto.vci</code><a class="headerlink" href="#ptovci" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vci %index {order = "ORDER"} : integer -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 生成一个逐 lane 索引向量。</li>
+</ul>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = base_index + i;
+</code></pre>
+<p>这类操作常用于 gather/scatter、排序、argsort 等场景。虽然 <code>vci</code> 也会出现在转换类页面里，但在这里更适合作为“索引物化原语”来理解。</p>
+<hr />
+<h2 id="tile-buffer">直接作用于向量 tile buffer 的操作<a class="headerlink" href="#tile-buffer" title="Permanent link">&para;</a></h2>
+<h3 id="ptovtranspose"><code>pto.vtranspose</code><a class="headerlink" href="#ptovtranspose" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vtranspose %dest, %src, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64</code></li>
+<li><strong>语义：</strong> 在向量 tile buffer 上直接做转置，不经过 <code>vreg -&gt; vreg</code> 路径。</li>
+</ul>
+<p>这里最重要的边界是：虽然名字在 <code>pto.v*</code> 命名空间里，但它不是普通向量寄存器运算，而是一个依赖控制字与布局约束的 UB-to-UB 加速器操作。</p>
+<hr />
+<h2 id="_6">排序操作<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="ptovsort32"><code>pto.vsort32</code><a class="headerlink" href="#ptovsort32" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vsort32 %dest, %src, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64</code></li>
+<li><strong>语义：</strong> 对向量 tile buffer 中的 32 个元素排序。</li>
+</ul>
+<h3 id="ptovbitsort"><code>pto.vbitsort</code><a class="headerlink" href="#ptovbitsort" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vbitsort %dest, %src, %indices, %repeat_times : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, index</code></li>
+<li><strong>语义：</strong> 按分数降序排序 32 个 region proposal，并把排序后的记录写入 <code>%dest</code>。</li>
+</ul>
+<p>要点：</p>
+<ul>
+<li>每条输出记录 8 字节</li>
+<li>高 4 字节是 index，低 4 字节是 score</li>
+<li>相同 score 的 tie 保持稳定</li>
+<li>所有指针都必须指向向量 tile buffer</li>
+<li>这是 A5 特有的 <code>VBS32</code> 硬件单元能力</li>
+</ul>
+<h3 id="ptovmrgsort"><code>pto.vmrgsort</code><a class="headerlink" href="#ptovmrgsort" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt; x4, i64, i64</code></li>
+<li><strong>语义：</strong> 对四个已经排好序的输入流做 merge-sort。</li>
+</ul>
+<p>约束：</p>
+<ul>
+<li>四个输入必须已经按 <code>%config</code> 约定的方向排好序</li>
+<li>页面正文常简写成 <code>pto.vmrgsort</code>，但当前实现摘要里仍保留 <code>pto.vmrgsort4</code></li>
+</ul>
+<hr />
+<h2 id="_7">当前实现摘要<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p>当前文档覆盖的主要形式包括：</p>
+<ul>
+<li><code>pto.vmull %lhs, %rhs, %mask</code></li>
+<li><code>pto.vmula %acc, %lhs, %rhs, %mask</code></li>
+<li><code>pto.vci %index {order = "ORDER"}</code></li>
+<li><code>pto.vbitsort %dest, %src, %indices, %repeat_times</code></li>
+<li><code>pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config</code></li>
+</ul>
+<hr />
+<h2 id="_8">典型用法<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mlir">// Softmax：先减去最大值，再走 expdiff
+%max_broadcast = pto.vlds %ub_max[%c0] {dist = &quot;BRC_B32&quot;}
+    : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+%exp_stable = pto.vexpdiff %logits, %max_broadcast
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+
+// Leaky ReLU
+%activated = pto.vlrelu %linear_out, %alpha_scalar, %mask
+    : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+
+// 残差加法 + ReLU
+%residual = pto.vaddrelu %conv_out, %skip_connection
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+
+// 为 argsort 生成索引
+%indices = pto.vci %c0 {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
+</code></pre>
+<hr />
+<h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../reduction-ops_zh/">归约操作</a></li>
+<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令面</a></li>
+<li><a href="../data-rearrangement_zh/">数据重排</a></li>
 </ul>
               
             </div>

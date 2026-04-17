@@ -931,19 +931,14 @@
               
                 <!-- Generated from `docs/isa/tile/ops/reduce-and-expand/tcolexpanddiv_zh.md` -->
 
-<h1 id="tcolexpanddiv">TCOLEXPANDDIV<a class="headerlink" href="#tcolexpanddiv" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TCOLEXPANDDIV tile operation" src="../../../../../figures/isa/TCOLEXPANDDIV.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>列广播除法：将每一列除以一个每列标量向量。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>设 <code>R = dst.GetValidRow()</code> 和 <code>C = dst.GetValidCol()</code>。设 <code>s_j</code> 为从 <code>src1</code> 中获取的每列标量（每列一个值）。</p>
-<p>对于 <code>0 &lt;= i &lt; R</code> 和 <code>0 &lt;= j &lt; C</code>：</p>
-<div class="arithmatex">\[
-\mathrm{dst}_{i,j} = \mathrm{src0}_{i,j} / s_j
-\]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<h1 id="ptotcolexpanddiv">pto.tcolexpanddiv<a class="headerlink" href="#ptotcolexpanddiv" title="Permanent link">&para;</a></h1>
+<p><code>pto.tcolexpanddiv</code> 属于<a href="../../../reduce-and-expand_zh/">归约与扩展</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>把“每列一个标量”的向量广播到整列，再作为除数参与逐元素除法。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>设 <code>R = dst.GetValidRow()</code>、<code>C = dst.GetValidCol()</code>。记 <code>s_j</code> 为第 <code>j</code> 列对应的广播标量。则：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src0}_{i,j} / s_j \]</div>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = tcolexpanddiv %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -954,36 +949,43 @@
 <pre><code class="language-text">pto.tcolexpanddiv ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCOLEXPANDDIV(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>TileDataDst::DType</code>、<code>TileDataSrc1::DType</code> 必须是以下之一：<code>half</code>、<code>float</code>。</li>
-<li>Tile 形状/布局约束（编译时）：<code>TileDataDst::isRowMajor</code>。</li>
-<li><code>src1</code> 预期提供<strong>每列一个标量</strong>（即，其有效形状必须覆盖 <code>C</code> 个值）。</li>
-<li>确切的布局/分形约束是目标特定的；参见 <code>include/pto/npu/*/TColExpand*.hpp</code> 下的后端头文件。</li>
+<li><code>src0</code>：逐元素主输入 tile</li>
+<li><code>src1</code>：提供“每列一个标量”的广播源</li>
+<li><code>dst</code>：目标 tile</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>参见 <code>docs/isa/</code> 和 <code>docs/coding/tutorials/</code> 中的相关示例。</p>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.tcolexpanddiv %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst[i,j] = src0[i,j] / src1[0,j]</code></li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>TileDataDst::DType</code>、<code>TileDataSrc1::DType</code> 当前实现只支持 <code>half</code>、<code>float</code></li>
+<li><code>dst</code> 必须是 row-major</li>
+<li><code>src1</code> 应覆盖每一列的广播标量</li>
+<li>具体布局 / 分形约束由 backend 决定</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有把 <code>tcolexpanddiv</code> 单列成公开 cost table，应视为目标 profile 相关的列广播组合路径。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<pre><code class="language-text">%dst = pto.tcolexpanddiv %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.tcolexpanddiv %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tcolexpanddiv %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tcolexpanddiv ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../reduce-and-expand_zh/">归约与扩展</a></li>
+<li>上一条指令：<a href="../tcolexpand_zh/">pto.tcolexpand</a></li>
+<li>下一条指令：<a href="../tcolexpandmul_zh/">pto.tcolexpandmul</a></li>
+</ul>
               
             </div>
           </div><footer>

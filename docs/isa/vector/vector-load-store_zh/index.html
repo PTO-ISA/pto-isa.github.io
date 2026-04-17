@@ -931,82 +931,424 @@
               
                 <!-- Generated from `docs/isa/vector/vector-load-store_zh.md` -->
 
-<h1 id="_1">向量加载存储指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>向量加载存储指令集定义 UB 与向量寄存器之间的数据搬运形式。<code>pto.v*</code> 计算只在向量寄存器上执行，因此这组指令构成 DMA 与向量计算之间的桥。</p>
-<h2 id="_2">执行模型<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<pre><code class="language-text">GM -&gt; MTE2 -&gt; UB -&gt; VLDS -&gt; vreg -&gt; PTO.v* compute -&gt; VSTS -&gt; UB -&gt; MTE3 -&gt; GM
+<h1 id="_1">向量指令集：加载与存储<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>PTO指令集架构中的向量加载 / 存储定义在这里。它们负责把数据在向量 tile buffer 与向量寄存器之间来回搬运，同时保持这条路径完全停留在 <code>pto.v*</code> 语义之内，不退回 tile 指令面。</p>
+<blockquote>
+<p><strong>类别：</strong> 向量 tile buffer ↔ 向量寄存器 数据搬运
+<strong>流水线：</strong> <code>PIPE_V</code></p>
+</blockquote>
+<p>向量加载从向量 tile buffer（当前硬件由 UB 实现）读取数据进入 <code>vreg</code>；向量存储则把 <code>vreg</code> 写回这个向量 tile buffer。所有向量计算都发生在 <code>vreg</code> 上，因此这组指令正好位于 DMA 与向量计算之间。</p>
+<hr />
+<h2 id="dma">执行模型：DMA 与向量流水线的衔接<a class="headerlink" href="#dma" title="Permanent link">&para;</a></h2>
+<p>向量 load/store 连接的是两套不同的执行域：</p>
+<ul>
+<li>DMA 域：MTE2 / MTE3</li>
+<li>计算域：<code>PIPE_V</code></li>
+</ul>
+<p>一段完整的向量 kernel 通常长这样：</p>
+<pre><code class="language-text">GM → MTE2 → 向量 tile buffer → VLDS → vreg → PTO.v* 计算 → VSTS → 向量 tile buffer → MTE3 → GM
 </code></pre>
-<p>典型顺序链：</p>
+<p>下面这个 skeleton 把一条完整数据链条串起来了：</p>
+<pre><code class="language-mlir">module attributes {pto.target_arch = &quot;a5&quot;} {
+  func.func @kernel_2d(%arg0: !pto.ptr, %arg1: !pto.ptr) {
+    %false = arith.constant false
+
+    // 阶段 1：MTE2 从 GM 装载到向量 tile buffer
+    pto.get_buf &quot;PIPE_MTE2&quot;, 0, 0
+    pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
+    pto.copy_gm_to_ubuf %arg0, %ub_in, %c0_i64, %c32_i64, %c128_i64,
+      %c0_i64, %c0_i64, %false, %c0_i64, %c128_i64, %c128_i64
+      : !pto.ptr, !pto.ptr, i64, i64, i64, i64, i64, i1, i64, i64, i64
+    pto.rls_buf &quot;PIPE_MTE2&quot;, 0, 0
+
+    // 阶段 2：MTE2 → V，同步数据可见性
+    pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+    pto.wait_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+
+    // 阶段 3：向量计算
+    pto.get_buf &quot;PIPE_V&quot;, 0, 0
+    pto.vecscope {
+      %_:1 = scf.for %offset = %c0 to %c1024 step %c64
+          iter_args(%remaining = %c1024_i32) -&gt; (i32) {
+        %mask, %next = pto.plt_b32 %remaining : i32 -&gt; !pto.mask, i32
+        %vec = pto.vlds %ub_in[%offset] : !pto.ptr -&gt; !pto.vreg&lt;64xf32&gt;
+        %out = pto.vabs %vec, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+        pto.vsts %out, %ub_out[%offset], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr, !pto.mask
+        scf.yield %next : i32
+      }
+    }
+    pto.rls_buf &quot;PIPE_V&quot;, 0, 0
+
+    // 阶段 4：V → MTE3，同步结果可见性
+    pto.set_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
+    pto.wait_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
+
+    // 阶段 5：MTE3 从向量 tile buffer 回写到 GM
+    pto.get_buf &quot;PIPE_MTE3&quot;, 0, 0
+    pto.set_loop_size_ubtoout %c1_i64, %c1_i64 : i64, i64
+    pto.copy_ubuf_to_gm %ub_out, %arg1, %c0_i64, %c32_i64, %c128_i64,
+      %c0_i64, %c128_i64, %c128_i64
+      : !pto.ptr, !pto.ptr, i64, i64, i64, i64, i64, i64
+    pto.rls_buf &quot;PIPE_MTE3&quot;, 0, 0
+
+    pto.barrier #pto.pipe
+    return
+  }
+}
+</code></pre>
+<h3 id="_2">典型同步原语<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pto.set_flag["PIPE_MTE2", "PIPE_V", id]</code></td>
+<td>告诉 <code>PIPE_V</code>：MTE2 已经把输入写好</td>
+</tr>
+<tr>
+<td><code>pto.wait_flag["PIPE_MTE2", "PIPE_V", id]</code></td>
+<td><code>PIPE_V</code> 在读之前必须等待</td>
+</tr>
+<tr>
+<td><code>pto.set_flag["PIPE_V", "PIPE_MTE3", id]</code></td>
+<td>告诉 MTE3：向量结果已经写回向量 tile buffer</td>
+</tr>
+<tr>
+<td><code>pto.wait_flag["PIPE_V", "PIPE_MTE3", id]</code></td>
+<td>MTE3 在回写前必须等待</td>
+</tr>
+<tr>
+<td><code>pto.get_buf "PIPE_*", slot, 0</code></td>
+<td>获取某个 buffer 槽位</td>
+</tr>
+<tr>
+<td><code>pto.rls_buf "PIPE_*", slot, 0</code></td>
+<td>释放某个 buffer 槽位</td>
+</tr>
+</tbody>
+</table>
+<p><code>get_buf</code> / <code>rls_buf</code> 的意义是用 buffer 槽位自动承载 RAW/WAR 依赖，避免在复杂双缓冲循环里手写大量事件 ID。</p>
+<h3 id="a2a3">A2A3 带宽模型<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>传输路径</th>
+<th>带宽</th>
+<th>常量</th>
+<th>周期公式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GM → 向量 tile buffer</td>
+<td>128 B/周期</td>
+<td><code>A2A3_BW_GM_VEC</code></td>
+<td><code>ceil(Nbytes / 128)</code></td>
+</tr>
+<tr>
+<td>GM → 矩阵 tile buffer</td>
+<td>256 B/周期</td>
+<td><code>A2A3_BW_GM_MAT</code></td>
+<td><code>ceil(Nbytes / 256)</code></td>
+</tr>
+<tr>
+<td>向量 tile buffer → 向量 tile buffer</td>
+<td>128 B/周期</td>
+<td><code>A2A3_BW_VEC_VEC</code></td>
+<td><code>ceil(Nbytes / 128)</code></td>
+</tr>
+</tbody>
+</table>
+<p>例如一次 4096B 的向量 tile 装载：</p>
+<pre><code class="language-text">cycles = ceil(4096 / 128) = 32
+</code></pre>
+<hr />
+<h2 id="_3">通用操作数模型<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>copy_gm_to_ubuf</code></li>
-<li><code>set_flag(PIPE_MTE2, PIPE_V, id)</code></li>
-<li><code>wait_flag(...)</code></li>
-<li><code>vlds</code></li>
-<li>向量计算</li>
-<li><code>vsts</code></li>
-<li><code>set_flag(PIPE_V, PIPE_MTE3, id)</code></li>
-<li><code>wait_flag(...)</code></li>
-<li><code>copy_ubuf_to_gm</code></li>
-</ul>
-<h2 id="_3">常见操作<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>pto.vlds</code></li>
-<li><code>pto.vldas</code></li>
-<li><code>pto.vldus</code></li>
-<li><code>pto.vldx2</code></li>
-<li><code>pto.vsld</code></li>
-<li><code>pto.vsldb</code></li>
-<li><code>pto.vsst</code></li>
-<li><code>pto.vsstb</code></li>
-<li><code>pto.vsta</code></li>
-<li><code>pto.vstar</code></li>
-<li><code>pto.vstas</code></li>
-<li><code>pto.vstu</code></li>
-<li><code>pto.vstus</code></li>
-<li><code>pto.vstur</code></li>
-<li><code>pto.vscatter</code></li>
-<li><code>pto.vgather2</code></li>
-<li><code>pto.vgather2_bc</code></li>
-<li><code>pto.vgatherb</code></li>
-</ul>
-<h2 id="_4">操作数模型<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>%source</code> / <code>%dest</code>：UB 地址基址</li>
-<li><code>%offset</code>：位移</li>
-<li><code>%mask</code>：predicated memory op 的谓词</li>
+<li><code>%source</code> / <code>%dest</code>：SSA 形式的基址操作数，必须指向向量 tile buffer</li>
+<li><code>%offset</code>：位移操作数，具体编码随指令形式而变化</li>
+<li><code>%mask</code>：谓词操作数，用在 predicated memory 指令中。inactive lane 或 inactive block 不得发起未文档化的内存请求</li>
 <li><code>%result</code>：目标向量寄存器</li>
-<li><code>!pto.align</code>：非对齐 load/store 使用的对齐状态</li>
+<li><code>!pto.align</code>：承载非对齐 load/store 对齐状态的 SSA 值</li>
 </ul>
-<h2 id="_5">分布模式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>常见 <code>dist</code> 模式包括：</p>
+<p>PTO 把非对齐状态显式放在 SSA 里，而不是让后端偷偷维护隐藏状态。这一点对合法化和调试都很关键。</p>
+<hr />
+<h2 id="_4">连续加载<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="ptovlds"><code>pto.vlds</code><a class="headerlink" href="#ptovlds" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>NORM</code></li>
-<li><code>BRC_B8/B16/B32</code></li>
-<li><code>US_B8/B16</code></li>
-<li><code>DS_B8/B16</code></li>
-<li><code>UNPK_B8/B16/B32</code></li>
-<li><code>DINTLV_B32</code></li>
-<li><code>SPLT2CHN_B8/B16</code></li>
-<li><code>SPLT4CHN_B8</code></li>
+<li><strong>语法：</strong> <code>%result = pto.vlds %source[%offset] {dist = "DIST"} : !pto.ptr&lt;T, ub&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 用给定分布模式，从向量 tile buffer 把一段数据装成向量寄存器。</li>
 </ul>
-<h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>约束：</p>
 <ul>
-<li>基址必须是 UB 指针</li>
-<li>有效地址必须满足对应分布模式的对齐要求</li>
-<li>非对齐流必须先通过 <code>vldas</code> 等操作初始化对齐状态</li>
-<li>predicated memory op 不应在 inactive lane 上发起未文档化的内存请求</li>
+<li>有效地址必须满足所选 <code>DIST</code> 的对齐要求</li>
+<li><code>NORM</code> 读一个完整向量 footprint</li>
+<li>广播、上采样、下采样、拆包、拆通道、去交织等模式只改变“如何映射到目标 lane”，不改变“数据来自向量 tile buffer”这个事实</li>
 </ul>
-<h2 id="_7">不允许的情形<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NORM</code></td>
+<td>连续 256B 装载</td>
+</tr>
+<tr>
+<td><code>BRC_B8/B16/B32</code></td>
+<td>广播单元素到所有 lane</td>
+</tr>
+<tr>
+<td><code>US_B8/B16</code></td>
+<td>上采样，重复每个元素</td>
+</tr>
+<tr>
+<td><code>DS_B8/B16</code></td>
+<td>下采样，隔一个取一个</td>
+</tr>
+<tr>
+<td><code>UNPK_B8/B16/B32</code></td>
+<td>拆包并扩展到更宽类型</td>
+</tr>
+<tr>
+<td><code>SPLT4CHN_B8</code></td>
+<td>4 通道拆分</td>
+</tr>
+<tr>
+<td><code>SPLT2CHN_B8/B16</code></td>
+<td>2 通道拆分</td>
+</tr>
+<tr>
+<td><code>DINTLV_B32</code></td>
+<td>32 位去交织</td>
+</tr>
+<tr>
+<td><code>BLK</code></td>
+<td>按块装载</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-mlir">%v = pto.vlds %ub[%offset] {dist = &quot;NORM&quot;}
+    : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+
+%bcast = pto.vlds %ub[%c0] {dist = &quot;BRC_B32&quot;}
+    : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<h3 id="ptovldas"><code>pto.vldas</code><a class="headerlink" href="#ptovldas" title="Permanent link">&para;</a></h3>
 <ul>
-<li>在没有建立对齐状态时直接使用非对齐流式 load/store</li>
-<li>在 DMA 尚未完成时直接消费 UB 数据</li>
-<li>把 UB 地址空间与 GM 地址空间混用</li>
+<li><strong>语法：</strong> <code>%result = pto.vldas %source : !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></li>
+<li><strong>语义：</strong> 为后续非对齐装载预热对齐状态。</li>
 </ul>
-<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<p>它会围绕 <code>%source</code> 所在的对齐块初始化 <code>!pto.align</code>，供后续 <code>vldus</code> 串流使用。</p>
+<h3 id="ptovldus"><code>pto.vldus</code><a class="headerlink" href="#ptovldus" title="Permanent link">&para;</a></h3>
 <ul>
-<li><a href="../pipeline-sync_zh/">向量流水同步</a></li>
-<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
-<li><a href="../../scalar/dma-copy_zh/">标量 DMA 拷贝</a></li>
+<li><strong>语法：</strong> <code>%result, %align_out, %base_out = pto.vldus %source, %align : !pto.ptr&lt;T, ub&gt;, !pto.align -&gt; !pto.vreg&lt;NxT&gt;, !pto.align, !pto.ptr&lt;T, ub&gt;</code></li>
+<li><strong>语义：</strong> 依赖已预热的 <code>!pto.align</code>，执行非对齐装载。</li>
+</ul>
+<p>约束：</p>
+<ul>
+<li>第一条相关 <code>vldus</code> 前必须有匹配的 <code>vldas</code></li>
+<li><code>!pto.align</code> 和基址都会随流推进，以 SSA 结果的形式显式返回</li>
+</ul>
+<pre><code class="language-mlir">%align = pto.vldas %ub : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
+%vec, %align2, %ub2 = pto.vldus %ub, %align
+    : !pto.ptr&lt;f32, ub&gt;, !pto.align
+      -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align, !pto.ptr&lt;f32, ub&gt;
+</code></pre>
+<hr />
+<h2 id="_5">双路加载与去交织<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="ptovldx2"><code>pto.vldx2</code><a class="headerlink" href="#ptovldx2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%low, %high = pto.vldx2 %source[%offset], "DIST" : !pto.ptr&lt;T, ub&gt;, index -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 从交织布局中一次装出两路结果，常用于 AoS→SoA 转换。</li>
+</ul>
+<p>合法分布模式包括 <code>DINTLV_B8</code>、<code>DINTLV_B16</code>、<code>DINTLV_B32</code>、<code>BDINTLV</code>。</p>
+<pre><code class="language-c">for (int i = 0; i &lt; 64; i++) {
+    low[i]  = UB[base + 8*i];
+    high[i] = UB[base + 8*i + 4];
+}
+</code></pre>
+<p>这两路输出是有顺序的，后端不得把它们交换。</p>
+<hr />
+<h2 id="_6">固定步长加载<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="ptovsld"><code>pto.vsld</code><a class="headerlink" href="#ptovsld" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vsld %source[%offset], "STRIDE" : !pto.ptr&lt;T, ub&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 用固定 stride 模式装载。</li>
+</ul>
+<p>这是兼容性保留指令。真正决定“从哪里读”的是 stride token，而不只是 lane 编号。</p>
+<h3 id="ptovsldb"><code>pto.vsldb</code><a class="headerlink" href="#ptovsldb" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vsldb %source, %offset, %mask : !pto.ptr&lt;T, ub&gt;, i32, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 按 block stride 从向量 tile buffer 装载，常用于二维 tile 访问。</li>
+</ul>
+<p>这里的 <code>%offset</code> 不是普通字节偏移，而是一个编码了 stride / repeat 规律的控制字。被 mask 关闭的 block 会在结果中清零，也不应为该 block 触发地址越界异常。</p>
+<hr />
+<h2 id="gather">Gather 装载<a class="headerlink" href="#gather" title="Permanent link">&para;</a></h2>
+<h3 id="ptovgather2"><code>pto.vgather2</code><a class="headerlink" href="#ptovgather2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vgather2 %source, %offsets, %active_lanes : !pto.ptr&lt;T, ub&gt;, !pto.vreg&lt;NxI&gt;, index -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 按索引从向量 tile buffer gather。</li>
+</ul>
+<pre><code class="language-c">for (int i = 0; i &lt; active_lanes; i++)
+    dst[i] = UB[base + offsets[i] * sizeof(T)];
+</code></pre>
+<p>只允许前 <code>%active_lanes</code> 个索引参与。</p>
+<h3 id="ptovgatherb"><code>pto.vgatherb</code><a class="headerlink" href="#ptovgatherb" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vgatherb %source, %offsets, %active_lanes : !pto.ptr&lt;T, ub&gt;, !pto.vreg&lt;NxI&gt;, index -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 按 32B block 做 gather，而不是按单字节逐 lane gather。</li>
+</ul>
+<p>约束：</p>
+<ul>
+<li><code>%source</code> 必须 32B 对齐</li>
+<li>每个参与的 offset 都必须描述 32B 对齐块</li>
+<li>inactive block 在结果中清零</li>
+</ul>
+<h3 id="ptovgather2_bc"><code>pto.vgather2_bc</code><a class="headerlink" href="#ptovgather2_bc" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vgather2_bc %source, %offsets, %mask : !pto.ptr&lt;T, ub&gt;, !pto.vreg&lt;NxI&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 带广播语义的 gather，受谓词控制。</li>
+</ul>
+<p>被 mask 关闭的 lane 不参与地址合并，也不会触发地址异常，结果位置按零填充。</p>
+<hr />
+<h2 id="_7">连续存储<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="ptovsts"><code>pto.vsts</code><a class="headerlink" href="#ptovsts" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vsts %value, %dest[%offset], %mask {dist = "DIST"} : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, !pto.mask</code></li>
+<li><strong>语义：</strong> 按给定分布模式，把向量寄存器写回向量 tile buffer。</li>
+</ul>
+<p>约束：</p>
+<ul>
+<li>目标地址必须满足分布模式的对齐要求</li>
+<li>打包 / 收窄模式可能只保留源向量的一部分比特</li>
+<li>merge-channel 模式会把多个 plane 重新交织成通道数据</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NORM_B8/B16/B32</code></td>
+<td>连续存储</td>
+</tr>
+<tr>
+<td><code>PK_B16/B32</code></td>
+<td>打包 / 收窄存储</td>
+</tr>
+<tr>
+<td><code>MRG4CHN_B8</code></td>
+<td>四通道合并</td>
+</tr>
+<tr>
+<td><code>MRG2CHN_B8/B16</code></td>
+<td>双通道合并</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ptovstx2"><code>pto.vstx2</code><a class="headerlink" href="#ptovstx2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vstx2 %low, %high, %dest[%offset], "DIST", %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, index, !pto.mask</code></li>
+<li><strong>语义：</strong> 双路交织存储，常用于 SoA→AoS 转换。</li>
+</ul>
+<p>合法分布模式包括 <code>INTLV_B8</code>、<code>INTLV_B16</code>、<code>INTLV_B32</code>。</p>
+<pre><code class="language-c">for (int i = 0; i &lt; 64; i++) {
+    UB[base + 8*i]     = low[i];
+    UB[base + 8*i + 4] = high[i];
+}
+</code></pre>
+<hr />
+<h2 id="_8">固定步长存储<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h3 id="ptovsst"><code>pto.vsst</code><a class="headerlink" href="#ptovsst" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vsst %value, %dest[%offset], "STRIDE" : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;</code></li>
+<li><strong>语义：</strong> 用固定 stride 模式存储。</li>
+</ul>
+<p>这是兼容性保留形式。真正定义写入模式的是 stride token。</p>
+<h3 id="ptovsstb"><code>pto.vsstb</code><a class="headerlink" href="#ptovsstb" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vsstb %value, %dest, %offset, %mask : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, i32, !pto.mask</code></li>
+<li><strong>语义：</strong> 按 block stride 存储二维 tile。</li>
+</ul>
+<p>这里的 <code>%offset</code> 同样是控制字，而不是普通的字节偏移。</p>
+<hr />
+<h2 id="scatter">Scatter 存储<a class="headerlink" href="#scatter" title="Permanent link">&para;</a></h2>
+<h3 id="ptovscatter"><code>pto.vscatter</code><a class="headerlink" href="#ptovscatter" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vscatter %value, %dest, %offsets, %active_lanes : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, !pto.vreg&lt;NxI&gt;, index</code></li>
+<li><strong>语义：</strong> 按索引把向量值散写到向量 tile buffer。</li>
+</ul>
+<pre><code class="language-c">for (int i = 0; i &lt; active_lanes; i++)
+    UB[base + offsets[i] * sizeof(T)] = src[i];
+</code></pre>
+<p>约束：</p>
+<ul>
+<li>当前记录的元素大小只支持 <code>b8</code>、<code>b16</code>、<code>b32</code></li>
+<li>索引向量必须使用这套指令支持的整数元素类型与布局</li>
+<li>如果多个索引别名到同一个地址，只保证会有一次写入生效，获胜 lane 由实现定义</li>
+</ul>
+<hr />
+<h2 id="flush">非对齐存储状态与 flush<a class="headerlink" href="#flush" title="Permanent link">&para;</a></h2>
+<h3 id="ptovsta"><code>pto.vsta</code><a class="headerlink" href="#ptovsta" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vsta %value, %dest[%offset] : !pto.align, !pto.ptr&lt;T, ub&gt;, index</code></li>
+<li><strong>语义：</strong> 把待提交的存储对齐状态 flush 到内存。</li>
+</ul>
+<h3 id="ptovstu"><code>pto.vstu</code><a class="headerlink" href="#ptovstu" title="Permanent link">&para;</a></h3>
+<p><code>pto.vstu</code> 有两种语法形态。</p>
+<p><strong>形态 A：</strong></p>
+<ul>
+<li><strong>语法：</strong> <code>%align_out, %base_out = pto.vstu %align_in, %base_in, %value, %dest, %mode : !pto.align, !pto.ptr&lt;T, ub&gt;, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, index -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;</code></li>
+<li><strong>语义：</strong> 显式串接对齐状态和基址状态的非对齐存储。</li>
+</ul>
+<p><strong>形态 B：</strong></p>
+<ul>
+<li><strong>语法：</strong> <code>%align_out, %offset_out = pto.vstu %align_in, %offset_in, %value, %base, "MODE" : !pto.align, index, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, index</code></li>
+<li><strong>语义：</strong> 显式更新对齐状态与逻辑偏移。</li>
+</ul>
+<p>不论是哪种形态，都只是推进状态，不代表尾部残留字节已经全部落地。之后还需要一个兼容的 flush 指令。</p>
+<h3 id="ptovstus"><code>pto.vstus</code><a class="headerlink" href="#ptovstus" title="Permanent link">&para;</a></h3>
+<p><code>pto.vstus</code> 同样有两种语法形态：</p>
+<ul>
+<li>标量偏移 + 显式状态串接</li>
+<li>标量偏移 + 明确 <code>MODE</code> 的状态更新</li>
+</ul>
+<p>它与 <code>vstu</code> 的区别主要在于偏移来源是标量寄存器 / 立即量，而不是 index 形式。</p>
+<h3 id="ptovstur"><code>pto.vstur</code><a class="headerlink" href="#ptovstur" title="Permanent link">&para;</a></h3>
+<p><code>pto.vstur</code> 也有两种形态：</p>
+<ul>
+<li>只返回更新后的 <code>!pto.align</code></li>
+<li>带 <code>MODE</code> 的显式状态形式</li>
+</ul>
+<p>它们都只是“把一段非对齐存储推进一步”，而不是自动完成整个尾部提交。</p>
+<h3 id="ptovstas"><code>pto.vstas</code><a class="headerlink" href="#ptovstas" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vstas %align, %dest, %offset : !pto.align, !pto.ptr&lt;T, ub&gt;, i32</code></li>
+<li><strong>语义：</strong> 用标量偏移把先前累计的尾部状态 flush 到向量 tile buffer。</li>
+</ul>
+<h3 id="ptovstar"><code>pto.vstar</code><a class="headerlink" href="#ptovstar" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.vstar %value, %dest : !pto.align, !pto.ptr&lt;T, ub&gt;</code></li>
+<li><strong>语义：</strong> 结束一段非对齐存储序列，把剩余缓冲状态全部冲刷到内存。</li>
+</ul>
+<p>这三类 flush 指令的共同要求是：前面必须已经有兼容的状态产生序列，否则 <code>!pto.align</code> 的含义根本不成立。</p>
+<hr />
+<h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../dma-copy_zh/">向量 DMA 拷贝</a></li>
+<li><a href="../pipeline-sync_zh/">向量流水线同步</a></li>
+<li><a href="../predicate-and-materialization_zh/">谓词与物化</a></li>
 </ul>
               
             </div>

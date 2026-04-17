@@ -932,17 +932,136 @@
                 <!-- Generated from `docs/isa/vector/ops/binary-vector-ops/vaddc_zh.md` -->
 
 <h1 id="ptovaddc">pto.vaddc<a class="headerlink" href="#ptovaddc" title="Permanent link">&para;</a></h1>
-<p>执行带扩展或进位语义的向量加法。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%result, %carry = pto.vaddc %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;, !pto.mask
-</code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vaddc</code> 属于<a href="../../../binary-vector-ops_zh/">二元向量操作</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vaddc</code> 是逐 lane 的整数加法，同时产生两个结果：</p>
 <ul>
-<li>输入向量与结果向量的宽度和元素类型必须兼容。</li>
-<li>位运算、移位和 carry 变体还会受具体元素类型限制。</li>
+<li>一个截断后的结果向量</li>
+<li>一个按 lane 给出的 carry / overflow 谓词掩码</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>这条指令对两个整数向量做逐 lane 加法，并额外返回每个 lane 的 carry-out。对每个满足谓词的 lane <code>i</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{lhs}_i + \mathrm{rhs}_i \]</div>
+<div class="arithmatex">\[ \mathrm{carry}_i = \text{lane } i \text{ 的无符号进位输出} \]</div>
+<p>在当前 A5 指令语义里，应把它看成无符号整数 carry-chain 加法。<code>%carry</code> 可以继续作为下一条 <code>vaddc</code> 的掩码输入，用来实现多字长整数加法链。非活跃 lane 上，结果寄存器和 carry 掩码都保持原值。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vaddc %dst, %carry, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result, %carry = pto.vaddc %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;, !pto.mask
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.vaddc ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
+          outs(%result, %carry : !pto.vreg&lt;NxT&gt;, !pto.mask)
+</code></pre>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%lhs</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>第一个加数</td>
+</tr>
+<tr>
+<td><code>%rhs</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>第二个加数</td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>谓词掩码；掩码位为 1 的 lane 参与加法</td>
+</tr>
+</tbody>
+</table>
+<p>两个源寄存器必须具有相同的元素类型和相同的向量宽度 <code>N</code>。掩码宽度必须与 <code>N</code> 一致。</p>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>活跃 lane 上得到截断后的和；非活跃 lane 保持原值</td>
+</tr>
+<tr>
+<td><code>%carry</code></td>
+<td><code>!pto.mask</code></td>
+<td>逐 lane 的进位 / 溢出谓词；无符号加法发生溢出时，对应 lane 为 1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令除了产生目标向量寄存器和 carry 谓词外，没有其他架构副作用。它不会隐式占用 buffer、发送事件，也不会建立内存栅栏。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>只支持整数元素类型。这是一条 carry-chain 整数加法指令。</li>
+<li>在 A5 上，应把它视作无符号整数运算。</li>
+<li><code>%lhs</code>、<code>%rhs</code> 和 <code>%result</code> 的元素类型必须一致。</li>
+<li>所有寄存器的向量宽度必须一致。</li>
+<li><code>%mask</code> 的宽度必须与 <code>N</code> 一致。</li>
+<li>非活跃 lane 上，结果与 carry 都保持原值。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非整数元素类型、类型不匹配、宽度不匹配或掩码宽度不匹配。</li>
+<li><a href="../../../binary-vector-ops_zh/">二元向量操作</a>页面列出的额外非法情形，同样适用于 <code>pto.vaddc</code>。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<p>A5 是当前文档里最具体的向量 profile。CPU 模拟器和 A2/A3 类目标会在保留可见 PTO 契约的前提下模拟这条指令。</p>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th>时延（周期）</th>
+<th>A5 RV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>i32</code></td>
+<td>7</td>
+<td><code>RV_VADDC</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="c">C 语义<a class="headerlink" href="#c" title="Permanent link">&para;</a></h3>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++) {
+    uint64_t r = (uint64_t)src0[i] + src1[i];
+    dst[i] = (T)r;
+    carry[i] = (r &gt;&gt; bitwidth);
+}
+</code></pre>
+<h3 id="mlir">MLIR 用法<a class="headerlink" href="#mlir" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result, %carry = pto.vaddc %a, %b, %active
+    : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xi32&gt;, !pto.mask
+
+%sum0, %carry0 = pto.vaddc %a0, %b0, %active : ...
+%sum1, %carry1 = pto.vaddc %a1, %b1, %carry0 : ...
+</code></pre>
+<h3 id="_11">典型场景：多字长整数加法<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%sum_low, %carry = pto.vaddc %a_low, %b_low, %active : ...
+%sum_high, %carry2 = pto.vaddc %a_high, %b_high, %carry : ...
+</code></pre>
+<h2 id="_12">性能<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h3 id="_13">时延与吞吐披露<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vaddc</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -967,9 +1086,11 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vaddc</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_14">相关页面<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../binary-vector-ops_zh/">二元向量指令集</a></li>
+<li>指令集总览：<a href="../../../binary-vector-ops_zh/">二元向量操作</a></li>
+<li>上一条指令：<a href="../vshr_zh/">pto.vshr</a></li>
+<li>下一条指令：<a href="../vsubc_zh/">pto.vsubc</a></li>
 </ul>
               
             </div>

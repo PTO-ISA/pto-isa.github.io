@@ -931,30 +931,122 @@
               
                 <!-- Generated from `docs/isa/tile/README_zh.md` -->
 
-<h1 id="tile-isa">Tile ISA 参考<a class="headerlink" href="#tile-isa" title="Permanent link">&para;</a></h1>
-<p><code>pto.t*</code> 是 PTO ISA 中以 tile 为中心的主干指令集。该指令集覆盖 tile 载荷的装载、逐元素计算、归约、扩展、重排、矩阵运算和显式同步。</p>
-<h2 id="_1">组织方式<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>Tile 参考按指令族组织，具体 per-op 页面位于 <code>tile/ops/</code> 下。</p>
-<h2 id="_2">指令族<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<ul>
-<li>同步与配置</li>
-<li>逐元素 Tile-Tile</li>
-<li>Tile-标量与立即数</li>
-<li>归约与扩展</li>
-<li>内存与数据搬运</li>
-<li>矩阵与矩阵-向量</li>
-<li>布局与重排</li>
-<li>不规则与复杂</li>
-</ul>
+<h1 id="tile">Tile 指令参考<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h1>
+<p><code>pto.t*</code> 是 PTO 指令集架构里以 tile 为中心的主干执行面。它覆盖 tile 数据的装载、逐元素计算、归约与扩展、布局重排、矩阵乘、显式同步，以及少量不规则专用操作。</p>
+<p>这组文档按“先看家族页，再看单指令页”的方式组织。家族页负责解释共享机制、角色、约束和 profile 边界；<code>tile/ops/</code> 下的 leaf 页负责给出逐条指令的合同。</p>
+<h2 id="_1">指令族<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>指令族</th>
+<th>说明</th>
+<th>典型指令</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../sync-and-config_zh/">同步与配置</a></td>
+<td>资源绑定、事件等待、tile 侧模式设置</td>
+<td><code>TASSIGN</code>、<code>TSYNC</code></td>
+</tr>
+<tr>
+<td><a href="../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></td>
+<td>tile 与 tile 的逐元素算术、比较和选择</td>
+<td><code>TADD</code>、<code>TMUL</code>、<code>TSEL</code></td>
+</tr>
+<tr>
+<td><a href="../tile-scalar-and-immediate_zh/">Tile-标量与立即数</a></td>
+<td>tile 与标量或立即数的组合运算</td>
+<td><code>TADDS</code>、<code>TMULS</code></td>
+</tr>
+<tr>
+<td><a href="../reduce-and-expand_zh/">归约与扩展</a></td>
+<td>行 / 列归约和按轴扩展</td>
+<td><code>TROWSUM</code>、<code>TROWEXPAND</code></td>
+</tr>
+<tr>
+<td><a href="../memory-and-data-movement_zh/">内存与数据搬运</a></td>
+<td>GM 与 tile 间传输，以及 tile 侧 gather / scatter</td>
+<td><code>TLOAD</code>、<code>TSTORE</code></td>
+</tr>
+<tr>
+<td><a href="../matrix-and-matrix-vector_zh/">矩阵与矩阵-向量</a></td>
+<td>cube 路径矩阵乘、GEMV 及其变体</td>
+<td><code>TMATMUL</code>、<code>TGEMV</code></td>
+</tr>
+<tr>
+<td><a href="../layout-and-rearrangement_zh/">布局与重排</a></td>
+<td>reshape、transpose、extract、insert、img2col</td>
+<td><code>TTRANS</code>、<code>TIMG2COL</code></td>
+</tr>
+<tr>
+<td><a href="../irregular-and-complex_zh/">不规则与复杂</a></td>
+<td>排序、量化、索引型搬运、部分归约等</td>
+<td><code>TSORT32</code>、<code>TQUANT</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="tile_1">常见 tile 角色<a class="headerlink" href="#tile_1" title="Permanent link">&para;</a></h2>
+<p>PTO 手册里的 tile 角色是架构抽象，不应和某个后端的单一物理实现混为一谈。读 tile 指令时，先分清角色，再看 dtype、shape、layout 和 valid region。</p>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>含义</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Vec</code></td>
+<td>向量 tile buffer 抽象</td>
+<td>逐元素、归约、搬运、重排</td>
+</tr>
+<tr>
+<td><code>Left</code></td>
+<td>左矩阵操作数 tile，对应 L0A 路径</td>
+<td>matmul / GEMV 左输入</td>
+</tr>
+<tr>
+<td><code>Right</code></td>
+<td>右矩阵操作数 tile，对应 L0B 路径</td>
+<td>matmul / GEMV 右输入</td>
+</tr>
+<tr>
+<td><code>Acc</code></td>
+<td>累加器 / 输出 tile</td>
+<td>matmul / GEMV 结果</td>
+</tr>
+<tr>
+<td><code>Bias</code></td>
+<td>偏置 tile</td>
+<td><code>*_bias</code> 变体</td>
+</tr>
+<tr>
+<td><code>ScaleLeft</code> / <code>ScaleRight</code></td>
+<td>MX block-scale 的左右 scale tile</td>
+<td><code>*_mx</code> 变体</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">阅读顺序<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>如果你刚开始查 PTO tile 指令，建议按这个顺序读：</p>
+<ol>
+<li>先看 <a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令表面</a>，明确 tile 路径和标量 / 向量路径的边界。</li>
+<li>再看 <a href="../../state-and-types/location-intent-and-legality_zh/">位置意图与合法性</a> 与 <a href="../../state-and-types/layout_zh/">布局</a>，把角色和布局约束建立起来。</li>
+<li>然后进入对应家族页。</li>
+<li>最后再查具体 leaf 页。</li>
+</ol>
 <h2 id="_3">共享约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
-<li>tile 的 dtype、shape、layout、role 和 valid region 都可能进入合法性判断</li>
-<li>目标 tile 的 valid region 通常决定逐元素迭代域</li>
-<li>某些高性能或特殊格式路径仅在特定 profile 上可用</li>
+<li>tile 的 <code>dtype</code>、<code>shape</code>、<code>layout</code>、<code>role</code> 和 <code>valid region</code> 都可能进入合法性判断。</li>
+<li>大多数逐元素与重排操作以目标 tile 的 valid region 作为迭代域。</li>
+<li>矩阵乘类操作额外受 <code>Left</code> / <code>Right</code> / <code>Acc</code> / <code>Bias</code> / scale tile 角色约束。</li>
+<li>某些高性能路径或特殊格式路径只在特定 profile 上开放，例如 A5 专属 MX block-scale。</li>
 </ul>
 <h2 id="_4">相关页面<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令集</a></li>
+<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令表面</a></li>
 <li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
 <li><a href="../../reference/format-of-instruction-descriptions_zh/">指令描述格式</a></li>
 </ul>

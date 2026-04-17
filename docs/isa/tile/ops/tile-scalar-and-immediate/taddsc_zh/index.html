@@ -931,16 +931,15 @@
               
                 <!-- Generated from `docs/isa/tile/ops/tile-scalar-and-immediate/taddsc_zh.md` -->
 
-<h1 id="taddsc">TADDSC<a class="headerlink" href="#taddsc" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TADDSC tile operation" src="../../../../../figures/isa/TADDSC.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>与标量和第二个 Tile 的融合逐元素加法：<code>src0 + scalar + src1</code>。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
+<h1 id="ptotaddsc">pto.taddsc<a class="headerlink" href="#ptotaddsc" title="Permanent link">&para;</a></h1>
+<p><code>pto.taddsc</code> 属于<a href="../../../tile-scalar-and-immediate_zh/">Tile-标量与立即数</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>把第一个 tile、一个标量和第二个 tile 融合到一次逐元素加法里。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对目标 tile 的有效区域内每个元素 <code>(i, j)</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src0}_{i,j} + \mathrm{scalar} + \mathrm{src1}_{i,j} \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS Specification</a>.</p>
+<p>这条指令的意义在于把“tile + 标量 + tile”的三输入模式直接定义成一条合法操作，避免中间结果再落地一个过渡 tile。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = taddsc %src0, %scalar, %src1 : !pto.tile&lt;...&gt;, f32, !pto.tile&lt;...&gt;
 </code></pre>
@@ -951,38 +950,50 @@
 <pre><code class="language-text">pto.taddsc ins(%src0, %scalar, %src1 : !pto.tile_buf&lt;...&gt;, dtype, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TADDSC(TileData&amp; dst, TileData&amp; src0, typename TileData::DType scalar, TileData&amp; src1,
                             WaitEvents&amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
+<li><code>src0</code>：第一个源 tile</li>
+<li><code>scalar</code>：广播到所有元素的标量</li>
+<li><code>src1</code>：第二个源 tile</li>
+<li><code>dst</code>：目标 tile</li>
+<li>迭代域：<code>dst</code> 的 valid row / valid col</li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst</code>：融合加法结果 tile</li>
 </ul>
-</li>
-<li><strong>Common constraints</strong>:<ul>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>Runtime: <code>dst</code>, <code>src0</code> and <code>src1</code> must have the same valid row/col.</li>
-<li>Scalar type must match the Tile data type.</li>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>tile 位置必须是向量 tile。</li>
+<li>静态 valid 边界必须合法。</li>
+<li>运行时要求：<code>dst</code>、<code>src0</code>、<code>src1</code> 的 valid row / valid col 一致。</li>
+<li>标量类型必须匹配 tile 数据类型。</li>
 </ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
-</li>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TileData::DType</code> 必须属于：<code>int32_t</code>、<code>int16_t</code>、<code>half</code>、<code>float</code></li>
+<li>tile 布局必须是行主序</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TileData::DType</code> 必须属于：<code>int32_t</code>、<code>int16_t</code>、<code>half</code>、<code>float</code></li>
+<li>tile 布局必须是行主序</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有为 <code>taddsc</code> 单列公开 cost bucket。若代码依赖具体延迟，应把它视为目标 profile 相关的三输入 tile-标量融合路径。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 void example() {
@@ -991,6 +1002,12 @@ void example() {
   TADDSC(out, a, 2.0f, b);
 }
 </code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../tile-scalar-and-immediate_zh/">Tile-标量与立即数</a></li>
+<li>上一条指令：<a href="../tlrelu_zh/">pto.tlrelu</a></li>
+<li>下一条指令：<a href="../tsubsc_zh/">pto.tsubsc</a></li>
+</ul>
               
             </div>
           </div><footer>

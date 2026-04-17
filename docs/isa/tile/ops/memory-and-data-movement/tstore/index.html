@@ -1017,10 +1017,10 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileDat
 <li><code>dst</code> is the destination GlobalTensor.</li>
 <li><code>atomicType</code> (optional): specifies atomic store mode (e.g., <code>AtomicAdd</code>).</li>
 <li><code>preQuantScalar</code> (optional): scalar for pre-quantization.</li>
-<li><code>fp</code> (optional, for TSTORE_FP): scaling tile for vector quantization parameters.</li>
+<li><code>fp</code> (optional, for TSTORE_FP): auxiliary fix-pipe tile consumed by the backend FPC path.</li>
 </ul>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>Data is written from <code>src</code> to <code>dst</code>. With atomic operations, values are accumulated. With quantization, data is converted using the quantization parameters.</p>
+<p>Data is written from <code>src</code> to <code>dst</code>. With atomic operations, values are accumulated. With <code>TSTORE_FP</code>, the transfer uses the fix-pipe sideband state configured by the auxiliary <code>fp</code> tile.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation writes to global memory. With atomic modes, concurrent access may produce implementation-defined results.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>

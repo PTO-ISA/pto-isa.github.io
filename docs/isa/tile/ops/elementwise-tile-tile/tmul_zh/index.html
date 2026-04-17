@@ -931,17 +931,16 @@
               
                 <!-- Generated from `docs/isa/tile/ops/elementwise-tile-tile/tmul_zh.md` -->
 
-<h1 id="tmul">TMUL<a class="headerlink" href="#tmul" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TMUL tile operation" src="../../../../../figures/isa/TMUL.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>两个 Tile 的逐元素乘法。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
+<h1 id="ptotmul">pto.tmul<a class="headerlink" href="#ptotmul" title="Permanent link">&para;</a></h1>
+<p><code>pto.tmul</code> 属于<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>对两个 tile 做逐元素乘法。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对目标 tile 的 valid region 中每个 <code>(i, j)</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src0}_{i,j} \cdot \mathrm{src1}_{i,j} \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
+<p>和其他二元逐元素 tile 指令一样，迭代域由目标 tile 决定，源 tile 域外值不应被依赖。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto-as">PTO-AS<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = tmul %src0, %src1 : !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
@@ -951,37 +950,110 @@
 <pre><code class="language-text">pto.tmul ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMUL(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>角色</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%src0</code></td>
+<td>左 tile</td>
+<td>第一个源 tile</td>
+</tr>
+<tr>
+<td><code>%src1</code></td>
+<td>右 tile</td>
+<td>第二个源 tile</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%dst</code></td>
+<td><code>!pto.tile&lt;...&gt;</code></td>
+<td><code>dst</code> valid region 内的每个元素都等于 <code>src0 * src1</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
-<li>Runtime: <code>src0</code>, <code>src1</code> and <code>dst</code> tiles should have the same <code>validRow/validCol</code>.</li>
+<li>A2A3 与 A5 当前都要求行主序向量 tile。</li>
+<li>静态 valid 边界必须合法。</li>
+<li>运行时通常要求 <code>src0</code>、<code>src1</code> 与 <code>dst</code> 的 <code>validRow/validCol</code> 一致。</li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>uint32_t</code>, <code>float</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>half</code>.</li>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>).</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
-<li>Runtime: <code>src0</code>, <code>src1</code> and <code>dst</code> tiles should have the same <code>validRow/validCol</code>.</li>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain; .</li>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持类型：<code>int32_t</code>、<code>int16_t</code>、<code>half</code>、<code>float</code></li>
+<li>tile 必须是行主序向量 tile</li>
 </ul>
-</li>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持类型：<code>int32_t</code>、<code>uint32_t</code>、<code>float</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>half</code></li>
+<li>tile 必须是行主序向量 tile</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3_1">A2A3<a class="headerlink" href="#a2a3_1" title="Permanent link">&para;</a></h3>
+<p><code>TMUL</code> 的吞吐模型是：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>FP</th>
+<th>INT</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>14</td>
+<td>14</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td>20</td>
+<td>18</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18</td>
+<td>18</td>
+</tr>
+</tbody>
+</table>
+<p>连续路径下，<code>R = validRow × validCol / 8</code> 可作为常见估算。</p>
+<h3 id="a5_1">A5<a class="headerlink" href="#a5_1" title="Permanent link">&para;</a></h3>
+<p>当前手册未单列 <code>tmul</code> 的独立周期表，应视为目标 profile 相关。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 void example_auto() {
@@ -990,20 +1062,12 @@ void example_auto() {
   TMUL(dst, src0, src1);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT src0, src1, dst;
-  TASSIGN(src0, 0x1000);
-  TASSIGN(src1, 0x2000);
-  TASSIGN(dst,  0x3000);
-  TMUL(dst, src0, src1);
-}
-</code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></li>
+<li>上一条指令：<a href="../tsub_zh/">pto.tsub</a></li>
+<li>下一条指令：<a href="../tdiv_zh/">pto.tdiv</a></li>
+</ul>
               
             </div>
           </div><footer>

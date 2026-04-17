@@ -1038,8 +1038,8 @@
    bisheng (or backend C++ compiler)
    ┌─────────────────────────────────────┐
    │ Compile to target binary             │
-   │ Target: A2/A3 (Ascend 2/3-class)   │
-   │ Target: A5 (Ascend 9xx-class)       │
+   │ Target: A2A3 (Ascend 910B / 910C)  │
+   │ Target: A5 (Ascend 950 PR / DT)    │
    │ Target: CPU simulator                │
    └─────────────────────────────────────┘
         │
@@ -1161,16 +1161,16 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&a
 <td>Off-chip device memory (<code>__gm__</code> address space) shared by all blocks and accessible via <code>GlobalTensor</code> views</td>
 </tr>
 <tr>
-<td><strong>Unified Buffer (UB)</strong></td>
-<td>On-chip local memory (<code>!pto.ptr&lt;T, ub&gt;</code>) visible to a single AI Core; the staging ground for GM↔tile data movement</td>
+<td><strong>Vector Tile Buffer</strong></td>
+<td>The local tile buffer used for <code>TileType::Vec</code>. On current hardware this is implemented by the Unified Buffer (UB), but PTO treats it as one tile-buffer concept rather than two separate architectural objects.</td>
 </tr>
 <tr>
 <td><strong>Tile Buffer</strong></td>
-<td>On-chip storage for a single Tile, partitioned by <code>TileType</code>: <code>Vec</code> (vector compute), <code>Mat</code> (matrix/CUBE compute), <code>Acc</code> (accumulator), <code>Scalar</code> (scalar tile)</td>
+<td>On-chip storage for one tile, chosen by <code>TileType</code>: <code>Vec</code> uses the vector tile buffer (hardware UB), <code>Left</code> maps to L0A, <code>Right</code> maps to L0B, <code>Acc</code> maps to L0C, and scale tiles map to the corresponding left/right scale buffers.</td>
 </tr>
 <tr>
 <td><strong>Location Intent</strong></td>
-<td>The declared role of a tile operand: <code>Left</code> (LHS of matmul), <code>Right</code> (RHS), <code>Acc</code> (accumulator/output), <code>Vec</code> (general vector tile)</td>
+<td>The declared role of a tile operand: <code>Left</code> (L0A-backed left matmul operand), <code>Right</code> (L0B-backed right matmul operand), <code>Acc</code> (accumulator/output), <code>Vec</code> (vector tile buffer), <code>ScaleLeft</code>, and <code>ScaleRight</code></td>
 </tr>
 <tr>
 <td><strong>Block Layout (BLayout)</strong></td>
@@ -1194,7 +1194,7 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&a
 </tr>
 <tr>
 <td><strong>Target Profile</strong></td>
-<td>A concrete instantiation of PTO ISA for a specific backend: <code>CPU</code> (reference simulator), <code>A2/A3</code> (Ascend 2/3-class), <code>A5</code> (Ascend 9xx-class)</td>
+<td>A concrete instantiation of PTO ISA for a specific backend: <code>CPU</code> (reference simulator), <code>A2A3</code> (Ascend 910B / Ascend 910C), <code>A5</code> (Ascend 950 PR / Ascend 950 DT)</td>
 </tr>
 <tr>
 <td><strong>Instruction Set</strong></td>
@@ -1238,14 +1238,14 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&a
         │
         └──► ptoas ──────────────────► binary        (Flow B)
 
-Targets: CPU simulation / A2-A3 / A5 / future Ascend NPUs
+Targets: CPU simulation / A2A3 (Ascend 910B / 910C) / A5 (Ascend 950 PR / 950 DT) / future Ascend NPUs
 </code></pre>
 <p>This structure gives the software stack one versioned instruction language even when native hardware instruction sets and low-level programming rules change across generations.</p>
 <h2 id="hierarchical-abstractions">Hierarchical Abstractions<a class="headerlink" href="#hierarchical-abstractions" title="Permanent link">&para;</a></h2>
 <p>PTO ISA uses <strong>hierarchical abstractions</strong> rather than one flat opcode space. The ISA is organized into four instruction sets:</p>
 <pre><code>PTO ISA
 ├── Tile Instructions (pto.t*)              Primary tile-oriented compute instruction set
-│   ├── Sync and Config                Resource binding, event setup, mode control
+│   ├── Sync and Config                Resource binding, event setup, tile-local config
 │   ├── Elementwise Tile-Tile           Lane-wise binary and unary operations
 │   ├── Tile-Scalar and Immediate       Tile combined with scalar or immediate
 │   ├── Reduce and Expand             Row/column reductions and expansions
@@ -1267,9 +1267,10 @@ Targets: CPU simulation / A2-A3 / A5 / future Ascend NPUs
 │
 ├── Scalar and Control Instruction Set (pto.*)  State setup and control shell
 │   ├── Pipeline Sync                 Event and barrier synchronization
-│   ├── DMA Copy                     GM↔UB memory transfer configuration
+│   ├── DMA Copy                     GM↔vector-tile-buffer transfer configuration
 │   ├── Predicate Load/Store         Mask-based scalar memory access
 │   ├── Predicate Generation         pset, pge, plt, pand, por, pxor, pnot, etc.
+│   ├── Control and Configuration    legacy tile-prefixed mode/config ops such as tsethf32mode and tsetfmatrix
 │   └── Shared Arithmetic/SCF         Scalar arithmetic and structured control flow
 │
 └── Communication Instructions (pto.*)       Collective and runtime operations
@@ -1283,11 +1284,12 @@ Targets: CPU simulation / A2-A3 / A5 / future Ascend NPUs
 └── Block  (AI Core / NPU)
     ├── Host Interface
     ├── Scalar Unit          (control flow, address calculation)
-    ├── Unified Buffer (UB)  256 KB on-chip SRAM
-    ├── Tile Registers       (16×16 tile slots, typed by TileType)
-    │   ├── Vec slots   ──► Vector Pipeline (V)
-    │   ├── Mat slots   ──► Matrix Multiply Unit (M / CUBE)
-    │   └── Acc slots   ──► Accumulator output
+    ├── Local Tile Buffers   (typed by TileType)
+    │   ├── Vec buffer   = hardware UB
+    │   ├── Left buffer  = L0A
+    │   ├── Right buffer = L0B
+    │   └── Acc buffer   = L0C
+    ├── Tile Registers       ISA abstraction over those local tile buffers
     ├── DMA Engine
     │   ├── MTE1: GM ──► UB  (GM→UB, prefetch)
     │   ├── MTE2: GM ──► UB  (GM→UB, load staging)
@@ -1325,8 +1327,8 @@ Targets: CPU simulation / A2-A3 / A5 / future Ascend NPUs
 <td><code>!pto.vreg&lt;NxT&gt;</code></td>
 </tr>
 <tr>
-<td><strong>Unified Buffer (UB)</strong></td>
-<td>On-chip staging area shared by all tile buffers and vector regs</td>
+<td><strong>Vector Tile Buffer (hardware UB)</strong></td>
+<td>On-chip buffer used by <code>TileType::Vec</code> and by the vector micro-instruction path</td>
 <td><code>!pto.ptr&lt;T, ub&gt;</code></td>
 </tr>
 <tr>
@@ -1343,7 +1345,7 @@ Targets: CPU simulation / A2-A3 / A5 / future Ascend NPUs
 <tr>
 <th>Feature</th>
 <th style="text-align: center;">CPU Simulator</th>
-<th style="text-align: center;">A2/A3 Profile</th>
+<th style="text-align: center;">A2A3 Profile</th>
 <th style="text-align: center;">A5 Profile</th>
 </tr>
 </thead>
@@ -1379,7 +1381,7 @@ Targets: CPU simulation / A2-A3 / A5 / future Ascend NPUs
 <td style="text-align: center;">Full</td>
 </tr>
 <tr>
-<td>UB size</td>
+<td>Vector tile buffer size</td>
 <td style="text-align: center;">Configurable</td>
 <td style="text-align: center;">256 KB/core</td>
 <td style="text-align: center;">256 KB/core</td>
@@ -1460,7 +1462,7 @@ pto.tstore ins(%tile : !pto.tile_buf&lt;f32, 16, 16&gt;)
 <ul>
 <li><code>TLOAD</code> copies data from GM into a tile buffer (via MTE2 → UB → tile)</li>
 <li>Tile compute (<code>TADD</code>, <code>TMATMUL</code>, etc.) operates directly on tile buffers</li>
-<li><code>TSTORE</code> copies data from a tile buffer to GM (via tile → MTE3 → UB → GM)</li>
+<li><code>TSTORE</code> copies data from a tile buffer to GM through the corresponding local store path</li>
 <li>Valid regions, layout, and tile type are explicit at every step</li>
 </ul>
 <h3 id="vector-instructions-ptov">Vector Instructions (pto.v*)<a class="headerlink" href="#vector-instructions-ptov" title="Permanent link">&para;</a></h3>

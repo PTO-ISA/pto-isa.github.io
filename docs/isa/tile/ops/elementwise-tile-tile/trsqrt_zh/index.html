@@ -931,17 +931,16 @@
               
                 <!-- Generated from `docs/isa/tile/ops/elementwise-tile-tile/trsqrt_zh.md` -->
 
-<h1 id="trsqrt">TRSQRT<a class="headerlink" href="#trsqrt" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TRSQRT tile operation" src="../../../../../figures/isa/TRSQRT.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>逐元素倒数平方根。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
+<h1 id="ptotrsqrt">pto.trsqrt<a class="headerlink" href="#ptotrsqrt" title="Permanent link">&para;</a></h1>
+<p><code>pto.trsqrt</code> 属于<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>对 tile 做逐元素倒数平方根。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对目标 tile 的 valid region 中每个 <code>(i, j)</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \frac{1}{\sqrt{\mathrm{src}_{i,j}}} \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
+<p>它常用于范数归一化、标准化和一类需要快速 <code>1/sqrt(x)</code> 的数值路径。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto-as">PTO-AS<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = trsqrt %src : !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
@@ -951,37 +950,78 @@
 <pre><code class="language-text">pto.trsqrt ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
 PTO_INST RecordEvent TRSQRT(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEvents &amp;... events);
 
 template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TRSQRT(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (NPU)</strong>:<ul>
-<li>The <code>tmp</code> buffer must be at least 32 bytes. When tmp is provided, the high-precision version is executed.</li>
-<li><code>TileData::DType</code> must be one of: <code>float</code> or <code>half</code>;</li>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>);</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>;</li>
-<li>Runtime: <code>src.GetValidRow() == dst.GetValidRow()</code> and <code>src.GetValidCol() == dst.GetValidCol()</code>;</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
+<li><code>%src</code>：源 tile</li>
+<li><code>%tmp</code>：可选临时 tile；提供时通常触发高精度路径</li>
+<li><code>%dst</code>：目标 tile</li>
 </ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%dst</code>：逐元素倒数平方根结果 tile</li>
 </ul>
-</li>
-<li><strong>Domain / NaN</strong>:<ul>
-<li>Behavior is target-defined (e.g., for <code>src == 0</code> or negative inputs).</li>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>支持类型当前是 <code>float</code> / <code>half</code></li>
+<li>tile 必须是行主序向量 tile</li>
+<li>迭代域由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定</li>
+<li>对 <code>src == 0</code> 或负输入这类情况，行为由目标 profile 定义</li>
+<li>当 <code>tmp</code> 提供时，NPU 路径要求它至少有 32 字节，以触发高精度实现</li>
 </ul>
-</li>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h3 id="npu">NPU<a class="headerlink" href="#npu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>tmp</code> 至少需要 32 字节；提供后会使用高精度版本</li>
+<li>支持类型：<code>float</code>、<code>half</code></li>
+<li>tile 必须是行主序向量 tile</li>
+<li>静态 valid 边界必须合法</li>
+<li>运行时要求：<code>src.GetValidRow() == dst.GetValidRow()</code> 且 <code>src.GetValidCol() == dst.GetValidCol()</code></li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p>英文页当前把 <code>TRSQRT</code> 归到一元超越函数桶：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>13</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td>26</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>1</td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p>当前手册未单列 <code>trsqrt</code> 的独立周期表，应视为目标 profile 相关。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 void example_auto() {
@@ -990,19 +1030,12 @@ void example_auto() {
   TRSQRT(dst, src);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT src, dst;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TRSQRT(dst, src);
-}
-</code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></li>
+<li>上一条指令：<a href="../tsel_zh/">pto.tsel</a></li>
+<li>下一条指令：<a href="../tsqrt_zh/">pto.tsqrt</a></li>
+</ul>
               
             </div>
           </div><footer>

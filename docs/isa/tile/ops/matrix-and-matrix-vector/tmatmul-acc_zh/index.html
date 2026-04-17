@@ -935,8 +935,8 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TMATMUL_ACC tile operation" src="../../../../../figures/isa/TMATMUL_ACC.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TMATMUL_ACC</code> 是“带累加器输入”的矩阵乘法版本。和 <code>TMATMUL</code> 相比，它不会把输出块当成从零开始的新结果，而是把已有累加器内容视为初值，再叠加一轮 <code>A * B</code>。</p>
-<p>在分块 GEMM 里，这通常就是 K 维循环中间阶段真正要用的形式。</p>
+<p><code>TMATMUL_ACC</code> 表示“在已有累加器上继续做一次矩阵乘叠加”。它不是 <code>TMATMUL</code> 的语法别名，而是 K 维分块 GEMM 中真正需要的累加形式。</p>
+<p>如果 <code>TMATMUL</code> 负责生成一个新块，那么 <code>TMATMUL_ACC</code> 负责把后续块继续叠到这个累加器上。这就是两条指令必须并列存在的原因。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>设：</p>
 <ul>
@@ -946,8 +946,15 @@
 </ul>
 <p>则：</p>
 <div class="arithmatex">\[ \mathrm{C}_{\text{out}, i,j} = \mathrm{C}_{\text{in}, i,j} + \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p>这就是 <code>TMATMUL_ACC</code> 与 <code>TMATMUL</code> 的唯一核心差别：前者保留已有累加器值，后者把结果视为新生成块。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="_4">机制<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>这条指令仍然使用 <code>Left</code> / <code>Right</code> / <code>Acc</code> 的 cube 路径合同。和 <code>TMATMUL</code> 相比，唯一核心差别是它把累加器视为已有值，而不是从零开始的新结果。</p>
+<p>需要特别说明的是：接口把 <code>cInMatrix</code> 和 <code>cOutMatrix</code> 分开，是为了表达“显式输入累加器”和“显式输出累加器”这层语义。但当前仓内实现并不完全一致：</p>
+<ul>
+<li>CPU 模拟器会按接口字面语义使用 <code>cInMatrix</code> 作为输入累加器；</li>
+<li>当前 A2A3 / A5 后端实现会直接在 <code>cOutMatrix</code> 上继续累加，不会先把 <code>cInMatrix</code> 拷入 <code>cOutMatrix</code>。</li>
+</ul>
+<p>因此，如果你显式传入两个不同的 tile，对 CPU 与 NPU 的当前行为不应想当然地当作完全一致。最稳妥的可移植写法，是使用共享累加器重载，让输入和输出指向同一块 <code>Acc</code> tile。</p>
+<h2 id="_5">汇编语法<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%acc1 = tmatmul.acc %acc0, %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
@@ -972,26 +979,45 @@ template &lt;AccPhase Phase = AccPhase::Unspecified, typename TileRes, typename 
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL_ACC(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
 </code></pre>
-<p>最后一个便捷重载等价于把同一个累加器 Tile 同时作为输入和输出。</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>最后一个重载是最稳妥的共享累加器写法。</p>
+<h2 id="_6">输入与输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>TMATMUL</code> 的所有 shape、位置、dtype 和 target-profile 约束，在这里同样成立。</li>
-<li><code>m/k/n</code> 仍然取自 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code> 和 <code>bMatrix.GetValidCol()</code>。</li>
-<li>最稳妥、最可移植的用法，是让 <code>cInMatrix</code> 与 <code>cOutMatrix</code> 使用同一种 <code>Acc</code> Tile 类型，并且在需要时直接传同一个对象。</li>
+<li><code>cInMatrix</code>：输入累加器。</li>
+<li><code>aMatrix</code>：左操作数 tile，必须是 <code>Left</code>。</li>
+<li><code>bMatrix</code>：右操作数 tile，必须是 <code>Right</code>。</li>
+<li><code>cOutMatrix</code>：输出累加器，必须是 <code>Acc</code>。</li>
 </ul>
-<h3 id="_7">实现说明<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>若使用共享累加器重载，则同一块 <code>Acc</code> tile 同时承担输入和输出。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="_8">通用约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <ul>
-<li>CPU 模拟器按接口字面语义工作：<code>cInMatrix</code> 作为显式输入累加器参与计算，结果写入 <code>cOutMatrix</code>。</li>
-<li>当前 NPU backend 的实现路径则更接近“对 <code>cOutMatrix</code> 本身继续累加”：</li>
-<li>A2/A3、A5 和 Kirin9030 的 <code>TMATMUL_ACC_IMPL</code> 都只把 <code>cOutMatrix</code> 传给底层 <code>mad</code> 路径</li>
-<li>也就是说，它们不会先把 <code>cInMatrix</code> 拷贝到 <code>cOutMatrix</code></li>
-<li>因而在实际代码里，最常见也最安全的写法就是直接使用共享累加器重载：</li>
+<li><code>TMATMUL</code> 的 shape、角色、dtype 和 target-profile 约束在这里全部成立；</li>
+<li><code>m</code>、<code>k</code>、<code>n</code> 仍取自 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code> 和 <code>bMatrix.GetValidCol()</code>；</li>
+<li>若追求跨 CPU / NPU 的稳妥可移植性，应优先使用共享累加器重载。</li>
 </ul>
-<pre><code class="language-cpp">TMATMUL_ACC(acc, aTile, bTile);
+<h3 id="a2a3-a5">A2A3 与 A5 说明<a class="headerlink" href="#a2a3-a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A2A3 与 A5 的 dtype、布局和角色限制，与 <code>TMATMUL</code> 相同；</li>
+<li>当前 A2A3 / A5 后端的实现路径不会先把 <code>cInMatrix</code> 复制到 <code>cOutMatrix</code>，而是直接把 <code>cOutMatrix</code> 交给底层累加路径。</li>
+</ul>
+<h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li>违反 <code>TMATMUL</code> 的任一合法性约束；</li>
+<li>依赖“不同 <code>cInMatrix</code> / <code>cOutMatrix</code> 在所有后端上都严格等价”的假设；</li>
+<li>把实现现状误写成更强的架构合同。</li>
+</ul>
+<h2 id="_10">性能与吞吐<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p>当前仓内 A2A3 costmodel 对 <code>TMATMUL_ACC</code> 与 <code>TMATMUL</code> 使用同一条 <code>mad/mmad</code> 公式：</p>
+<pre><code class="language-text">cycles = 14 + ceil(M/16) * ceil(N/16) * ceil(K / baskK) * repeat_cost
 </code></pre>
-<p>如果你显式传入不同的 <code>cInMatrix</code> / <code>cOutMatrix</code>，CPU 和 NPU backend 当前可能表现不同。</p>
-<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<p>其中：</p>
+<ul>
+<li><code>baskK = 32 / sizeof(left_element_type)</code>；</li>
+<li>int8、fp16 bucket 的 <code>repeat_cost = 1</code>；</li>
+<li>fp32 bucket 的 <code>repeat_cost = 2</code>。</li>
+</ul>
+<p>当前仓库没有单列的 A5 latency / throughput 表；A5 仍只公开合法性和 dtype / layout 边界。</p>
+<h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1007,7 +1033,7 @@ void example_auto() {
   TMATMUL_ACC(c1, c0, a, b);
 }
 </code></pre>
-<h3 id="_9">共享累加器写法<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<h3 id="_12">共享累加器写法<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -1022,11 +1048,11 @@ void example_accumulate() {
   TMATMUL_ACC(acc, a, b);
 }
 </code></pre>
-<h2 id="_10">相关页面<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../tmatmul_zh/">TMATMUL</a></li>
 <li><a href="../tmatmul-bias_zh/">TMATMUL_BIAS</a></li>
-<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵向量指令集</a></li>
+<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵-向量指令集</a></li>
 </ul>
               
             </div>

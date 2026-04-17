@@ -932,17 +932,85 @@
                 <!-- Generated from `docs/isa/vector/ops/vector-load-store/vsts_zh.md` -->
 
 <h1 id="ptovsts">pto.vsts<a class="headerlink" href="#ptovsts" title="Permanent link">&para;</a></h1>
-<p>把向量寄存器结果写回 UB。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vsts</code> 属于<a href="../../../vector-load-store_zh/">向量加载与存储</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>带分布模式的向量存储。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vsts</code> 属于 PTO 的向量内存 / 数据搬运指令。它把一个向量寄存器按指定分布模式写回 UB，同时把 UB 地址、分布模式以及 lane 到内存字节的映射关系保持为架构可见语义。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vsts %value, %dest[%offset], %mask {dist = &quot;DIST&quot;}
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">pto.vsts %value, %dest[%offset], %mask {dist = &quot;DIST&quot;} : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, !pto.mask
 </code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>UB 地址空间与对齐要求必须满足。</li>
-<li>DMA 与向量计算之间的顺序边必须显式建立。</li>
+<li><code>%value</code>：源向量寄存器</li>
+<li><code>%dest</code>：UB 基址</li>
+<li><code>%offset</code>：位移</li>
+<li><code>%mask</code>：选择活跃 lane 或子元素的谓词</li>
+<li><code>DIST</code>：存储分布模式</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>这条指令没有 SSA 结果；它会把数据写入 UB 内存</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令会写 UB 可见内存，某些有状态的非对齐流式形式还会推进对齐状态；尾部数据是否真正完成写出，可能还需要后续 flush 指令。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>有效目标地址必须满足所选存储模式的对齐规则。</li>
+<li>打包 / 收窄模式可能只保留源向量中的部分比特。</li>
+<li>merge-channel 模式会把源向量解释成若干通道平面，再交织写回。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>使用超出 UB 可见空间的地址，或违反所选分布模式的地址 / 对齐契约，都是非法的。</li>
+<li>约束部分列出的额外非法情形，同样属于 <code>pto.vsts</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+</ul>
+<h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mlir">pto.vsts %v, %ub[%offset], %mask {dist = &quot;NORM_B32&quot;} : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask
+</code></pre>
+<h2 id="_10">详细说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="_11">常见分布模式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+<th>C 语义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NORM_B8/B16/B32</code></td>
+<td>连续存储</td>
+<td><code>UB[base + i] = src[i]</code></td>
+</tr>
+<tr>
+<td><code>PK_B16/B32</code></td>
+<td>打包 / 收窄存储</td>
+<td><code>UB_i16[base + 2*i] = truncate_16(src_i32[i])</code></td>
+</tr>
+<tr>
+<td><code>MRG4CHN_B8</code></td>
+<td>四通道合并</td>
+<td>把四个 plane 交织为 RGBA</td>
+</tr>
+<tr>
+<td><code>MRG2CHN_B8/B16</code></td>
+<td>双通道合并</td>
+<td>把两个 plane 交织写回</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_12">性能<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h3 id="_13">时延与吞吐披露<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vsts</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -967,9 +1035,11 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vsts</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_14">相关页面<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../vector-load-store_zh/">向量加载存储指令集</a></li>
+<li>指令集总览：<a href="../../../vector-load-store_zh/">向量加载与存储</a></li>
+<li>上一条指令：<a href="../vgather2-bc_zh/">pto.vgather2_bc</a></li>
+<li>下一条指令：<a href="../vstx2_zh/">pto.vstx2</a></li>
 </ul>
               
             </div>

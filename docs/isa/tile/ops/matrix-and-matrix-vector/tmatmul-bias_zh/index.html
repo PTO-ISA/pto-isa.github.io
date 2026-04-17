@@ -935,8 +935,8 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TMATMUL_BIAS tile operation" src="../../../../../figures/isa/TMATMUL_BIAS.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TMATMUL_BIAS</code> 在矩阵乘法结果上再叠加一行 Bias Tile。它表达的是“矩阵乘法 + 列偏置”，而不是另一种不同的乘法。</p>
-<p>这条指令常见于需要在 cube 计算后立刻加入每列偏置的场景，可以避免把乘法和偏置加法拆成两步理解。</p>
+<p><code>TMATMUL_BIAS</code> 表示“矩阵乘法后立即并入列偏置”。它表达的是矩阵乘积再加一行 bias，而不是另一种不同的乘法。</p>
+<p>把 bias 作为这条指令的显式输入，有两个好处：一是合同清楚，二是文档不必把“先做 matmul、再做逐元素加”误写成完全等价的抽象。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>设：</p>
 <ul>
@@ -944,10 +944,13 @@
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>对 <code>0 &lt;= i &lt; M</code> 和 <code>0 &lt;= j &lt; N</code>：</p>
+<p>对 <code>0 &lt;= i &lt; M</code>、<code>0 &lt;= j &lt; N</code>：</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} + \mathrm{Bias}_{0,j} \]</div>
-<p>这里的 Bias Tile 只有一行，因此它按列广播到所有输出行。<code>bias[0, j]</code> 会加到结果矩阵的整列 <code>j</code> 上。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>Bias tile 只有一行，因此它按输出列广播。</p>
+<h2 id="_4">机制<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p><code>TMATMUL_BIAS</code> 仍然走 <code>Left</code> / <code>Right</code> / <code>Acc</code> 的 cube 路径，只是在乘积生成后再引入一块 <code>Bias</code> tile。</p>
+<p>这条指令要求 bias 是“单行偏置 tile”，而不是任意 shape 的普通 tile。也正因为如此，它表达的是列偏置，而不是一般意义上的逐元素加法。</p>
+<h2 id="_5">汇编语法<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%acc = tmatmul.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
@@ -969,31 +972,53 @@ template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileR
 PTO_INST RecordEvent TMATMUL_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData,
                                   WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h2 id="_6">输入与输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>TMATMUL</code> 的所有 shape、位置、dtype 和 target-profile 约束，在这里同样成立。</li>
-<li><code>biasData</code> 的元素类型必须与结果累加器 <code>TileRes::DType</code> 一致。</li>
-<li><code>biasData</code> 必须是单行 Bias Tile，因为它表示“按列广播”的偏置。</li>
+<li><code>aMatrix</code>：左操作数 tile，必须是 <code>Left</code>。</li>
+<li><code>bMatrix</code>：右操作数 tile，必须是 <code>Right</code>。</li>
+<li><code>biasData</code>：偏置 tile，必须是 <code>Bias</code>，且为单行。</li>
+<li><code>cMatrix</code>：结果累加器 tile，必须是 <code>Acc</code>。</li>
 </ul>
-<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p>输出合同是：先得到矩阵乘积，再把 <code>bias[0, j]</code> 加到每个输出列 <code>j</code> 上。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="_8">通用约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TMATMUL</code> 的所有 shape、角色、dtype 和 target-profile 约束在这里同样成立；</li>
+<li><code>biasData</code> 的数据类型必须与结果累加器 <code>TileRes::DType</code> 一致；</li>
+<li><code>biasData</code> 必须是单行 Bias tile。</li>
+</ul>
+<h3 id="a2a3">A2A3 约束<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p><code>A2A3</code> 指 Ascend 910B 与 Ascend 910C。当前实现要求：</p>
 <ul>
 <li><code>TileBias::Loc == TileType::Bias</code></li>
 <li><code>TileBias::Rows == 1</code></li>
 </ul>
-<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<h3 id="a5">A5 约束<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p><code>A5</code> 指 Ascend 950 PR 与 Ascend 950 DT。当前实现要求：</p>
 <ul>
 <li><code>TileBias::Loc == TileType::Bias</code></li>
 <li><code>TileBias::Rows == 1</code></li>
 <li><code>TileBias::isRowMajor == true</code></li>
 </ul>
-<h3 id="_7">目标差异说明<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <ul>
-<li>通用 A5 / A2A3 路径都把 bias 直接送入底层 cube bias 通道。</li>
-<li>CPU 模拟器则先完成普通矩阵乘法，再把 <code>bias[0, j]</code> 显式加到每一行的第 <code>j</code> 列上。</li>
-<li>虽然实现方式不同，但对读者可见的合同是一致的：Bias 是“按列广播”。</li>
+<li>用普通 tile 代替 Bias tile；</li>
+<li>bias 不是单行；</li>
+<li>bias dtype 与结果累加器 dtype 不一致；</li>
+<li>违反 <code>TMATMUL</code> 的任一合法性约束。</li>
 </ul>
-<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_10">性能与吞吐<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p>当前仓内 A2A3 costmodel 对 <code>TMATMUL_BIAS</code> 仍复用 <code>mad/mmad</code> 的同一套模型，周期口径与 <code>TMATMUL</code> 一致：</p>
+<pre><code class="language-text">cycles = 14 + ceil(M/16) * ceil(N/16) * ceil(K / baskK) * repeat_cost
+</code></pre>
+<p>其中：</p>
+<ul>
+<li><code>baskK = 32 / sizeof(left_element_type)</code>；</li>
+<li>int8、fp16 bucket 的 <code>repeat_cost = 1</code>；</li>
+<li>fp32 bucket 的 <code>repeat_cost = 2</code>。</li>
+</ul>
+<p>当前仓库没有单列的 A5 latency / throughput 表。</p>
+<h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1032,11 +1057,12 @@ void example_manual() {
   TMATMUL_BIAS(c, a, b, bias);
 }
 </code></pre>
-<h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../tmatmul_zh/">TMATMUL</a></li>
 <li><a href="../tmatmul-acc_zh/">TMATMUL_ACC</a></li>
-<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵向量指令集</a></li>
+<li><a href="../tmatmul-mx_zh/">TMATMUL_MX</a></li>
+<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵-向量指令集</a></li>
 </ul>
               
             </div>

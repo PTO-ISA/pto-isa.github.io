@@ -935,30 +935,22 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TGEMV_ACC tile operation" src="../../../../../figures/isa/TGEMV_ACC.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>带显式累加器输入 Tile（<code>cInMatrix</code>）和输出 Tile（<code>cOutMatrix</code>）的 GEMV。</p>
-<h2 id="_3">另请参见<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<ul>
-<li>基础 GEMV 指令：<code>docs/isa/TGEMV.md</code>。</li>
-<li>偏置变体：<code>docs/isa/TGEMV_BIAS.md</code>。</li>
-</ul>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_4">数学语义<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p><code>TGEMV_ACC</code> 表示“在已有累加器上继续做一轮 GEMV 叠加”。它是 GEMV 的累加形式，对应 <code>TMATMUL_ACC</code> 在 <code>m = 1</code> 条件下的专门版本。</p>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>设：</p>
 <ul>
-<li><code>M = 1</code></li>
 <li><code>K = bMatrix.GetValidRow()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>对于 <code>0 &lt;= j &lt; N</code>（累加到已有输出 Tile）：</p>
-<div class="arithmatex">\[ \mathrm{C}_{0,j} \gets \mathrm{C}_{0,j} + \sum_{k=0}^{K-1} \mathrm{A}_{0,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p><strong>注意：</strong> 精确的累加器行为和数据类型提升由目标/实现定义。</p>
+<p>对 <code>0 &lt;= j &lt; N</code>：</p>
+<div class="arithmatex">\[ \mathrm{C}_{\text{out}, 0,j} = \mathrm{C}_{\text{in}, 0,j} + \sum_{k=0}^{K-1} \mathrm{A}_{0,k} \cdot \mathrm{B}_{k,j} \]</div>
+<h2 id="_4">机制<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>这条指令仍然是 cube 路径合同，只是运行时固定 <code>m = 1</code>。和 <code>TMATMUL_ACC</code> 一样，需要把接口语义和当前实现现状区分开看：</p>
+<ul>
+<li>CPU 模拟器会把 <code>cInMatrix</code> 作为显式输入累加器；</li>
+<li>当前 A2A3 / A5 实现会直接在 <code>cOutMatrix</code> 上继续累加，不会先把 <code>cInMatrix</code> 拷入 <code>cOutMatrix</code>。</li>
+</ul>
+<p>因此，若你显式传入不同的输入 / 输出累加器，不应默认所有后端都严格等价。最稳妥的写法，是让输入和输出共享同一块累加器 tile。</p>
 <h2 id="_5">汇编语法<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
@@ -970,54 +962,52 @@ PTO_INST RecordEvent TGEMV_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, 
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tgemv.acc ins(%c_in, %a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="_7">通用形状与位置约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
+PTO_INST RecordEvent TGEMV_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix,
+                               WaitEvents &amp;... events);
+
+template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
+PTO_INST RecordEvent TGEMV_ACC(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix,
+                               WaitEvents &amp;... events);
+</code></pre>
+<h2 id="_6">输入与输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
-<li>静态形状约束：<ul>
-<li><code>TileLeft::Rows == TileRes::Rows</code></li>
-<li><code>TileLeft::Cols == TileRight::Rows</code></li>
-<li><code>TileRight::Cols == TileRes::Cols</code></li>
+<li><code>cInMatrix</code>：输入累加器。</li>
+<li><code>aMatrix</code>：左操作数 tile，必须是 <code>Left</code>。</li>
+<li><code>bMatrix</code>：右操作数 tile，必须是 <code>Right</code>。</li>
+<li><code>cOutMatrix</code>：输出累加器，必须是 <code>Acc</code>。</li>
 </ul>
-</li>
-<li>Tile 位置约束：<ul>
-<li><code>TileLeft::Loc == Left</code></li>
-<li><code>TileRight::Loc == Right</code></li>
-<li><code>TileRes::Loc == Acc</code></li>
-</ul>
-</li>
-<li>运行时有效尺寸约束：<ul>
-<li><code>m</code> 必须为 <code>1</code></li>
-<li><code>k</code> 和 <code>n</code>（取自 <code>bMatrix.GetValidRow()</code> 与 <code>bMatrix.GetValidCol()</code>）必须位于 <code>[1, 4095]</code></li>
-</ul>
-</li>
-</ul>
-<h3 id="_8">数据类型约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="_8">通用约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li>支持的 <code>(CType, AType, BType)</code> 三元组：<ul>
-<li><code>(int32_t, int8_t, int8_t)</code></li>
-<li><code>(float, half, half)</code></li>
-<li><code>(float, float, float)</code></li>
-<li><code>(float, bfloat16_t, bfloat16_t)</code></li>
+<li><code>TGEMV</code> 的角色、shape、dtype 和 target-profile 约束在这里全部成立；</li>
+<li>运行时固定 <code>m = 1</code>；</li>
+<li>对于跨后端的稳妥可移植写法，优先使用共享累加器。</li>
 </ul>
-</li>
+<h3 id="a2a3-a5">A2A3 与 A5 说明<a class="headerlink" href="#a2a3-a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A2A3 与 A5 的 dtype、布局和角色限制，与 <code>TGEMV</code> 相同；</li>
+<li>当前 A2A3 / A5 实现不会先把 <code>cInMatrix</code> 搬到 <code>cOutMatrix</code>，而是直接对 <code>cOutMatrix</code> 所指向的累加器继续叠加。</li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li>累加器类型必须是 <code>int32_t</code> 或 <code>float</code>。</li>
-<li>如果为 <code>int32_t</code>：<code>AType == int8_t</code> 且 <code>BType == int8_t</code>。</li>
-<li>如果为 <code>float</code>：支持 <code>half</code>、<code>bfloat16_t</code>、<code>float</code> 以及选定的 fp8 组合（目标定义）。</li>
-<li>会强制执行以下分形/布局约束：<ul>
-<li>Left：<code>Loc == Left</code>、<code>!isRowMajor</code>、<code>SFractal == RowMajor</code></li>
-<li>Right：<code>Loc == Right</code>、<code>isRowMajor</code>、<code>SFractal == ColMajor</code></li>
-<li>Acc：<code>Loc == Acc</code>、<code>!isRowMajor</code>、<code>SFractal == RowMajor</code></li>
+<h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li>违反 <code>TGEMV</code> 的任一合法性约束；</li>
+<li>依赖“不同 <code>cInMatrix</code> / <code>cOutMatrix</code> 在所有后端上都严格等价”的假设。</li>
 </ul>
-</li>
-<li>除上述 GEMV 约定外，底层 A5 matmul 实现不会再单独补充一组显式的 <code>m/k/n</code> 运行时断言。</li>
+<h2 id="_10">性能与吞吐<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p>当前仓内 A2A3 costmodel 对 <code>TGEMV_ACC</code> 与 <code>TGEMV</code> 使用同一条公式：</p>
+<pre><code class="language-text">cycles = 14 + ceil(N/16) * ceil(K / baskK) * repeat_cost
+</code></pre>
+<p>其中：</p>
+<ul>
+<li><code>baskK = 32 / sizeof(left_element_type)</code>；</li>
+<li>int8、fp16 bucket 的 <code>repeat_cost = 1</code>；</li>
+<li>fp32 bucket 的 <code>repeat_cost = 2</code>。</li>
 </ul>
-</li>
-</ul>
-<h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓库没有公开单列的 A5 latency / throughput 表。</p>
+<h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1033,42 +1023,27 @@ void example_auto() {
   TGEMV_ACC(c1, c0, a, b);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<h3 id="_12">共享累加器写法<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-void example_manual() {
+void example_accumulate() {
   using A = TileLeft&lt;half, 1, 16&gt;;
   using B = TileRight&lt;half, 16, 16&gt;;
   using C = TileAcc&lt;float, 1, 16&gt;;
   A a;
   B b;
-  C c0, c1;
-  TASSIGN(a, 0x1000);
-  TASSIGN(b, 0x2000);
-  TASSIGN(c0, 0x3000);
-  TASSIGN(c1, 0x4000);
-  TGEMV_ACC(c1, c0, a, b);
+  C acc;
+  TGEMV_ACC(acc, acc, a, b);
 }
 </code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_10">自动模式<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%c_out = pto.tgemv.acc %c_in, %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="_11">手动模式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%c_out = pto.tgemv.acc %c_in, %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%acc1 = tgemv.acc %acc0, %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tgemv.acc ins(%c_in, %a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tgemv_zh/">TGEMV</a></li>
+<li><a href="../tgemv-bias_zh/">TGEMV_BIAS</a></li>
+<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵-向量指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

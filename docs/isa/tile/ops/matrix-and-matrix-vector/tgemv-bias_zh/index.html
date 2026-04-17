@@ -935,31 +935,18 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TGEMV_BIAS tile operation" src="../../../../../figures/isa/TGEMV_BIAS.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>带偏置加法的 GEMV。</p>
-<h2 id="_3">另请参见<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<ul>
-<li>基础 GEMV 指令：<code>docs/isa/TGEMV.md</code>。</li>
-<li>累加变体：<code>docs/isa/TGEMV_ACC.md</code>。</li>
-</ul>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename TileBias, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
-
-template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename TileBias,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
-</code></pre>
-<h2 id="_4">数学语义<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p><code>TGEMV_BIAS</code> 表示“先做 GEMV，再并入 bias”。它仍然属于 cube 路径，只是运行时固定 <code>m = 1</code>。</p>
+<p>这条指令的 bias 不是任意 shape 的普通 tile，而是单行 Bias tile。也正因此，它表达的是输出列上的偏置，而不是一般意义上的逐元素加法。</p>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>设：</p>
 <ul>
-<li><code>M = 1</code></li>
 <li><code>K = bMatrix.GetValidRow()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>对于 <code>0 &lt;= j &lt; N</code>（将偏置项加入矩阵乘积）：</p>
+<p>对 <code>0 &lt;= j &lt; N</code>：</p>
 <div class="arithmatex">\[ \mathrm{C}_{0,j} = \mathrm{Bias}_{0,j} + \sum_{k=0}^{K-1} \mathrm{A}_{0,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p><strong>注意：</strong> 精确的累加器行为和数据类型提升由目标/实现定义。</p>
+<h2 id="_4">机制<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p><code>TGEMV_BIAS</code> 沿用 <code>TGEMV</code> 的 <code>Left</code> / <code>Right</code> / <code>Acc</code> 角色合同，再额外引入一块单行 <code>Bias</code> tile。由于输出本身只有一行，这里不需要像 <code>TMATMUL_BIAS</code> 那样再解释“按列向多行广播”；bias 的每一项直接对应结果中的一列。</p>
 <h2 id="_5">汇编语法<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
@@ -971,63 +958,62 @@ PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tgemv.bias ins(%a, %b, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
 </code></pre>
-<h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="_7">通用形状与位置约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename TileBias, typename... WaitEvents&gt;
+PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData,
+                                WaitEvents &amp;... events);
+
+template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename TileBias,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData,
+                                WaitEvents &amp;... events);
+</code></pre>
+<h2 id="_6">输入与输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
-<li>静态形状约束：<ul>
-<li><code>TileLeft::Rows == TileRes::Rows</code></li>
-<li><code>TileLeft::Cols == TileRight::Rows</code></li>
-<li><code>TileRight::Cols == TileRes::Cols</code></li>
+<li><code>aMatrix</code>：左操作数 tile，必须是 <code>Left</code>。</li>
+<li><code>bMatrix</code>：右操作数 tile，必须是 <code>Right</code>。</li>
+<li><code>biasData</code>：单行 Bias tile。</li>
+<li><code>cMatrix</code>：结果累加器 tile，必须是 <code>Acc</code>。</li>
 </ul>
-</li>
-<li>Tile 位置约束：<ul>
-<li><code>TileLeft::Loc == Left</code></li>
-<li><code>TileRight::Loc == Right</code></li>
-<li><code>TileRes::Loc == Acc</code></li>
-</ul>
-</li>
-<li>运行时有效尺寸约束：<ul>
-<li><code>m</code> 必须为 <code>1</code></li>
-<li><code>k</code> 和 <code>n</code>（取自 <code>bMatrix.GetValidRow()</code> 与 <code>bMatrix.GetValidCol()</code>）必须位于 <code>[1, 4095]</code></li>
-</ul>
-</li>
-</ul>
-<h3 id="_8">数据类型约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="_8">通用约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li>支持的 <code>(CType, AType, BType)</code> 三元组：<ul>
-<li><code>(int32_t, int8_t, int8_t)</code></li>
-<li><code>(float, half, half)</code></li>
-<li><code>(float, float, float)</code></li>
-<li><code>(float, bfloat16_t, bfloat16_t)</code></li>
+<li><code>TGEMV</code> 的角色、shape、dtype 和 target-profile 约束在这里全部成立；</li>
+<li>bias 的数据类型必须与结果累加器 <code>TileRes::DType</code> 一致；</li>
+<li>bias 必须是单行 Bias tile。</li>
 </ul>
-</li>
-</ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li>累加器类型必须是 <code>int32_t</code> 或 <code>float</code>。</li>
-<li>如果为 <code>int32_t</code>：<code>AType == int8_t</code> 且 <code>BType == int8_t</code>。</li>
-<li>如果为 <code>float</code>：支持 <code>half</code>、<code>bfloat16_t</code>、<code>float</code> 以及选定的 fp8 组合（目标定义）。</li>
-<li>会强制执行以下分形/布局约束：<ul>
-<li>Left：<code>Loc == Left</code>、<code>!isRowMajor</code>、<code>SFractal == RowMajor</code></li>
-<li>Right：<code>Loc == Right</code>、<code>isRowMajor</code>、<code>SFractal == ColMajor</code></li>
-<li>Acc：<code>Loc == Acc</code>、<code>!isRowMajor</code>、<code>SFractal == RowMajor</code></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="_9">偏置专属约束<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<h3 id="a2a3">A2A3 约束<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p><code>A2A3</code> 指 Ascend 910B 与 Ascend 910C。当前实现要求：</p>
 <ul>
-<li>偏置 tile 的数据类型必须与 <code>TileRes::DType</code> 完全一致。</li>
-<li>偏置 tile 必须配置为单行。</li>
-<li>偏置 tile 的位置必须为 <code>TileType::Bias</code>。</li>
-<li><strong>A5 附加说明</strong>：<ul>
-<li>除上述 GEMV 约定外，底层 A5 matmul 实现不会再单独补充一组显式的 <code>m/k/n</code> 运行时断言。</li>
+<li><code>TileBias::Loc == TileType::Bias</code></li>
+<li><code>TileBias::Rows == 1</code></li>
 </ul>
-</li>
+<h3 id="a5">A5 约束<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p><code>A5</code> 指 Ascend 950 PR 与 Ascend 950 DT。当前实现要求：</p>
+<ul>
+<li><code>TileBias::Loc == TileType::Bias</code></li>
+<li><code>TileBias::Rows == 1</code></li>
+<li><code>TileBias::isRowMajor == true</code></li>
 </ul>
-<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li>bias 不是单行；</li>
+<li>bias 的角色或 dtype 不合法；</li>
+<li>违反 <code>TGEMV</code> 的任一合法性约束。</li>
+</ul>
+<h2 id="_10">性能与吞吐<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p>当前仓内 A2A3 costmodel 对 <code>TGEMV_BIAS</code> 仍复用 <code>mad/mmad</code> 的 GEMV 公式：</p>
+<pre><code class="language-text">cycles = 14 + ceil(N/16) * ceil(K / baskK) * repeat_cost
+</code></pre>
+<p>其中：</p>
+<ul>
+<li><code>baskK = 32 / sizeof(left_element_type)</code>；</li>
+<li>int8、fp16 bucket 的 <code>repeat_cost = 1</code>；</li>
+<li>fp32 bucket 的 <code>repeat_cost = 2</code>。</li>
+</ul>
+<p>当前仓库没有公开单列的 A5 latency / throughput 表。</p>
+<h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1036,7 +1022,7 @@ using namespace pto;
 void example_auto() {
   using A = TileLeft&lt;half, 1, 16&gt;;
   using B = TileRight&lt;half, 16, 16&gt;;
-  using Bias = Tile&lt;TileType::Bias, half, 1, 16&gt;;
+  using Bias = Tile&lt;TileType::Bias, float, 1, 16&gt;;
   using C = TileAcc&lt;float, 1, 16&gt;;
   A a;
   B b;
@@ -1053,7 +1039,7 @@ using namespace pto;
 void example_manual() {
   using A = TileLeft&lt;half, 1, 16&gt;;
   using B = TileRight&lt;half, 16, 16&gt;;
-  using Bias = Tile&lt;TileType::Bias, half, 1, 16&gt;;
+  using Bias = Tile&lt;TileType::Bias, float, 1, 16&gt;;
   using C = TileAcc&lt;float, 1, 16&gt;;
   A a;
   B b;
@@ -1066,23 +1052,13 @@ void example_manual() {
   TGEMV_BIAS(c, a, b, bias);
 }
 </code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_11">自动模式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%c = pto.tgemv.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="_12">手动模式<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%c = pto.tgemv.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%acc = tgemv.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tgemv.bias ins(%a, %b, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tgemv_zh/">TGEMV</a></li>
+<li><a href="../tgemv-acc_zh/">TGEMV_ACC</a></li>
+<li><a href="../tgemv-mx_zh/">TGEMV_MX</a></li>
+<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵-向量指令集</a></li>
+</ul>
               
             </div>
           </div><footer>

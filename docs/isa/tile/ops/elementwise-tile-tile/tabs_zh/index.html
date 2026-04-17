@@ -931,17 +931,16 @@
               
                 <!-- Generated from `docs/isa/tile/ops/elementwise-tile-tile/tabs_zh.md` -->
 
-<h1 id="tabs">TABS<a class="headerlink" href="#tabs" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TABS tile operation" src="../../../../../figures/isa/TABS.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>Tile 的逐元素绝对值。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
+<h1 id="ptotabs">pto.tabs<a class="headerlink" href="#ptotabs" title="Permanent link">&para;</a></h1>
+<p><code>pto.tabs</code> 属于<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>对 tile 做逐元素绝对值。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对目标 tile 的 valid region 中每个 <code>(i, j)</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \left|\mathrm{src}_{i,j}\right| \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
+<p>这是 tile 版的一元绝对值操作，常用于归一化、非负化或前处理。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto-as">PTO-AS<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = tabs %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
@@ -951,38 +950,77 @@
 <pre><code class="language-text">pto.tabs ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
 PTO_INST RecordEvent TABS(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (CPU sim)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>int</code>, <code>int16_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>The implementation iterates over <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code>.</li>
+<li><code>%src</code>：源 tile</li>
+<li><code>%dst</code>：目标 tile</li>
 </ul>
-</li>
-<li><strong>实现检查 (Costmodel)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>uint8_t</code>、<code>half</code>、<code>float</code>.</li>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%dst</code>：逐元素绝对值结果 tile</li>
 </ul>
-</li>
-<li><strong>实现检查 (NPU)</strong>:<ul>
-<li><code>TileData::DType</code> must be one of: <code>float</code> or <code>half</code>;</li>
-<li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>);</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>;</li>
-<li>Runtime: <code>src.GetValidRow() == dst.GetValidRow()</code> and <code>src.GetValidCol() == dst.GetValidCol()</code>;</li>
-<li>Tile 布局 must be row-major (<code>TileData::isRowMajor</code>).</li>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>操作迭代域由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定。</li>
 </ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
-</li>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h3 id="cpu-simulation">CPU simulation<a class="headerlink" href="#cpu-simulation" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持类型：<code>int32_t</code>、<code>int</code>、<code>int16_t</code>、<code>half</code>、<code>float</code></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h3 id="costmodel">Costmodel<a class="headerlink" href="#costmodel" title="Permanent link">&para;</a></h3>
+<ul>
+<li>当前建模类型覆盖：<code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>uint8_t</code>、<code>half</code>、<code>float</code></li>
+</ul>
+<h3 id="npu">NPU<a class="headerlink" href="#npu" title="Permanent link">&para;</a></h3>
+<ul>
+<li>当前实现只记录 <code>float</code> / <code>half</code></li>
+<li>tile 必须是行主序向量 tile</li>
+<li>静态 valid 边界必须合法</li>
+<li>运行时要求：<code>src.GetValidRow() == dst.GetValidRow()</code> 且 <code>src.GetValidCol() == dst.GetValidCol()</code></li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p>英文页把 <code>TABS</code> 归入一元 tile 运算桶：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>13</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td>26（沿用一元 / 超越函数桶）</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>1</td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p>当前手册未单列 <code>tabs</code> 的独立周期表，应视为目标 profile 相关。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 void example_auto() {
@@ -991,19 +1029,12 @@ void example_auto() {
   TABS(dst, src);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT src, dst;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TABS(dst, src);
-}
-</code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></li>
+<li>上一条指令：<a href="../tadd_zh/">pto.tadd</a></li>
+<li>下一条指令：<a href="../tand_zh/">pto.tand</a></li>
+</ul>
               
             </div>
           </div><footer>

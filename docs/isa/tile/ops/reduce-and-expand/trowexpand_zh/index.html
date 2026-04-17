@@ -931,16 +931,15 @@
               
                 <!-- Generated from `docs/isa/tile/ops/reduce-and-expand/trowexpand_zh.md` -->
 
-<h1 id="trowexpand">TROWEXPAND<a class="headerlink" href="#trowexpand" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TROWEXPAND tile operation" src="../../../../../figures/isa/TROWEXPAND.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>将每个源行的第一个元素广播到目标行中。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
+<h1 id="ptotrowexpand">pto.trowexpand<a class="headerlink" href="#ptotrowexpand" title="Permanent link">&para;</a></h1>
+<p><code>pto.trowexpand</code> 属于<a href="../../../reduce-and-expand_zh/">归约与扩展</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>把源 tile 每一行的第一个元素广播到整行。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>设 <code>R = dst.GetValidRow()</code>、<code>C = dst.GetValidCol()</code>。对 <code>0 &lt;= i &lt; R</code> 且 <code>0 &lt;= j &lt; C</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{i,0} \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS Specification</a>.</p>
+<p>也就是说，<code>trowexpand</code> 先从每一行抽出一个标量，再沿列方向复制回整行。它是行广播的最基础形式，后面的 <code>trowexpandadd</code>、<code>trowexpandmax</code>、<code>trowexpandexpdif</code> 都是在这个语义上继续组合。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = trowexpand %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -951,26 +950,39 @@
 <pre><code class="language-text">pto.trowexpand ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWEXPAND(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>实现检查 (NPU):</p>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Tile Type: <code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
-<li>Tile 布局: ND fractal (<code>isRowMajor</code> and <code>SLayout::NoneBox</code>) for both <code>src</code> and <code>dst</code>.</li>
-<li>Data type: A2A3/A5 element types must be one of: <code>int8_t</code> or <code>uint8_t</code> or <code>int16_t</code> or <code>uint16_t</code> or <code>int32_t</code> or <code>uint32_t</code> or <code>half</code> or <code>bfloat16_t</code> or <code>float</code>.</li>
-<li>运行期有效区域检查:<ul>
-<li>A2A3: returns early if any of <code>dstValidRow</code>, <code>dstValidCol</code>, <code>srcValidRow</code>, <code>srcValidCol</code> is zero.</li>
-<li>A5: asserts <code>srcValidRow == dstValidRow</code> and asserts <code>srcValidRow != 0 &amp;&amp; srcValidCol != 0</code>.</li>
+<li><code>src</code>：源 tile</li>
+<li><code>dst</code>：目标 tile</li>
 </ul>
-</li>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst</code>：每一行都被 <code>src[i,0]</code> 填满的广播结果</li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst</code> 和 <code>src</code> 都必须是 <code>TileType::Vec</code></li>
+<li><code>src</code> 与 <code>dst</code> 都必须是标准 ND 非分形布局：row-major 且 <code>SLayout::NoneBox</code></li>
+<li>支持的数据类型在 A2A3 / A5 上都覆盖：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code></li>
+</ul>
+<h3 id="_8">运行时有效区域<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A2A3：若 <code>dstValidRow</code>、<code>dstValidCol</code>、<code>srcValidRow</code>、<code>srcValidCol</code> 中任一为 0，直接提前返回</li>
+<li>A5：要求 <code>srcValidRow == dstValidRow</code>，并要求 <code>srcValidRow != 0 &amp;&amp; srcValidCol != 0</code></li>
+</ul>
+<h2 id="_9">异常与非法情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
+</ul>
+<h2 id="_10">性能<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有把 <code>trowexpand</code> 单列成公开 cost table。若代码依赖具体延迟，应把它视为目标 profile 相关的广播 / 重排路径。</p>
+<h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 void example_auto() {
@@ -981,21 +993,12 @@ void example_auto() {
   TROWEXPAND(dst, src);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  SrcT src;
-  DstT dst;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TROWEXPAND(dst, src);
-}
-</code></pre>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../reduce-and-expand_zh/">归约与扩展</a></li>
+<li>上一条指令：<a href="../trowargmin_zh/">pto.trowargmin</a></li>
+<li>下一条指令：<a href="../trowexpanddiv_zh/">pto.trowexpanddiv</a></li>
+</ul>
               
             </div>
           </div><footer>

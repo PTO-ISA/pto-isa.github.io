@@ -332,7 +332,7 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#gatherscatter-mgather-mscatter">Gather/Scatter (MGATHER, MSCATTER)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#fillpad-variants-tstore_fp">Fill/Pad Variants (TSTORE_FP)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#fix-pipe-variants-tstore_fp">Fix-Pipe Variants (TSTORE_FP)</a>
     </li>
         </ul>
     </li>
@@ -979,37 +979,37 @@
 <tr>
 <td><a href="../ops/memory-and-data-movement/tload/">pto.tload</a></td>
 <td>Load from GM into tile</td>
-<td>GM → UB → Tile</td>
+<td>GM → local tile buffer</td>
 <td><code>TLOAD(dst, gtensor)</code></td>
 </tr>
 <tr>
 <td><a href="../ops/memory-and-data-movement/tprefetch/">pto.tprefetch</a></td>
 <td>Prefetch from GM into tile (non-blocking)</td>
-<td>GM → UB → Tile</td>
+<td>GM → local tile buffer</td>
 <td><code>TPREFETCH(dst, gtensor)</code></td>
 </tr>
 <tr>
 <td><a href="../ops/memory-and-data-movement/tstore/">pto.tstore</a></td>
 <td>Store from tile to GM</td>
-<td>Tile → UB → GM</td>
+<td>local tile buffer → GM</td>
 <td><code>TSTORE(gtensor, src)</code></td>
 </tr>
 <tr>
 <td><a href="../ops/memory-and-data-movement/tstore-fp/">pto.tstore_fp</a></td>
-<td>Store with fill/pad</td>
-<td>Tile → UB → GM</td>
+<td>Store through the fix-pipe path</td>
+<td>Tile → local tile buffer → GM</td>
 <td><code>TSTORE_FP(gtensor, src, fp)</code></td>
 </tr>
 <tr>
 <td><a href="../ops/memory-and-data-movement/mgather/">pto.mgather</a></td>
 <td>Gather scattered elements from GM</td>
-<td>GM → UB → Tile</td>
+<td>GM → local tile buffer</td>
 <td><code>MGATHER(dst, gtensor, indices)</code></td>
 </tr>
 <tr>
 <td><a href="../ops/memory-and-data-movement/mscatter/">pto.mscatter</a></td>
 <td>Scatter tile elements to GM</td>
-<td>Tile → UB → GM</td>
+<td>local tile buffer → GM</td>
 <td><code>MSCATTER(gtensor, indices, src)</code></td>
 </tr>
 </tbody>
@@ -1026,8 +1026,8 @@ TSTORE: dst[ r0 + i, c0 + j ] = src[i,j]
 <h3 id="gatherscatter-mgather-mscatter">Gather/Scatter (MGATHER, MSCATTER)<a class="headerlink" href="#gatherscatter-mgather-mscatter" title="Permanent link">&para;</a></h3>
 <p>An index tile specifies which GM elements to transfer:</p>
 <div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{src}_{\mathrm{index}_i} \]</div>
-<h3 id="fillpad-variants-tstore_fp">Fill/Pad Variants (TSTORE_FP)<a class="headerlink" href="#fillpad-variants-tstore_fp" title="Permanent link">&para;</a></h3>
-<p>In addition to transferring valid data, padding regions are filled with a specified fill value before storing.</p>
+<h3 id="fix-pipe-variants-tstore_fp">Fix-Pipe Variants (TSTORE_FP)<a class="headerlink" href="#fix-pipe-variants-tstore_fp" title="Permanent link">&para;</a></h3>
+<p><code>TSTORE_FP</code> is a <strong>fix-pipe</strong> variant, not a “floating-point” variant. The <code>_fp</code> suffix names the backend path that programs fix-pipe state before storing.</p>
 <h2 id="layout-compatibility">Layout Compatibility<a class="headerlink" href="#layout-compatibility" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1151,7 +1151,7 @@ TSTORE: dst[ r0 + i, c0 + j ] = src[i,j]
 <li>Layout compatibility between GM layout and tile layout is profile-dependent (see layout compatibility table above).</li>
 <li>Gather/scatter index tiles must have compatible shapes.</li>
 <li><code>TSTORE</code> with <code>TileType::Acc</code> supports <code>AtomicType</code>: <code>AtomicNone</code>, <code>AtomicAdd</code>, <code>AtomicMax</code>, <code>AtomicMin</code> (A5 only).</li>
-<li><code>TSTORE_FP</code> quantized-store is only legal for <code>TileType::Acc</code> on A2/A3 and A5.</li>
+<li><code>TSTORE_FP</code> is only legal for <code>TileType::Acc</code> on A2A3 and A5 and uses the fix-pipe sideband state carried by the auxiliary <code>fp</code> tile argument.</li>
 </ul>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
 <ul>

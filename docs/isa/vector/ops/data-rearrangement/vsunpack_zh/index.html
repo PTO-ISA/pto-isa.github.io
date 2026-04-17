@@ -932,17 +932,81 @@
                 <!-- Generated from `docs/isa/vector/ops/data-rearrangement/vsunpack_zh.md` -->
 
 <h1 id="ptovsunpack">pto.vsunpack<a class="headerlink" href="#ptovsunpack" title="Permanent link">&para;</a></h1>
-<p>对打包向量做解包。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vsunpack</code> 属于<a href="../../../data-rearrangement_zh/">数据重排</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>把窄向量的一半解包并做符号扩展。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vsunpack</code> 从源向量里选中一半，再把每个窄元素做符号扩展，写成更宽的目标向量。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vsunpack %dst, %src, %part
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vsunpack %src, %part : !pto.vreg&lt;NxT_narrow&gt;, index -&gt; !pto.vreg&lt;N/2xT_wide&gt;
 </code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%src</code></td>
+<td><code>!pto.vreg&lt;NxT_narrow&gt;</code></td>
+<td>打包后的窄源向量</td>
+</tr>
+<tr>
+<td><code>%part</code></td>
+<td><code>index</code></td>
+<td>指定要解开的哪一半</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;N/2xT_wide&gt;</code></td>
+<td>经过符号扩展的更宽结果向量</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令除了产生目标值，没有其他架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li>成对输出的顺序必须保留。</li>
-<li>不同重排形式只在文档化的元素宽度和模式下合法。</li>
+<li>选中的半区及扩宽模式必须是目标 profile 支持的合法形式。</li>
+<li>它的扩宽行为是符号扩展。</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
+<li>约束部分列出的额外非法情形，同样属于 <code>pto.vsunpack</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有为 <code>vsunpack</code> 单列周期表。若代码对具体延迟敏感，应把它视为目标 profile 相关的扩宽重排路径。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">for (int i = 0; i &lt; N/2; i++)
+    dst[i] = sign_extend(src[part_offset + i]);
+</code></pre>
+<h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vsunpack</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -967,9 +1031,11 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vsunpack</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../data-rearrangement_zh/">数据重排指令集</a></li>
+<li>指令集总览：<a href="../../../data-rearrangement_zh/">数据重排</a></li>
+<li>上一条指令：<a href="../vpack_zh/">pto.vpack</a></li>
+<li>下一条指令：<a href="../vzunpack_zh/">pto.vzunpack</a></li>
 </ul>
               
             </div>

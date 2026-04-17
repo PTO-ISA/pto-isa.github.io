@@ -932,8 +932,15 @@
                 <!-- Generated from `docs/isa/vector/ops/binary-vector-ops/vadd_zh.md` -->
 
 <h1 id="ptovadd">pto.vadd<a class="headerlink" href="#ptovadd" title="Permanent link">&para;</a></h1>
-<p>按激活 lane 逐项相加两个向量。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vadd</code> 属于<a href="../../../binary-vector-ops_zh/">二元向量操作</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vadd</code> 对两个向量寄存器做逐 lane 加法，结果写入目标向量寄存器。只有谓词掩码选中的 lane 参与计算；非活跃 lane 不参与加法，目标寄存器对应位置保持不变。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vadd</code> 是标准的 <code>pto.v*</code> 计算指令。它按 lane 同时读取两个源向量寄存器，把对应元素相加，再写回目标向量寄存器。逻辑迭代域覆盖全部 <code>N</code> 个 lane，真正参与计算的是谓词位为真的那一部分。</p>
+<p>对每个满足谓词的 lane <code>i</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{lhs}_i + \mathrm{rhs}_i \]</div>
+<p>谓词为假的 lane 处于非活跃状态，目标寄存器在这些位置上不被修改。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">vadd %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;
 </code></pre>
@@ -944,40 +951,225 @@
 <pre><code class="language-mlir">pto.vadd ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
           outs(%result : !pto.vreg&lt;NxT&gt;)
 </code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<ul>
-<li>输入与结果类型必须一致。</li>
-<li>谓词宽度必须与目标向量宽度一致。</li>
-</ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
-对于 <code>pto.vadd</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
+<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
+<p>声明位于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename VecDst, typename VecLhs, typename VecRhs, typename MaskT, typename... WaitEvents&gt;
+PTO_INST RecordEvent VADD(VecDst&amp; dst, const VecLhs&amp; lhs, const VecRhs&amp; rhs,
+                          const MaskT&amp; mask, WaitEvents&amp;... events);
+</code></pre>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>指标</th>
-<th>状态</th>
-<th>来源依据</th>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>A5 时延</td>
-<td>公开来源未给出</td>
-<td><code>visa.txt</code>、<code>PTOAS/docs/vpto-spec.md</code></td>
+<td><code>%lhs</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>左操作数向量寄存器</td>
 </tr>
 <tr>
-<td>稳态吞吐</td>
-<td>公开来源未给出</td>
-<td><code>visa.txt</code>、<code>PTOAS/docs/vpto-spec.md</code></td>
+<td><code>%rhs</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>右操作数向量寄存器</td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>谓词掩码；掩码位为 1 的 lane 参与运算</td>
 </tr>
 </tbody>
 </table>
-<p>如果软件调度或性能建模依赖 <code>pto.vadd</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>两个源寄存器必须有相同的元素类型和相同的向量宽度 <code>N</code>。掩码宽度也必须与 <code>N</code> 一致。</p>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%dst</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>活跃 lane 上得到逐 lane 和；非活跃 lane 保持原值</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令除了产生目标向量寄存器外，没有其他架构副作用。它不会隐式占用 buffer、发送事件，也不会建立内存栅栏。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../binary-vector-ops_zh/">二元向量指令集</a></li>
+<li><code>%lhs</code>、<code>%rhs</code> 和 <code>%dst</code> 的元素类型必须完全一致。</li>
+<li>三个寄存器必须具有相同的向量宽度 <code>N</code>。</li>
+<li><code>%mask</code> 的宽度必须等于 <code>N</code>。</li>
+<li>只有谓词位为 1 的 lane 参与加法。</li>
+<li>非活跃 lane 对应的目标元素保持不变。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非法的元素类型不匹配、向量宽度不匹配或掩码宽度不匹配。</li>
+<li><a href="../../../binary-vector-ops_zh/">二元向量操作</a>页面声明的额外非法情形，同样属于 <code>pto.vadd</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th style="text-align: center;">CPU Simulator</th>
+<th style="text-align: center;">A2/A3</th>
+<th style="text-align: center;">A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code></td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">支持</td>
+</tr>
+<tr>
+<td><code>f16</code> / <code>bf16</code></td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">支持</td>
+</tr>
+<tr>
+<td><code>i8</code>–<code>i64</code>、<code>u8</code>–<code>u64</code></td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">支持</td>
+</tr>
+</tbody>
+</table>
+<p>A5 是当前文档中最具体的向量实现 profile。CPU 模拟器和 A2/A3 类目标通过标量循环或等效路径模拟 <code>pto.v*</code>，但仍需保留可见的 PTO 语义。任何依赖具体时延或吞吐的代码，都应把这类依赖视为 profile 相关行为。</p>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th>时延（周期）</th>
+<th>A5 RV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code></td>
+<td>7</td>
+<td><code>RV_VADD</code></td>
+</tr>
+<tr>
+<td><code>f16</code></td>
+<td>7</td>
+<td><code>RV_VADD</code></td>
+</tr>
+<tr>
+<td><code>i32</code></td>
+<td>7</td>
+<td><code>RV_VADD</code></td>
+</tr>
+<tr>
+<td><code>i16</code></td>
+<td>7</td>
+<td><code>RV_VADD</code></td>
+</tr>
+<tr>
+<td><code>i8</code></td>
+<td>7</td>
+<td><code>RV_VADD</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a2a3">A2/A3 吞吐<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数值</th>
+<th>适用范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>14（<code>A2A3_STARTUP_BINARY</code>）</td>
+<td>全部 FP / INT 二元运算</td>
+</tr>
+<tr>
+<td>完成时延：FP32</td>
+<td>19（<code>A2A3_COMPL_FP_BINOP</code>）</td>
+<td>f32、i32</td>
+</tr>
+<tr>
+<td>完成时延：INT16</td>
+<td>17（<code>A2A3_COMPL_INT_BINOP</code>）</td>
+<td>int16</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>2（<code>A2A3_RPT_2</code>）</td>
+<td>全部二元运算</td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18（<code>A2A3_INTERVAL</code>）</td>
+<td>全部向量运算</td>
+</tr>
+<tr>
+<td>周期模型</td>
+<td><code>14 + C + 2R + (R-1)×18</code></td>
+<td><code>C</code> 为完成时延，<code>R</code> 为 repeats</td>
+</tr>
+</tbody>
+</table>
+<p>示例：1024 个 f32 元素，16 次迭代（<code>R=16</code>）：</p>
+<pre><code class="language-text">A5 总周期（流水重叠后）：7 + 15×2 = 37
+A2/A3 总周期：14 + 19 + 32 + 270 = 335
+</code></pre>
+<p><code>vadd</code> 的每次 repeat 吞吐高于不少一元操作，因此在纯逐元素 kernel 里通常是最容易饱和流水线的一类运算。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="lane">全向量加法（全部 lane 活跃）<a class="headerlink" href="#lane" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+Mask&lt;64&gt; mask;
+mask.set_all(true);
+
+VADD(vdst, va, vb, mask);
+</code></pre>
+<h3 id="_11">部分谓词化<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vadd %va, %vb, %cond
+    : (!pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask) -&gt; !pto.vreg&lt;128xf16&gt;
+</code></pre>
+<h3 id="load-compute-store">完整的 load / compute / store 链<a class="headerlink" href="#load-compute-store" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+void vector_add(Ptr&lt;ub_space_t, ub_t&gt; ub_a, Ptr&lt;ub_space_t, ub_t&gt; ub_b,
+                Ptr&lt;ub_space_t, ub_t&gt; ub_out, size_t count) {
+    VReg&lt;64, float&gt; va, vb, vdst;
+    Mask&lt;64&gt; mask;
+    mask.set_all(true);
+
+    VLDS(va, ub_a, &quot;NORM&quot;);
+    VLDS(vb, ub_b, &quot;NORM&quot;);
+    VADD(vdst, va, vb, mask);
+    VSTS(vdst, ub_out);
+}
+</code></pre>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../binary-vector-ops_zh/">二元向量操作</a></li>
+<li>下一条指令：<a href="../vsub_zh/">pto.vsub</a></li>
+<li>向量指令总览：<a href="../../../../instruction-surfaces/vector-instructions_zh/">向量指令面</a></li>
+<li>类型系统：<a href="../../../../state-and-types/type-system_zh/">类型系统</a></li>
 </ul>
               
             </div>

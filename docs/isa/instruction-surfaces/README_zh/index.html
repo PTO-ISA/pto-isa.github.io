@@ -932,23 +932,168 @@
                 <!-- Generated from `docs/isa/instruction-surfaces/README_zh.md` -->
 
 <h1 id="_1">指令集总览<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>本章描述 PTO ISA 的指令集（Instruction Set）——按功能角色组织的指令分类。不同指令集对应不同的执行路径与操作域。</p>
-<h2 id="_2">本章内容<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>PTO ISA 被组织成四类指令集。每一类指令集都对应不同的机制、不同的操作数域，以及不同的执行路径。在阅读单条指令页之前，先理解这一层的分工非常重要。</p>
+<h2 id="_2">总览<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>指令集</th>
+<th>前缀</th>
+<th>执行路径</th>
+<th>主要职责</th>
+<th>典型操作数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../tile-instructions_zh/">Tile 指令集</a></td>
+<td><code>pto.t*</code></td>
+<td>通过 tile buffer 参与本地执行</td>
+<td>面向 tile 的计算、数据搬运、布局变换、同步</td>
+<td><code>!pto.tile&lt;...&gt;</code>、<code>!pto.tile_buf&lt;...&gt;</code>、<code>!pto.partition_tensor_view&lt;...&gt;</code></td>
+</tr>
+<tr>
+<td><a href="../vector-instructions_zh/">向量指令集</a></td>
+<td><code>pto.v*</code></td>
+<td>向量流水线（PIPE_V）</td>
+<td>lane 级向量微指令、mask、对齐状态、向量寄存器搬运</td>
+<td><code>!pto.vreg&lt;NxT&gt;</code>、<code>!pto.mask</code>、<code>!pto.ptr&lt;T, ub&gt;</code></td>
+</tr>
+<tr>
+<td><a href="../scalar-and-control-instructions_zh/">标量与控制指令集</a></td>
+<td><code>pto.*</code></td>
+<td>标量单元 / DMA / 同步外壳</td>
+<td>配置、控制流、DMA、同步、谓词</td>
+<td>标量寄存器、pipe/event 标识、buffer 标识、GM/UB 指针</td>
+</tr>
+<tr>
+<td><a href="../other-instructions_zh/">其他指令集</a></td>
+<td><code>pto.*</code></td>
+<td>通信 / 运行时 / 跨 NPU</td>
+<td>集体通信、运行时支撑、别名与序列类辅助操作</td>
+<td><code>!pto.group&lt;N&gt;</code>、tile 序列、分配句柄等</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">为什么要分成四类指令集<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>PTO 不是把所有 opcode 塞进一个扁平列表里，而是按架构可见状态来分层。原因很直接：tile、vector、scalar/control、communication 各自暴露的是不同类型的状态，如果把它们混成一层，会让 ISA 契约变得模糊。</p>
+<h3 id="tile-ptot">Tile 指令集（<code>pto.t*</code>）<a class="headerlink" href="#tile-ptot" title="Permanent link">&para;</a></h3>
+<p>Tile 指令围绕 <strong>tile</strong> 建模。tile 是带 shape、layout、role、valid region 元数据的架构可见对象。它们的主要职责是：</p>
 <ul>
-<li><a href="./">指令集总览</a> — 四类指令集的整体说明、数据流图和操作数对照表</li>
-<li><a href="../tile-instructions_zh/">Tile 指令集</a> — <code>pto.t*</code> 逐 tile 操作指令集</li>
-<li><a href="../vector-instructions_zh/">向量指令集</a> — <code>pto.v*</code> 向量微指令集</li>
-<li><a href="../scalar-and-control-instructions_zh/">标量与控制指令集</a> — 标量、控制和配置操作指令集</li>
-<li><a href="../other-instructions_zh/">其他指令集</a> — 通信、调试和其他支持操作</li>
+<li>在 GM 和本地 tile buffer 之间搬运数据</li>
+<li>在 tile 这一层执行逐元素运算、归约、扩展、布局变换和 matmul</li>
+<li>建立 tile 级同步边</li>
 </ul>
-<h2 id="_3">阅读建议<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>建议按以下顺序阅读：</p>
-<ol>
-<li>先读 <a href="./">指令集总览</a>，理解 Tile / Vector / Scalar&amp;Control / Other 四类指令集的整体结构和数据流关系</li>
-<li>再根据需要深入具体指令集页面，了解该指令集的操作数类型、约束和规范语言</li>
-</ol>
-<h2 id="_4">章节定位<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>本章属于手册第 7 章（指令集）的一部分。指令集是介于编程模型与具体指令之间的中层抽象，用于按功能角色定位指令。</p>
+<pre><code class="language-text">输入：tile、标量修饰符、GlobalTensor 视图
+输出：tile payload、valid region 变化、同步边
+关注点：shape / layout / role / valid region / 目标 profile 收缩
+</code></pre>
+<h3 id="ptov">向量指令集（<code>pto.v*</code>）<a class="headerlink" href="#ptov" title="Permanent link">&para;</a></h3>
+<p>向量指令直接暴露向量流水线。它们处理的是向量寄存器、谓词寄存器和向量 tile buffer（硬件实现为 UB），而不是 tile 级 valid region。</p>
+<pre><code class="language-text">输入：vreg、标量、谓词、UB 指针、对齐状态
+输出：vreg、谓词、UB 写回
+关注点：lane、mask、对齐状态、distribution mode、目标 profile 限制
+</code></pre>
+<h3 id="pto">标量与控制指令集（<code>pto.*</code>）<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<p>标量与控制指令不直接产生 tile 或向量 payload。它们负责建立执行外壳：</p>
+<ul>
+<li>同步与 producer-consumer 顺序</li>
+<li>DMA 配置与启动</li>
+<li>谓词构造与谓词搬运</li>
+<li>标量控制流与控制状态</li>
+</ul>
+<pre><code class="language-text">输入：标量值、pipe/event id、buffer id、DMA 参数
+输出：控制状态、事件边、谓词、DMA 配置
+关注点：顺序、配置、控制、可见状态
+</code></pre>
+<h3 id="pto_1">其他指令集（<code>pto.*</code>）<a class="headerlink" href="#pto_1" title="Permanent link">&para;</a></h3>
+<p>这一类用于放不能自然归入 tile / vector / scalar-control 的内容，例如：</p>
+<ul>
+<li>通信与运行时</li>
+<li>非 ISA 但仍与手册主线相关的支撑操作</li>
+<li>tile 序列、分配句柄等辅助结构</li>
+</ul>
+<h2 id="_4">指令级数据流关系<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>四类指令集共同组成 PTO 的执行层次：</p>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────┐
+│  GM（片外全局内存）                                         │
+└──────────┬──────────────────────────────────────┬───────────┘
+           │                                      │
+           │  Tile 指令：TLOAD / TSTORE                │
+           │  Vector 路径：copy_gm_to_ubuf / copy_ubuf_to_gm
+           ▼                                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  本地 tile buffer                                           │
+│  其中 Vec tile buffer 的硬件实现就是 UB                      │
+└──────┬──────────────────────────────────────────┬──────────┘
+       │                                      │
+       │  Tile 指令：直接读写 tile buffer           │
+       │  Vector 指令：vlds / vsts                 │
+       ▼                                      ▼
+┌─────────────────┐              ┌─────────────────────────────┐
+│  Tile Buffers   │              │  Vector Registers           │
+│  !pto.tile_buf  │              │  !pto.vreg&lt;NxT&gt;            │
+│  (Vec/Mat/Acc/  │              │                             │
+│   Left/Right)   │              │                             │
+└────────┬─────────┘              └──────────────┬────────────┘
+         │                                     │
+         │  Tile 指令：pto.t*                         │  向量指令：pto.v*
+         │  (TMATMUL 通过 Mat / Left / Right / Acc) │  (vadd, vmul, vcmp, ...)
+         │                                     │
+         │  ◄── Matrix Multiply Unit           │  ◄── Vector Pipeline
+         └─────────────────────────────────────┘
+                       │
+                       ▼
+                [本地 tile buffer → GM]
+</code></pre>
+<h2 id="_5">指令数量摘要<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>指令集</th>
+<th>分组数</th>
+<th>操作数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tile</td>
+<td>8</td>
+<td>约 120</td>
+<td>matmul、逐元素、归约、布局变换、数据搬运</td>
+</tr>
+<tr>
+<td>Vector</td>
+<td>9</td>
+<td>约 99</td>
+<td>完整向量微指令、加载存储、SFU</td>
+</tr>
+<tr>
+<td>Scalar / Control</td>
+<td>6</td>
+<td>约 60</td>
+<td>同步、DMA、谓词、控制</td>
+</tr>
+<tr>
+<td>Other / Communication</td>
+<td>2</td>
+<td>约 24</td>
+<td>通信与支撑操作</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">规范语言<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>指令集页描述的是“这一组操作共同遵守什么契约”，不是逐条重复 opcode 说明。文中使用 <strong>MUST / SHOULD / MAY</strong> 时，应只用于 verifier、测试或 review 能够检查的规则；解释性内容应尽量用自然语言而不是模板句。</p>
+<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../instruction-families/README_zh/">指令族</a></li>
+<li><a href="../../reference/format-of-instruction-descriptions_zh/">指令描述格式</a></li>
+<li><a href="../../tile/README_zh/">Tile 参考入口</a></li>
+<li><a href="../../vector/README_zh/">Vector 参考入口</a></li>
+<li><a href="../../scalar/README_zh/">标量与控制参考入口</a></li>
+<li><a href="../../other/README_zh/">其他与通信参考入口</a></li>
+</ul>
               
             </div>
           </div><footer>

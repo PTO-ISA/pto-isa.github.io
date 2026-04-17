@@ -932,8 +932,8 @@
                 <!-- Generated from `docs/isa/tile/memory-and-data-movement_zh.md` -->
 
 <h1 id="_1">内存与数据搬运指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>该指令集覆盖 GM 与 tile 之间的数据搬运，以及索引式 <code>mgather</code> / <code>mscatter</code>。它们决定 tile 数据何时进入本地缓冲，又何时离开本地缓冲回到 GM。</p>
-<h2 id="_2">操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>这一组指令负责在 GM 与 tile 本地缓冲之间搬运数据，也是 tile 路径里唯一直接跨越“GM 可见状态”和“tile 可见状态”的指令面。无论是连续搬运，还是带索引的 gather/scatter，都属于这一类。</p>
+<h2 id="_2">指令一览<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -948,7 +948,7 @@
 </tr>
 <tr>
 <td><code>pto.tprefetch</code></td>
-<td>预取数据到局部缓冲路径</td>
+<td>预取数据到本地缓冲</td>
 </tr>
 <tr>
 <td><code>pto.tstore</code></td>
@@ -956,53 +956,167 @@
 </tr>
 <tr>
 <td><code>pto.tstore_fp</code></td>
-<td>带浮点特殊处理的 store</td>
+<td>经 fix-pipe 路径写回</td>
 </tr>
 <tr>
 <td><code>pto.mgather</code></td>
-<td>索引 gather</td>
+<td>索引式 gather</td>
 </tr>
 <tr>
 <td><code>pto.mscatter</code></td>
-<td>索引 scatter</td>
+<td>索引式 scatter</td>
 </tr>
 </tbody>
 </table>
 <h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="tload">TLOAD<a class="headerlink" href="#tload" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">dst[i, j] = src[r0 + i, c0 + j]
+<h3 id="tload-tstore">连续搬运：TLOAD / TSTORE<a class="headerlink" href="#tload-tstore" title="Permanent link">&para;</a></h3>
+<p>二维视角下可以理解为：</p>
+<pre><code class="language-text">TLOAD:  dst[i, j] = src[r0 + i, c0 + j]
+TSTORE: dst[r0 + i, c0 + j] = src[i, j]
 </code></pre>
-<p>搬运大小由目标 tile 的 <code>GetValidRow()</code> / <code>GetValidCol()</code> 决定。</p>
-<h3 id="tstore">TSTORE<a class="headerlink" href="#tstore" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">dst[r0 + i, c0 + j] = src[i, j]
-</code></pre>
-<p>写回大小由源 tile 的 valid region 决定。</p>
-<h3 id="mgather-mscatter">MGATHER / MSCATTER<a class="headerlink" href="#mgather-mscatter" title="Permanent link">&para;</a></h3>
-<p>索引类搬运允许以非连续位置访问数据：</p>
+<p>其中真正的搬运尺寸不是物理 tile 尺寸，而是 valid region：</p>
+<ul>
+<li><code>TLOAD</code> 由目标 tile 的 valid region 决定搬运范围</li>
+<li><code>TSTORE</code> 由源 tile 的 valid region 决定写回范围</li>
+</ul>
+<h3 id="tprefetch">预取：TPREFETCH<a class="headerlink" href="#tprefetch" title="Permanent link">&para;</a></h3>
+<p><code>TPREFETCH</code> 会提前把后续可能要用到的 GM 数据搬进 tile 可见的本地路径。它的意义不在于改变数据布局，而在于把“稍后会访问的数据”尽早拉近。</p>
+<h3 id="mgather-mscatter">索引搬运：MGATHER / MSCATTER<a class="headerlink" href="#mgather-mscatter" title="Permanent link">&para;</a></h3>
+<p>索引类搬运允许非连续地址访问：</p>
 <pre><code class="language-text">gather:  dst[i] = src[index[i]]
 scatter: dst[index[i]] = src[i]
 </code></pre>
-<h2 id="_4">数据路径<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<pre><code class="language-text">GM -&gt; UB -&gt; Tile Buffer
-Tile Buffer -&gt; UB -&gt; GM
-</code></pre>
-<p>Tile 路径与向量路径不同；向量路径需要先显式经过 UB 和 <code>vlds/vsts</code>。</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_fp"><code>_fp</code> 变体<a class="headerlink" href="#_fp" title="Permanent link">&para;</a></h3>
+<p><code>TSTORE_FP</code> 里的 <code>_fp</code> 指的是 <strong>fix-pipe</strong> 路径，不是 floating-point store 的缩写。它通过 fix-pipe sideband state 配合写回。</p>
+<h2 id="_4">布局兼容性<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>TileType</th>
+<th style="text-align: center;">ND→ND</th>
+<th style="text-align: center;">DN→DN</th>
+<th style="text-align: center;">NZ→NZ</th>
+<th style="text-align: center;">ND→NZ</th>
+<th style="text-align: center;">DN→ZN</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TileType::Vec</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">No</td>
+<td></td>
+</tr>
+<tr>
+<td><code>TileType::Mat</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>TileType::Acc</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">No</td>
+<td>原子写回等特殊路径</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a5">A5 额外限制<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <ul>
-<li>源与目标 dtype 大小必须兼容</li>
-<li>GlobalTensor 布局必须与目标 tile 布局兼容</li>
-<li>gather/scatter 索引必须落在合法范围内</li>
-<li>atomic store 仅在支持的 profile 上提供</li>
+<li><code>TileType::Vec</code> 若做 <code>ND→NZ</code> 或 <code>DN→ZN</code>，要求 <code>GlobalData::staticShape[0..2] == 1</code> 且 <code>TileData::SFractalSize == 512</code></li>
+<li><code>int64_t/uint64_t</code> 的 Vec 路径只支持 <code>ND→ND</code> 或 <code>DN→DN</code></li>
 </ul>
-<h2 id="_6">不允许的情形<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="profile">目标 Profile 支持<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th style="text-align: center;">CPU Simulator</th>
+<th style="text-align: center;">A2/A3</th>
+<th style="text-align: center;">A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code> / <code>f16</code> / <code>bf16</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td><code>i8/u8</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td><code>i16/u16</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td><code>i32/u32</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td><code>i64/u64</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td><code>f8e4m3 / f8e5m2</code></td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td><code>hifloat8_t / float4_e*</code></td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">排序与同步<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>内存与数据搬运指令必须遵守 PTO 的生产者-消费者排序规则。程序不能假设“搬完了自然可见”，而是应显式使用：</p>
 <ul>
-<li>把 tile 搬运和 vector 搬运写成同一套契约</li>
-<li>在没有显式同步的情况下跨越 DMA / compute 顺序边</li>
-<li>scatter 到合法范围之外</li>
+<li><code>TSYNC</code></li>
+<li><code>set_flag / wait_flag</code></li>
 </ul>
-<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p>来保证后续计算看到的是已经到位的数据。</p>
+<h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../memory-model/consistency-baseline_zh/">内存模型</a></li>
+<li>源与目标 dtype 的字节大小必须兼容：<code>sizeof(tile.dtype) == sizeof(gtensor.dtype)</code></li>
+<li>布局兼容性依赖 target profile</li>
+<li>gather/scatter 的索引 tile 必须满足形状和类型约束</li>
+<li><code>TSTORE</code> 的 <code>AtomicType</code> 是否可用由 profile 决定</li>
+<li><code>TSTORE_FP</code> 当前只对 <code>TileType::Acc</code> 的 fix-pipe 路径合法</li>
+</ul>
+<h2 id="_7">不允许的情形<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>使用未初始化的 tile 参与搬运</li>
+<li>GlobalTensor 的 stride 与搬运模式不兼容</li>
+<li>访问超出张量声明 shape 的 GM 地址</li>
+<li>对非 <code>TileType::Acc</code> 使用 <code>TSTORE_FP</code></li>
+<li>在 CPU 模拟器上假设原子写回具备 NPU 上的所有语义</li>
+</ul>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../memory-model/consistency-baseline_zh/">一致性基线</a></li>
 <li><a href="../../memory-model/producer-consumer-ordering_zh/">生产者-消费者排序</a></li>
 <li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
 </ul>

@@ -980,15 +980,15 @@
 <h1 id="ptotgemv_mx">pto.tgemv_mx<a class="headerlink" href="#ptotgemv_mx" title="Permanent link">&para;</a></h1>
 <p><code>pto.tgemv_mx</code> is part of the <a href="../../../matrix-and-matrix-vector/">Matrix And Matrix Vector</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>GEMV with additional scaling tiles for mixed-precision / quantized matrix-vector compute.</p>
+<p>GEMV in an MX block-scale format, with explicit left and right scale tiles.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>GEMV with scaling tiles for mixed-precision / quantized matrix-vector compute on supported targets.</p>
+<p>GEMV in an MX block-scale format on supported targets.</p>
 <p>This instruction set extends <code>TGEMV</code> with additional scale operands (mx path). Accumulator and scale handling are target-dependent. It operates on tile payloads rather than scalar control state, and its legality is constrained by tile shape, layout, valid-region, and target-profile support.</p>
 <p>Conceptually (base GEMV path):</p>
 <div class="arithmatex">\[
 \mathrm{C}_{0,j} = \sum_{k=0}^{K-1} \mathrm{A}_{0,k} \cdot \mathrm{B}_{k,j}
 \]</div>
-<p>For <code>TGEMV_MX</code>, scale tiles participate in implementation-defined mixed-precision reconstruction / scaling. The architectural contract is that output corresponds to the target-defined mx GEMV semantics.</p>
+<p>For <code>TGEMV_MX</code>, the scale tiles carry the block-scale metadata required by the MX format. The architectural contract is that output corresponds to the target-defined MX GEMV semantics rather than a plain scalar-rescaled GEMV.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Schematic form:</p>
@@ -1036,15 +1036,15 @@ PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileL
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>a</code> is the left operand tile (must be TileLeft location).</li>
-<li><code>aScale</code> is the left scaling tile for mixed-precision reconstruction.</li>
+<li><code>aScale</code> is the left scale tile for the MX block-scale format.</li>
 <li><code>b</code> is the right operand tile (must be TileRight location).</li>
-<li><code>bScale</code> is the right scaling tile for mixed-precision reconstruction.</li>
+<li><code>bScale</code> is the right scale tile for the MX block-scale format.</li>
 <li><code>bias</code> (optional): bias tile (must be TileType::Bias).</li>
 <li><code>cIn</code> (optional): input accumulator tile for accumulation variants.</li>
 <li><code>dst</code> names the destination accumulator tile. The operation iterates over dst's valid region.</li>
 </ul>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the mx matrix-vector product with mixed-precision scaling applied.</p>
+<p><code>dst</code> holds the MX block-scale matrix-vector result.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>

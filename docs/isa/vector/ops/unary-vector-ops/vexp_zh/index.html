@@ -932,8 +932,15 @@
                 <!-- Generated from `docs/isa/vector/ops/unary-vector-ops/vexp_zh.md` -->
 
 <h1 id="ptovexp">pto.vexp<a class="headerlink" href="#ptovexp" title="Permanent link">&para;</a></h1>
-<p>逐 lane 取指数。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vexp</code> 属于<a href="../../../unary-vector-ops_zh/">一元向量操作</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vexp</code> 在每个活跃 lane 上计算指数函数。活跃 lane 计算 <code>e^src[i]</code>；非活跃 lane 保持目标寄存器原值。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vexp</code> 是标准的 <code>pto.v*</code> 计算指令，它对每个活跃 lane 独立应用指数函数：</p>
+<p>对每个谓词位为 1 的 lane <code>i</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_i = \exp(\mathrm{src}_i) \]</div>
+<p>活跃 lane 会把指数值写入 <code>dst[i]</code>；非活跃 lane 则保持目标原值，不会被自动清零。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%result = vexp %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask
 </code></pre>
@@ -944,41 +951,218 @@
 <pre><code class="language-mlir">pto.vexp ins(%input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask)
           outs(%result : !pto.vreg&lt;NxT&gt;)
 </code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<ul>
-<li>输入与结果类型必须一致。</li>
-<li>谓词宽度必须与目标向量宽度一致。</li>
-<li>当前 target profile 可能对该形式施加额外限制。</li>
-</ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
-对于 <code>pto.vexp</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
+<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
+<p>声明位于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre><code class="language-cpp">template &lt;typename VecDst, typename VecSrc, typename MaskT, typename... WaitEvents&gt;
+PTO_INST RecordEvent VEXP(VecDst&amp; dst, const VecSrc&amp; src,
+                          const MaskT&amp; mask, WaitEvents&amp;... events);
+</code></pre>
+<h2 id="c">C 语义<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    if (mask[i])
+        dst[i] = expf(src[i]);
+    // else: dst[i] unchanged
+</code></pre>
+<p>其中 <code>N</code> 由元素类型决定：</p>
 <table>
 <thead>
 <tr>
-<th>指标</th>
-<th>状态</th>
-<th>来源依据</th>
+<th>元素类型</th>
+<th style="text-align: center;">lane 数（N）</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>A5 时延</td>
-<td>公开来源未给出</td>
-<td><code>visa.txt</code>、<code>PTOAS/docs/vpto-spec.md</code></td>
+<td><code>f32</code></td>
+<td style="text-align: center;">64</td>
+<td></td>
 </tr>
 <tr>
-<td>稳态吞吐</td>
-<td>公开来源未给出</td>
-<td><code>visa.txt</code>、<code>PTOAS/docs/vpto-spec.md</code></td>
+<td><code>f16</code>、<code>bf16</code></td>
+<td style="text-align: center;">128</td>
+<td></td>
+</tr>
+<tr>
+<td><code>i8</code>、<code>u8</code></td>
+<td style="text-align: center;">256</td>
+<td>这里只是向量宽度示意，不表示 <code>vexp</code> 支持整数类型</td>
 </tr>
 </tbody>
 </table>
-<p>如果软件调度或性能建模依赖 <code>pto.vexp</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%input</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>源向量寄存器</td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>谓词掩码；掩码位为 1 的 lane 为活跃 lane</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>活跃 lane 上得到 <code>exp(input[i])</code>；非活跃 lane 保持原值</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>无额外架构副作用。它不会隐式占用 buffer、发送事件，也不会建立内存栅栏。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../unary-vector-ops_zh/">一元向量指令集</a></li>
+<li>源和目标寄存器的元素类型必须一致。</li>
+<li>源和目标寄存器的向量宽度必须一致。</li>
+<li>掩码宽度必须与 <code>N</code> 相同。</li>
+<li>非活跃 lane 的目标值保持不变，不能假定它们被清零。</li>
+<li>溢出、下溢和 NaN 处理遵循目标 profile 的浮点异常规则。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非法的类型不匹配、宽度不匹配或掩码宽度不匹配。</li>
+<li>数值溢出、NaN 等异常由目标平台定义；除非文档明确收窄，否则代码不应依赖某个特定异常值。</li>
+<li><a href="../../../unary-vector-ops_zh/">一元向量操作</a>页声明的额外非法情形，同样适用于 <code>pto.vexp</code>。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th style="text-align: center;">CPU Simulator</th>
+<th style="text-align: center;">A2/A3</th>
+<th style="text-align: center;">A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code></td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">支持</td>
+</tr>
+<tr>
+<td><code>f16</code></td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">支持</td>
+</tr>
+</tbody>
+</table>
+<p>A5 是当前向量特殊函数最具体的实现 profile。CPU 模拟器和 A2/A3 类目标会以标量循环或等效路径模拟这些超越函数，但必须保留可见的 PTO 契约。</p>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th>时延（周期）</th>
+<th>A5 RV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code></td>
+<td>16</td>
+<td><code>RV_VEXP</code></td>
+</tr>
+<tr>
+<td><code>f16</code></td>
+<td>21</td>
+<td><code>RV_VEXP</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a2a3">A2/A3 吞吐<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>f32</th>
+<th>f16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>13（<code>A2A3_STARTUP_REDUCE</code>）</td>
+<td>13</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td>26（<code>A2A3_COMPL_FP32_EXP</code>）</td>
+<td>28（<code>A2A3_COMPL_FP16_EXP</code>）</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>2</td>
+<td>4</td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18</td>
+<td>18</td>
+</tr>
+</tbody>
+</table>
+<p>示例：1024 个 f32 元素，16 次迭代：</p>
+<pre><code class="language-text">A5（流水重叠）：16 + 15×2 = 46 周期
+A2/A3：13 + 26 + 32 + 270 = 341 周期
+</code></pre>
+<p><strong>性能说明：</strong> 对数值稳定的 softmax，更推荐使用 <code>vexpdiff</code> 融合形式，而不是先 <code>vsub</code> 再 <code>vexp</code>。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="softmax">Softmax 分子（数值稳定形式）<a class="headerlink" href="#softmax" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%max_bc = pto.vlds %ub_max[%c0] {dist = &quot;BRC&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+%sub = pto.vsub %x, %max_bc, %mask
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+%exp = pto.vexp %sub, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<h3 id="c_1">C++ 用法<a class="headerlink" href="#c_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+void exp_vector(VReg&lt;64, float&gt;&amp; dst, const VReg&lt;64, float&gt;&amp; src, Mask&lt;64&gt;&amp; mask) {
+    VEXP(dst, src, mask);
+}
+</code></pre>
+<h2 id="_11">详细说明<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<p>指数函数 <code>exp(x)</code> 计算的是 <code>e^x</code>，其中 <code>e ≈ 2.71828</code>。对浮点目标而言：</p>
+<ul>
+<li><code>exp(+INF) = +INF</code></li>
+<li><code>exp(-INF) = +0</code></li>
+<li><code>exp(NaN) = NaN</code></li>
+<li>很大的正输入可能溢出为 <code>+INF</code></li>
+<li>很大的负输入可能下溢为 <code>+0</code></li>
+</ul>
+<p>对 softmax 这类数值敏感路径，优先计算 <code>exp(x - max(x))</code> 而不是直接 <code>exp(x)</code>。</p>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../unary-vector-ops_zh/">一元向量操作</a></li>
+<li>上一条指令：<a href="../vneg_zh/">pto.vneg</a></li>
+<li>下一条指令：<a href="../vln_zh/">pto.vln</a></li>
+<li>向量指令总览：<a href="../../../../instruction-surfaces/vector-instructions_zh/">向量指令面</a></li>
+<li>类型系统：<a href="../../../../state-and-types/type-system_zh/">类型系统</a></li>
 </ul>
               
             </div>

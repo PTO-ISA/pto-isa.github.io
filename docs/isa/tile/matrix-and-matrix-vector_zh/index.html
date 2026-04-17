@@ -932,106 +932,212 @@
                 <!-- Generated from `docs/isa/tile/matrix-and-matrix-vector_zh.md` -->
 
 <h1 id="-">矩阵与矩阵-向量指令集<a class="headerlink" href="#-" title="Permanent link">&para;</a></h1>
-<p>该指令集覆盖 GEMV、matmul 及其累加、bias 和 MX 变体。它们依赖 <code>Mat</code>、<code>Left</code>、<code>Right</code>、<code>Acc</code> 等特定 tile role，而不是通用 <code>Vec</code> tile。</p>
+<p>这一组指令覆盖 PTO tile 路径里的 cube 计算指令。基础型负责生成新的累加器结果，<code>_acc</code> 型负责在已有累加器上继续累加，<code>_bias</code> 型负责把偏置并入矩阵乘积，<code>*_mx</code> 型则在此基础上再引入 MX block-scale 所需的左右 scale tile。</p>
+<p>这不是普通逐元素 tile 运算的变体。它的合法性取决于专门的矩阵角色：<code>Left</code>、<code>Right</code>、<code>Acc</code>、<code>Bias</code>、<code>ScaleLeft</code>、<code>ScaleRight</code>，还取决于 A2A3 与 A5 各自的布局和数据类型约束。</p>
 <h2 id="_1">操作<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>操作</th>
+<th>作用</th>
+<th>C++ 内建接口</th>
 <th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>pto.tgemv</code> / <code>tgemv_acc</code> / <code>tgemv_bias</code> / <code>tgemv_mx</code></td>
-<td>矩阵-向量乘及其变体</td>
+<td><a href="../ops/matrix-and-matrix-vector/tmatmul_zh/">pto.tmatmul</a></td>
+<td>生成新累加器结果的矩阵乘</td>
+<td><code>TMATMUL(C, A, B)</code></td>
+<td>新输出块</td>
 </tr>
 <tr>
-<td><code>pto.tmatmul</code> / <code>tmatmul_acc</code> / <code>tmatmul_bias</code> / <code>tmatmul_mx</code></td>
-<td>矩阵乘及其变体</td>
+<td><a href="../ops/matrix-and-matrix-vector/tmatmul-acc_zh/">pto.tmatmul_acc</a></td>
+<td>在已有累加器上继续累加的矩阵乘</td>
+<td><code>TMATMUL_ACC(C, A, B)</code></td>
+<td>K 维分块主力形式</td>
+</tr>
+<tr>
+<td><a href="../ops/matrix-and-matrix-vector/tmatmul-bias_zh/">pto.tmatmul_bias</a></td>
+<td>带列偏置的矩阵乘</td>
+<td><code>TMATMUL_BIAS(C, A, B, bias)</code></td>
+<td>Bias tile 为单行</td>
+</tr>
+<tr>
+<td><a href="../ops/matrix-and-matrix-vector/tmatmul-mx_zh/">pto.tmatmul_mx</a></td>
+<td>MX block-scale 矩阵乘</td>
+<td><code>TMATMUL_MX(C, A, AScale, B, BScale)</code></td>
+<td>仅 A5</td>
+</tr>
+<tr>
+<td><a href="../ops/matrix-and-matrix-vector/tgemv_zh/">pto.tgemv</a></td>
+<td>生成新累加器结果的 GEMV</td>
+<td><code>TGEMV(C, A, B)</code></td>
+<td><code>m = 1</code> 的 cube 形式</td>
+</tr>
+<tr>
+<td><a href="../ops/matrix-and-matrix-vector/tgemv-acc_zh/">pto.tgemv_acc</a></td>
+<td>在已有累加器上继续累加的 GEMV</td>
+<td><code>TGEMV_ACC(C, A, B)</code></td>
+<td>累加形式</td>
+</tr>
+<tr>
+<td><a href="../ops/matrix-and-matrix-vector/tgemv-bias_zh/">pto.tgemv_bias</a></td>
+<td>带偏置的 GEMV</td>
+<td><code>TGEMV_BIAS(C, A, B, bias)</code></td>
+<td>Bias tile 为单行</td>
+</tr>
+<tr>
+<td><a href="../ops/matrix-and-matrix-vector/tgemv-mx_zh/">pto.tgemv_mx</a></td>
+<td>MX block-scale GEMV</td>
+<td><code>TGEMV_MX(C, A, AScale, B, BScale)</code></td>
+<td>仅 A5</td>
 </tr>
 </tbody>
 </table>
-<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<h3 id="matmul">Matmul<a class="headerlink" href="#matmul" title="Permanent link">&para;</a></h3>
-<div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_k \mathrm{A}_{i,k} \times \mathrm{B}_{k,j} \]</div>
-<p><code>_acc</code> 变体在现有累加器上继续累加，<code>_bias</code> 变体在结果中加入 bias。</p>
-<h3 id="gemv">GEMV<a class="headerlink" href="#gemv" title="Permanent link">&para;</a></h3>
-<p>矩阵-向量乘是 matmul 的特例，其中右操作数退化为列向量或行向量。</p>
+<h2 id="_2">这组指令为什么单列出来<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>PTO 没把矩阵乘积类操作混进普通 tile 算术里，原因很直接：cube 路径有自己的一套角色、布局、合法性和 target 限制。读者通常需要先弄清四件事：</p>
+<ul>
+<li>左右输入和累加器分别是谁；</li>
+<li>“生成新结果”和“在旧结果上继续累加”有什么区别；</li>
+<li>bias 是怎么并入结果的；</li>
+<li>A2A3 与 A5 的布局规则到底哪里一样、哪里不一样。</li>
+</ul>
+<p>把这几个问题拆散写在零散 leaf 页里，查阅成本会很高，因此这组页需要一个正式的家族入口。</p>
+<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="tmatmul">TMATMUL<a class="headerlink" href="#tmatmul" title="Permanent link">&para;</a></h3>
+<p>设 <code>M = a.GetValidRow()</code>、<code>K = a.GetValidCol()</code>、<code>N = b.GetValidCol()</code>，则：</p>
+<div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
+<p><code>pto.tmatmul</code> 的含义是“生成一个新的输出累加器块”，因此它适合 K 循环的首轮，或者任何不需要保留旧累加器内容的场景。</p>
+<h3 id="tmatmul_acc">TMATMUL_ACC<a class="headerlink" href="#tmatmul_acc" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[ \mathrm{C1}_{i,j} = \mathrm{C0}_{i,j} + \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
+<p>这类指令存在的原因，是块化 GEMM 在 K 维循环中往往需要反复把部分乘积叠加到同一个累加器上。把“新结果”与“继续累加”拆成两条指令，可以把调度和资源语义说清楚。</p>
+<h3 id="tmatmul_bias">TMATMUL_BIAS<a class="headerlink" href="#tmatmul_bias" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} + \mathrm{Bias}_{0,j} \]</div>
+<p>Bias tile 只有一行，因此它按输出列广播。<code>Bias[0, j]</code> 会加到结果矩阵的整列 <code>j</code> 上。</p>
+<h3 id="tgemv">TGEMV<a class="headerlink" href="#tgemv" title="Permanent link">&para;</a></h3>
+<p>GEMV 可以理解为 <code>m = 1</code> 的 cube 合同。PTO 没有把它硬塞进普通 matmul 页脚里，而是单列出来，因为它在接口、用法和约束表达上都更接近“矩阵乘一条向量”，而不是任意二维块的对乘。</p>
 <h3 id="mx">MX 变体<a class="headerlink" href="#mx" title="Permanent link">&para;</a></h3>
-<p>MX 变体依赖 <code>Left</code> / <code>Right</code> 角色和目标 profile 的专用格式支持，常用于 int8 输入配合更宽的累加器。</p>
-<h2 id="_3">输出形状<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p><code>*_mx</code> 不是“多一个 scale 参数”这么简单。对 MXFP4、MXMP8 这类 block-scale 格式，PTO 把 scale 也建模成 tile：</p>
+<ul>
+<li>左输入在 <code>Left</code>，</li>
+<li>右输入在 <code>Right</code>，</li>
+<li>左 scale 在 <code>ScaleLeft</code>，</li>
+<li>右 scale 在 <code>ScaleRight</code>，</li>
+<li>输出或累加器在 <code>Acc</code>。</li>
+</ul>
+<p>也就是说，MX 变体要求左右两侧各自带一块 scale tile，而不是只附带一个笼统的 scale 张量。</p>
+<h2 id="tile">Tile 角色与缓冲区语义<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h2>
+<p>从架构视角看，tile 角色是对目标缓冲区的抽象：</p>
+<ul>
+<li><code>Left</code> 表示左操作数 tile，对应 L0A 路径。</li>
+<li><code>Right</code> 表示右操作数 tile，对应 L0B 路径。</li>
+<li><code>Acc</code> 表示累加器 / 输出 tile。</li>
+<li><code>Bias</code> 表示 <code>*_bias</code> 使用的单行偏置 tile。</li>
+<li><code>ScaleLeft</code> 与 <code>ScaleRight</code> 表示 MX block-scale 变体使用的左右 scale tile。</li>
+</ul>
+<p>这里最容易写错的是 <code>Right</code>。虽然 A2A3 和 A5 都有 <code>Right</code> 角色，但不能把它们理解成“同一套可移植物理布局”。对右操作数的具体布局要求，A2A3 与 A5 并不相同，必须以各自的 target profile 和 leaf 页约束为准。</p>
+<h2 id="profile">目标 Profile<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<p>本手册里：</p>
+<ul>
+<li><code>A2A3</code> 指 Ascend 910B 与 Ascend 910C；</li>
+<li><code>A5</code> 指 Ascend 950 PR 与 Ascend 950 DT。</li>
+</ul>
 <table>
 <thead>
 <tr>
-<th>操作</th>
-<th>输入</th>
-<th>输出</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>GEMV</td>
-<td><code>(M,K)</code> × <code>(K,1)</code></td>
-<td><code>(M,1)</code></td>
-</tr>
-<tr>
-<td>Matmul</td>
-<td><code>(M,K)</code> × <code>(K,N)</code></td>
-<td><code>(M,N)</code></td>
-</tr>
-</tbody>
-</table>
-<h2 id="profile">目标 Profile 支持<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>特性</th>
-<th style="text-align: center;">CPU</th>
-<th style="text-align: center;">A2/A3</th>
+<th>能力</th>
+<th style="text-align: center;">CPU 模拟器</th>
+<th style="text-align: center;">A2A3</th>
 <th style="text-align: center;">A5</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>普通 GEMV / matmul</td>
-<td style="text-align: center;">Software/Emulated</td>
-<td style="text-align: center;">Hardware</td>
-<td style="text-align: center;">Hardware</td>
+<td><code>TMATMUL</code> / <code>TMATMUL_ACC</code> / <code>TMATMUL_BIAS</code></td>
+<td style="text-align: center;">是</td>
+<td style="text-align: center;">是</td>
+<td style="text-align: center;">是</td>
 </tr>
 <tr>
-<td>MX format</td>
-<td style="text-align: center;">No</td>
-<td style="text-align: center;">No</td>
-<td style="text-align: center;">Yes</td>
+<td><code>TGEMV</code> / <code>TGEMV_ACC</code> / <code>TGEMV_BIAS</code></td>
+<td style="text-align: center;">是</td>
+<td style="text-align: center;">是</td>
+<td style="text-align: center;">是</td>
 </tr>
 <tr>
-<td>FP8 / 更激进低精度形式</td>
-<td style="text-align: center;">No</td>
-<td style="text-align: center;">No</td>
-<td style="text-align: center;">Yes</td>
+<td>int8 cube 路径</td>
+<td style="text-align: center;">否</td>
+<td style="text-align: center;">是</td>
+<td style="text-align: center;">是</td>
+</tr>
+<tr>
+<td>fp16 / bf16 / fp32 cube 路径</td>
+<td style="text-align: center;">是</td>
+<td style="text-align: center;">是</td>
+<td style="text-align: center;">是</td>
+</tr>
+<tr>
+<td>fp8 cube 路径</td>
+<td style="text-align: center;">否</td>
+<td style="text-align: center;">否</td>
+<td style="text-align: center;">是</td>
+</tr>
+<tr>
+<td>MX block-scale 路径</td>
+<td style="text-align: center;">否</td>
+<td style="text-align: center;">否</td>
+<td style="text-align: center;">是</td>
 </tr>
 </tbody>
 </table>
-<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_4">通用合法性<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <ul>
-<li>左、右、累加器 tile role 必须匹配</li>
-<li>维度必须满足 matmul 兼容关系</li>
-<li><code>_acc</code> 变体要求输出 tile 可作为累加器继续参与运算</li>
-<li><code>_bias</code> 变体要求 bias 的 shape 与输出兼容</li>
-<li>MX 变体要求 profile 和布局都支持对应格式</li>
+<li>matmul 的形状必须满足 <code>(M, K) x (K, N) -&gt; (M, N)</code>。</li>
+<li>GEMV 使用同一套 cube 合同，只是 <code>m = 1</code>。</li>
+<li><code>Left</code>、<code>Right</code>、<code>Acc</code>、<code>Bias</code>、<code>ScaleLeft</code>、<code>ScaleRight</code> 必须与所发射的具体指令匹配。</li>
+<li>超出合法输出域的内容不会被这组指令自动“修正”为某种可移植结果。</li>
 </ul>
-<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3 说明<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <ul>
-<li>使用不兼容的 tile role 组合</li>
-<li>K 维或输出 shape 不匹配</li>
-<li>在 CPU / A2 / A3 上使用 A5 专属 MX 路径</li>
+<li>基础 cube 路径支持仓内文档已列出的组合，例如 <code>(int32, int8, int8)</code>、<code>(float, half, half)</code>、<code>(float, bfloat16_t, bfloat16_t)</code>。</li>
+<li>动态 <code>m</code>、<code>k</code>、<code>n</code> 范围受限于 <code>[1, 4095]</code>。</li>
+<li>backend 会显式检查 <code>Left</code> / <code>Right</code> / <code>Acc</code> 的角色组合是否合法。</li>
 </ul>
+<h3 id="a5">A5 说明<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>基础 cube 路径允许 <code>int32</code> 累加器配 int8 输入对，也允许 <code>float</code> 累加器配 fp16、bf16、fp32 和部分 fp8 输入对。</li>
+<li><code>Right</code> 角色在 A5 上有自己的一套布局 / fractal 约束，不能照搬 A2A3 的理解。</li>
+<li>MX 变体是 A5 专属路径，且要求同时提供 <code>ScaleLeft</code> 与 <code>ScaleRight</code>。</li>
+</ul>
+<h2 id="_5">性能与吞吐<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>仓内当前公开的性能证据主要来自 A2A3 costmodel。<code>TMATMUL</code>、<code>TMATMUL_ACC</code>、<code>TMATMUL_BIAS</code>、<code>TGEMV</code>、<code>TGEMV_ACC</code>、<code>TGEMV_BIAS</code> 最终都落到共享的 <code>mad/mmad</code> cube 指令模型。</p>
+<p>A2A3 的公开模型可以写成：</p>
+<ul>
+<li>启动开销：<code>14</code> cycles；</li>
+<li>repeat 次数：<code>ceil(M/16) * ceil(N/16) * ceil(K / baskK)</code>；</li>
+<li><code>baskK = 32 / sizeof(left_element_type)</code>；</li>
+<li>单个 repeat 的稳态代价：</li>
+<li>int8、fp16 bucket 为 <code>1</code> cycle；</li>
+<li>fp32 bucket 为 <code>2</code> cycles。</li>
+</ul>
+<p>因此，仓内已公开的 A2A3 公式是：</p>
+<pre><code class="language-text">cycles = 14 + repeat_count * repeat_cost
+</code></pre>
+<p>已有 costmodel 测试样例包括：</p>
+<ul>
+<li>half <code>40x50 * 50x60</code>：<code>62</code> cycles；</li>
+<li>int8 <code>6x7 * 7x8</code>：<code>15</code> cycles；</li>
+<li>float <code>120x110 * 110x50</code>：<code>910</code> cycles。</li>
+</ul>
+<p>对 GEMV，因为 <code>m = 1</code>，公式仍然成立，只是 <code>ceil(M/16)</code> 固定为 <code>1</code>。
+当前仓库没有公开单列的 A5 latency / throughput 表，因此 A5 在这组页里只能精确写合法性和数据类型边界，不能凭空补周期数字。</p>
 <h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
-<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令集</a></li>
+<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令表面</a></li>
 <li><a href="../../state-and-types/location-intent-and-legality_zh/">位置意图与合法性</a></li>
+<li><a href="../../state-and-types/layout_zh/">布局</a></li>
 </ul>
               
             </div>

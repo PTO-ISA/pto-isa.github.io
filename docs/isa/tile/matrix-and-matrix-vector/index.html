@@ -342,25 +342,35 @@
     <ul class="current">
     <li class="toctree-l3"><a class="reference internal" href="#operations">Operations</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#why-this-family-exists">Why This Family Exists</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#gemv">GEMV</a>
+    <li class="toctree-l4"><a class="reference internal" href="#tmatmul">TMATMUL</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#matmul">Matmul</a>
+    <li class="toctree-l4"><a class="reference internal" href="#tmatmul_acc">TMATMUL_ACC</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#mx-format">MX Format</a>
+    <li class="toctree-l4"><a class="reference internal" href="#tmatmul_bias">TMATMUL_BIAS</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tgemv">TGEMV</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mx-variants">MX Variants</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#tile-type">Tile Type</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-roles-and-buffer-mapping">Tile Roles And Buffer Mapping</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#type-support-by-target-profile">Type Support by Target Profile</a>
+    <li class="toctree-l3"><a class="reference internal" href="#target-profiles">Target Profiles</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#common-legality">Common Legality</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-notes">A2A3 Notes</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#cases-that-are-not-allowed">Cases That Are Not Allowed</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-notes">A5 Notes</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#performance-and-throughput">Performance And Throughput</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
@@ -960,205 +970,206 @@
                 <!-- Generated from `docs/isa/tile/matrix-and-matrix-vector.md` -->
 
 <h1 id="matrix-and-matrix-vector-instruction-set">Matrix And Matrix-Vector Instruction Set<a class="headerlink" href="#matrix-and-matrix-vector-instruction-set" title="Permanent link">&para;</a></h1>
-<p>Matrix and matrix-vector operations perform tiled linear algebra on <code>TileType::Mat</code> tiles (cube tiles). They use specialized matrix multiply units and may have dedicated DMA paths.</p>
+<p>This family covers the cube-pipeline instructions that evaluate matrix products on tile buffers. The basic forms produce a new accumulator tile, the <code>_acc</code> forms continue accumulation on an existing accumulator tile, the <code>_bias</code> forms inject a bias tile, and the <code>*_mx</code> forms add explicit scale tiles for block-scale MX formats.</p>
+<p>These instructions are not generic vector-tile operations. Their legality depends on dedicated matrix roles such as <code>Left</code>, <code>Right</code>, <code>Acc</code>, <code>Bias</code>, <code>ScaleLeft</code>, and <code>ScaleRight</code>, plus the target profile's layout and datatype rules.</p>
 <h2 id="operations">Operations<a class="headerlink" href="#operations" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>Operation</th>
-<th>Description</th>
-<th>Variants</th>
-<th>TileType</th>
-<th>C++ Intrinsic</th>
+<th>Purpose</th>
+<th>C++ intrinsic</th>
+<th>Notes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="../ops/matrix-and-matrix-vector/tgemv/">pto.tgemv</a></td>
-<td>General matrix-vector product</td>
-<td>basic, acc, bias, mx</td>
-<td><code>Mat</code></td>
-<td><code>TGEMV(C, A, x)</code></td>
-</tr>
-<tr>
-<td><a href="../ops/matrix-and-matrix-vector/tgemv-acc/">pto.tgemv_acc</a></td>
-<td>GEMV with accumulation</td>
-<td>—</td>
-<td><code>Mat</code></td>
-<td><code>TGEMV_ACC(C, A, x)</code></td>
-</tr>
-<tr>
-<td><a href="../ops/matrix-and-matrix-vector/tgemv-bias/">pto.tgemv_bias</a></td>
-<td>GEMV with bias addition</td>
-<td>—</td>
-<td><code>Mat</code></td>
-<td><code>TGEMV_BIAS(C, A, x, bias)</code></td>
-</tr>
-<tr>
-<td><a href="../ops/matrix-and-matrix-vector/tgemv-mx/">pto.tgemv_mx</a></td>
-<td>MX-format GEMV</td>
-<td>—</td>
-<td><code>Mat</code></td>
-<td><code>TGEMV_MX(C, A, x, scale)</code></td>
-</tr>
-<tr>
 <td><a href="../ops/matrix-and-matrix-vector/tmatmul/">pto.tmatmul</a></td>
-<td>General matrix-matrix multiply</td>
-<td>basic, acc, bias, mx</td>
-<td><code>Mat</code></td>
+<td>Matrix multiply producing a fresh accumulator tile</td>
 <td><code>TMATMUL(C, A, B)</code></td>
+<td>New result tile</td>
 </tr>
 <tr>
 <td><a href="../ops/matrix-and-matrix-vector/tmatmul-acc/">pto.tmatmul_acc</a></td>
-<td>Matmul with accumulation</td>
-<td>—</td>
-<td><code>Mat</code></td>
+<td>Matrix multiply that continues accumulation</td>
 <td><code>TMATMUL_ACC(C, A, B)</code></td>
+<td>K-loop body form</td>
 </tr>
 <tr>
 <td><a href="../ops/matrix-and-matrix-vector/tmatmul-bias/">pto.tmatmul_bias</a></td>
-<td>Matmul with bias addition</td>
-<td>—</td>
-<td><code>Mat</code></td>
+<td>Matrix multiply with column bias</td>
 <td><code>TMATMUL_BIAS(C, A, B, bias)</code></td>
+<td>Bias tile is one row</td>
 </tr>
 <tr>
 <td><a href="../ops/matrix-and-matrix-vector/tmatmul-mx/">pto.tmatmul_mx</a></td>
-<td>MX-format matrix multiply</td>
-<td>—</td>
-<td><code>Mat</code></td>
-<td><code>TMATMUL_MX(C, A, B, scale)</code></td>
+<td>Matrix multiply in MX block-scale format</td>
+<td><code>TMATMUL_MX(C, A, AScale, B, BScale)</code></td>
+<td>A5 only</td>
+</tr>
+<tr>
+<td><a href="../ops/matrix-and-matrix-vector/tgemv/">pto.tgemv</a></td>
+<td>Matrix-vector multiply producing a fresh accumulator tile</td>
+<td><code>TGEMV(C, A, B)</code></td>
+<td><code>m = 1</code> GEMV shape</td>
+</tr>
+<tr>
+<td><a href="../ops/matrix-and-matrix-vector/tgemv-acc/">pto.tgemv_acc</a></td>
+<td>GEMV that continues accumulation</td>
+<td><code>TGEMV_ACC(C, A, B)</code></td>
+<td>Accumulating form</td>
+</tr>
+<tr>
+<td><a href="../ops/matrix-and-matrix-vector/tgemv-bias/">pto.tgemv_bias</a></td>
+<td>GEMV with bias add</td>
+<td><code>TGEMV_BIAS(C, A, B, bias)</code></td>
+<td>Bias tile is one row</td>
+</tr>
+<tr>
+<td><a href="../ops/matrix-and-matrix-vector/tgemv-mx/">pto.tgemv_mx</a></td>
+<td>GEMV in MX block-scale format</td>
+<td><code>TGEMV_MX(C, A, AScale, B, BScale)</code></td>
+<td>A5 only</td>
 </tr>
 </tbody>
 </table>
+<h2 id="why-this-family-exists">Why This Family Exists<a class="headerlink" href="#why-this-family-exists" title="Permanent link">&para;</a></h2>
+<p>PTO keeps matrix-product instructions separate from ordinary tile arithmetic because the cube path has different operand roles, different legality checks, and different target constraints from the vector path. A reader needs one place that answers:</p>
+<ul>
+<li>which tile roles are legal,</li>
+<li>how accumulation differs from fresh output generation,</li>
+<li>how bias is injected,</li>
+<li>and which profile-specific layout rules apply on A2A3 versus A5.</li>
+</ul>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<h3 id="gemv">GEMV<a class="headerlink" href="#gemv" title="Permanent link">&para;</a></h3>
-<div class="arithmatex">\[ \mathbf{y} = A \times \mathbf{x} + \mathbf{b} \]</div>
+<h3 id="tmatmul">TMATMUL<a class="headerlink" href="#tmatmul" title="Permanent link">&para;</a></h3>
+<p>For <code>M = a.GetValidRow()</code>, <code>K = a.GetValidCol()</code>, and <code>N = b.GetValidCol()</code>:</p>
+<div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
+<p><code>pto.tmatmul</code> treats the destination accumulator as a newly produced output tile.</p>
+<h3 id="tmatmul_acc">TMATMUL_ACC<a class="headerlink" href="#tmatmul_acc" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[ \mathrm{C1}_{i,j} = \mathrm{C0}_{i,j} + \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
+<p>This form exists for split-K and blocked GEMM loops where a partial accumulator must be carried across iterations.</p>
+<h3 id="tmatmul_bias">TMATMUL_BIAS<a class="headerlink" href="#tmatmul_bias" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} + \mathrm{Bias}_{0,j} \]</div>
+<p>Bias is a one-row tile and is broadcast by output column.</p>
+<h3 id="tgemv">TGEMV<a class="headerlink" href="#tgemv" title="Permanent link">&para;</a></h3>
+<p>GEMV is the <code>m = 1</code> specialization of the same cube contract. PTO still exposes it as a separate instruction family because it has its own operand spelling and its own common usage pattern.</p>
+<h3 id="mx-variants">MX Variants<a class="headerlink" href="#mx-variants" title="Permanent link">&para;</a></h3>
+<p><code>*_mx</code> uses block-scale MX formats such as MXFP4 and MXMP8. Those forms require:</p>
 <ul>
-<li>Matrix tile <code>A</code>: shape <code>(M, K)</code></li>
-<li>Vector tile <code>x</code>: shape <code>(K)</code></li>
-<li>Bias tile <code>b</code> (optional): shape <code>(M)</code></li>
-<li>Result tile <code>y</code>: shape <code>(M)</code></li>
+<li>one left operand tile in <code>Left</code>,</li>
+<li>one right operand tile in <code>Right</code>,</li>
+<li>one left scale tile in <code>ScaleLeft</code>,</li>
+<li>one right scale tile in <code>ScaleRight</code>,</li>
+<li>and an accumulator/output tile in <code>Acc</code>.</li>
 </ul>
-<h3 id="matmul">Matmul<a class="headerlink" href="#matmul" title="Permanent link">&para;</a></h3>
-<div class="arithmatex">\[ C = A \times B + D \]</div>
+<p>MX is not "one extra scale tensor". It is a paired scale-tile contract on both sides of the product.</p>
+<h2 id="tile-roles-and-buffer-mapping">Tile Roles And Buffer Mapping<a class="headerlink" href="#tile-roles-and-buffer-mapping" title="Permanent link">&para;</a></h2>
+<p>The architectural tile roles are abstractions over target tile buffers:</p>
 <ul>
-<li>Tile <code>A</code>: shape <code>(M, K)</code></li>
-<li>Tile <code>B</code>: shape <code>(K, N)</code></li>
-<li>Bias tile <code>D</code> (optional): shape <code>(M, N)</code></li>
-<li>Result tile <code>C</code>: shape <code>(M, N)</code></li>
+<li><code>Left</code> is the left matrix operand tile and corresponds to the L0A-backed operand path.</li>
+<li><code>Right</code> is the right matrix operand tile and corresponds to the L0B-backed operand path.</li>
+<li><code>Acc</code> is the accumulator/output tile.</li>
+<li><code>Bias</code> is the one-row bias tile used by <code>*_bias</code>.</li>
+<li><code>ScaleLeft</code> and <code>ScaleRight</code> are the scale tiles used by MX block-scale variants.</li>
 </ul>
-<h3 id="mx-format">MX Format<a class="headerlink" href="#mx-format" title="Permanent link">&para;</a></h3>
-<p>MX (Matrix Multiply) format is Huawei's hardware-optimized data format. It separates scale tensors and may use compressed data representation. The <code>*_mx</code> variants require:</p>
-<ol>
-<li>MX-formatted input tiles (<code>A</code>, <code>B</code>) with matching MX layout.</li>
-<li>A scale tensor (<code>scale</code>) with compatible shape.</li>
-<li>Accumulator tile (<code>C</code>) with shape matching the output shape.</li>
-</ol>
-<h2 id="tile-type">Tile Type<a class="headerlink" href="#tile-type" title="Permanent link">&para;</a></h2>
-<p>Matrix operations <strong>require</strong> <code>TileType::Mat</code> (cube tiles). <code>TileType::Vec</code> tiles MUST NOT be used with matrix operations. Cube tiles use a different physical layout optimized for matrix multiplication and have different valid-region semantics from vector tiles.</p>
-<h2 id="type-support-by-target-profile">Type Support by Target Profile<a class="headerlink" href="#type-support-by-target-profile" title="Permanent link">&para;</a></h2>
+<p>Programs should not assume one portable physical layout for <code>Right</code>. A2A3 and A5 both use the <code>Right</code> role, but the legal right-tile layout details differ by target profile.</p>
+<h2 id="target-profiles">Target Profiles<a class="headerlink" href="#target-profiles" title="Permanent link">&para;</a></h2>
+<p><code>A2A3</code> in this manual means the Ascend 910B and Ascend 910C class targets. <code>A5</code> means the Ascend 950 PR and Ascend 950 DT class targets.</p>
 <table>
 <thead>
 <tr>
-<th>Element Type</th>
-<th style="text-align: center;">CPU Simulator</th>
-<th style="text-align: center;">A2/A3</th>
+<th>Capability</th>
+<th style="text-align: center;">CPU simulator</th>
+<th style="text-align: center;">A2A3</th>
 <th style="text-align: center;">A5</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>f32 (float)</td>
+<td><code>TMATMUL</code>, <code>TMATMUL_ACC</code>, <code>TMATMUL_BIAS</code></td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
-<td>f16 (half)</td>
+<td><code>TGEMV</code>, <code>TGEMV_ACC</code>, <code>TGEMV_BIAS</code></td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
-<td>bf16 (bfloat16_t)</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr>
-<td>i8 / u8</td>
+<td>int8 cube path</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
-<td>f8e4m3 / f8e5m2</td>
+<td>fp16 / bf16 / fp32 cube path</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td>fp8 cube path</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
-<td>MX format</td>
+<td>MX block-scale path</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 </tbody>
 </table>
-<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<h3 id="common-legality">Common Legality<a class="headerlink" href="#common-legality" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Tile type MUST be <code>TileType::Mat</code></strong> — <code>TileType::Vec</code> tiles MUST NOT be used.</li>
-<li>Shape compatibility: <code>(M, K) × (K) → (M)</code> for GEMV; <code>(M, K) × (K, N) → (M, N)</code> for matmul.</li>
-<li>MX format operations require matching MX layout between <code>A</code> and <code>B</code> tiles.</li>
-<li>Bias variants require compatible bias tensor shape.</li>
-<li>Accumulation variants require matching accumulator tile shape.</li>
-<li>On A2/A3, int8/i8 matrix multiply requires <code>shape[0..1] % 16 == 0</code>.</li>
-<li>On A5, FP8 matmul is supported but requires scale tensors.</li>
+<li>Shapes must satisfy <code>(M, K) x (K, N) -&gt; (M, N)</code> for matmul.</li>
+<li>GEMV uses the same contract with <code>m = 1</code>.</li>
+<li>Left, Right, Acc, Bias, and MX scale-tile roles must match the operation being issued.</li>
+<li>Valid-region values outside the legal output domain are not repaired implicitly.</li>
 </ul>
-<h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3-notes">A2A3 Notes<a class="headerlink" href="#a2a3-notes" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>MUST NOT</strong> use <code>TileType::Vec</code> tiles with matrix operations.</li>
-<li><strong>MUST NOT</strong> use incompatible shape combinations (e.g., <code>(M, K) × (N, K) → …</code>).</li>
-<li><strong>MUST NOT</strong> mix MX and non-MX tiles in the same operation.</li>
-<li><strong>MUST NOT</strong> use FP8 matmul on CPU simulator or A2/A3.</li>
+<li>The base cube path supports the repository's documented triples such as <code>(int32, int8, int8)</code> and <code>(float, half, half)</code>.</li>
+<li>Dynamic <code>m</code>, <code>k</code>, and <code>n</code> are constrained to <code>[1, 4095]</code>.</li>
+<li>The backend checks the <code>Left</code>/<code>Right</code>/<code>Acc</code> role combination explicitly.</li>
 </ul>
-<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-using namespace pto;
-
-// Basic matrix-vector
-template &lt;typename TileC, typename TileA, typename TileX&gt;
-PTO_INST RecordEvent TGEMV(TileC&amp; C, TileA&amp; A, TileX&amp; x);
-
-// Matrix-vector with accumulation
-template &lt;typename TileC, typename TileA, typename TileX&gt;
-PTO_INST RecordEvent TGEMV_ACC(TileC&amp; C, TileA&amp; A, TileX&amp; x);
-
-// Matrix-vector with bias
-template &lt;typename TileC, typename TileA, typename TileX, typename TileBias&gt;
-PTO_INST RecordEvent TGEMV_BIAS(TileC&amp; C, TileA&amp; A, TileX&amp; x, TileBias&amp; bias);
-
-// Basic matrix multiply
-template &lt;typename TileC, typename TileA, typename TileB&gt;
-PTO_INST RecordEvent TMATMUL(TileC&amp; C, TileA&amp; A, TileB&amp; B);
-
-// Matrix multiply with accumulation
-template &lt;typename TileC, typename TileA, typename TileB&gt;
-PTO_INST RecordEvent TMATMUL_ACC(TileC&amp; C, TileA&amp; A, TileB&amp; B);
-
-// Matrix multiply with bias
-template &lt;typename TileC, typename TileA, typename TileB, typename TileBias&gt;
-PTO_INST RecordEvent TMATMUL_BIAS(TileC&amp; C, TileA&amp; A, TileB&amp; B, TileBias&amp; bias);
-
-// MX-format matrix multiply
-template &lt;typename TileC, typename TileA, typename TileB, typename TileScale&gt;
-PTO_INST RecordEvent TMATMUL_MX(TileC&amp; C, TileA&amp; A, TileB&amp; B, TileScale&amp; scale);
+<h3 id="a5-notes">A5 Notes<a class="headerlink" href="#a5-notes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The base cube path accepts <code>int32</code> accumulators for int8 input pairs and <code>float</code> accumulators for fp16, bf16, fp32, and selected fp8 pairs.</li>
+<li>The <code>Right</code> role has A5-specific layout/fractal constraints; do not copy an A2A3 right-tile layout assumption onto A5.</li>
+<li>MX variants are A5-only and require both <code>ScaleLeft</code> and <code>ScaleRight</code>.</li>
+</ul>
+<h2 id="performance-and-throughput">Performance And Throughput<a class="headerlink" href="#performance-and-throughput" title="Permanent link">&para;</a></h2>
+<p>The repository currently exposes an A2A3 cost-model formula for the shared <code>mad/mmad</code> cube instruction used by <code>TMATMUL</code>, <code>TMATMUL_ACC</code>, <code>TMATMUL_BIAS</code>, <code>TGEMV</code>, <code>TGEMV_ACC</code>, and <code>TGEMV_BIAS</code>.</p>
+<p>For A2A3:</p>
+<ul>
+<li>startup cost: <code>14</code> cycles,</li>
+<li>repeat count: <code>ceil(M/16) * ceil(N/16) * ceil(K / baskK)</code>,</li>
+<li><code>baskK = 32 / sizeof(left_element_type)</code>,</li>
+<li>steady-state cost per repeat:</li>
+<li><code>1</code> cycle for int8 and fp16 buckets,</li>
+<li><code>2</code> cycles for fp32 buckets.</li>
+</ul>
+<p>So the published A2A3 model is:</p>
+<pre><code class="language-text">cycles = 14 + repeat_count * repeat_cost
 </code></pre>
+<p>Examples backed by <code>tests/costmodel/st/testcase/tmatmul/tmatmul_kernel.cpp</code> include:</p>
+<ul>
+<li>half <code>40x50 * 50x60</code>: <code>62</code> cycles,</li>
+<li>int8 <code>6x7 * 7x8</code>: <code>15</code> cycles,</li>
+<li>float <code>120x110 * 110x50</code>: <code>910</code> cycles.</li>
+</ul>
+<p>The current repository does not publish an equivalent A5 latency or throughput table for this family. A5 legality is specified, but cycle figures are not single-listed in the public cost-model headers.</p>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../instruction-families/tile-families/">Tile instruction set</a> — Instruction set overview</li>
-<li><a href="../../instruction-surfaces/tile-instructions/">Tile instruction set</a> — Instruction Set description</li>
+<li><a href="../../instruction-families/tile-families/">Tile instruction families</a></li>
+<li><a href="../../instruction-surfaces/tile-instructions/">Tile instruction surface</a></li>
+<li><a href="../../state-and-types/location-intent-and-legality/">Location intent and legality</a></li>
+<li><a href="../../state-and-types/layout/">Layout</a></li>
 </ul>
               
             </div>

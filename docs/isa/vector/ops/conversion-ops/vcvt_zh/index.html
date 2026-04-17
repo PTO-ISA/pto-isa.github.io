@@ -932,43 +932,728 @@
                 <!-- Generated from `docs/isa/vector/ops/conversion-ops/vcvt_zh.md` -->
 
 <h1 id="ptovcvt">pto.vcvt<a class="headerlink" href="#ptovcvt" title="Permanent link">&para;</a></h1>
-<p>在不同数值类型之间做向量转换。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%result = pto.vcvt %input {round_mode = &quot;ROUND_MODE&quot;, sat = &quot;SAT_MODE&quot;, part = &quot;PART_MODE&quot;} : !pto.vreg&lt;NxT0&gt; -&gt; !pto.vreg&lt;MxT1&gt;
-</code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vcvt</code> 属于<a href="../../../conversion-ops_zh/">转换操作</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vcvt</code> 在不同数值类型之间做向量转换。它覆盖浮点到整数、浮点到浮点、整数到浮点、整数到整数这四大类转换，并支持可选的舍入模式、饱和模式和 <code>part</code> 放置控制。</p>
+<p>它的结果向量元素类型可以与源不同；如果是宽度变化型转换，目标 lane 数也会随之变化。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vcvt</code> 在向量寄存器模型内部改变元素解释、元素位宽、舍入方式或饱和行为，不需要退出向量寄存器语义。统一的 <code>pto.vcvt</code> 表面覆盖四类转换：</p>
 <ul>
-<li>当前 target profile 可能对该形式施加额外限制。</li>
+<li>浮点转整数</li>
+<li>浮点转浮点</li>
+<li>整数转浮点</li>
+<li>整数转整数</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
-对于 <code>pto.vcvt</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
+<h3 id="zero-merge">谓词与 zero-merge 行为<a class="headerlink" href="#zero-merge" title="Permanent link">&para;</a></h3>
+<p>inactive lane 不参与转换，并在目标 lane 写 0：</p>
+<pre><code class="language-c">for (int i = 0; i &lt; min(N, M); i++) {
+    if (mask[i])
+        dst[i] = convert(src[i], T0, T1, rnd, sat);
+    else
+        dst[i] = 0;
+}
+</code></pre>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-assembly">PTO.vcvt  vd, vs, vmask, rnd, sat, part
+</code></pre>
+<p>其中：</p>
+<ul>
+<li><code>vd</code>：目标向量寄存器</li>
+<li><code>vs</code>：源向量寄存器</li>
+<li><code>vmask</code>：谓词寄存器</li>
+<li><code>rnd</code>：舍入模式，可选</li>
+<li><code>sat</code>：饱和模式，可选</li>
+<li><code>part</code>：宽度变化转换时的 even/odd 放置控制，可选</li>
+</ul>
+<h3 id="mlir-ssa">MLIR SSA 形式<a class="headerlink" href="#mlir-ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vcvt %input, %mask {rnd = &quot;RND&quot;, sat = &quot;SAT&quot;, part = &quot;PART&quot;}
+    : !pto.vreg&lt;NxT0&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;MxT1&gt;
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vcvt %input, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;}
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xi32&gt;
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">PTO.vcvt  v0, v1, vmask, R, SAT, NONE
+</code></pre>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>指标</th>
-<th>状态</th>
-<th>来源依据</th>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>A5 时延</td>
-<td>公开来源未给出</td>
-<td><code>visa.txt</code>、<code>PTOAS/docs/vpto-spec.md</code></td>
+<td><code>%input</code></td>
+<td><code>!pto.vreg&lt;NxT0&gt;</code></td>
+<td>源向量寄存器，<code>T0</code> 为源元素类型，<code>N</code> 为 lane 数</td>
 </tr>
 <tr>
-<td>稳态吞吐</td>
-<td>公开来源未给出</td>
-<td><code>visa.txt</code>、<code>PTOAS/docs/vpto-spec.md</code></td>
+<td><code>%mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
+<td>执行掩码；<code>G</code> 必须匹配源向量家族的 typed-mask 粒度</td>
 </tr>
 </tbody>
 </table>
-<p>如果软件调度或性能建模依赖 <code>pto.vcvt</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="typed-mask">typed-mask 粒度<a class="headerlink" href="#typed-mask" title="Permanent link">&para;</a></h3>
 <ul>
-<li><a href="../../../conversion-ops_zh/">转换操作指令集</a></li>
+<li><code>b32</code>：f32 / i32 家族</li>
+<li><code>b16</code>：f16 / bf16 / i16 家族</li>
+<li><code>b8</code>：i8 家族</li>
+</ul>
+<p>VPTO 没有 <code>!pto.mask&lt;b64&gt;</code> 形式。</p>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;MxT1&gt;</code></td>
+<td>目标向量寄存器，<code>T1</code> 为目标元素类型；宽度变化型转换时 <code>M</code> 可以与 <code>N</code> 不同。inactive lane 写 0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p><code>pto.vcvt</code> 除了产生 SSA 结果，没有其他架构副作用。它不会隐式占用 buffer、发送事件，也不会建立内存栅栏。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="_8">类型约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>只有本页<a href="#支持的类型转换">支持的类型转换</a>列出的源 / 目标类型对是合法的。</li>
+<li>除非手册明确把某种类型对定义为 identity / no-op，否则源和目标类型必须不同。</li>
+<li>宽度变化型转换会自动调整 lane 数，并满足：</li>
+</ul>
+<pre><code class="language-text">M * bitwidth(T1) = N * bitwidth(T0) = 2048
+</code></pre>
+<h3 id="_9">掩码约束<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>执行掩码必须使用匹配源向量家族的 typed-mask 粒度。</li>
+<li>VPTO 没有 <code>!pto.mask&lt;b64&gt;</code>。</li>
+</ul>
+<h3 id="_10">属性约束<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>rnd</code>：只能取<a href="#舍入模式">舍入模式</a>表中列出的模式。省略时默认 <code>"R"</code>。</li>
+<li><code>sat</code>：<code>"SAT"`` 表示溢出时饱和；</code>"NOSAT"``（默认）表示溢出时 wrap 或产生目标定义行为。</li>
+<li><code>part</code>：只对宽度变化型转换合法。<code>"EVEN"</code> 表示写到每个 lane 组的偶数位置，<code>"ODD"</code> 表示写到奇数位置。</li>
+</ul>
+<h2 id="_11">异常与非法情形<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非法的操作数形状、不支持的类型对、掩码粒度不匹配以及不合法的属性组合。</li>
+<li>转换溢出而 <code>sat = "NOSAT"</code> 时，结果由目标平台定义。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>A5</strong>：当前手册记录了最完整的 <code>pto.vcvt</code> 表面；详见<a href="#支持的类型转换">支持的类型转换</a>与<a href="#性能">性能</a>。</li>
+<li><strong>CPU simulation</strong>：在行为层面保留转换语义；浮点部分尽量遵循 IEEE 754。</li>
+<li><strong>A2/A3</strong>：只保证子集支持；具体可用的类型对和属性组合由目标 profile 决定。</li>
+</ul>
+<h2 id="_12">舍入模式<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>名称</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>R</code></td>
+<td>就近舍入，ties to even</td>
+<td>默认模式</td>
+</tr>
+<tr>
+<td><code>A</code></td>
+<td>远离 0 舍入</td>
+<td>朝绝对值更大的可表示值舍入</td>
+</tr>
+<tr>
+<td><code>F</code></td>
+<td>Floor</td>
+<td>向负无穷舍入</td>
+</tr>
+<tr>
+<td><code>C</code></td>
+<td>Ceil</td>
+<td>向正无穷舍入</td>
+</tr>
+<tr>
+<td><code>Z</code></td>
+<td>Truncate</td>
+<td>向 0 舍入</td>
+</tr>
+<tr>
+<td><code>O</code></td>
+<td>Round to odd</td>
+<td>舍入到最近的奇数可表示值</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_13">饱和模式<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SAT</code></td>
+<td>溢出时饱和到目标类型可表示的最大 / 最小值</td>
+</tr>
+<tr>
+<td><code>NOSAT</code></td>
+<td>默认；溢出时 wrap 或产生目标定义行为</td>
+</tr>
+</tbody>
+</table>
+<h2 id="part">Part 模式<a class="headerlink" href="#part" title="Permanent link">&para;</a></h2>
+<p>用于宽度变化型转换，把结果写到更宽目标布局中的偶 / 奇半：</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EVEN</code></td>
+<td>写到每个 lane 组的偶数位置</td>
+</tr>
+<tr>
+<td><code>ODD</code></td>
+<td>写到每个 lane 组的奇数位置</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_14">支持的类型转换<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
+<h3 id="_15">浮点转整数<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>形式</th>
+<th>舍入</th>
+<th>饱和</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>!pto.vreg&lt;64xf32&gt;</code> → <code>!pto.vreg&lt;32xsi64&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>f32 → i64</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xf32&gt;</code> → <code>!pto.vreg&lt;64xsi32&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>f32 → i32</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xf32&gt;</code> → <code>!pto.vreg&lt;128xsi16&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>f32 → i16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xf16&gt;</code> → <code>!pto.vreg&lt;64xsi32&gt;</code></td>
+<td>支持</td>
+<td>可选</td>
+<td>f16 → i32</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xf16&gt;</code> → <code>!pto.vreg&lt;128xsi16&gt;</code></td>
+<td>支持</td>
+<td>可选</td>
+<td>f16 → i16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xf16&gt;</code> → <code>!pto.vreg&lt;256xsi8&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>f16 → i8</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xf16&gt;</code> → <code>!pto.vreg&lt;256xui8&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>f16 → ui8</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xbf16&gt;</code> → <code>!pto.vreg&lt;64xsi32&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>bf16 → i32</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_16">浮点转浮点<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>形式</th>
+<th>Part</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>!pto.vreg&lt;64xf32&gt;</code> → <code>!pto.vreg&lt;128xf16&gt;</code></td>
+<td>支持</td>
+<td>f32 → f16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xf32&gt;</code> → <code>!pto.vreg&lt;128xbf16&gt;</code></td>
+<td>支持</td>
+<td>f32 → bf16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xf16&gt;</code> → <code>!pto.vreg&lt;64xf32&gt;</code></td>
+<td>支持</td>
+<td>f16 → f32</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xbf16&gt;</code> → <code>!pto.vreg&lt;64xf32&gt;</code></td>
+<td>支持</td>
+<td>bf16 → f32</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_17">整数转浮点<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>形式</th>
+<th>舍入</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>!pto.vreg&lt;256xui8&gt;</code> → <code>!pto.vreg&lt;128xf16&gt;</code></td>
+<td>否</td>
+<td>ui8 → f16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;256xsi8&gt;</code> → <code>!pto.vreg&lt;128xf16&gt;</code></td>
+<td>否</td>
+<td>si8 → f16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xsi16&gt;</code> → <code>!pto.vreg&lt;128xf16&gt;</code></td>
+<td>支持</td>
+<td>i16 → f16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xsi16&gt;</code> → <code>!pto.vreg&lt;64xf32&gt;</code></td>
+<td>支持</td>
+<td>i16 → f32</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xsi32&gt;</code> → <code>!pto.vreg&lt;64xf32&gt;</code></td>
+<td>支持</td>
+<td>i32 → f32</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xui32&gt;</code> → <code>!pto.vreg&lt;64xf32&gt;</code></td>
+<td>支持</td>
+<td>ui32 → f32</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_18">整数转整数<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>形式</th>
+<th>饱和</th>
+<th>Part</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>!pto.vreg&lt;256xui8&gt;</code> → <code>!pto.vreg&lt;128xui16&gt;</code></td>
+<td>否</td>
+<td>支持</td>
+<td>ui8 → ui16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;256xui8&gt;</code> → <code>!pto.vreg&lt;64xui32&gt;</code></td>
+<td>否</td>
+<td>支持</td>
+<td>ui8 → ui32</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;256xsi8&gt;</code> → <code>!pto.vreg&lt;128xsi16&gt;</code></td>
+<td>否</td>
+<td>支持</td>
+<td>si8 → si16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;256xsi8&gt;</code> → <code>!pto.vreg&lt;64xsi32&gt;</code></td>
+<td>否</td>
+<td>支持</td>
+<td>si8 → si32</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xui16&gt;</code> → <code>!pto.vreg&lt;256xui8&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>ui16 → ui8</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xui16&gt;</code> → <code>!pto.vreg&lt;64xui32&gt;</code></td>
+<td>否</td>
+<td>支持</td>
+<td>ui16 → ui32</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xsi16&gt;</code> → <code>!pto.vreg&lt;256xui8&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>si16 → ui8</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xsi16&gt;</code> → <code>!pto.vreg&lt;64xui32&gt;</code></td>
+<td>否</td>
+<td>支持</td>
+<td>si16 → ui32</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;128xsi16&gt;</code> → <code>!pto.vreg&lt;64xsi32&gt;</code></td>
+<td>否</td>
+<td>支持</td>
+<td>si16 → si32</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xui32&gt;</code> → <code>!pto.vreg&lt;256xui8&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>ui32 → ui8</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xui32&gt;</code> → <code>!pto.vreg&lt;128xui16&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>ui32 → ui16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xui32&gt;</code> → <code>!pto.vreg&lt;128xsi16&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>ui32 → si16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xsi32&gt;</code> → <code>!pto.vreg&lt;256xui8&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>si32 → ui8</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xsi32&gt;</code> → <code>!pto.vreg&lt;128xui16&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>si32 → ui16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xsi32&gt;</code> → <code>!pto.vreg&lt;128xsi16&gt;</code></td>
+<td>支持</td>
+<td>支持</td>
+<td>si32 → si16</td>
+</tr>
+<tr>
+<td><code>!pto.vreg&lt;64xsi32&gt;</code> → <code>!pto.vreg&lt;32xsi64&gt;</code></td>
+<td>否</td>
+<td>支持</td>
+<td>si32 → si64</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_19">支持类型矩阵<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h2>
+<p>下表是概览；真正的源 / 目标配对仍以上面的逐项表格为准。</p>
+<table>
+<thead>
+<tr>
+<th><code>src \\ dst</code></th>
+<th><code>ui8</code></th>
+<th><code>si8</code></th>
+<th><code>ui16</code></th>
+<th><code>si16</code></th>
+<th><code>ui32</code></th>
+<th><code>si32</code></th>
+<th><code>si64</code></th>
+<th><code>f16</code></th>
+<th><code>f32</code></th>
+<th><code>bf16</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ui8</code></td>
+<td>—</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>si8</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>ui16</code></td>
+<td>Y</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>si16</code></td>
+<td>Y</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Y</td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+<td>Y</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>ui32</code></td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+<td>Y</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>si32</code></td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+<td>Y</td>
+<td>—</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>si64</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>f16</code></td>
+<td>Y</td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>f32</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>—</td>
+<td>Y</td>
+</tr>
+<tr>
+<td><code>bf16</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+<td>—</td>
+<td>Y</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_20">宽度变化型转换模式<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h2>
+<p>当转换会改变 lane 宽度时，通常要用 even / odd 两个 part 组合：</p>
+<pre><code class="language-mlir">%even = pto.vcvt %in0, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;, part = &quot;EVEN&quot;}
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
+%odd  = pto.vcvt %in1, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;, part = &quot;ODD&quot;}
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
+%result = pto.vor %even, %odd, %mask
+    : !pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask&lt;b16&gt; -&gt; !pto.vreg&lt;128xf16&gt;
+</code></pre>
+<h2 id="_21">性能<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h2>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>PTO 操作</th>
+<th>RV（A5）</th>
+<th>说明</th>
+<th>时延</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pto.vcvt</code></td>
+<td><code>RV_VCVT_F2F</code></td>
+<td>f32 → f16</td>
+<td><strong>7</strong> 周期</td>
+</tr>
+<tr>
+<td><code>pto.vcvt</code></td>
+<td>—</td>
+<td>其他转换对</td>
+<td>由目标定义</td>
+</tr>
+</tbody>
+</table>
+<p>只有代表性 trace 在手册里给出。其他转换对在 A5 上的具体 RV lowering 取决于 trace。CPU 模拟器和 A2/A3 的吞吐仍由目标定义。</p>
+<h2 id="_22">示例<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h2>
+<h3 id="c">C 语义<a class="headerlink" href="#c" title="Permanent link">&para;</a></h3>
+<pre><code class="language-c">// 浮点转整数：最近舍入 + 饱和
+float src[64];
+int dst[64];
+int mask[64];
+
+for (int i = 0; i &lt; 64; i++) {
+    if (mask[i]) {
+        dst[i] = (int)roundf(src[i]);
+    } else {
+        dst[i] = 0;
+    }
+}
+</code></pre>
+<h3 id="mlir-ssa_1">MLIR SSA<a class="headerlink" href="#mlir-ssa_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vcvt %input_f32, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;}
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xi32&gt;
+
+%even = pto.vcvt %in0, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;, part = &quot;EVEN&quot;}
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
+%odd  = pto.vcvt %in1, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;, part = &quot;ODD&quot;}
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
+
+%float_result = pto.vcvt %input_i32, %mask
+    : !pto.vreg&lt;64xi32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<h3 id="_23">典型场景：量化<a class="headerlink" href="#_23" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%scaled = pto.vmul %input, %scale, %mask
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+%quantized = pto.vcvt %scaled, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;}
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xi32&gt;
+</code></pre>
+<h3 id="_24">典型场景：混合精度<a class="headerlink" href="#_24" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%f32_vec = pto.vcvt %bf16_input, %mask {part = &quot;EVEN&quot;}
+    : !pto.vreg&lt;128xbf16&gt;, !pto.mask&lt;b16&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+
+%bf16_out = pto.vcvt %f32_result, %mask {rnd = &quot;R&quot;, part = &quot;EVEN&quot;}
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xbf16&gt;
+</code></pre>
+<h2 id="_25">详细说明<a class="headerlink" href="#_25" title="Permanent link">&para;</a></h2>
+<h3 id="_26">舍入模式选择建议<a class="headerlink" href="#_26" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>通用神经网络推理</td>
+<td><code>"R"</code></td>
+</tr>
+<tr>
+<td>向下取整</td>
+<td><code>"F"</code></td>
+</tr>
+<tr>
+<td>向上取整</td>
+<td><code>"C"</code></td>
+</tr>
+<tr>
+<td>向零截断</td>
+<td><code>"Z"</code></td>
+</tr>
+<tr>
+<td>需要确定性奇数舍入</td>
+<td><code>"O"</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_27">属性使用建议<a class="headerlink" href="#_27" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>rnd</code>：当转换需要显式舍入规则时使用，尤其是浮点转整数、浮点收窄或整数转浮点。</li>
+<li><code>mask</code>：控制哪些源 lane 参与转换；宽度变化型转换时，它会与 <code>part</code> 一起决定输出位置。</li>
+<li><code>sat</code>：当目标类型范围可能溢出时使用。</li>
+<li><code>part</code>：只用于宽度变化型转换，选择 even 或 odd 半区布局。</li>
+</ul>
+<h2 id="_28">相关页面<a class="headerlink" href="#_28" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../conversion-ops_zh/">转换操作</a></li>
+<li>上一条指令：<a href="../vci_zh/">pto.vci</a></li>
+<li>下一条指令：<a href="../vtrc_zh/">pto.vtrc</a></li>
+<li>相关舍入指令：<a href="../vtrc_zh/">pto.vtrc</a></li>
 </ul>
               
             </div>

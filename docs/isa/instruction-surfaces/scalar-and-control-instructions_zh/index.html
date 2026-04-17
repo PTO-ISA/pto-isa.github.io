@@ -932,76 +932,227 @@
                 <!-- Generated from `docs/isa/instruction-surfaces/scalar-and-control-instructions_zh.md` -->
 
 <h1 id="_1">标量与控制指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p><code>pto.*</code> 中的标量与控制指令集负责配置、同步、DMA 外壳、谓词和控制流支撑。它们围绕 tile 与 vector 有效载荷工作，而不是直接产生 tile / vector 结果。</p>
+<p><code>pto.*</code> 中的标量与控制指令集负责建立执行外壳：配置、同步、DMA、谓词和控制流。它们围绕 tile 与 vector 有效载荷工作，而不是直接产出 tile / vector payload。</p>
 <h2 id="_2">指令集概览<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>标量与控制指令不直接生成 tile 或向量结果，它们主要生成：</p>
+<ul>
+<li>控制效果（barrier、控制流推进、状态更新）</li>
+<li>明确的 producer-consumer 顺序边</li>
+<li>谓词 mask</li>
+<li>DMA 参数与 DMA 状态</li>
+<li>标量结果值</li>
+</ul>
+<p>标量操作数是单值的，它们的职责是把 tile / vector 这两条 payload 路径串起来。</p>
+<h2 id="_3">指令分类<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>类别</th>
 <th>说明</th>
+<th>示例</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>控制与配置</td>
-<td>屏障、yield、控制外壳和基础配置</td>
+<td>NOP、barrier、yield 以及模式配置</td>
+<td><code>nop</code>、<code>barrier</code>、<code>yield</code>、<code>tsethf32mode</code>、<code>tsetfmatrix</code></td>
 </tr>
 <tr>
 <td>流水线同步</td>
-<td>事件、barrier 与 producer-consumer 顺序</td>
+<td>跨流水线的事件同步与 barrier</td>
+<td><code>set_flag</code>、<code>wait_flag</code>、<code>pipe_barrier</code></td>
 </tr>
 <tr>
 <td>DMA 拷贝</td>
-<td>GM 与 UB 之间的数据搬运配置和发起</td>
+<td>GM↔向量 tile buffer 的搬运配置与发起</td>
+<td><code>copy_gm_to_ubuf</code>、<code>copy_ubuf_to_gm</code>、<code>set_loop_size_outtoub</code></td>
 </tr>
 <tr>
 <td>谓词加载存储</td>
-<td>谓词相关的内存访问</td>
+<td>谓词在内存与谓词寄存器之间搬运</td>
+<td><code>pld</code>、<code>plds</code>、<code>pst</code>、<code>pstu</code></td>
 </tr>
 <tr>
 <td>谓词生成与代数</td>
-<td>谓词构造、比较和布尔组合</td>
-</tr>
-<tr>
-<td>共享算术 / 共享 SCF</td>
-<td>支撑 PTO 区域的标量算术与结构化控制流</td>
+<td>构造 tail mask、布尔组合、谓词重排</td>
+<td><code>pset_b8</code>、<code>pge_b8</code>、<code>plt_b8</code>、<code>pand</code>、<code>por</code>、<code>pxor</code></td>
 </tr>
 </tbody>
 </table>
-<h2 id="_3">输入<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>标量与控制操作主要处理：</p>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>标量与控制指令常见输入包括：</p>
 <ul>
-<li>标量寄存器</li>
-<li>pipe 标识和 event 标识</li>
-<li>DMA loop size / stride</li>
-<li>UB / GM 指针</li>
-<li>谓词与控制参数</li>
+<li>标量寄存器或立即数</li>
+<li>pipe 标识：<code>PIPE_MTE1</code>、<code>PIPE_MTE2</code>、<code>PIPE_MTE3</code>、<code>PIPE_V</code>、<code>PIPE_M</code></li>
+<li>event 标识：<code>EVENT_ID0</code>～<code>EVENT_ID15</code>（具体范围受 profile 约束）</li>
+<li>buffer id</li>
+<li>指针：<code>!pto.ptr&lt;T, ub&gt;</code>、<code>!pto.ptr&lt;T, gm&gt;</code></li>
+<li>DMA loop size / stride 参数</li>
 </ul>
-<h2 id="_4">输出<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>这类操作会产生：</p>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>标量与控制指令会产生：</p>
 <ul>
-<li>事件或同步状态</li>
-<li>DMA 配置状态</li>
+<li>控制状态变化</li>
+<li>显式同步边</li>
 <li>谓词 mask</li>
-<li>标量结果或控制状态变化</li>
+<li>已配置好的 DMA 状态</li>
+<li>标量结果</li>
 </ul>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>架构副作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>流水线同步</td>
+<td>建立 producer-consumer 顺序，或阻塞某个流水线 / 执行单元</td>
+</tr>
+<tr>
+<td>DMA 拷贝</td>
+<td>发起 GM 与向量 tile buffer 之间的数据搬运</td>
+</tr>
+<tr>
+<td>谓词加载存储</td>
+<td>读写谓词对应的内存表示</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_7">事件模型<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p>标量 / 控制同步使用显式事件模型。一个事件由 <code>(src_pipe, dst_pipe, event_id)</code> 三元组标识：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>典型取值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src_pipe</code></td>
+<td><code>PIPE_MTE1</code>、<code>PIPE_MTE2</code>、<code>PIPE_MTE3</code>、<code>PIPE_V</code>、<code>PIPE_M</code></td>
+<td>产生事件的流水线</td>
+</tr>
+<tr>
+<td><code>dst_pipe</code></td>
+<td><code>PIPE_MTE1</code>、<code>PIPE_MTE2</code>、<code>PIPE_MTE3</code>、<code>PIPE_V</code>、<code>PIPE_M</code></td>
+<td>消费事件的流水线</td>
+</tr>
+<tr>
+<td><code>event_id</code></td>
+<td>0–15（取决于目标 profile）</td>
+<td>事件槽编号</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-text">Producer pipe                               Consumer pipe
+   │                                            │
+   │  发起 DMA 或计算                            │
+   ▼                                            │
+set_flag(src_pipe, dst_pipe, EVENT_ID)          │
+   │                                            │
+   │                               wait_flag(src_pipe, dst_pipe, EVENT_ID)
+   │                                            │
+   ▼                                            ▼
+结果或数据可见                                 后续操作继续
+</code></pre>
+<h2 id="profile-pipe">不同 profile 的 pipe 空间<a class="headerlink" href="#profile-pipe" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Pipe</th>
+<th style="text-align: center;">CPU Sim</th>
+<th style="text-align: center;">A2A3</th>
+<th style="text-align: center;">A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PIPE_MTE1</code></td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">支持</td>
+<td style="text-align: center;">支持</td>
+</tr>
+<tr>
+<td><code>PIPE_MTE2</code></td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">支持</td>
+<td style="text-align: center;">支持</td>
+</tr>
+<tr>
+<td><code>PIPE_MTE3</code></td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">支持</td>
+<td style="text-align: center;">支持</td>
+</tr>
+<tr>
+<td><code>PIPE_V</code></td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">桥接/模拟</td>
+<td style="text-align: center;">原生</td>
+</tr>
+<tr>
+<td><code>PIPE_M</code></td>
+<td style="text-align: center;">模拟</td>
+<td style="text-align: center;">支持</td>
+<td style="text-align: center;">支持</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_8">约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li>pipe / event 空间必须符合所选 profile。</li>
-<li>DMA 参数必须自洽。</li>
-<li>谓词宽度和目标操作必须匹配。</li>
-<li>同步建立与消费必须成对出现。</li>
+<li><code>set_flag</code> / <code>wait_flag</code> 必须成对使用。</li>
+<li>DMA 参数必须在发起传输前配置完成。</li>
+<li>谓词宽度必须和目标操作匹配。</li>
+<li>依赖外壳不能跳过：例如，在 <code>copy_gm_to_ubuf</code> 完成前就直接执行依赖其结果的 <code>vlds</code> 是非法的。</li>
 </ul>
-<h2 id="_6">不允许的情形<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <ul>
-<li>等待从未建立的事件</li>
+<li>等待一个从未建立的事件</li>
 <li>使用目标 profile 不支持的 pipe 或 event 标识</li>
-<li>在没有完成同步的情况下越过 DMA / vector / tile 的顺序边</li>
+<li>配置不自洽的 DMA 参数</li>
+<li>混用和目标向量宽度不匹配的谓词宽度</li>
+<li>没有正确等待就跨越 DMA / vector / tile 顺序边</li>
 </ul>
-<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_10">语法<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="pto-as">PTO-AS 形式<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
+<pre><code class="language-asm">set_flag PIPE_MTE2, PIPE_V, EVENT_ID0
+wait_flag PIPE_MTE2, PIPE_V, EVENT_ID0
+pipe_barrier PIPE_V
+</code></pre>
+<h3 id="ssa-as-level-1">SSA 形式（AS Level 1）<a class="headerlink" href="#ssa-as-level-1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+pto.wait_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+pto.pipe_barrier[&quot;PIPE_V&quot;]
+</code></pre>
+<p>完整语法见 <a href="../../syntax-and-operands/assembly-model_zh/">汇编拼写与操作数</a>。</p>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+PTO_INST void set_flag(pipe_t src_pipe, pipe_t dst_pipe, event_t event_id);
+PTO_INST void wait_flag(pipe_t src_pipe, pipe_t dst_pipe, event_t event_id);
+PTO_INST void pipe_barrier(pipe_t pipe);
+
+PTO_INST void copy_gm_to_ubuf(ub_ptr dst, gm_ptr src, uint64_t sid,
+                              uint64_t n_burst, uint64_t len_burst,
+                              uint64_t dst_stride, uint64_t src_stride);
+
+PTO_INST void copy_ubuf_to_gm(gm_ptr dst, ub_ptr src, uint64_t sid,
+                              uint64_t n_burst, uint64_t len_burst,
+                              uint64_t reserved, uint64_t dst_stride, uint64_t src_stride);
+</code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/scalar-and-control-families_zh/">标量与控制指令族</a></li>
 <li><a href="../../scalar/README_zh/">标量参考入口</a></li>
+<li><a href="../../machine-model/ordering-and-synchronization_zh/">顺序与同步</a></li>
 </ul>
               
             </div>

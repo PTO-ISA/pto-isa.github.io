@@ -948,13 +948,15 @@
 <p>Scalar and control operations do not carry tile payload semantics themselves. They set up the execution environment in which <code>pto.t*</code> and <code>pto.v*</code> work becomes legal and well ordered.</p>
 <h2 id="main-subfamilies">Main Subfamilies<a class="headerlink" href="#main-subfamilies" title="Permanent link">&para;</a></h2>
 <ul>
+<li>Legacy tile-prefixed control/configuration ops: <a href="../ops/control-and-configuration/tsethf32mode/"><code>pto.tsethf32mode</code></a> and <a href="../ops/control-and-configuration/tsetfmatrix/"><code>pto.tsetfmatrix</code></a>. These keep historic <code>t</code>-prefixed API names but are documented here because they configure scalar-visible mode state rather than tile payload state.</li>
 <li><a href="../pipeline-sync/">Pipeline sync</a>: explicit producer-consumer edges, buffer-token protocols, and vector-scope memory barriers.</li>
-<li><a href="../dma-copy/">DMA copy</a>: loop-size and stride configuration plus GM↔UB and UB↔UB copy operations.</li>
+<li><a href="../dma-copy/">DMA copy</a>: loop-size and stride configuration plus GM↔vector-tile-buffer and vector-tile-buffer↔vector-tile-buffer copy operations.</li>
 <li><a href="../predicate-load-store/">Predicate load store</a>: moving <code>!pto.mask</code> state through UB and handling unaligned predicate-store streams.</li>
 <li><a href="../predicate-generation-and-algebra/">Predicate generation and algebra</a>: mask creation, tail masks, boolean combination, and predicate rearrangement.</li>
 </ul>
 <h2 id="architectural-role">Architectural Role<a class="headerlink" href="#architectural-role" title="Permanent link">&para;</a></h2>
 <p>The <code>pto.*</code> instruction set is where PTO exposes stateful setup and synchronization explicitly. These forms are still part of the virtual ISA contract, but their visible outputs are control, mask, or configuration state rather than tile or vector payload results.</p>
+<p>The manual also places a small number of historic <code>pto.t*</code> configuration ops here when their architectural job is scalar/control setup rather than tile-buffer mutation. <code>tsethf32mode</code> and <code>tsetfmatrix</code> fall into that category.</p>
 <h2 id="related-material">Related Material<a class="headerlink" href="#related-material" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-surfaces/scalar-and-control-instructions/">Scalar and control instruction set</a></li>

@@ -932,15 +932,79 @@
                 <!-- Generated from `docs/isa/tile/ops/tile-scalar-and-immediate/tmaxs_zh.md` -->
 
 <h1 id="ptotmaxs">pto.tmaxs<a class="headerlink" href="#ptotmaxs" title="Permanent link">&para;</a></h1>
-<p>规范兼容参考页：<a href="./tile/ops/tile-scalar-and-immediate/tmaxs.md">pto.tmaxs</a>.</p>
-<p>PTO ISA 手册现已把 tile、vector、scalar/control 操作统一组织到分组后的指令集路径下。根级旧路径保留为兼容入口。</p>
-<h2 id="_1">规范位置<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.tmaxs</code> 属于<a href="../../../tile-scalar-and-immediate_zh/">Tile-标量与立即数</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>对 tile 和标量逐元素取最大值。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对目标 tile 的有效区域内每个元素 <code>(i, j)</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \max(\mathrm{src}_{i,j}, \mathrm{scalar}) \]</div>
+<p>标量会广播到整个 valid region。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>同步形式：</p>
+<pre><code class="language-text">%dst = tmaxs %src, %scalar : !pto.tile&lt;...&gt;, f32
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.tmaxs %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tmaxs ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMAXS(TileDataDst&amp; dst, TileDataSrc&amp; src, typename TileDataSrc::DType scalar, WaitEvents&amp;... events);
+</code></pre>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>指令集概览：<a href="./tile/tile-scalar-and-immediate_zh.md">Tile Scalar And Immediate</a></li>
-<li>规范 per-op 页面：<a href="./tile/ops/tile-scalar-and-immediate/tmaxs.md">pto.tmaxs</a></li>
+<li><code>src</code>：源 tile</li>
+<li><code>scalar</code>：广播到所有元素的标量</li>
+<li><code>dst</code>：目标 tile</li>
+<li>迭代域：<code>dst</code> 的 valid row / valid col</li>
 </ul>
-<h2 id="_2">兼容性说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>旧的根级链接仍通过该兼容页保留；新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst</code>：逐元素最大值结果 tile</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>tile 位置必须是向量 tile</li>
+<li>标量类型必须与 tile 数据类型匹配</li>
+<li>操作迭代域由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
+</ul>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TileData::DType</code> 必须属于：<code>int32_t</code>、<code>int16_t</code>、<code>half</code>、<code>float</code></li>
+<li>tile 布局必须是行主序</li>
+</ul>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TileData::DType</code> 必须属于：<code>int32_t</code>、<code>uint32_t</code>、<code>float</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>uint8_t</code>、<code>int8_t</code></li>
+<li>tile 布局必须是行主序</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内虽然存在 <code>TMAXS_IMPL</code>，但公开 costmodel 没有像 <code>TADDS</code> / <code>TMULS</code> 那样直接单列 <code>TMAXS</code> 常量表。若代码依赖具体延迟，应把它视为目标 profile 相关的 tile max 路径。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+void example() {
+  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  TileT x, out;
+  TMAXS(out, x, 0.0f);
+}
+</code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../tile-scalar-and-immediate_zh/">Tile-标量与立即数</a></li>
+<li>上一条指令：<a href="../trems_zh/">pto.trems</a></li>
+<li>下一条指令：<a href="../tands_zh/">pto.tands</a></li>
+</ul>
               
             </div>
           </div><footer>

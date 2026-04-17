@@ -1027,18 +1027,18 @@
 <p><strong>Category:</strong> UB ↔ Vector Register data movement
 <strong>Pipeline:</strong> PIPE_V (Vector Core)</p>
 </blockquote>
-<p>Vector loads move data from Unified Buffer (UB) to vector registers (<code>vreg</code>). Vector stores move data from <code>vreg</code> back to UB. All vector compute operates only on <code>vreg</code> — UB is the staging area between DMA and compute.</p>
+<p>Vector loads move data from the vector tile buffer (implemented on current hardware by the Unified Buffer / UB) to vector registers (<code>vreg</code>). Vector stores move data from <code>vreg</code> back to that same vector tile buffer. All vector compute operates only on <code>vreg</code>.</p>
 <hr />
 <h2 id="execution-model-dmavector-pipeline">Execution Model: DMA–Vector Pipeline<a class="headerlink" href="#execution-model-dmavector-pipeline" title="Permanent link">&para;</a></h2>
 <p>Vector load/store operations bridge the <strong>DMA</strong> (<code>PIPE_MTE2</code>/<code>PIPE_MTE3</code>) and <strong>Vector</strong> (<code>PIPE_V</code>) pipelines. The complete kernel structure is:</p>
-<pre><code>GM → MTE2 → UB → VLDS → vreg → PTO.v* compute → VSTS → UB → MTE3 → GM
+<pre><code>GM → MTE2 → vector tile buffer (hardware UB) → VLDS → vreg → PTO.v* compute → VSTS → vector tile buffer → MTE3 → GM
 </code></pre>
 <p><strong>Typical kernel structure:</strong></p>
 <pre><code class="language-mlir">module attributes {pto.target_arch = &quot;a5&quot;} {
   func.func @kernel_2d(%arg0: !pto.ptr, %arg1: !pto.ptr) {
     %false = arith.constant false
 
-    // Phase 1: MTE2 DMA (GM → UB)
+    // Phase 1: MTE2 DMA (GM → vector tile buffer / hardware UB)
     pto.get_buf &quot;PIPE_MTE2&quot;, 0, 0
     pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
     pto.copy_gm_to_ubuf %arg0, %ub_in, %c0_i64, %c32_i64, %c128_i64,
@@ -1068,7 +1068,7 @@
     pto.set_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
     pto.wait_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
 
-    // Phase 5: MTE3 DMA (UB → GM)
+    // Phase 5: MTE3 DMA (vector tile buffer / hardware UB → GM)
     pto.get_buf &quot;PIPE_MTE3&quot;, 0, 0
     pto.set_loop_size_ubtoout %c1_i64, %c1_i64 : i64, i64
     pto.copy_ubuf_to_gm %ub_out, %arg1, %c0_i64, %c32_i64, %c128_i64,
@@ -1155,7 +1155,7 @@
 <h2 id="common-operand-model">Common Operand Model<a class="headerlink" href="#common-operand-model" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%source</code> / <code>%dest</code> is the base address operand in SSA form. The base pointer
-  MUST address the Vector tile buffer / UB space.</li>
+  MUST address the vector tile buffer (implemented on current hardware by the Unified Buffer / UB).</li>
 <li><code>%offset</code> is the displacement operand in SSA form. The exact encoding is
   instruction-specific, but the effective address and any post-update behavior
   MUST match the selected instruction form.</li>

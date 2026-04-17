@@ -931,59 +931,174 @@
               
                 <!-- Generated from `docs/isa/tile/ops/elementwise-tile-tile/tcmp_zh.md` -->
 
-<h1 id="tcmp">TCMP<a class="headerlink" href="#tcmp" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TCMP tile operation" src="../../../../../figures/isa/TCMP.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>比较两个 Tile 并写入一个打包的谓词掩码。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>Conceptually, for each element <code>(i, j)</code> in the valid region, define a predicate:</p>
+<h1 id="ptotcmp">pto.tcmp<a class="headerlink" href="#ptotcmp" title="Permanent link">&para;</a></h1>
+<p><code>pto.tcmp</code> 属于<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>比较两个 tile，并把结果写成打包谓词 tile。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>从语义上看，对目标 tile 的 valid region 中每个 <code>(i, j)</code>，先定义一个谓词：</p>
 <div class="arithmatex">\[ p_{i,j} = \left(\mathrm{src0}_{i,j}\ \mathrm{cmpMode}\ \mathrm{src1}_{i,j}\right) \]</div>
-<p>The predicate mask is stored in <code>dst</code> using an implementation-defined packed layout.</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS Specification</a>.</p>
-<p>同步形式：</p>
-<pre><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+<p>随后把这些谓词位按目标定义的 packed layout 写入 <code>dst</code>。也就是说，<code>dst</code> 不是“每个 lane 一个布尔数”的朴素 tile，而是某种目标定义的压缩谓词表示。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto-as">PTO-AS<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcmp %src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+<pre><code class="language-text">%dst = pto.tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcmp ins(%src0, %src1{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+<pre><code class="language-text">pto.tcmp ins(%src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/type.hpp</code>:</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataSrc &amp;src1, CmpMode cmpMode, WaitEvents &amp;... events);
+PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataSrc &amp;src1,
+                          CmpMode cmpMode, WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_4">比较模式<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EQ</code></td>
+<td>等于</td>
+</tr>
+<tr>
+<td><code>NE</code></td>
+<td>不等于</td>
+</tr>
+<tr>
+<td><code>LT</code></td>
+<td>小于</td>
+</tr>
+<tr>
+<td><code>LE</code></td>
+<td>小于等于</td>
+</tr>
+<tr>
+<td><code>GT</code></td>
+<td>大于</td>
+</tr>
+<tr>
+<td><code>GE</code></td>
+<td>大于等于</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">输入<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>角色</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%src0</code></td>
+<td>左 tile</td>
+<td>在 <code>dst</code> valid region 上逐坐标参与比较</td>
+</tr>
+<tr>
+<td><code>%src1</code></td>
+<td>右 tile</td>
+<td>在 <code>dst</code> valid region 上逐坐标参与比较</td>
+</tr>
+<tr>
+<td><code>%dst</code></td>
+<td>谓词 tile</td>
+<td>保存打包后的比较结果</td>
+</tr>
+<tr>
+<td><code>cmpMode</code></td>
+<td>比较谓词</td>
+<td>选择 EQ/NE/LT/LE/GT/GE</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">预期输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%dst</code></td>
+<td><code>!pto.tile&lt;...&gt;</code></td>
+<td>打包后的谓词结果 tile</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_7">副作用<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p>除产生谓词 tile 外，没有额外架构副作用。</p>
+<h2 id="_8">约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li>Input type must be one of: <code>int32_t</code>, <code>half</code>, <code>float</code>.</li>
-<li>Output type must be <code>uint8_t</code>.</li>
-<li><code>src0/src1/dst</code> tile location must be <code>TileType::Vec</code>.</li>
-<li>Static valid bounds: <code>TileDataSrc::ValidRow &lt;= TileDataSrc::Rows</code> and <code>TileDataSrc::ValidCol &lt;= TileDataSrc::Cols</code>.</li>
-<li>Runtime: <code>src0.GetValidRow() == dst.GetValidRow()</code> and <code>src0.GetValidCol() == dst.GetValidCol()</code>.</li>
-<li>Note: <code>src1</code> shape/valid is not validated by explicit runtime assertions in this implementation.</li>
-<li>For <code>TileDataSrc::DType == int32_t</code>, the implementation uses the <code>EQ</code> compare path regardless of <code>cmpMode</code>.</li>
+<li>迭代域是 <code>dst.GetValidRow() × dst.GetValidCol()</code>。</li>
+<li><code>src0</code> 的 validRow / validCol 必须与 <code>dst</code> 一致。</li>
+<li><code>src1</code> 的 shape / valid 在某些实现里不会做完整运行时校验，因此域外读值属于 implementation-defined。</li>
+<li>程序不能假设谓词 tile 的具体编码。</li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li>Input type must be one of: <code>uint32_t</code>, <code>int32_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint8_t</code>,  <code>int8_t</code>, <code>float</code>, <code>half</code>.</li>
-<li>Output type must be <code>uint32_t</code>.</li>
-<li>Implemented (see <code>include/pto/npu/a5/TCmp.hpp</code>).</li>
-<li>The A5 implementation uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain and writes a packed predicate mask into <code>dst</code> (target-defined packing).</li>
+<h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li>假设谓词 tile 是“一位一元素”的普通展开布尔 tile。</li>
+<li>对 <code>dst</code> 使用不符合目标定义的谓词输出 dtype。</li>
 </ul>
-</li>
-<li><strong>Mask encoding</strong>:<ul>
-<li>The mask tile is interpreted as packed predicate bits in a target-defined layout.</li>
-</ul>
-</li>
-</ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>检查项</th>
+<th style="text-align: center;">A2A3</th>
+<th style="text-align: center;">A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>支持输入类型</td>
+<td style="text-align: center;"><code>int32_t</code>、<code>half</code>、<code>float</code></td>
+<td style="text-align: center;"><code>uint32_t</code>、<code>int32_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint8_t</code>、<code>int8_t</code>、<code>float</code>、<code>half</code></td>
+</tr>
+<tr>
+<td>输出谓词 dtype</td>
+<td style="text-align: center;"><code>uint8_t</code></td>
+<td style="text-align: center;"><code>uint32_t</code></td>
+</tr>
+<tr>
+<td>tile 位置</td>
+<td style="text-align: center;"><code>TileType::Vec</code></td>
+<td style="text-align: center;"><code>TileType::Vec</code></td>
+</tr>
+<tr>
+<td>布局</td>
+<td style="text-align: center;">RowMajor</td>
+<td style="text-align: center;">RowMajor</td>
+</tr>
+<tr>
+<td><code>src0</code> valid == <code>dst</code> valid`</td>
+<td style="text-align: center;">Required</td>
+<td style="text-align: center;">Required</td>
+</tr>
+<tr>
+<td><code>src1</code> validity`</td>
+<td style="text-align: center;">Not fully verified</td>
+<td style="text-align: center;">Not fully verified</td>
+</tr>
+</tbody>
+</table>
+<p>对 A2A3，若输入类型是 <code>int32_t</code>，实现里可能只走 <code>EQ</code> 比较路径；A5 则支持完整比较模式。</p>
+<h2 id="_10">性能<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有把 <code>tcmp</code> 单独落成公开 cost bucket。若代码依赖具体延迟，应把它视为目标 profile 相关的 tile 比较路径。</p>
+<h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 void example_auto() {
@@ -994,22 +1109,12 @@ void example_auto() {
   TCMP(mask, src0, src1, CmpMode::GT);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using MaskT = Tile&lt;TileType::Vec, uint8_t, 16, 32, BLayout::RowMajor, -1, -1&gt;;
-  SrcT src0, src1;
-  MaskT mask(16, 2);
-  TASSIGN(src0, 0x1000);
-  TASSIGN(src1, 0x2000);
-  TASSIGN(mask, 0x3000);
-  TCMP(mask, src0, src1, CmpMode::GT);
-}
-</code></pre>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></li>
+<li>上一条指令：<a href="../tmax_zh/">pto.tmax</a></li>
+<li>下一条指令：<a href="../tdiv_zh/">pto.tdiv</a></li>
+</ul>
               
             </div>
           </div><footer>

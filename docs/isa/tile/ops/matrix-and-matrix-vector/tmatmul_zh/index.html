@@ -935,8 +935,8 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TMATMUL tile operation" src="../../../../../figures/isa/TMATMUL.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TMATMUL</code> 是 PTO tile 路径里最核心的矩阵乘法指令之一：它从 <code>Left</code> / <code>Right</code> Tile 读取操作数，在 <code>Acc</code> Tile 中生成新的乘加结果。</p>
-<p>这条指令的语义是“用当前 <code>aMatrix</code> 和 <code>bMatrix</code> 计算一个新的输出块”。如果你要在已有累加器内容上继续累加，应改用 <code>TMATMUL_ACC</code>；这也是 <code>TMATMUL</code> 和 <code>TMATMUL_ACC</code> 分开的原因。</p>
+<p><code>TMATMUL</code> 是 tile 路径里生成新累加器结果的基础矩阵乘指令。它从 <code>Left</code> 读取左操作数，从 <code>Right</code> 读取右操作数，把结果写入 <code>Acc</code>。</p>
+<p>这条指令和 <code>TMATMUL_ACC</code> 分开的原因很直接：<code>TMATMUL</code> 代表“这次计算生成一个新的输出块”，而 <code>TMATMUL_ACC</code> 代表“在已有累加器上继续叠加”。把两者混在一起，会让 K 维分块循环里的资源和调度语义变得不清楚。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>设：</p>
 <ul>
@@ -944,11 +944,19 @@
 <li><code>K = aMatrix.GetValidCol()</code></li>
 <li><code>N = bMatrix.GetValidCol()</code></li>
 </ul>
-<p>对 <code>0 &lt;= i &lt; M</code> 和 <code>0 &lt;= j &lt; N</code>：</p>
+<p>对 <code>0 &lt;= i &lt; M</code>、<code>0 &lt;= j &lt; N</code>：</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p>这里的有效计算域由 <code>aMatrix</code> 和 <code>bMatrix</code> 的 valid region 决定，而不是单纯由静态 Tile 尺寸决定。</p>
-<p>累加器内部的精确实现细节，例如某些 target 上的特殊舍入或 profile 限定的数据类型子集，不属于这条通用语义本身，而是目标 profile 的约束。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>有效计算域由输入 tile 的 valid region 决定，而不是单纯由静态 tile 尺寸决定。指令不会隐式做广播、reshape，或把不合法的输入域“修复”为某种可移植结果。</p>
+<h2 id="_4">机制<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p><code>TMATMUL</code> 属于 cube 路径，不是普通逐元素 tile 运算：</p>
+<ul>
+<li>左操作数必须是 <code>Left</code> tile，对应 L0A 路径；</li>
+<li>右操作数必须是 <code>Right</code> tile，对应 L0B 路径；</li>
+<li>输出必须是 <code>Acc</code> tile；</li>
+<li>结果域由 <code>(M, K) x (K, N) -&gt; (M, N)</code> 的合法矩阵乘域决定。</li>
+</ul>
+<p><code>Right</code> 虽然在 A2A3 与 A5 上都叫同一个架构角色，但它们的具体布局要求并不完全相同，不能把某一侧的物理布局理解成“全 target 通用”。</p>
+<h2 id="_5">汇编语法<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
 <pre><code class="language-text">%acc = tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
@@ -967,47 +975,74 @@ PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRi
 template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
 </code></pre>
-<p>带 <code>AccPhase</code> 的模板重载不会改变矩阵乘法本身的算术含义；它只是在目标实现侧附带 unit-flag 相关的选择。</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>带 <code>AccPhase</code> 的模板重载不改变矩阵乘法的算术语义；它只是让具体后端在 unit-flag 或实现细节上做选择。</p>
+<h2 id="_6">输入与输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>aMatrix</code>：左操作数 tile，必须是 <code>Left</code>。</li>
+<li><code>bMatrix</code>：右操作数 tile，必须是 <code>Right</code>。</li>
+<li><code>cMatrix</code>：结果累加器 tile，必须是 <code>Acc</code>。</li>
+</ul>
+<p>结果写入 <code>cMatrix</code>。对读者可见的合同是：输出块由本次 <code>A * B</code> 生成，而不是在旧累加器上继续叠加。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="_8">通用约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <ul>
 <li>静态 shape 必须满足：</li>
 <li><code>TileLeft::Rows == TileRes::Rows</code></li>
 <li><code>TileLeft::Cols == TileRight::Rows</code></li>
 <li><code>TileRight::Cols == TileRes::Cols</code></li>
-<li>Tile 位置必须满足：</li>
-<li>左操作数为 <code>TileType::Left</code></li>
-<li>右操作数为 <code>TileType::Right</code></li>
-<li>结果为 <code>TileType::Acc</code></li>
-<li>运行时 <code>m/k/n</code> 均必须落在 <code>[1, 4095]</code>。</li>
-<li><code>TMATMUL</code> 依赖 cube 路径认可的 fractal/layout 组合；Left / Right / Acc 不是可随意替换的通用 Tile 位置。</li>
+<li>tile 角色必须满足：</li>
+<li><code>TileLeft::Loc == Left</code></li>
+<li><code>TileRight::Loc == Right</code></li>
+<li><code>TileRes::Loc == Acc</code></li>
+<li>运行时 <code>m</code>、<code>k</code>、<code>n</code> 必须位于 <code>[1, 4095]</code>。</li>
 </ul>
-<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<h3 id="a2a3">A2A3 约束<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p><code>A2A3</code> 指 Ascend 910B 与 Ascend 910C。当前仓内实现公开支持的 <code>(CType, AType, BType)</code> 组合包括：</p>
 <ul>
-<li>A2/A3 支持的 <code>(CType, AType, BType)</code> 组合是：</li>
 <li><code>(int32_t, int8_t, int8_t)</code></li>
 <li><code>(float, half, half)</code></li>
 <li><code>(float, float, float)</code></li>
 <li><code>(float, bfloat16_t, bfloat16_t)</code></li>
-<li>对 <code>float + float + float</code> 路径，backend 还会根据输入对齐信息决定某些内部实现细节，但不改变外部矩阵乘法语义。</li>
 </ul>
-<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<h3 id="a5">A5 约束<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p><code>A5</code> 指 Ascend 950 PR 与 Ascend 950 DT。当前仓内实现要求：</p>
 <ul>
-<li>A5 上，累加器类型必须是 <code>int32_t</code> 或 <code>float</code>。</li>
-<li>当累加器为 <code>int32_t</code> 时，左右输入都必须是 <code>int8_t</code>。</li>
-<li>当累加器为 <code>float</code> 时，当前实现支持以下输入族：</li>
-<li><code>half / half</code></li>
-<li><code>bfloat16_t / bfloat16_t</code></li>
-<li><code>float / float</code></li>
-<li>若干 fp8 组合：<code>float8_e4m3_t</code> / <code>float8_e5m2_t</code></li>
-<li><code>hifloat8_t / hifloat8_t</code></li>
-<li>A5 的 Left / Right / Acc 还要求固定的 fractal 方向：</li>
+<li>累加器类型必须是 <code>int32_t</code> 或 <code>float</code>；</li>
+<li>若累加器为 <code>int32_t</code>，左右输入都必须是 <code>int8_t</code>；</li>
+<li>若累加器为 <code>float</code>，当前实现支持 <code>half</code>、<code>bfloat16_t</code>、<code>float</code> 和部分 fp8 输入对；</li>
+<li>A5 还要求固定的角色布局组合：</li>
 <li>Left：<code>Loc == Left</code>，非 row-major，<code>SFractal == RowMajor</code></li>
 <li>Right：<code>Loc == Right</code>，row-major，<code>SFractal == ColMajor</code></li>
 <li>Acc：<code>Loc == Acc</code>，非 row-major，<code>SFractal == RowMajor</code></li>
-<li>某些具体 A5 目标可能比通用 A5 实现更窄。例如部分具体芯片只开放其中一部分 dtype 组合；这类收窄以目标 profile 为准。</li>
 </ul>
-<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li>使用不是 <code>Left</code> / <code>Right</code> / <code>Acc</code> 的角色组合；</li>
+<li>形状不满足 <code>(M, K) x (K, N) -&gt; (M, N)</code>；</li>
+<li>在不支持的 target 上使用不支持的 dtype 组合；</li>
+<li>把某个 target 上偶然可运行的布局当成可移植合同。</li>
+</ul>
+<h2 id="_10">性能与吞吐<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p>仓内当前公开的性能数据主要来自 A2A3 costmodel。<code>TMATMUL</code>、<code>TMATMUL_ACC</code> 与 <code>TMATMUL_BIAS</code> 使用同一条 <code>mad/mmad</code> cube 模型：</p>
+<ul>
+<li>启动开销：<code>14</code> cycles；</li>
+<li>repeat 次数：<code>ceil(M/16) * ceil(N/16) * ceil(K / baskK)</code>；</li>
+<li><code>baskK = 32 / sizeof(left_element_type)</code>；</li>
+<li>单个 repeat 的稳态代价：</li>
+<li>int8、fp16 bucket 为 <code>1</code> cycle；</li>
+<li>fp32 bucket 为 <code>2</code> cycles。</li>
+</ul>
+<p>因此 A2A3 的公开公式是：</p>
+<pre><code class="language-text">cycles = 14 + ceil(M/16) * ceil(N/16) * ceil(K / baskK) * repeat_cost
+</code></pre>
+<p>仓内 costmodel 测试样例包括：</p>
+<ul>
+<li>half <code>40x50 * 50x60</code>：<code>62</code> cycles；</li>
+<li>int8 <code>6x7 * 7x8</code>：<code>15</code> cycles；</li>
+<li>float <code>120x110 * 110x50</code>：<code>910</code> cycles。</li>
+</ul>
+<p>当前仓库没有公开单列的 A5 latency / throughput 表，因此 A5 这里只能精确写合法性和 dtype 边界，不能编造周期数字。</p>
+<h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1041,11 +1076,12 @@ void example_manual() {
   TMATMUL(c, a, b);
 }
 </code></pre>
-<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵向量指令集</a></li>
+<li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵-向量指令集</a></li>
 <li><a href="../tmatmul-acc_zh/">TMATMUL_ACC</a></li>
-<li><a href="../../layout-and-rearrangement/tmov_zh/">TMOV</a></li>
+<li><a href="../tmatmul-bias_zh/">TMATMUL_BIAS</a></li>
+<li><a href="../tmatmul-mx_zh/">TMATMUL_MX</a></li>
 </ul>
               
             </div>

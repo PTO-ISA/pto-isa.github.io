@@ -984,10 +984,9 @@
 <h1 id="ptotstore_fp">pto.tstore_fp<a class="headerlink" href="#ptotstore_fp" title="Permanent link">&para;</a></h1>
 <p><code>pto.tstore_fp</code> is part of the <a href="../../../memory-and-data-movement/">Memory And Data Movement</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Store an accumulator tile into global memory using a scaling (<code>fp</code>) tile for vector quantization parameters.</p>
+<p>Store an accumulator tile into global memory through the fix-pipe path.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Store an accumulator tile into global memory using a scaling (<code>fp</code>) tile for vector quantization parameters.</p>
-<p><code>TSTORE_FP</code> is the fp-quantization overload of <a href="../tstore/"><code>pto.tstore</code></a>. It is part of the tile memory/data-movement instruction set, so the visible behavior includes explicit transfer between GM-visible data and tile-visible state.</p>
+<p><code>TSTORE_FP</code> is the fix-pipe overload of <a href="../tstore/"><code>pto.tstore</code></a>. The <code>_fp</code> suffix means <strong>fix pipe</strong>, not floating point. The auxiliary <code>fp</code> tile is the sideband tile consumed by the backend <code>set_fpc(...)</code> path before the store executes.</p>
 <p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. Conceptually (2D view, with a base offset), for <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{r_0 + i,\; c_0 + j} = \mathrm{Convert}\!\left(\mathrm{src}_{i,j};\ \mathrm{fp}\right) \]</div>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
@@ -1016,14 +1015,14 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileDat
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code> is the source accumulator tile.</li>
-<li><code>fp</code> is the scaling tile containing vector quantization parameters.</li>
+<li><code>fp</code> is the auxiliary fix-pipe tile consumed by the backend FPC path.</li>
 <li><code>dst</code> is the destination GlobalTensor.</li>
 <li><code>reluPreMode</code> (optional): specifies ReLU pre-processing mode.</li>
 </ul>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>src</code> is converted using <code>fp</code> scaling parameters and written to <code>dst</code>.</p>
+<p><code>src</code> is written to <code>dst</code> through the fix-pipe path configured by the auxiliary <code>fp</code> tile.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation writes to global memory with quantization conversion.</p>
+<p>This operation writes to global memory and programs fix-pipe sideband state for the transfer.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li>
@@ -1048,14 +1047,14 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileDat
 <li>Source dtype must be <code>int32_t</code> or <code>float</code>.</li>
 <li>Static shape constraints: <code>1 &lt;= TileData::Cols &lt;= 4095</code>; if ND then <code>1 &lt;= TileData::Rows &lt;= 8192</code>; if NZ then <code>1 &lt;= TileData::Rows &lt;= 65535</code> and <code>TileData::Cols % 16 == 0</code>.</li>
 <li>Runtime: <code>1 &lt;= src.GetValidCol() &lt;= 4095</code>.</li>
-<li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code> (the implementation uses <code>fp</code> to set FPC state).</li>
+<li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code>; the implementation uses <code>fp</code> to set FPC state.</li>
 </ul>
 </li>
 <li>
 <p><strong>Implementation checks (A5)</strong>:</p>
 <ul>
 <li>Implemented via <code>TSTORE_IMPL(dst, src, fp)</code> and validated by <code>CheckStaticAcc&lt;..., true&gt;()</code> for the accumulator path (ND/NZ only, <code>int32_t/float</code> source dtype, rows/cols ranges).</li>
-<li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code> (the implementation uses <code>fp</code> to set FPC state).</li>
+<li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code>; the implementation uses <code>fp</code> to set FPC state.</li>
 </ul>
 </li>
 </ul>

@@ -932,8 +932,8 @@
                 <!-- Generated from `docs/isa/tile/tile-scalar-and-immediate_zh.md` -->
 
 <h1 id="tile-">Tile-标量与立即数指令集<a class="headerlink" href="#tile-" title="Permanent link">&para;</a></h1>
-<p>Tile-标量类操作把一个 tile 与一个标量或立即数结合。标量会在语义上广播到整个 tile 形状。比较类变体产生谓词 tile。</p>
-<h2 id="_1">操作<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>Tile-标量类操作把一个 tile 与一个标量或立即数结合。标量在语义上会广播到 tile 的有效区域。多数操作产生数值 tile，比较类变体产生谓词或可作为选择条件使用的结果。</p>
+<h2 id="_1">指令一览<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -952,48 +952,48 @@
 </tr>
 <tr>
 <td><code>pto.tmins</code> / <code>tmaxs</code></td>
-<td>与标量做 min / max</td>
+<td>与标量做逐元素 min / max</td>
 </tr>
 <tr>
 <td><code>pto.tands</code> / <code>tors</code> / <code>txors</code></td>
-<td>与标量做按位逻辑</td>
+<td>与标量做逐元素按位逻辑</td>
 </tr>
 <tr>
 <td><code>pto.tshls</code> / <code>tshrs</code></td>
-<td>用标量做位移</td>
+<td>用标量做逐元素位移</td>
 </tr>
 <tr>
 <td><code>pto.tlrelu</code></td>
-<td>标量 slope 的 Leaky ReLU</td>
+<td>标量斜率的 Leaky ReLU</td>
 </tr>
 <tr>
 <td><code>pto.taddsc</code> / <code>tsubsc</code></td>
-<td>饱和加减</td>
+<td>结合标量和第二个 tile 的融合逐元素运算</td>
 </tr>
 <tr>
-<td><code>pto.texpands</code> / <code>tcmps</code></td>
-<td>与标量比较，产生谓词结果</td>
+<td><code>pto.texpands</code></td>
+<td>用标量填充整个目标 tile</td>
+</tr>
+<tr>
+<td><code>pto.tcmps</code></td>
+<td>tile 与标量比较</td>
 </tr>
 <tr>
 <td><code>pto.tsels</code></td>
-<td>依谓词条件选择</td>
+<td>用 mask / 标量参与逐元素选择</td>
 </tr>
 </tbody>
 </table>
 <h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>对目标 valid region 中的每个 lane：</p>
+<p>对目标 tile 的 valid region 中每个元素 <code>(r, c)</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{r,c} = f(\mathrm{src}_{r,c}, \mathrm{scalar}) \]</div>
-<p>标量逻辑上广播到所有 lane。比较类变体会产生谓词 tile。</p>
-<h2 id="_3">标量操作数<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>标量可以是：</p>
+<p>这里的 <code>scalar</code> 可以是：</p>
 <ul>
 <li>标量寄存器值</li>
 <li>编译期立即数</li>
-<li>运行时参数</li>
+<li>运行时传入的普通标量</li>
 </ul>
-<p>标量类型必须与 tile 元素类型兼容，不存在隐式类型提升。</p>
-<h2 id="_4">饱和变体<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p><code>TADDSC</code> 与 <code>TSUBSC</code> 在溢出/下溢时截断到类型上下界，而不是使用 wrapping 语义。</p>
+<p>PTO 不允许在 tile-标量操作里依赖隐式类型提升。标量如何广播、比较结果如何编码、饱和与否怎样处理，都属于具体操作自己的架构语义。</p>
 <h2 id="profile">目标 Profile 支持<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1006,35 +1006,38 @@
 </thead>
 <tbody>
 <tr>
-<td>f32 / f16 / bf16</td>
+<td><code>f32 / f16 / bf16</code></td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
-<td>i8/u8, i16/u16, i32/u32, i64/u64</td>
+<td><code>i8/u8, i16/u16, i32/u32, i64/u64</code></td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 </tbody>
 </table>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>实际每条指令支持的子集，以各自 per-op 页面为准。</p>
+<h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
-<li>标量类型必须与 tile 元素类型兼容</li>
-<li><code>TSHLS</code> / <code>TSHRS</code> 把标量解释为无符号 shift count</li>
-<li>比较类产生谓词 tile，而不是数值 tile</li>
+<li>标量类型必须与 tile 元素类型兼容。</li>
+<li><code>TSHLS</code> / <code>TSHRS</code> 将标量解释为无符号 shift count。</li>
+<li><code>TCMPS</code> 的结果不应被当成普通数值 tile 使用，除非对应 target/profile 明确约定其编码。</li>
+<li>需要保持 valid region 语义的操作，迭代域都以 <code>dst</code> 的 valid row / col 为准。</li>
 </ul>
-<h2 id="_6">不允许的情形<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_4">不允许的情形<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>使用与 tile 元素类型不兼容的标量</li>
-<li>使用超出元素位宽的 shift count</li>
-<li>依赖隐式类型提升</li>
+<li>使用与 tile 元素类型不兼容的标量。</li>
+<li>依赖隐式类型提升。</li>
+<li>对位移类操作传入超出元素位宽的移位量。</li>
+<li>把不同 target profile 的实现细节当成跨目标保证。</li>
 </ul>
-<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
-<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令集</a></li>
+<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令面</a></li>
 </ul>
               
             </div>

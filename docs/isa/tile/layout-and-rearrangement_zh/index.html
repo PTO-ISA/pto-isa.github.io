@@ -932,80 +932,107 @@
                 <!-- Generated from `docs/isa/tile/layout-and-rearrangement_zh.md` -->
 
 <h1 id="_1">布局与重排指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>布局与重排操作改变 tile 数据在缓冲区中的组织方式。这些操作是<strong>纯数据移动/重解释</strong>操作，不改变元素值本身。</p>
+<p>布局与重排类操作负责改变 tile 数据的组织方式、访问窗口和布局解释。它们大多数不改变有效元素的算术值，但会改变这些元素如何被排列、提取、插入、转置或送入后续算子。</p>
+<p>这组操作的关键不在“是不是搬运”，而在“搬运后数据以什么布局被后续指令看见”。</p>
 <h2 id="_2">操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>操作</th>
-<th>说明</th>
+<th>作用</th>
 <th>类别</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>pto.tmov</code> / <code>pto.tmov_fp</code></td>
-<td>搬运或填充式搬运</td>
+<td><a href="../ops/layout-and-rearrangement/tmov_zh/">pto.tmov</a></td>
+<td>tile 搬运 / 拷贝</td>
 <td>Copy</td>
 </tr>
 <tr>
-<td><code>pto.treshape</code></td>
-<td>改变 tile 形状解释</td>
+<td><a href="../ops/layout-and-rearrangement/tmov-fp_zh/">pto.tmov_fp</a></td>
+<td>fix pipe 搬运 / 填充式搬运</td>
+<td>Copy</td>
+</tr>
+<tr>
+<td><a href="../ops/layout-and-rearrangement/treshape_zh/">pto.treshape</a></td>
+<td>改变 tile 的形状解释</td>
 <td>Transform</td>
 </tr>
 <tr>
-<td><code>pto.ttrans</code></td>
-<td>转置</td>
+<td><a href="../ops/layout-and-rearrangement/ttrans_zh/">pto.ttrans</a></td>
+<td>转置 tile</td>
 <td>Transform</td>
 </tr>
 <tr>
-<td><code>pto.textract</code> / <code>pto.textract_fp</code></td>
+<td><a href="../ops/layout-and-rearrangement/textract_zh/">pto.textract</a></td>
 <td>抽取子 tile</td>
 <td>Extract</td>
 </tr>
 <tr>
-<td><code>pto.tinsert</code> / <code>pto.tinsert_fp</code></td>
+<td><a href="../ops/layout-and-rearrangement/textract-fp_zh/">pto.textract_fp</a></td>
+<td>通过 fix pipe 做抽取 / 填充</td>
+<td>Extract</td>
+</tr>
+<tr>
+<td><a href="../ops/layout-and-rearrangement/tinsert_zh/">pto.tinsert</a></td>
 <td>插入子 tile</td>
 <td>Insert</td>
 </tr>
 <tr>
-<td><code>pto.tfillpad</code> / <code>tfillpad_inplace</code> / <code>tfillpad_expand</code></td>
-<td>填充 padding</td>
+<td><a href="../ops/layout-and-rearrangement/tinsert-fp_zh/">pto.tinsert_fp</a></td>
+<td>通过 fix pipe 做插入 / 填充</td>
+<td>Insert</td>
+</tr>
+<tr>
+<td><a href="../ops/layout-and-rearrangement/tfillpad_zh/">pto.tfillpad</a></td>
+<td>填充 padding 区域</td>
 <td>Fill</td>
 </tr>
 <tr>
-<td><code>pto.timg2col</code></td>
-<td>图像到列的重排</td>
+<td><a href="../ops/layout-and-rearrangement/tfillpad-inplace_zh/">pto.tfillpad_inplace</a></td>
+<td>原地填充 padding</td>
+<td>Fill</td>
+</tr>
+<tr>
+<td><a href="../ops/layout-and-rearrangement/tfillpad-expand_zh/">pto.tfillpad_expand</a></td>
+<td>填充 padding 并扩大 valid region</td>
+<td>Fill</td>
+</tr>
+<tr>
+<td><a href="../ops/layout-and-rearrangement/timg2col_zh/">pto.timg2col</a></td>
+<td>图像块重排为列布局</td>
 <td>Transform</td>
 </tr>
 </tbody>
 </table>
+<p>说明：本家族里 <code>*_fp</code> 的 <code>_fp</code> 指的是 <code>fix pipe</code>，不是 floating point。</p>
 <h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="copy">Copy<a class="headerlink" href="#copy" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">dst[i, j] = src[i, j]
-</code></pre>
-<p><code>*_fp</code> 变体会额外处理 padding 或 fill value。</p>
-<h3 id="transform">Transform<a class="headerlink" href="#transform" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">dst[i, j] = src[index(i, j)]
-</code></pre>
+<h3 id="_4">搬运<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p><code>TMOV</code> 与 <code>TMOV_FP</code> 负责把一个 tile 的数据复制到另一个 tile。两者的差别不是“一个是浮点，一个不是”，而是是否走 fix pipe 及其附带的填充 / 边界处理合同。</p>
+<h3 id="_5">形状与布局重解释<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>TTRANS</code>：交换行列</li>
-<li><code>TRESHAPE</code>：在保持元素总数不变的前提下改变形状解释</li>
-<li><code>TIMG2COL</code>：把卷积 patch 重排成列</li>
+<li><code>TRESHAPE</code> 在不改变元素总数的前提下改变 shape 解释；</li>
+<li><code>TTRANS</code> 把行列对调；</li>
+<li><code>TIMG2COL</code> 把卷积窗口重排成列式布局，供后续卷积 lowering 或矩阵化计算使用。</li>
 </ul>
-<h3 id="extract-insert">Extract / Insert<a class="headerlink" href="#extract-insert" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">TEXTRACT: dst = src[row_offset : ..., col_offset : ...]
-TINSERT:  dst[row_offset : ..., col_offset : ...] = src
-</code></pre>
-<h3 id="fill">Fill<a class="headerlink" href="#fill" title="Permanent link">&para;</a></h3>
-<p>对 valid region 之外的 padding 区域填入指定值。<code>INPLACE</code> 在原 tile 上操作，<code>EXPAND</code> 还会扩大 valid region。</p>
+<h3 id="_6">抽取与插入<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TEXTRACT</code> 从源 tile 中抽出一个窗口；</li>
+<li><code>TINSERT</code> 把子 tile 插回目标 tile 的指定位置；</li>
+<li>对应的 <code>*_fp</code> 变体在 fix pipe 上完成相同类型的边界与填充合同。</li>
+</ul>
+<h3 id="padding">Padding 填充<a class="headerlink" href="#padding" title="Permanent link">&para;</a></h3>
+<p><code>TFILLPAD</code>、<code>TFILLPAD_INPLACE</code> 与 <code>TFILLPAD_EXPAND</code> 处理 valid region 之外的 padding 区域。它们看起来像“写入默认值”，但本质上是在为后续布局敏感或边界敏感的算子准备更稳定的输入形态。</p>
+<h2 id="_7">为什么这组指令要单列<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p>如果不把布局重排单独拿出来，很多 tile 算术页就会被迫重复解释“输入到底是原样、转置后，还是某个子窗口”。把这组指令集中到一个家族里，能把“数据如何被重新组织”这层语义单独讲清楚。</p>
 <h2 id="profile">目标 Profile 支持<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>元素类型</th>
 <th style="text-align: center;">CPU</th>
-<th style="text-align: center;">A2/A3</th>
+<th style="text-align: center;">A2A3</th>
 <th style="text-align: center;">A5</th>
 </tr>
 </thead>
@@ -1017,7 +1044,7 @@ TINSERT:  dst[row_offset : ..., col_offset : ...] = src
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
-<td>i8/u8, i16/u16, i32/u32, i64/u64</td>
+<td>i8/u8、i16/u16、i32/u32、i64/u64</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
@@ -1030,25 +1057,25 @@ TINSERT:  dst[row_offset : ..., col_offset : ...] = src
 </tr>
 </tbody>
 </table>
-<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="_8">约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>TRESHAPE</code> 要求总元素数不变</li>
-<li><code>TEXTRACT</code> 的 offset 与子形状必须落在源 tile 声明范围内</li>
-<li><code>TINSERT</code> 插入后的区域必须落在目标 tile 范围内</li>
-<li><code>*_fp</code> 变体要求 fill value 与 tile 元素类型兼容</li>
-<li><code>TIMG2COL</code> 依赖 kernel/padding/stride 配置，且受 profile 缩窄</li>
+<li><code>TRESHAPE</code> 要求总元素数保持不变。</li>
+<li><code>TEXTRACT</code> 的 offset 与子形状必须落在源 tile 声明范围内。</li>
+<li><code>TINSERT</code> 插入后的区域必须落在目标 tile 声明范围内。</li>
+<li><code>*_fp</code> 变体要求填充值与 tile 元素类型兼容。</li>
+<li><code>TIMG2COL</code> 依赖 kernel、padding、stride 等配置，且会被具体 profile 收窄。</li>
 </ul>
-<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <ul>
-<li>reshape 到不同总元素数的形状</li>
-<li>用越界 offset 做 extract / insert</li>
-<li>在不支持的 profile 上把 FP8 与 <code>TIMG2COL</code> 组合使用</li>
+<li>reshape 到不同总元素数的形状；</li>
+<li>用越界 offset 做 extract / insert；</li>
+<li>在不支持的 profile 上把 FP8 与 <code>TIMG2COL</code> 组合使用。</li>
 </ul>
-<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_10">相关页面<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
-<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令集</a></li>
-<li><a href="../../state-and-types/layout_zh/">布局参考</a></li>
+<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令表面</a></li>
+<li><a href="../../state-and-types/layout_zh/">布局</a></li>
 </ul>
               
             </div>

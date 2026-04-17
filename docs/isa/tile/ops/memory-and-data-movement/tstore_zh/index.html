@@ -931,17 +931,15 @@
               
                 <!-- Generated from `docs/isa/tile/ops/memory-and-data-movement/tstore_zh.md` -->
 
-<h1 id="tstore">TSTORE<a class="headerlink" href="#tstore" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSTORE tile operation" src="../../../../../figures/isa/TSTORE.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TSTORE</code> 把 Tile 中的数据写回 <code>GlobalTensor</code>（GM）。在普通写回之外，它还支持原子写入，以及当前实现中仅针对 <code>TileType::Acc</code> 暴露的量化写回重载。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>地址计算取决于 <code>GlobalTensor</code> 的 shape / stride 和 Tile 布局。用带基址偏移的二维视角表示时：</p>
+<h1 id="ptotstore">pto.tstore<a class="headerlink" href="#ptotstore" title="Permanent link">&para;</a></h1>
+<p><code>pto.tstore</code> 属于<a href="../../../memory-and-data-movement_zh/">内存与数据搬运</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>把 tile 中的数据写回 <code>GlobalTensor</code>（GM）。普通写回、原子写回以及当前实现中面向 <code>TileType::Acc</code> 的量化写回都在这一类接口里。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>若用带基址偏移的二维视角表示，可写成：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{r_0 + i,\; c_0 + j} = \mathrm{src}_{i,j} \]</div>
-<p>真正的写回范围由源 Tile 的 valid region 决定。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>真正的写回范围由源 tile 的 valid region 决定。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
 <pre><code class="language-text">tstore %t1, %sv_out[%c0, %c0]
 </code></pre>
@@ -952,7 +950,6 @@
 <pre><code class="language-text">pto.tstore ins(%src : !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code> 和 <code>include/pto/common/constants.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, AtomicType atomicType = AtomicType::AtomicNone,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TSTORE(GlobalData &amp;dst, TileData &amp;src, WaitEvents &amp;... events);
@@ -965,56 +962,58 @@ template &lt;typename TileData, typename GlobalData, typename FpTileData, Atomic
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
 </code></pre>
-<p><code>preQuantScalar</code> 和 <code>TSTORE_FP</code> 这两类量化写回重载，在当前 A2/A3 与 A5 backend 上只对 <code>TileType::Acc</code> 合法；它们不是通用 vec-tile 量化写回接口。</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>写回大小由 <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code> 决定。</li>
-<li>目标 <code>GlobalTensor</code> 的 shape 必须足以容纳这次写回。</li>
+<li><code>src</code>：源 tile</li>
+<li><code>dst</code>：目标 <code>GlobalTensor</code></li>
+<li><code>atomicType</code>：可选原子写回模式</li>
+<li><code>preQuantScalar</code> / <code>fp</code>：当前实现中仅对 <code>TileType::Acc</code> 合法的量化 / fix-pipe 路径附加参数</li>
 </ul>
-<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>源 Tile 的位置类型必须是 <code>TileType::Vec</code>、<code>TileType::Mat</code> 或 <code>TileType::Acc</code>。</li>
-<li>运行时要求：所有 <code>dst.GetShape(dim)</code> 以及 <code>src.GetValidRow()/GetValidCol()</code> 都必须大于 <code>0</code>。</li>
-<li>对 <code>TileType::Vec</code> / <code>TileType::Mat</code>：</li>
-<li><code>TileData::DType</code> 必须属于：
-    <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>int64_t</code>、<code>uint64_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code></li>
-<li><code>sizeof(TileData::DType)</code> 必须等于 <code>sizeof(GlobalData::DType)</code></li>
+<li>数据从 <code>src</code> 写回 <code>dst</code></li>
+<li>若使用原子模式，则在 GM 侧执行累加或比较类原子写回</li>
+<li>若使用 <code>TSTORE_FP</code>，则通过 fix-pipe sideband state 路径写回</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令会写 GM。原子模式下，并发写入的结果还会依赖实现和内存一致性规则。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>写回范围由 <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code> 决定</li>
+<li>目标 <code>GlobalTensor</code> 的 shape / stride 必须允许这次写回</li>
+</ul>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>源 tile 位置必须是 <code>TileType::Vec</code>、<code>TileType::Mat</code> 或 <code>TileType::Acc</code></li>
+<li>运行时要求：所有 <code>dst.GetShape(dim)</code> 和 <code>src.GetValidRow()/GetValidCol()</code> 都大于 0</li>
+<li>对 <code>Vec/Mat</code>：</li>
+<li>支持类型：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>int64_t</code>、<code>uint64_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code></li>
+<li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code></li>
 <li>布局必须匹配 ND / DN / NZ，或满足单行 / 单列特殊情形</li>
-<li>对 <code>int64_t/uint64_t</code>，仅支持 <code>ND -&gt; ND</code> 与 <code>DN -&gt; DN</code></li>
-<li>A2/A3 不提供原生的 vec 量化写回路径；若要做 <code>vec -&gt; GM</code> 的类型转换或量化，应先显式生成转换后的 vec Tile，再执行同 dtype 的 <code>TSTORE</code></li>
+<li><code>int64_t/uint64_t</code> 只支持 <code>ND→ND</code> 与 <code>DN→DN</code></li>
 <li>对 <code>TileType::Acc</code>：</li>
 <li>目标布局必须为 ND 或 NZ</li>
 <li>源 dtype 必须为 <code>int32_t</code> 或 <code>float</code></li>
 <li>不量化时，目标 dtype 必须为 <code>__gm__ int32_t/float/half/bfloat16_t</code></li>
-<li>静态 shape 约束：
-    <code>1 &lt;= TileData::Cols &lt;= 4095</code>
-    若为 ND，<code>1 &lt;= TileData::Rows &lt;= 8192</code>
-    若为 NZ，<code>1 &lt;= TileData::Rows &lt;= 65535</code> 且 <code>TileData::Cols % 16 == 0</code></li>
-<li>运行时要求：<code>1 &lt;= src.GetValidCol() &lt;= 4095</code></li>
+<li>shape 受 <code>Cols &lt;= 4095</code>、<code>Rows</code> 上限等约束</li>
 </ul>
-<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <ul>
-<li>源 Tile 的位置类型必须为 <code>TileType::Vec</code> 或 <code>TileType::Acc</code>（A5 不支持 <code>Mat</code> store）。</li>
-<li>对 <code>TileType::Vec</code>：</li>
-<li><code>sizeof(TileData::DType)</code> 必须等于 <code>sizeof(GlobalData::DType)</code></li>
-<li><code>TileData::DType</code> 必须属于：
-    <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>int64_t</code>、<code>uint64_t</code>、
-    <code>half</code>、<code>bfloat16_t</code>、<code>float</code>、<code>float8_e4m3_t</code>、<code>float8_e5m2_t</code>、<code>hifloat8_t</code>、
-    <code>float4_e1m2x2_t</code>、<code>float4_e2m1x2_t</code></li>
-<li>布局必须匹配 ND / DN / NZ，或满足单行 / 单列特殊情形</li>
-<li>还存在额外的对齐要求，例如 ND 时 row-major 宽度字节数应为 32 的倍数；DN 时 column-major 高度字节数应为 32 的倍数</li>
-<li>对 <code>TileType::Acc</code>：</li>
-<li>目标布局必须为 ND 或 NZ</li>
-<li>源 dtype 必须为 <code>int32_t</code> 或 <code>float</code></li>
-<li>不量化时，目标 dtype 必须为 <code>__gm__ int32_t/float/half/bfloat16_t</code></li>
-<li>静态 shape 约束与 A2/A3 一致</li>
-<li><code>AtomicAdd</code> 还会进一步限制目标 dtype 必须属于支持的原子类型</li>
+<li>源 tile 位置必须为 <code>TileType::Vec</code> 或 <code>TileType::Acc</code></li>
+<li><code>Vec</code> 路径支持更宽的元素类型集合，包括部分 float8 / packed float4 形式</li>
+<li><code>Vec</code> 路径要求 <code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code></li>
+<li>布局需匹配 ND / DN / NZ，且额外存在行宽 / 列高字节对齐约束</li>
+<li><code>Acc</code> 路径与 A2A3 类似，但 <code>AtomicAdd</code> 还会进一步限制目标 dtype</li>
 </ul>
-<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有把 <code>tstore</code> 单列成完整公开周期表，但在 A2A3 的搬运带宽模型里，Vec → Vec / GM 路径通常按带宽估算。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 template &lt;typename T&gt;
@@ -1029,29 +1028,10 @@ void example_auto(__gm__ T* out) {
   TSTORE(gout, t);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T&gt;
-void example_manual(__gm__ T* out) {
-  using TileT = Tile&lt;TileType::Vec, T, 16, 16&gt;;
-  using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
-  using GStride = BaseShape2D&lt;T, 16, 16, Layout::ND&gt;;
-  using GTensor = GlobalTensor&lt;T, GShape, GStride, Layout::ND&gt;;
-
-  GTensor gout(out);
-  TileT t;
-  TASSIGN(t, 0x1000);
-  TSTORE&lt;TileT, GTensor, AtomicType::AtomicAdd&gt;(gout, t);
-}
-</code></pre>
-<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../memory-and-data-movement_zh/">内存与数据搬运指令集</a></li>
+<li>指令集总览：<a href="../../../memory-and-data-movement_zh/">内存与数据搬运</a></li>
 <li><a href="../../../../memory-model/consistency-baseline_zh/">一致性基线</a></li>
-<li><a href="../../../../state-and-types/layout_zh/">布局参考</a></li>
 </ul>
               
             </div>

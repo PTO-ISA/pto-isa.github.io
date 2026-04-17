@@ -931,16 +931,15 @@
               
                 <!-- Generated from `docs/isa/tile/ops/reduce-and-expand/trowexpandmax_zh.md` -->
 
-<h1 id="trowexpandmax">TROWEXPANDMAX<a class="headerlink" href="#trowexpandmax" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TROWEXPANDMAX tile operation" src="../../../../../figures/isa/TROWEXPANDMAX.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TROWEXPANDMAX</code> 把一个“按行给出的标量向量”广播到整行，再和 <code>src0</code> 做逐元素最大值。常见用途是按行阈值裁剪或 softmax 前的按行最大值展开。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>设 <code>R = dst.GetValidRow()</code>、<code>C = dst.GetValidCol()</code>。记 <code>s_i</code> 为第 <code>i</code> 行对应的广播标量，则：</p>
+<h1 id="ptotrowexpandmax">pto.trowexpandmax<a class="headerlink" href="#ptotrowexpandmax" title="Permanent link">&para;</a></h1>
+<p><code>pto.trowexpandmax</code> 属于<a href="../../../reduce-and-expand_zh/">归约与扩展</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>把“每行一个标量”的向量广播到整行，再与 <code>src0</code> 做逐元素最大值。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>设 <code>R = dst.GetValidRow()</code>、<code>C = dst.GetValidCol()</code>。记 <code>s_i</code> 为第 <code>i</code> 行对应的广播标量。则：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \max(\mathrm{src0}_{i,j}, s_i) \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>常见用途是按行阈值裁剪、数值稳定化前的按行上界展开等。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = trowexpandmax %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -951,7 +950,6 @@
 <pre><code class="language-text">pto.trowexpandmax ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWEXPANDMAX(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, WaitEvents &amp;... events);
 
@@ -960,17 +958,33 @@ template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1,
 PTO_INST RecordEvent TROWEXPANDMAX(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, TileDataTmp &amp;tmp,
                                    WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>dst/src0/src1</code> 的元素类型必须一致，且当前实现只支持 <code>half</code> 或 <code>float</code>。</li>
-<li><code>dst</code> 必须是 row-major Tile。</li>
-<li><code>src0</code> 或 <code>src1</code> 其中之一必须与 <code>dst</code> 具有相同的 valid shape。</li>
-<li>另一侧承担“每行一个标量”的广播角色。</li>
+<li><code>src0</code>：逐元素主输入 tile</li>
+<li><code>src1</code>：提供“每行一个标量”的广播源</li>
+<li><code>tmp</code>：部分实现路径会用到的临时 tile</li>
+<li><code>dst</code>：目标 tile</li>
 </ul>
-<p>广播侧允许的具体形态与 <code>TROWEXPANDADD</code> 相同：不带 <code>tmp</code> 时可接受单列广播或一行 32B 数据块；带 <code>tmp</code> 时更偏向单列广播。</p>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst[i,j] = max(src0[i,j], src1[i,0])</code></li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst/src0/src1</code> 的元素类型必须一致，当前实现只支持 <code>half</code> 或 <code>float</code></li>
+<li><code>dst</code> 必须是 row-major</li>
+<li><code>src1</code> 需要表达“每行一个标量”这一角色</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有把 <code>trowexpandmax</code> 单列成公开 cost table，应视为目标 profile 相关的广播组合路径。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 void example() {
@@ -981,11 +995,11 @@ void example() {
   TROWEXPANDMAX(dst, src0, src1);
 }
 </code></pre>
-<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../trowexpandmin_zh/">TROWEXPANDMIN</a></li>
-<li><a href="../trowexpandadd_zh/">TROWEXPANDADD</a></li>
-<li><a href="../../../reduce-and-expand_zh/">归约与扩展指令集</a></li>
+<li>指令集总览：<a href="../../../reduce-and-expand_zh/">归约与扩展</a></li>
+<li>上一条指令：<a href="../trowexpandadd_zh/">pto.trowexpandadd</a></li>
+<li>下一条指令：<a href="../trowexpandmin_zh/">pto.trowexpandmin</a></li>
 </ul>
               
             </div>

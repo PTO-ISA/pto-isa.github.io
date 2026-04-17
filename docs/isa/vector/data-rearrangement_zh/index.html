@@ -931,50 +931,152 @@
               
                 <!-- Generated from `docs/isa/vector/data-rearrangement_zh.md` -->
 
-<h1 id="_1">数据重排指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>数据重排指令在寄存器内部或寄存器之间重排数据，而不经过 DMA 或 tile 搬运。它们包括 interleave、deinterleave、slide、compress、expand、pack 和 unpack。</p>
-<h2 id="_2">常见操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h1 id="_1">向量指令集：数据重排<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>这里定义的是寄存器内、寄存器间的数据重排操作。它们会改动向量可见数据的排列方式，但不会退化成 tile 搬运或 DMA，因此仍属于 <code>pto.v*</code> 指令面。</p>
+<blockquote>
+<p><strong>类别：</strong> 寄存器内数据移动与置换
+<strong>流水线：</strong> <code>PIPE_V</code></p>
+</blockquote>
+<p>这组操作覆盖交织 / 去交织、滑窗、压缩 / 展开、置换、pack / unpack 等场景。它们的共同点是：只处理寄存器内容，不直接访问向量 tile buffer。</p>
+<hr />
+<h2 id="_2">通用操作数模型<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>pto.vintlv</code> / <code>pto.vdintlv</code></li>
-<li><code>pto.vslide</code> / <code>pto.vshift</code></li>
-<li><code>pto.vsqz</code> / <code>pto.vusqz</code></li>
-<li><code>pto.vpack</code> / <code>pto.vsunpack</code> / <code>pto.vzunpack</code></li>
-<li><code>pto.vperm</code></li>
-<li><code>pto.vintlvv2</code> / <code>pto.vdintlvv2</code></li>
+<li><code>%lhs</code> / <code>%rhs</code>：双输入重排的两个源寄存器</li>
+<li><code>%src</code>：单输入重排的源寄存器</li>
+<li><code>%result</code>：目标寄存器；少数指令会显式返回两个结果</li>
 </ul>
-<h2 id="_3">操作数模型<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>因为这些指令不碰内存，所以页面的重点是“结果排列顺序”而不是“地址如何计算”。</p>
+<hr />
+<h2 id="_3">交织与去交织<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="ptovintlv"><code>pto.vintlv</code><a class="headerlink" href="#ptovintlv" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>%lhs</code> / <code>%rhs</code>：双输入重排</li>
-<li><code>%src</code>：单输入重排</li>
-<li><code>%result</code>：单个结果向量</li>
-<li>某些操作会返回成对结果，如 interleave / deinterleave</li>
+<li><strong>语法：</strong> <code>%low, %high = pto.vintlv %lhs, %rhs : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 把两个源向量交织成两路输出。</li>
 </ul>
-<h2 id="_4">机制<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<h3 id="interleave-deinterleave">Interleave / Deinterleave<a class="headerlink" href="#interleave-deinterleave" title="Permanent link">&para;</a></h3>
-<p>把两个向量按 even/odd 交织，或把交织后的数据拆分回两路。</p>
-<h3 id="slide-shift">Slide / Shift<a class="headerlink" href="#slide-shift" title="Permanent link">&para;</a></h3>
-<p>在逻辑拼接窗口上抽取一个长度为 <code>N</code> 的滑动结果，或在单源向量上做零填充 shift。</p>
-<h3 id="compress-expand">Compress / Expand<a class="headerlink" href="#compress-expand" title="Permanent link">&para;</a></h3>
-<p>按 mask 压紧有效 lane，或把压紧结果再展开到固定寄存器形状。</p>
-<h3 id="pack-unpack-permute">Pack / Unpack / Permute<a class="headerlink" href="#pack-unpack-permute" title="Permanent link">&para;</a></h3>
-<p>把更宽或更窄的 lane 重新组合，或按索引置换顺序。</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">// low  = {src0[0], src1[0], src0[1], src1[1], ...}
+// high = {src0[N/2], src1[N/2], src0[N/2+1], src1[N/2+1], ...}
+</code></pre>
+<p>两个输出构成一个成对结果，顺序必须保留。</p>
+<h3 id="ptovdintlv"><code>pto.vdintlv</code><a class="headerlink" href="#ptovdintlv" title="Permanent link">&para;</a></h3>
 <ul>
-<li>成对输出的顺序必须被保留</li>
-<li>某些重排只对特定元素宽度合法</li>
-<li>压缩与展开需要与 mask 语义一致</li>
-<li><code>vslide</code> 的源顺序和提取偏移不能被 lowering 改写</li>
+<li><strong>语法：</strong> <code>%low, %high = pto.vdintlv %lhs, %rhs : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 把交织流拆回偶数 / 奇数位置。</li>
 </ul>
-<h2 id="_6">不允许的情形<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">// low  = {src0[0], src0[2], src0[4], ...}
+// high = {src0[1], src0[3], src0[5], ...}
+</code></pre>
+<p>这两条指令最容易被误写的点是“两个结果可交换”。它们不可交换，SSA 结果的顺序就是架构语义的一部分。</p>
+<hr />
+<h2 id="slide-shift">slide / shift<a class="headerlink" href="#slide-shift" title="Permanent link">&para;</a></h2>
+<h3 id="ptovslide"><code>pto.vslide</code><a class="headerlink" href="#ptovslide" title="Permanent link">&para;</a></h3>
 <ul>
-<li>把成对输出的顺序当作可交换</li>
-<li>混淆 zero-fill、preserve 或 wrap 类 shift 语义</li>
-<li>在未文档化的元素宽度上使用特定 pack / unpack 变体</li>
+<li><strong>语法：</strong> <code>%result = pto.vslide %src0, %src1, %amt : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, i16 -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 先把 <code>%src1</code> 与 <code>%src0</code> 逻辑拼接，再从偏移 <code>%amt</code> 开始截出一个长度为 <code>N</code> 的窗口。</li>
 </ul>
+<p>这类操作常用于滑窗、移位寄存器和跨向量边界的卷积准备。</p>
+<h3 id="ptovshift"><code>pto.vshift</code><a class="headerlink" href="#ptovshift" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vshift %src, %amt : !pto.vreg&lt;NxT&gt;, i16 -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 单源 slide，空出来的位置按当前形式要求做零填充或其他规定填充。</li>
+</ul>
+<p>这两条指令的关键语义不是“移多少位”，而是“逻辑窗口如何建立、从哪里截取”。lowering 不能偷偷改动源顺序。</p>
+<hr />
+<h2 id="_4">压缩与展开<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="ptovsqz"><code>pto.vsqz</code><a class="headerlink" href="#ptovsqz" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vsqz %src, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 把 mask 选中的活跃 lane 压紧到结果前部。</li>
+</ul>
+<pre><code class="language-c">int j = 0;
+for (int i = 0; i &lt; N; i++)
+    if (mask[i]) dst[j++] = src[i];
+while (j &lt; N) dst[j++] = 0;
+</code></pre>
+<p>活跃元素之间的相对顺序必须与源 lane 顺序一致。</p>
+<h3 id="ptovusqz"><code>pto.vusqz</code><a class="headerlink" href="#ptovusqz" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vusqz %mask : !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 把前部压紧流再按 <code>%mask</code> 的活跃位置展开回固定形状。</li>
+</ul>
+<p>当前指令面把“前部压紧流”的来源隐含在形式之中，因此后端更不能随意改写其放置规则。</p>
+<hr />
+<h2 id="_5">置换与选择<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="ptovperm"><code>pto.vperm</code><a class="headerlink" href="#ptovperm" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vperm %src, %index : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxI&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 在寄存器内做表驱动置换。</li>
+</ul>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src[index[i] % N];
+</code></pre>
+<p>它是寄存器内 permutation，不是从向量 tile buffer 读数据的 gather。</p>
+<h3 id="ptovselr"><code>pto.vselr</code><a class="headerlink" href="#ptovselr" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vselr %src0, %src1 : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxI&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 带反向选择语义的寄存器选择。</li>
+</ul>
+<p>这条指令也会在 compare/select 语境下被提到，但在这里强调的是它的重排属性。</p>
+<hr />
+<h2 id="pack-unpack">pack / unpack<a class="headerlink" href="#pack-unpack" title="Permanent link">&para;</a></h2>
+<h3 id="ptovpack"><code>pto.vpack</code><a class="headerlink" href="#ptovpack" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vpack %src0, %src1, %part : !pto.vreg&lt;NxT_wide&gt;, !pto.vreg&lt;NxT_wide&gt;, index -&gt; !pto.vreg&lt;2NxT_narrow&gt;</code></li>
+<li><strong>语义：</strong> 把两个宽向量打包成一个窄向量。</li>
+</ul>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++) {
+    dst[i]     = truncate(src0[i]);
+    dst[N + i] = truncate(src1[i]);
+}
+</code></pre>
+<p>这是收窄操作，不是无损搬运。超出目标位宽的部分会按所选 pack 模式截断。</p>
+<h3 id="ptovsunpack"><code>pto.vsunpack</code><a class="headerlink" href="#ptovsunpack" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vsunpack %src, %part : !pto.vreg&lt;NxT_narrow&gt;, index -&gt; !pto.vreg&lt;N/2xT_wide&gt;</code></li>
+<li><strong>语义：</strong> 选择一半窄向量并做符号扩展。</li>
+</ul>
+<h3 id="ptovzunpack"><code>pto.vzunpack</code><a class="headerlink" href="#ptovzunpack" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vzunpack %src, %part : !pto.vreg&lt;NxT_narrow&gt;, index -&gt; !pto.vreg&lt;N/2xT_wide&gt;</code></li>
+<li><strong>语义：</strong> 选择一半窄向量并做零扩展。</li>
+</ul>
+<p><code>vsunpack</code> 与 <code>vzunpack</code> 的差别就在于扩展时是否保留符号位。</p>
+<hr />
+<h2 id="_6">典型用法<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mlir">%even, %odd = pto.vdintlv %interleaved0, %interleaved1
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;
+
+%pass_mask = pto.vcmps %values, %threshold, %all, &quot;gt&quot;
+    : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
+%compacted = pto.vsqz %values, %pass_mask
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+
+%prev_window = pto.vslide %curr, %prev, %c1
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, i16 -&gt; !pto.vreg&lt;64xf32&gt;
+%window_sum = pto.vadd %curr, %prev_window, %all
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+
+%packed_i16 = pto.vpack %wide0_i32, %wide1_i32, %c0
+    : !pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, index -&gt; !pto.vreg&lt;128xi16&gt;
+</code></pre>
+<hr />
+<h2 id="v2">V2 交织形式<a class="headerlink" href="#v2" title="Permanent link">&para;</a></h2>
+<h3 id="ptovintlvv2"><code>pto.vintlvv2</code><a class="headerlink" href="#ptovintlvv2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vintlvv2 %lhs, %rhs, "PART" : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> V2 交织形式，但只把一半结果暴露为一个 SSA 值。</li>
+</ul>
+<h3 id="ptovdintlvv2"><code>pto.vdintlvv2</code><a class="headerlink" href="#ptovdintlvv2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vdintlvv2 %lhs, %rhs, "PART" : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> V2 去交织形式，同样只暴露一半结果。</li>
+</ul>
+<p>这两条的限制是：结果并不是完整双路输出，而是只取其中一半，因此 <code>PART</code> 的选择必须被精确保留。</p>
+<hr />
 <h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../vector-families_zh/">向量指令族</a></li>
-<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
+<li><a href="../vector-load-store_zh/">向量加载与存储</a></li>
+<li><a href="../predicate-and-materialization_zh/">谓词与物化</a></li>
+<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令面</a></li>
 </ul>
               
             </div>

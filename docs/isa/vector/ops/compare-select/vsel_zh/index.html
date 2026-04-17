@@ -932,17 +932,91 @@
                 <!-- Generated from `docs/isa/vector/ops/compare-select/vsel_zh.md` -->
 
 <h1 id="ptovsel">pto.vsel<a class="headerlink" href="#ptovsel" title="Permanent link">&para;</a></h1>
-<p>按谓词在两个向量结果之间做选择。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vsel</code> 属于<a href="../../../compare-select_zh/">比较与选择</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vsel</code> 根据显式谓词掩码，在两个向量操作数之间逐 lane 选择一个值。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对每个 lane <code>i</code>：</p>
+<pre><code class="language-text">result[i] = mask[i] ? src0[i] : src1[i]
+</code></pre>
+<p>这条指令消费两个形状相同的向量操作数，并按显式谓词决定每个 lane 取真值还是假值分支。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vsel %dst, %src_true, %src_false, %mask : !pto.vreg&lt;NxT&gt;
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vsel %src0, %src1, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%src0</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>当掩码位为 1 时被选中的值</td>
+</tr>
+<tr>
+<td><code>%src1</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>当掩码位为 0 时被选中的值</td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>逐 lane 选择 <code>%src0</code> 与 <code>%src1</code> 的谓词</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>逐 lane 选择后的结果向量</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令除了产生目标向量外，没有其他架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li>比较模式、谓词宽度和输入类型必须匹配。</li>
-<li><code>vselr</code> / <code>vselrv2</code> 的具体选择语义必须由 lowering 精确保留。</li>
+<li><code>%src0</code>、<code>%src1</code> 与 <code>%result</code> 必须有相同的向量宽度 <code>N</code> 和相同的元素类型 <code>T</code>。</li>
+<li><code>%mask</code> 的宽度必须与 <code>N</code> 一致。</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
+<li>约束部分列出的额外非法情形，同样属于 <code>pto.vsel</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+<li>如果代码依赖隐式谓词来源或某种目标专用编码变体，这类依赖都应视为 profile 相关。</li>
+</ul>
+<h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    result[i] = mask[i] ? src0[i] : src1[i];
+</code></pre>
+<pre><code class="language-mlir">%result = pto.vsel %true_vals, %false_vals, %condition
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<h2 id="_10">性能<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="_11">时延与吞吐披露<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vsel</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -967,9 +1041,11 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vsel</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../compare-select_zh/">比较与选择指令集</a></li>
+<li>指令集总览：<a href="../../../compare-select_zh/">比较与选择</a></li>
+<li>上一条指令：<a href="../vcmps_zh/">pto.vcmps</a></li>
+<li>下一条指令：<a href="../vselr_zh/">pto.vselr</a></li>
 </ul>
               
             </div>

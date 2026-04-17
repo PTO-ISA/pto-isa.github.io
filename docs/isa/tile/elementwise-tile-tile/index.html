@@ -160,7 +160,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#valid-region-compatibility">Valid Region Compatibility</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#saturating-variants">Saturating Variants</a>
+    <li class="toctree-l3"><a class="reference internal" href="#_c-variants">_c Variants</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#type-support-by-target-profile">Type Support by Target Profile</a>
     </li>
@@ -1080,15 +1080,15 @@
 </tr>
 <tr>
 <td><a href="../ops/elementwise-tile-tile/taddc/">pto.taddc</a></td>
-<td>Saturating elementwise addition</td>
-<td>Binary</td>
-<td><code>TADDC(dst, src0, src1)</code></td>
+<td>Three-input fused addition</td>
+<td>Ternary-like Binary</td>
+<td><code>TADDC(dst, src0, src1, src2)</code></td>
 </tr>
 <tr>
 <td><a href="../ops/elementwise-tile-tile/tsubc/">pto.tsubc</a></td>
-<td>Saturating elementwise subtraction</td>
-<td>Binary</td>
-<td><code>TSUBC(dst, src0, src1)</code></td>
+<td>Three-input fused subtract/add</td>
+<td>Ternary-like Binary</td>
+<td><code>TSUBC(dst, src0, src1, src2)</code></td>
 </tr>
 <tr>
 <td><a href="../ops/elementwise-tile-tile/tcvt/">pto.tcvt</a></td>
@@ -1165,30 +1165,13 @@
 <li>Source tiles whose valid region does not cover <code>(r, c)</code> read <strong>implementation-defined values</strong></li>
 <li>Programs MUST NOT rely on any particular value being read from an out-of-region source lane unless the operation explicitly documents the behavior</li>
 </ul>
-<h2 id="saturating-variants">Saturating Variants<a class="headerlink" href="#saturating-variants" title="Permanent link">&para;</a></h2>
-<p>Operations with the <code>_c</code> suffix perform saturating arithmetic instead of wrapping arithmetic:</p>
-<table>
-<thead>
-<tr>
-<th>Base Op</th>
-<th>Saturating Op</th>
-<th>Overflow/Underflow Behavior</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>TADD</code></td>
-<td><code>TADDC</code></td>
-<td>Clamp to type min/max</td>
-</tr>
-<tr>
-<td><code>TSUB</code></td>
-<td><code>TSUBC</code></td>
-<td>Clamp to type min/max</td>
-</tr>
-</tbody>
-</table>
-<p>Programs MUST NOT assume that <code>TADDC</code> and <code>TADD</code> produce identical results when overflow does not occur; they MAY differ even for in-range values due to implementation precision choices.</p>
+<h2 id="_c-variants"><code>_c</code> Variants<a class="headerlink" href="#_c-variants" title="Permanent link">&para;</a></h2>
+<p>Within the current canonical per-op pages and intrinsic signatures, the <code>_c</code> suffix in this instruction family does <strong>not</strong> denote a generic saturating-arithmetic convention:</p>
+<ul>
+<li><code>TADDC</code> is a three-input fused add: <code>src0 + src1 + src2</code></li>
+<li><code>TSUBC</code> is a three-input fused subtract/add: <code>src0 - src1 + src2</code></li>
+</ul>
+<p>Readers MUST NOT infer saturating semantics from the suffix alone; always treat the individual per-op page as the source of truth.</p>
 <h2 id="type-support-by-target-profile">Type Support by Target Profile<a class="headerlink" href="#type-support-by-target-profile" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1263,7 +1246,7 @@
 <ul>
 <li><strong>MUST NOT</strong> assume implicit broadcasting, reshaping, or valid-region repair.</li>
 <li><strong>MUST NOT</strong> rely on a defined value from a source tile lane outside its valid region.</li>
-<li><strong>MUST NOT</strong> assume <code>TADDC</code>/<code>TSUBC</code> are bit-identical to <code>TADD</code>/<code>TSUB</code> for all inputs.</li>
+<li><strong>MUST NOT</strong> infer a generic saturating-arithmetic meaning from the <code>_c</code> suffix alone.</li>
 <li><strong>MUST NOT</strong> use a shift count <code>&gt;=</code> element bit-width.</li>
 </ul>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
@@ -1277,8 +1260,8 @@ PTO_INST RecordEvent TADD(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; sr
 template &lt;typename TileDst, typename TileSrc0, typename TileSrc1&gt;
 PTO_INST RecordEvent TMUL(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; src1);
 
-template &lt;typename TileDst, typename TileSrc0, typename TileSrc1&gt;
-PTO_INST RecordEvent TADDC(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; src1);
+template &lt;typename TileData, typename TileData0, typename TileData1, typename TileData2&gt;
+PTO_INST RecordEvent TADDC(TileData&amp; dst, TileData0&amp; src0, TileData1&amp; src1, TileData2&amp; src2);
 
 // Unary elementwise
 template &lt;typename TileDst, typename TileSrc&gt;

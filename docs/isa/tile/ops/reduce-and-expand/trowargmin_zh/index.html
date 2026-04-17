@@ -931,71 +931,75 @@
               
                 <!-- Generated from `docs/isa/tile/ops/reduce-and-expand/trowargmin_zh.md` -->
 
-<h1 id="trowargmin">TROWARGMIN<a class="headerlink" href="#trowargmin" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TROWARGMIN tile operation" src="../../../../../figures/isa/TROWARGMIN.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TROWARGMIN</code> 对输入 Tile 的每一行做“取最小值位置”的归约，结果返回<strong>列索引</strong>。它通常用在后续仍然需要知道“最优元素落在哪一列”的场景里，而不是只要最小值本身的场景。</p>
-<p>输出 Tile 只保留一列，因此第 <code>i</code> 行的结果 <code>dst[i, 0]</code> 表示：源 Tile 第 <code>i</code> 行的最小元素位于哪一列。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h1 id="ptotrowargmin">pto.trowargmin<a class="headerlink" href="#ptotrowargmin" title="Permanent link">&para;</a></h1>
+<p><code>pto.trowargmin</code> 属于<a href="../../../reduce-and-expand_zh/">归约与扩展</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>返回每一行最小值所在的列索引。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>设：</p>
 <ul>
 <li><code>R = src.GetValidRow()</code></li>
 <li><code>C = src.GetValidCol()</code></li>
 </ul>
-<p>对 <code>0 &lt;= i &lt; R</code>：</p>
+<p>则对 <code>0 &lt;= i &lt; R</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,0} = \underset{0 \le j &lt; C}{\operatorname{argmin}} \; \mathrm{src}_{i,j} \]</div>
-<p>如果一行里有多个相同的最小值，具体选择哪一个索引由实现决定。可移植代码不应依赖某个固定的 tie-breaking 结果。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>输出 tile 只保留一列，因此 <code>dst[i,0]</code> 表示“第 <code>i</code> 行最小值落在哪一列”。如果有多个相同最小值，具体选哪一个索引由实现决定。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = trowargmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>在 lowering 过程中，backend 可能会引入临时 scratch Tile；C++ 内建接口因此显式接收 <code>tmp</code> 操作数。</p>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<h3 id="ir-level-1ssa">IR Level 1（SSA）<a class="headerlink" href="#ir-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.trowargmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<h3 id="ir-level-2dps">IR Level 2（DPS）<a class="headerlink" href="#ir-level-2dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.trowargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWARGMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>src</code> 和 <code>dst</code> 都必须是 <code>TileType::Vec</code>。</li>
-<li><code>src</code> 必须是标准 ND 布局：row-major 且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
-<li><code>dst</code> 必须是以下两类之一：</li>
-<li>ND 布局，或</li>
-<li>单列 DN 布局（<code>Cols == 1</code>）。</li>
-<li><code>dst</code> 的元素类型必须是 <code>uint32_t</code> 或 <code>int32_t</code>。</li>
-<li><code>src</code> 的元素类型必须属于：
-  <code>half</code>、<code>float</code>、<code>int32_t</code>、<code>int16_t</code>。</li>
+<li><code>src</code>：源 tile</li>
+<li><code>tmp</code>：可能参与归约中间阶段的临时 tile</li>
+<li><code>dst</code>：目标索引 tile</li>
+</ul>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst[i,0]</code>：第 <code>i</code> 行最小值所在列索引</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst</code> 与 <code>src</code> 必须为 <code>TileType::Vec</code></li>
+<li>源元素类型支持：<code>half</code>、<code>float</code></li>
+<li>目标元素类型支持：<code>uint32_t</code>、<code>int32_t</code></li>
 <li>运行时要求：</li>
 <li><code>src.GetValidRow() != 0</code></li>
 <li><code>src.GetValidCol() != 0</code></li>
-<li><code>dst.GetValidRow() == src.GetValidRow()</code></li>
+<li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
 </ul>
-<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <ul>
-<li>当 <code>src.GetValidCol() &lt;= elementPerRepeat</code> 时，A2/A3 可以直接完成行内索引归约，此时 <code>tmp</code> 不参与计算。</li>
-<li>当 <code>src.GetValidCol() &gt; elementPerRepeat</code> 时，A2/A3 会使用 <code>tmp</code> 做分阶段归约：</li>
-<li><code>validCol &lt;= elementPerRepeat^2</code> 时走一阶段暂存；</li>
-<li><code>validCol &gt; elementPerRepeat^2</code> 时走两阶段暂存。</li>
-<li>因为暂存是按“每一行”展开的，<code>tmp</code> 至少应覆盖与 <code>src</code> 同样的有效行数。</li>
+<li><code>src</code> 必须是标准 ND 布局：行主且非分形</li>
+<li><code>dst</code> 可为单列 DN，或 validCol 为 1 的 ND</li>
+<li>当 <code>srcValidCol &lt;= elementPerRepeat</code> 时，<code>tmp</code> 可能不参与运算</li>
+<li>当 <code>srcValidCol &gt; elementPerRepeat</code> 时，<code>tmp</code> 会用于分阶段归约</li>
+<li><code>tmp</code> 的行数应与 <code>src</code> 一致</li>
 </ul>
-<h3 id="a5-cpu">A5 与 CPU 实现<a class="headerlink" href="#a5-cpu" title="Permanent link">&para;</a></h3>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <ul>
-<li>A5 和 CPU 的接口也保留了 <code>tmp</code> 参数，但当前实现并不会实际使用它。</li>
-<li>这意味着 <code>tmp</code> 在这些 profile 里主要是接口兼容用，而不是算法必需输入。</li>
+<li>A5 路径接口仍接收 <code>tmp</code>，但当前 checked implementation 中并不实际使用它</li>
 </ul>
-<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有把 <code>trowargmin</code> 单列成公开 cost table。它应视为索引归约路径，而不是普通数值归约。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 void example_auto() {
@@ -1008,29 +1012,10 @@ void example_auto() {
   TROWARGMIN(dst, src, tmp);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, uint32_t, 16, 1, BLayout::ColMajor&gt;;
-  using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  SrcT src;
-  DstT dst;
-  TmpT tmp;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TASSIGN(tmp, 0x3000);
-  TROWARGMIN(dst, src, tmp);
-}
-</code></pre>
-<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../reduce-and-expand_zh/">归约与扩展指令集</a></li>
-<li><a href="../trowmin_zh/">TROWMIN</a></li>
-<li><a href="../../../../state-and-types/layout_zh/">布局参考</a></li>
+<li>指令集总览：<a href="../../../reduce-and-expand_zh/">归约与扩展</a></li>
+<li>上一条指令：<a href="../trowargmax_zh/">pto.trowargmax</a></li>
 </ul>
               
             </div>

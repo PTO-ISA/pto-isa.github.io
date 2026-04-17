@@ -931,48 +931,375 @@
               
                 <!-- Generated from `docs/isa/vector/unary-vector-ops_zh.md` -->
 
-<h1 id="_1">一元向量指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>一元向量指令对单个向量输入做 lane 级变换，常见于绝对值、取负、指数、对数、平方根和倒数等操作。</p>
-<h2 id="_2">常见操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>pto.vabs</code></li>
-<li><code>pto.vneg</code></li>
-<li><code>pto.vexp</code></li>
-<li><code>pto.vln</code></li>
-<li><code>pto.vsqrt</code></li>
-<li><code>pto.vrsqrt</code></li>
-<li><code>pto.vrec</code></li>
-<li><code>pto.vrelu</code></li>
-<li><code>pto.vnot</code></li>
-<li><code>pto.vbcnt</code></li>
-<li><code>pto.vcls</code></li>
-<li><code>pto.vmov</code></li>
-</ul>
-<h2 id="_3">操作数模型<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h1 id="_1">向量指令集：一元向量操作<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>这里定义的是带单个向量输入的 <code>pto.v*</code> 计算指令。除非某条指令明确说明了例外，否则向量形状、active-lane 语义和目标 profile 约束，都以这一页和对应 leaf 页为准。</p>
+<blockquote>
+<p><strong>类别：</strong> 单输入向量运算
+<strong>流水线：</strong> <code>PIPE_V</code></p>
+</blockquote>
+<p>这组操作对每个活跃 lane 独立执行一元变换，常见于绝对值、取负、指数、对数、平方根、倒数以及少量按位与移动类操作。</p>
+<hr />
+<h2 id="_2">通用操作数模型<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%input</code>：源向量寄存器</li>
-<li><code>%mask</code>：控制激活 lane</li>
+<li><code>%mask</code>：谓词操作数</li>
 <li><code>%result</code>：目标向量寄存器</li>
 </ul>
-<h2 id="_4">机制<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>对每个激活 lane：</p>
-<div class="arithmatex">\[ \mathrm{dst}_i = f(\mathrm{input}_i) \]</div>
-<p>不同指令在浮点异常、整数边界值和 masked-lane 处理上会有各自细节。</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>inactive lane 的处理随具体形式而定：有的形式会零填充，有的形式会保持原目标值不变。这里不把所有一元指令硬压成同一种掩码策略。</p>
+<hr />
+<h2 id="vecscope">执行模型：<code>vecscope</code><a class="headerlink" href="#vecscope" title="Permanent link">&para;</a></h2>
+<p>一元向量操作一般出现在 <code>pto.vecscope { ... }</code> 区域中，区域内指令都发往 <code>PIPE_V</code>。</p>
+<pre><code class="language-mlir">pto.vecscope {
+  %remaining_init = arith.constant 1024 : i32
+  %_:1 = scf.for %offset = %c0 to %total step %c64
+      iter_args(%remaining = %remaining_init) -&gt; (i32) {
+    %mask, %next_remaining = pto.plt_b32 %remaining : i32 -&gt; !pto.mask, i32
+    %vec = pto.vlds %ub_in[%offset] : !pto.ptr -&gt; !pto.vreg&lt;64xf32&gt;
+    %out = pto.vabs %vec, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+    pto.vsts %out, %ub_out[%offset], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr, !pto.mask
+    scf.yield %next_remaining : i32
+  }
+}
+</code></pre>
+<p>这里常见的配套谓词生成方式有两种：</p>
 <ul>
-<li>源和目标类型通常保持一致，除非具体指令另有说明</li>
-<li>指数、对数、平方根等只对浮点类型合法</li>
-<li>profile 会缩窄某些低精度形式</li>
+<li><code>pto.pset_b32 "PAT_ALL"</code>：整向量全活跃</li>
+<li><code>pto.plt_b32 %remaining</code>：按剩余元素数生成尾掩码</li>
 </ul>
-<h2 id="_6">不允许的情形<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<hr />
+<h2 id="a5">A5 时延与吞吐<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>下表记录的是周期级模拟器上的 popped→retire 周期数。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>PTO 操作</th>
+<th>A5 RV（CA）</th>
+<th>f32</th>
+<th>f16</th>
+<th>bf16</th>
+<th>i32</th>
+<th>i16</th>
+<th>i8</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pto.vabs</code></td>
+<td><code>RV_VABS_FP</code></td>
+<td>5</td>
+<td>5</td>
+<td>—</td>
+<td>5</td>
+<td>5</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>pto.vneg</code></td>
+<td><code>RV_VMULS</code></td>
+<td>8</td>
+<td>8</td>
+<td>—</td>
+<td>8</td>
+<td>8</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>pto.vexp</code></td>
+<td><code>RV_VEXP</code></td>
+<td>16</td>
+<td>21</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>pto.vln</code></td>
+<td><code>RV_VLN</code></td>
+<td>18</td>
+<td>23</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>pto.vsqrt</code></td>
+<td><code>RV_VSQRT</code></td>
+<td>17</td>
+<td>22</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>pto.vrelu</code></td>
+<td><code>RV_VRELU</code></td>
+<td>5</td>
+<td>5</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>pto.vrec</code></td>
+<td><code>RV_VDIV</code> 路径综合</td>
+<td>见注</td>
+<td>见注</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>pto.vrsqrt</code></td>
+<td><code>RV_VRSQRT</code> 路径</td>
+<td>见注</td>
+<td>见注</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>pto.vnot</code></td>
+<td><code>RV_VNOT</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>5</td>
+<td>5</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>pto.vbcnt</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>逐 lane</td>
+<td>逐 lane</td>
+<td>逐 lane</td>
+</tr>
+<tr>
+<td><code>pto.vcls</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>逐 lane</td>
+<td>逐 lane</td>
+<td>逐 lane</td>
+</tr>
+<tr>
+<td><code>pto.vmov</code></td>
+<td><code>RV_VLD</code> 代理</td>
+<td>9</td>
+<td>9</td>
+<td>—</td>
+<td>9</td>
+<td>9</td>
+<td>9</td>
+</tr>
+</tbody>
+</table>
+<p><code>vrec</code> 由除法路径综合，<code>vrsqrt</code> 与 <code>vsqrt</code> 共用同一类硬件路径，因此它们的成本不应按“普通一元 ALU”理解。</p>
+<h2 id="a2a3">A2A3 时延与吞吐<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>常量</th>
+<th>周期值</th>
+<th>适用范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延（归约 / 特殊函数）</td>
+<td><code>A2A3_STARTUP_REDUCE</code></td>
+<td>13</td>
+<td><code>vexp</code>、<code>vsqrt</code>、<code>vln</code></td>
+</tr>
+<tr>
+<td>启动时延（普通算术）</td>
+<td><code>A2A3_STARTUP_BINARY</code></td>
+<td>14</td>
+<td><code>vabs</code>、<code>vneg</code> 等</td>
+</tr>
+<tr>
+<td>完成时延：FP 二元</td>
+<td><code>A2A3_COMPL_FP_BINOP</code></td>
+<td>19</td>
+<td><code>vabs</code>、<code>vneg</code> 等 f32 形式</td>
+</tr>
+<tr>
+<td>完成时延：INT 二元</td>
+<td><code>A2A3_COMPL_INT_BINOP</code></td>
+<td>17</td>
+<td><code>vabs</code> 等整型形式</td>
+</tr>
+<tr>
+<td>完成时延：FP32 exp</td>
+<td><code>A2A3_COMPL_FP32_EXP</code></td>
+<td>26</td>
+<td><code>vexp</code>（f32）</td>
+</tr>
+<tr>
+<td>完成时延：FP16 exp</td>
+<td><code>A2A3_COMPL_FP16_EXP</code></td>
+<td>28</td>
+<td><code>vexp</code>（f16）</td>
+</tr>
+<tr>
+<td>完成时延：FP32 sqrt</td>
+<td><code>A2A3_COMPL_FP32_SQRT</code></td>
+<td>27</td>
+<td><code>vsqrt</code>（f32）</td>
+</tr>
+<tr>
+<td>完成时延：FP16 sqrt</td>
+<td><code>A2A3_COMPL_FP16_SQRT</code></td>
+<td>29</td>
+<td><code>vsqrt</code>（f16）</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td><code>A2A3_RPT_1</code></td>
+<td>1</td>
+<td>普通一元操作</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td><code>A2A3_RPT_2</code></td>
+<td>2</td>
+<td>部分浮点路径</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td><code>A2A3_RPT_4</code></td>
+<td>4</td>
+<td>f16 特殊函数</td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td><code>A2A3_INTERVAL</code></td>
+<td>18</td>
+<td>全部向量操作</td>
+</tr>
+<tr>
+<td>流水间隔（拷贝）</td>
+<td><code>A2A3_INTERVAL_VCOPY</code></td>
+<td>13</td>
+<td><code>vmov</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="_3">算术与符号处理<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="ptovabs"><code>pto.vabs</code><a class="headerlink" href="#ptovabs" title="Permanent link">&para;</a></h3>
 <ul>
-<li>在未文档化类型上使用一元数学函数</li>
-<li>依赖 masked-lane 的未说明结果</li>
+<li><strong>语法：</strong> <code>%result = pto.vabs %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 对每个活跃 lane 取绝对值。</li>
 </ul>
-<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p>整数最小负数的溢出行为由目标平台定义。</p>
+<h3 id="ptovneg"><code>pto.vneg</code><a class="headerlink" href="#ptovneg" title="Permanent link">&para;</a></h3>
 <ul>
-<li><a href="../vector-families_zh/">向量指令族</a></li>
-<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令集</a></li>
+<li><strong>语法：</strong> <code>%result = pto.vneg %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 对每个活跃 lane 做算术取负。</li>
+</ul>
+<p>在 A5 上它借用标量乘法类硬件路径，因此延迟不像 <code>vabs</code> 那么低。</p>
+<hr />
+<h2 id="_4">超越函数<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="ptovexp"><code>pto.vexp</code><a class="headerlink" href="#ptovexp" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vexp %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 逐 lane 计算 <code>exp(input[i])</code>。</li>
+</ul>
+<p>只对浮点类型合法。f16 的成本高于 f32，因此 softmax 等场景通常更偏好融合形式 <code>vexpdiff</code>。</p>
+<h3 id="ptovln"><code>pto.vln</code><a class="headerlink" href="#ptovln" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vln %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 逐 lane 计算自然对数。</li>
+</ul>
+<p>对实数语义而言，活跃输入最好严格大于 0；非正输入的异常或 NaN 行为由目标平台决定。</p>
+<h3 id="ptovsqrt"><code>pto.vsqrt</code><a class="headerlink" href="#ptovsqrt" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vsqrt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 逐 lane 求平方根。</li>
+</ul>
+<p>负输入的行为由目标平台定义。</p>
+<h3 id="ptovrsqrt"><code>pto.vrsqrt</code><a class="headerlink" href="#ptovrsqrt" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vrsqrt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 逐 lane 求倒数平方根。</li>
+</ul>
+<p>它与 <code>vsqrt</code> 共享一类硬件路径，因此成本也接近。</p>
+<h3 id="ptovrec"><code>pto.vrec</code><a class="headerlink" href="#ptovrec" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vrec %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 逐 lane 求倒数。</li>
+</ul>
+<p>本质上走的是除法路径，因此不该把它当成廉价的一元 ALU 操作。</p>
+<hr />
+<h2 id="_5">激活<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="ptovrelu"><code>pto.vrelu</code><a class="headerlink" href="#ptovrelu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vrelu %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 逐 lane 执行 <code>max(input, 0)</code>。</li>
+</ul>
+<p>这是 A5 上延迟最低的一元浮点操作之一。需要带斜率的版本时，应使用 <code>vlrelu</code>。</p>
+<hr />
+<h2 id="_6">位操作<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="ptovnot"><code>pto.vnot</code><a class="headerlink" href="#ptovnot" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vnot %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 逐 lane 按位取反。</li>
+</ul>
+<p>仅对整数类型合法。</p>
+<h3 id="ptovbcnt"><code>pto.vbcnt</code><a class="headerlink" href="#ptovbcnt" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vbcnt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 逐 lane 统计设置位个数。</li>
+</ul>
+<p>统计范围是“单个元素的位宽”，不是整个寄存器的总位数。</p>
+<h3 id="ptovcls"><code>pto.vcls</code><a class="headerlink" href="#ptovcls" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vcls %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 逐 lane 统计前导符号位数量。</li>
+</ul>
+<p>它依赖元素的有符号解释，因此 signedness 是语义的一部分。</p>
+<hr />
+<h2 id="_7">数据移动<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="ptovmov"><code>pto.vmov</code><a class="headerlink" href="#ptovmov" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>%result = pto.vmov %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语义：</strong> 受谓词控制的寄存器复制。</li>
+</ul>
+<p>无谓词形式是完整寄存器复制；有谓词时则更接近 masked copy。</p>
+<hr />
+<h2 id="_8">典型用法<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mlir">%sub = pto.vsub %x, %max_broadcast, %mask
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+%exp = pto.vexp %sub, %mask
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+
+%sum_rcp = pto.vrec %sum, %mask
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+
+%activated = pto.vrelu %linear_out, %mask
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<hr />
+<h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../sfu-and-dsa-ops_zh/">SFU 与 DSA 操作</a></li>
+<li><a href="../binary-vector-ops_zh/">二元向量操作</a></li>
+<li><a href="../../instruction-surfaces/vector-instructions_zh/">向量指令面</a></li>
 </ul>
               
             </div>

@@ -975,22 +975,10 @@
 <td><code>TSYNC(events...)</code></td>
 </tr>
 <tr>
-<td><a href="../ops/sync-and-config/tsethf32mode/">pto.tsethf32mode</a></td>
-<td>Set HF32 computation mode</td>
-<td>Config</td>
-<td><code>TSETHF32MODE(mode)</code></td>
-</tr>
-<tr>
 <td><a href="../ops/sync-and-config/tsettf32mode/">pto.tsettf32mode</a></td>
 <td>Set TF32 computation mode</td>
 <td>Config</td>
 <td><code>TSETTF32MODE(mode)</code></td>
-</tr>
-<tr>
-<td><a href="../ops/sync-and-config/tsetfmatrix/">pto.tsetfmatrix</a></td>
-<td>Set FMatrix layout configuration</td>
-<td>Config</td>
-<td><code>TSETFMATRIX(cfg)</code></td>
 </tr>
 <tr>
 <td><a href="../ops/sync-and-config/tset-img2col-rpt/">pto.tset_img2col_rpt</a></td>
@@ -1023,7 +1011,7 @@
 <ul>
 <li><strong><code>TASSIGN</code></strong>: binds a physical UB address to a tile register. Without <code>TASSIGN</code>, the compiler/runtime auto-assigns addresses. <code>TASSIGN</code> enables manual placement for performance tuning.</li>
 <li><strong><code>TSYNC</code></strong>: waits on event tokens (<code>events...</code>) or inserts per-op pipeline barriers (<code>TSYNC&lt;Op&gt;()</code>). See <a href="../../machine-model/ordering-and-synchronization/">Ordering and Synchronization</a> for the full event model.</li>
-<li><strong><code>TSET*</code></strong>: configure mode registers that affect how later operations interpret their inputs or produce results. The affected operations are those that consume the configured mode.</li>
+<li><strong><code>TSET*</code></strong>: tile-local configuration in this instruction set is limited to tile-side controls such as TF32 or IMG2COL setup. Legacy mode-register ops such as <code>tsethf32mode</code> and <code>tsetfmatrix</code> are documented in the scalar/control lane because their architectural effect is scalar-visible configuration, not tile payload transformation.</li>
 <li><strong><code>TSUBVIEW</code></strong>: creates a logical view of a tile with adjusted offsets and/or reduced shape. The underlying storage is shared with the source tile.</li>
 <li><strong><code>TGET_SCALE_ADDR</code></strong>: retrieves the physical UB address of a scale tensor used in quantized matmul operations.</li>
 </ul>
@@ -1042,7 +1030,7 @@
 <ul>
 <li><code>TASSIGN</code> binds an address; using the same address for two non-alias tiles simultaneously results in undefined behavior.</li>
 <li><code>TSYNC</code> with no operands is a no-op.</li>
-<li><code>TSET*</code> mode configurations affect subsequent operations until the next mode-setting operation of the same kind.</li>
+<li>Tile-side <code>TSET*</code> mode configurations affect subsequent operations until the next mode-setting operation of the same kind.</li>
 <li><code>TSUBVIEW</code> creates a view with reduced shape; accessing elements outside the view's shape but within the underlying tile's shape is undefined behavior.</li>
 </ul>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
@@ -1068,9 +1056,7 @@ template &lt;typename OpTag&gt;
 PTO_INST void TSYNC();
 
 // Set computation modes
-PTO_INST void TSETHF32MODE(HF32Mode mode);
 PTO_INST void TSETTF32MODE(TF32Mode mode);
-PTO_INST void TSETFMATRIX(FMatrixConfig cfg);
 
 // Subview creation
 template &lt;typename TileT&gt;
@@ -1082,6 +1068,7 @@ PTO_INST TileT TSUBVIEW(TileT&amp; src, int rowOffset, int colOffset,
 <li><a href="../../instruction-families/tile-families/">Tile instruction set</a> — Instruction set overview</li>
 <li><a href="../../machine-model/ordering-and-synchronization/">Ordering and Synchronization</a> — Event model</li>
 <li><a href="../../instruction-surfaces/tile-instructions/">Tile instruction set</a> — Instruction Set description</li>
+<li><a href="../../scalar/control-and-configuration/">Scalar control and configuration</a> — canonical location for <code>tsethf32mode</code> and <code>tsetfmatrix</code></li>
 </ul>
               
             </div>

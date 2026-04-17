@@ -932,87 +932,99 @@
                 <!-- Generated from `docs/isa/tile/sync-and-config_zh.md` -->
 
 <h1 id="_1">同步与配置指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>同步与配置操作管理 tile 可见状态：资源绑定、事件等待、模式配置以及逻辑子视图。它们本身不产生算术有效载荷，但会改变后续 tile 指令所消费的状态。</p>
+<p>同步与配置类操作负责管理 tile 路径可见的状态：资源绑定、事件等待、tile 侧模式设置，以及基于现有 tile 创建逻辑视图。它们本身通常不产生算术载荷，但会决定后续 tile 指令怎样取数、怎样排序、怎样解释数据。</p>
+<p>这类页最容易被写成“几条杂项命令列表”。实际上它们承担的是 tile 执行面的控制面，因此应先说明状态模型，再看具体指令。</p>
 <h2 id="_2">操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>操作</th>
-<th>说明</th>
+<th>作用</th>
+<th>类别</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>pto.tassign</code></td>
-<td>把 tile 绑定到 UB 地址</td>
+<td><a href="../ops/sync-and-config/tassign_zh/">pto.tassign</a></td>
+<td>把 tile 绑定到 tile-buffer 地址</td>
+<td>资源绑定</td>
 </tr>
 <tr>
-<td><code>pto.tsync</code></td>
-<td>等待事件或插入 tile 级屏障</td>
+<td><a href="../ops/sync-and-config/tsync_zh/">pto.tsync</a></td>
+<td>等待事件或插入屏障</td>
+<td>同步</td>
 </tr>
 <tr>
-<td><code>pto.tsethf32mode</code></td>
-<td>设置 HF32 模式</td>
+<td><a href="../ops/sync-and-config/tsettf32mode_zh/">pto.tsettf32mode</a></td>
+<td>设置 tile 路径的 TF32 行为</td>
+<td>模式配置</td>
 </tr>
 <tr>
-<td><code>pto.tsettf32mode</code></td>
-<td>设置 TF32 模式</td>
+<td><a href="../ops/sync-and-config/tset-img2col-rpt_zh/">pto.tset_img2col_rpt</a></td>
+<td>设置 img2col 重复次数</td>
+<td>模式配置</td>
 </tr>
 <tr>
-<td><code>pto.tsetfmatrix</code></td>
-<td>设置 FMatrix 配置</td>
+<td><a href="../ops/sync-and-config/tset-img2col-padding_zh/">pto.tset_img2col_padding</a></td>
+<td>设置 img2col padding 形态</td>
+<td>模式配置</td>
 </tr>
 <tr>
-<td><code>pto.tset_img2col_rpt</code></td>
-<td>设置 img2col repetition</td>
+<td><a href="../ops/sync-and-config/tsubview_zh/">pto.tsubview</a></td>
+<td>基于已有 tile 创建子视图</td>
+<td>视图</td>
 </tr>
 <tr>
-<td><code>pto.tset_img2col_padding</code></td>
-<td>设置 img2col padding</td>
-</tr>
-<tr>
-<td><code>pto.tsubview</code></td>
-<td>创建 tile 子视图</td>
-</tr>
-<tr>
-<td><code>pto.tget_scale_addr</code></td>
-<td>获取量化 matmul 的 scale 地址</td>
+<td><a href="../ops/sync-and-config/tget-scale-addr_zh/">pto.tget_scale_addr</a></td>
+<td>取得量化 / MX 路径使用的 scale 地址</td>
+<td>辅助查询</td>
 </tr>
 </tbody>
 </table>
-<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>兼容性说明：</p>
 <ul>
-<li><strong><code>TASSIGN</code></strong>：把物理 UB 地址绑定到 tile</li>
-<li><strong><code>TSYNC</code></strong>：等待事件或为特定操作类建立 barrier</li>
-<li><strong><code>TSET*</code></strong>：设置后续操作会读取的模式寄存器</li>
-<li><strong><code>TSUBVIEW</code></strong>：在共享底层存储的前提下创建逻辑子视图</li>
-<li><strong><code>TGET_SCALE_ADDR</code></strong>：查询量化路径中使用的 scale 地址</li>
+<li><a href="../ops/sync-and-config/tsethf32mode_zh/">tsethf32mode</a> 和 <a href="../ops/sync-and-config/tsetfmatrix_zh/">tsetfmatrix</a> 仍保留旧路径入口；</li>
+<li>但它们的规范位置已经迁移到 <a href="../../scalar/control-and-configuration_zh/">标量控制与配置</a>，因为它们配置的是标量可见状态，而不是 tile 载荷合同。</li>
 </ul>
-<h2 id="_4">同步模型<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p><code>TSYNC</code> 有两种常见形式：</p>
+<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="tassign">TASSIGN<a class="headerlink" href="#tassign" title="Permanent link">&para;</a></h3>
+<p><code>TASSIGN</code> 把 tile 句柄绑定到某个 tile-buffer 地址。Auto 模式下，这类地址可以由编译器 / 运行时管理；Manual 模式下，则需要程序员显式指定。</p>
+<p>这条指令修改的是“tile 句柄与物理存储的关系”，不是 tile 内容本身。</p>
+<h3 id="tsync">TSYNC<a class="headerlink" href="#tsync" title="Permanent link">&para;</a></h3>
+<p><code>TSYNC</code> 有两类常见用法：</p>
 <ol>
-<li><strong>事件等待形式</strong>
-   <code>TSYNC(%e0, %e1)</code>，等待事件完成</li>
-<li><strong>屏障形式</strong>
-   <code>TSYNC&lt;Op&gt;()</code>，为某类操作建立 pipeline barrier</li>
+<li>事件等待形式：<code>TSYNC(%e0, %e1)</code>
+   等待前序操作产生的事件完成。</li>
+<li>屏障形式：<code>TSYNC&lt;Op&gt;()</code>
+   对某一类 tile 操作建立顺序边界。</li>
 </ol>
+<p>它的核心价值不在“暂停一下”，而在于把 producer-consumer 关系写成可验证的显式合同。</p>
+<h3 id="tset">TSET*<a class="headerlink" href="#tset" title="Permanent link">&para;</a></h3>
+<p>本页只保留 tile 侧配置，例如 TF32 或 img2col 相关模式。它们会影响后续同类 tile 指令，直到再次被覆盖。</p>
+<h3 id="tsubview">TSUBVIEW<a class="headerlink" href="#tsubview" title="Permanent link">&para;</a></h3>
+<p><code>TSUBVIEW</code> 创建的是逻辑子视图，不会复制底层数据。源 tile 和子视图共享同一份底层存储，因此它的价值在于“改变解释与访问窗口”，而不是搬运数据。</p>
+<h3 id="tget_scale_addr">TGET_SCALE_ADDR<a class="headerlink" href="#tget_scale_addr" title="Permanent link">&para;</a></h3>
+<p><code>TGET_SCALE_ADDR</code> 用于取得量化或 MX 路径使用的 scale 地址，便于后续配置或调度使用。它本身不改变 tile 载荷。</p>
+<h2 id="_4">为什么这组指令要单列<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>很多 tile 算术页都会引用这组状态，但不会重复解释它们。把同步、资源绑定、模式配置和逻辑视图集中到一个家族里，读者才能先建立控制面，再去理解数据面。</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>TASSIGN</code> 绑定的是地址；没有别名关系的两个 tile 不能同时安全复用同一地址</li>
-<li>空参数 <code>TSYNC()</code> 是 no-op</li>
-<li><code>TSET*</code> 的配置会影响后续同类依赖操作，直到下一次同类设置覆盖</li>
-<li><code>TSUBVIEW</code> 共享底层存储，超出子视图范围的访问无定义</li>
+<li><code>TASSIGN</code> 绑定的是地址。若两个没有别名关系的 tile 同时复用同一地址，其行为不受手册保证。</li>
+<li>空参数 <code>TSYNC()</code> 是 no-op。</li>
+<li><code>TSET*</code> 的配置会影响后续依赖该模式的同类指令，直到下一次同类设置覆盖它。</li>
+<li><code>TSUBVIEW</code> 与源 tile 共享底层存储，超出子视图范围的访问不受手册保证。</li>
 </ul>
 <h2 id="_6">不允许的情形<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
-<li>在没有别名语义的情况下让两个 tile 共享同一物理 tile register 地址</li>
-<li>等待从未由先前操作产生的事件</li>
-<li>在依赖操作仍在 flight 时修改相关模式寄存器</li>
+<li>在没有别名语义的前提下，让两个活跃 tile 共享同一物理地址；</li>
+<li>等待一个从未由前序操作产生的事件；</li>
+<li>在相关依赖操作尚未完成时改写会影响它们的模式配置。</li>
 </ul>
 <h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
 <li><a href="../../machine-model/ordering-and-synchronization_zh/">顺序与同步</a></li>
+<li><a href="../../scalar/control-and-configuration_zh/">标量控制与配置</a></li>
 </ul>
               
             </div>

@@ -984,11 +984,10 @@
 <h1 id="ptotmov_fp">pto.tmov_fp<a class="headerlink" href="#ptotmov_fp" title="Permanent link">&para;</a></h1>
 <p><code>pto.tmov_fp</code> is part of the <a href="../../../layout-and-rearrangement/">Layout And Rearrangement</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Move/convert from an accumulator tile into a destination tile, using a scaling (<code>fp</code>) tile for vector quantization parameters.</p>
+<p>Move or convert from an accumulator tile into a destination tile through the fix-pipe path.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Move/convert from an accumulator tile into a destination tile, using a scaling (<code>fp</code>) tile for vector quantization parameters.</p>
-<p><code>TMOV_FP</code> is a named wrapper around the <code>TMOV_IMPL(..., fp)</code> path and is part of the <a href="../tmov/"><code>pto.tmov</code></a> instruction set. It belongs to the tile instructions and carries architecture-visible behavior that is not reducible to a plain elementwise compute pattern.</p>
-<p>Conceptually converts each element using an implementation-defined quantization/dequantization configuration derived from <code>fp</code>:</p>
+<p><code>TMOV_FP</code> is a named wrapper around the <code>TMOV_IMPL(..., fp)</code> path and is part of the <a href="../tmov/"><code>pto.tmov</code></a> instruction set. The <code>_fp</code> suffix means <strong>fix pipe</strong>, not floating point. The auxiliary <code>fp</code> tile is the sideband tile consumed by the backend <code>set_fpc(...)</code> path.</p>
+<p>Conceptually the fix-pipe path applies an implementation-defined conversion configured by <code>fp</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{Convert}\!\left(\mathrm{src}_{i,j};\ \mathrm{fp}\right) \]</div>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
@@ -1016,12 +1015,12 @@ PTO_INST RecordEvent TMOV_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileD
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code> is the source accumulator tile.</li>
-<li><code>fp</code> is the scaling tile for vector quantization.</li>
+<li><code>fp</code> is the auxiliary fix-pipe tile for the backend FPC path.</li>
 <li><code>dst</code> names the destination tile. The operation iterates over dst's valid region.</li>
 <li><code>reluMode</code> (optional): specifies ReLU mode.</li>
 </ul>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the converted values from <code>src</code> using <code>fp</code> quantization parameters.</p>
+<p><code>dst</code> holds the values moved from <code>src</code> through the fix-pipe path configured by <code>fp</code>.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>

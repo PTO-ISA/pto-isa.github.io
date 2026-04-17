@@ -1033,7 +1033,7 @@
 </table>
 <p>The GM layout must be compatible with the tile's internal layout during <code>TLOAD</code>/<code>TSTORE</code>. The compatibility rules are documented on the <a href="../../tile/ops/memory-and-data-movement/tload/">TLOAD</a> and <a href="../../tile/ops/memory-and-data-movement/tstore/">TSTORE</a> instruction pages.</p>
 <h2 id="block-layout-blayout">Block Layout (BLayout)<a class="headerlink" href="#block-layout-blayout" title="Permanent link">&para;</a></h2>
-<p><code>BLayout</code> describes the in-memory stride between adjacent elements along the row and column axes within a tile buffer. It is the tile's <strong>storage order</strong> — the order in which element data is laid out in the Tile Register File (TRF) or UB buffer.</p>
+<p><code>BLayout</code> describes the in-memory stride between adjacent elements along the row and column axes within a tile buffer. It is the tile's <strong>storage order</strong> — the order in which element data is laid out in the local tile buffer selected by the tile role. For <code>TileType::Vec</code>, that local tile buffer is the hardware Unified Buffer.</p>
 <h3 id="values">Values<a class="headerlink" href="#values" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1251,10 +1251,24 @@
 </tr>
 <tr>
 <td><code>Right</code></td>
+<td>backend-specific</td>
+<td>backend-specific</td>
+<td>backend-specific</td>
+<td>L0B-backed RHS matmul operand; do not assume one portable right-tile layout across A2A3 and A5</td>
+</tr>
+<tr>
+<td><code>ScaleLeft</code></td>
 <td><code>RowMajor</code></td>
-<td><code>NoneBox</code></td>
-<td><code>NN</code> (implicit)</td>
-<td>RHS of <code>TMATMUL_MX</code></td>
+<td><code>RowMajor</code></td>
+<td>MX scale fractal</td>
+<td>L0A-side scale tile for MX block-scale formats</td>
+</tr>
+<tr>
+<td><code>ScaleRight</code></td>
+<td><code>ColMajor</code></td>
+<td><code>ColMajor</code></td>
+<td>MX scale fractal</td>
+<td>L0B-side scale tile for MX block-scale formats</td>
 </tr>
 <tr>
 <td><code>Scalar</code></td>
@@ -1266,6 +1280,13 @@
 </tbody>
 </table>
 <p>Using a combination not listed in this table is an <strong>illegal PTO program</strong>. The verifier or backend will reject it.</p>
+<p>For matrix roles, treat the role-to-buffer mapping as primary:</p>
+<ul>
+<li><code>Left</code> means the L0A-backed operand</li>
+<li><code>Right</code> means the L0B-backed operand</li>
+<li><code>ScaleLeft</code> / <code>ScaleRight</code> are the extra L0A/L0B scale tiles required by MX block-scale formats</li>
+</ul>
+<p>The exact <code>Right</code>-tile layout contract is backend-sensitive. The current manual should not describe A2A3 and A5 right tiles as one interchangeable layout rule; use the relevant per-op target-profile restrictions or the typed aliases from <code>include/pto/common/pto_tile.hpp</code>.</p>
 <h2 id="padding">Padding<a class="headerlink" href="#padding" title="Permanent link">&para;</a></h2>
 <p>Elements outside the valid region may be initialized with a padding value. The <code>Pad</code> parameter controls this:</p>
 <table>

@@ -136,35 +136,7 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.tsethf32mode</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#why-this-moved">Why This Moved</a>
     </li>
     </ul>
                 </li>
@@ -966,78 +938,9 @@
                 <!-- Generated from `docs/isa/tile/ops/sync-and-config/tsethf32mode.md` -->
 
 <h1 id="ptotsethf32mode">pto.tsethf32mode<a class="headerlink" href="#ptotsethf32mode" title="Permanent link">&para;</a></h1>
-<p><code>pto.tsethf32mode</code> is part of the <a href="../../../sync-and-config/">Sync And Config</a> instruction set.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Configure HF32 transform mode (implementation-defined).</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Configure HF32 transform mode (implementation-defined).</p>
-<p>This instruction controls backend-specific HF32 transformation behavior used by supported compute paths. It is part of the tile synchronization or configuration shell, so the visible effect is ordering or state setup rather than arithmetic payload transformation.</p>
-<p>No direct tensor arithmetic is produced by this instruction. It updates target mode state used by subsequent instructions.</p>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
-<p>Schematic form:</p>
-<pre><code class="language-text">tsethf32mode {enable = true, mode = ...}
-</code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tsethf32mode {enable = true, mode = ...}
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tsethf32mode ins({enable = true, mode = ...}) outs()
-</code></pre>
-<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;bool isEnable, RoundMode hf32TransMode = RoundMode::CAST_ROUND, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSETHF32MODE(WaitEvents &amp;... events);
-</code></pre>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>enable</code> (bool): enables or disables the HF32 transform mode.</li>
-<li><code>mode</code> (RoundMode): specifies the HF32 rounding mode.</li>
-</ul>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>This form is defined primarily by its ordering or configuration effect. It does not introduce a new payload tile beyond any explicit state object named by the syntax.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation may establish a synchronization edge, bind or configure architectural tile state, or update implementation-defined configuration that later tile instructions consume.</p>
-<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<ul>
-<li>
-<p>Available only when the corresponding backend capability macro is enabled.</p>
-</li>
-<li>
-<p>Exact mode values and hardware behavior are target-defined.</p>
-</li>
-<li>
-<p>This instruction has control-state side effects and should be ordered appropriately relative to dependent compute instructions.</p>
-</li>
-</ul>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
-</ul>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>
-<p><code>pto.tsethf32mode</code> preserves PTO-visible semantics across CPU simulation, A2/A3-class targets, and A5-class targets, but concrete support subsets may differ by profile.</p>
-</li>
-<li>
-<p>Portable code must rely only on the documented type, layout, shape, and mode combinations that the selected target profile guarantees.</p>
-</li>
-</ul>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-using namespace pto;
-
-void example_enable_hf32() {
-  TSETHF32MODE&lt;true, RoundMode::CAST_ROUND&gt;();
-}
-</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Instruction set overview: <a href="../../../sync-and-config/">Sync And Config</a></li>
-<li>Previous op in instruction set: <a href="../tassign/">pto.tassign</a></li>
-<li>Next op in instruction set: <a href="../tsettf32mode/">pto.tsettf32mode</a></li>
-</ul>
+<p>Compatibility entrypoint. The canonical manual page is now the scalar/control reference page <a href="../../../../scalar/ops/control-and-configuration/tsethf32mode/">pto.tsethf32mode</a>.</p>
+<h2 id="why-this-moved">Why This Moved<a class="headerlink" href="#why-this-moved" title="Permanent link">&para;</a></h2>
+<p><code>pto.tsethf32mode</code> keeps a historic <code>t</code>-prefixed API name, but its architectural role is scalar/control configuration state rather than tile payload transformation. New documentation should link to the scalar/control page.</p>
               
             </div>
           </div><footer>

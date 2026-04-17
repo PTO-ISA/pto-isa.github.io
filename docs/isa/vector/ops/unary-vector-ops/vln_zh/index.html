@@ -932,44 +932,143 @@
                 <!-- Generated from `docs/isa/vector/ops/unary-vector-ops/vln_zh.md` -->
 
 <h1 id="ptovln">pto.vln<a class="headerlink" href="#ptovln" title="Permanent link">&para;</a></h1>
-<p>逐 lane 取自然对数。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vln</code> 属于<a href="../../../unary-vector-ops_zh/">一元向量操作</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>%result</code> 在每个活跃 lane 上保存自然对数结果。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vln</code> 逐 lane 计算自然对数：<code>dst[i] = ln(src[i])</code>。在实数语义下，活跃输入最好严格大于 0；非正输入的异常或 NaN 行为由目标平台决定。非活跃 lane 保持目标原值。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vln %result, %input, %mask
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vln %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
-<p>A5 已文档化的支持形式：<code>f16</code> 与 <code>f32</code>。</p>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<ul>
-<li>仅支持浮点元素类型。</li>
-</ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
-对于 <code>pto.vln</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
+<p>A5 当前文档化支持的类型：<code>f16</code>、<code>f32</code>。</p>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>指标</th>
-<th>状态</th>
-<th>来源依据</th>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>A5 时延</td>
-<td>公开来源未给出</td>
-<td><code>visa.txt</code>、<code>PTOAS/docs/vpto-spec.md</code></td>
+<td><code>%input</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>源向量寄存器；在每个活跃 lane 上读取</td>
 </tr>
 <tr>
-<td>稳态吞吐</td>
-<td>公开来源未给出</td>
-<td><code>visa.txt</code>、<code>PTOAS/docs/vpto-spec.md</code></td>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>谓词掩码；掩码位为 1 的 lane 为活跃 lane</td>
 </tr>
 </tbody>
 </table>
-<p>如果软件调度或性能建模依赖 <code>pto.vln</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>活跃 lane 上得到 <code>ln(src[i])</code>；非活跃 lane 保持原值</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令除了产生 SSA 结果，没有其他架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../unary-vector-ops_zh/">一元向量指令集</a></li>
+<li>只支持浮点元素类型。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
+<li>除零、域外输入等数值异常，仍由所选 backend profile 决定。</li>
+<li>约束部分列出的额外非法情形，同样属于 <code>pto.vln</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 当前文档化支持：<code>f16</code>、<code>f32</code>。</li>
+<li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th>时延（周期）</th>
+<th>A5 RV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code></td>
+<td>18</td>
+<td><code>RV_VLN</code></td>
+</tr>
+<tr>
+<td><code>f16</code></td>
+<td>23</td>
+<td><code>RV_VLN</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a2a3">A2/A3 吞吐<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>f32</th>
+<th>f16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>13（<code>A2A3_STARTUP_REDUCE</code>）</td>
+<td>13</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td>26（f32）/ 28（f16）</td>
+<td><code>A2A3_COMPL_FP32_EXP</code> / <code>A2A3_COMPL_FP16_EXP</code></td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>2</td>
+<td>4</td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18</td>
+<td>18</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="c">C 语义<a class="headerlink" href="#c" title="Permanent link">&para;</a></h3>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = logf(src[i]);
+</code></pre>
+<p><strong>输入定义域：</strong> <code>logf(x)</code> 只在 <code>x &gt; 0</code> 时有实数意义。非正活跃输入会产生 NaN 或目标定义的异常结果。</p>
+<h3 id="_11">数值稳定性说明<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<p>对于 softmax 分母这类 <code>log(sum(exp(x - max)))</code> 模式，通常优先通过 <code>vexpdiff</code> 等融合路径避免不必要的数值风险。</p>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../unary-vector-ops_zh/">一元向量操作</a></li>
+<li>上一条指令：<a href="../vexp_zh/">pto.vexp</a></li>
+<li>下一条指令：<a href="../vsqrt_zh/">pto.vsqrt</a></li>
 </ul>
               
             </div>

@@ -932,18 +932,113 @@
                 <!-- Generated from `docs/isa/vector/ops/binary-vector-ops/vdiv_zh.md` -->
 
 <h1 id="ptovdiv">pto.vdiv<a class="headerlink" href="#ptovdiv" title="Permanent link">&para;</a></h1>
-<p>按激活 lane 做向量除法。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vdiv</code> 属于<a href="../../../binary-vector-ops_zh/">二元向量操作</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>%result</code> 是 <code>%lhs</code> 与 <code>%rhs</code> 的逐 lane 商值。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vdiv</code> 是 <code>pto.v*</code> 计算指令，在活跃 lane 上执行向量除法。<code>%lhs</code> 是被除数，<code>%rhs</code> 是除数。</p>
+<p>对每个活跃 lane：</p>
+<div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{lhs}_i / \mathrm{rhs}_i \]</div>
+<p>这条指令当前只记录浮点形式，不包含整数除法。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vdiv %result, %lhs, %rhs, %mask
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vdiv %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
-<p>A5 已文档化的支持形式：仅 <code>f16</code> 与 <code>f32</code>，不支持整数除法。</p>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>A5 当前文档化的形式只有 <code>f16</code> 与 <code>f32</code>。</p>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>输入向量与结果向量的宽度和元素类型必须兼容。</li>
-<li>位运算、移位和 carry 变体还会受具体元素类型限制。</li>
+<li><code>%lhs</code>：被除数</li>
+<li><code>%rhs</code>：除数</li>
+<li><code>%mask</code>：选择活跃 lane 的谓词掩码</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%result</code>：逐 lane 商值</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令除了产生 SSA 结果外，没有其他架构副作用。除非具体形式另有说明，它不会隐式占用 buffer、发送事件，也不会建立内存栅栏。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>只支持浮点元素类型。</li>
+<li>活跃 lane 上如果除数是 <code>+0</code> 或 <code>-0</code>，其行为遵循目标平台的异常语义。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非法的向量形状、不支持的元素类型，以及不合法的属性组合。</li>
+<li>除零、域外输入等数值异常，仍由所选 backend profile 决定，除非本页进一步收窄。</li>
+<li>约束部分列出的额外非法情形同样属于 <code>pto.vdiv</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 当前文档化支持：仅 <code>f16</code>、<code>f32</code>，不支持整数除法。</li>
+<li>A5 是当前手册中最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+<li>任何依赖具体指令类型清单、分布模式或融合路径的代码，都应视为 profile 相关。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th>时延（周期）</th>
+<th>A5 RV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code></td>
+<td>17</td>
+<td><code>RV_VDIV</code></td>
+</tr>
+<tr>
+<td><code>f16</code></td>
+<td>22</td>
+<td><code>RV_VDIV</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a2a3">A2/A3 吞吐<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>f32</th>
+<th>f16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>14</td>
+<td><code>A2A3_STARTUP_BINARY</code></td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td>20</td>
+<td><code>A2A3_COMPL_FP_MUL</code></td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>2</td>
+<td>4</td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18</td>
+<td>18</td>
+</tr>
+</tbody>
+</table>
+<p><strong>性能说明：</strong> 除法显著慢于乘法。A5 上 <code>vdiv</code> 需要 17–22 周期，而 <code>vmul</code> 只要 8 周期。若精度允许，更建议先求倒数，再用乘法实现。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] / src1[i];
+</code></pre>
+<h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vdiv</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -968,9 +1063,11 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vdiv</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../binary-vector-ops_zh/">二元向量指令集</a></li>
+<li>指令集总览：<a href="../../../binary-vector-ops_zh/">二元向量操作</a></li>
+<li>上一条指令：<a href="../vmul_zh/">pto.vmul</a></li>
+<li>下一条指令：<a href="../vmax_zh/">pto.vmax</a></li>
 </ul>
               
             </div>

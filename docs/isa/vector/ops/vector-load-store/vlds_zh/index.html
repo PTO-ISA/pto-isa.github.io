@@ -932,17 +932,112 @@
                 <!-- Generated from `docs/isa/vector/ops/vector-load-store/vlds_zh.md` -->
 
 <h1 id="ptovlds">pto.vlds<a class="headerlink" href="#ptovlds" title="Permanent link">&para;</a></h1>
-<p>从 UB 加载向量寄存器。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vlds</code> 属于<a href="../../../vector-load-store_zh/">向量加载与存储</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>带分布模式的向量加载。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vlds</code> 属于 PTO 的向量内存 / 数据搬运指令。它把向量 tile buffer 中的数据按选定分布模式装成一个向量寄存器，同时把 UB 地址、分布模式以及映射规则保持为架构可见语义，而不是完全隐藏到后端 lowering 里。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vlds %result, %source[%offset] {dist = &quot;DIST&quot;}
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vlds %source[%offset] {dist = &quot;DIST&quot;} : !pto.ptr&lt;T, ub&gt; -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>UB 地址空间与对齐要求必须满足。</li>
-<li>DMA 与向量计算之间的顺序边必须显式建立。</li>
+<li><code>%source</code>：UB 基址</li>
+<li><code>%offset</code>：加载位移</li>
+<li><code>DIST</code>：分布模式，决定数据怎样映射到目标 lane</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%result</code>：装载得到的向量寄存器值</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令会读取 UB 可见存储并返回 SSA 结果。它不会单独分配 buffer、发送事件，也不会建立栅栏。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>有效地址必须满足所选分布模式的对齐规则。</li>
+<li><code>NORM</code> 读取一个完整向量 footprint。</li>
+<li>广播、上采样、下采样、拆包、拆通道和去交错等模式会改变“内存字节如何映射到目标 lane”，但不会改变“数据源来自 UB”这一点。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>使用超出 UB 可见空间的地址，或违反所选分布模式的对齐 / 分布契约，都是非法的。</li>
+<li>被屏蔽的 lane 或 inactive block，除非指令正文明确说明，否则不能把一个本来非法的地址变成合法。</li>
+<li>约束部分列出的额外非法情形，同样属于 <code>pto.vlds</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+<li>如果代码依赖某个分布模式、类型列表或特殊行为，应把这种依赖视为 profile 相关。</li>
+</ul>
+<h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mlir">%v = pto.vlds %ub[%offset] {dist = &quot;NORM&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<pre><code class="language-mlir">%v = pto.vlds %ub[%c0] {dist = &quot;BRC_B32&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<h2 id="_10">详细说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="_11">常见分布模式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+<th>C 语义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NORM</code></td>
+<td>连续 256B 装载</td>
+<td><code>dst[i] = UB[base + i * sizeof(T)]</code></td>
+</tr>
+<tr>
+<td><code>BRC_B8/B16/B32</code></td>
+<td>单元素广播</td>
+<td><code>dst[i] = UB[base]</code></td>
+</tr>
+<tr>
+<td><code>US_B8/B16</code></td>
+<td>上采样</td>
+<td><code>dst[2*i] = dst[2*i+1] = UB[base + i]</code></td>
+</tr>
+<tr>
+<td><code>DS_B8/B16</code></td>
+<td>下采样</td>
+<td><code>dst[i] = UB[base + 2*i]</code></td>
+</tr>
+<tr>
+<td><code>UNPK_B8/B16/B32</code></td>
+<td>拆包并零扩展</td>
+<td><code>dst_i32[i] = (uint32_t)UB_i16[base + 2*i]</code></td>
+</tr>
+<tr>
+<td><code>SPLT4CHN_B8</code></td>
+<td>四通道拆分</td>
+<td>每 4 字节抽 1 字节</td>
+</tr>
+<tr>
+<td><code>SPLT2CHN_B8/B16</code></td>
+<td>双通道拆分</td>
+<td>每 2 个元素抽 1 个</td>
+</tr>
+<tr>
+<td><code>DINTLV_B32</code></td>
+<td>32 位去交错</td>
+<td>取偶数位元素</td>
+</tr>
+<tr>
+<td><code>BLK</code></td>
+<td>分块装载</td>
+<td>块状访问模式</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_12">性能<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h3 id="_13">时延与吞吐披露<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vlds</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -967,9 +1062,10 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vlds</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_14">相关页面<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../vector-load-store_zh/">向量加载存储指令集</a></li>
+<li>指令集总览：<a href="../../../vector-load-store_zh/">向量加载与存储</a></li>
+<li>下一条指令：<a href="../vldas_zh/">pto.vldas</a></li>
 </ul>
               
             </div>

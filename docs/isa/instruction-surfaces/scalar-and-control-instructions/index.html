@@ -988,8 +988,8 @@
 <tbody>
 <tr>
 <td>Control and Configuration</td>
-<td>NOP, barrier, yield, and control setup</td>
-<td><code>nop</code>, <code>barrier</code>, <code>yield</code></td>
+<td>NOP, barrier, yield, and mode/config setup</td>
+<td><code>nop</code>, <code>barrier</code>, <code>yield</code>, <code>tsethf32mode</code>, <code>tsetfmatrix</code></td>
 </tr>
 <tr>
 <td>Pipeline Sync</td>
@@ -998,7 +998,7 @@
 </tr>
 <tr>
 <td>DMA Copy</td>
-<td>GM↔UB memory transfer configuration and initiation</td>
+<td>GM↔vector-tile-buffer transfer configuration and initiation</td>
 <td><code>copy_gm_to_ubuf</code>, <code>copy_ubuf_to_gm</code>, <code>set_loop_size_outtoub</code></td>
 </tr>
 <tr>
@@ -1183,12 +1183,12 @@ PTO_INST void wait_flag(pipe_t src_pipe, pipe_t dst_pipe, event_t event_id);
 // Pipeline barrier
 PTO_INST void pipe_barrier(pipe_t pipe);
 
-// DMA copy: GM → UB
+// DMA copy: GM → vector tile buffer / hardware UB
 PTO_INST void copy_gm_to_ubuf(ub_ptr dst, gm_ptr src, uint64_t sid,
                               uint64_t n_burst, uint64_t len_burst,
                               uint64_t dst_stride, uint64_t src_stride);
 
-// DMA copy: UB → GM
+// DMA copy: vector tile buffer / hardware UB → GM
 PTO_INST void copy_ubuf_to_gm(gm_ptr dst, ub_ptr src, uint64_t sid,
                               uint64_t n_burst, uint64_t len_burst,
                               uint64_t reserved, uint64_t dst_stride, uint64_t src_stride);

@@ -931,29 +931,600 @@
               
                 <!-- Generated from `docs/isa/vector/dma-copy_zh.md` -->
 
-<h1 id="dma">向量 DMA 路径<a class="headerlink" href="#dma" title="Permanent link">&para;</a></h1>
-<p>这组文档说明向量路径中与 DMA 相关的可见约束。它们描述的是 GM、UB 与向量寄存器之间的搬运关系，而不是独立的向量算术指令。</p>
-<h2 id="_1">作用<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>在 <code>pto.v*</code> 路径中：</p>
-<pre><code class="language-text">GM -&gt; copy_gm_to_ubuf -&gt; UB -&gt; vlds -&gt; vreg
-vreg -&gt; vsts -&gt; UB -&gt; copy_ubuf_to_gm -&gt; GM
+<h1 id="dma">向量指令集：DMA 拷贝<a class="headerlink" href="#dma" title="Permanent link">&para;</a></h1>
+<p>PTO指令集架构中的向量 DMA 指令负责在 GM 与向量可见的 tile buffer 之间搬运数据。当前硬件用 UB 实现这个向量 tile buffer，因此这组指令既是数据搬运原语，也是 <code>pto.v*</code> 计算能否开始执行的前置条件。</p>
+<blockquote>
+<p><strong>类别：</strong> DMA 传输配置与执行
+<strong>流水线：</strong> MTE2（GM→向量 tile buffer）、MTE3（向量 tile buffer→GM）</p>
+</blockquote>
+<p>GM 与向量 tile buffer 之间的数据搬运由 MTE 引擎异步执行。MTE2、MTE3 与 <code>PIPE_V</code> 并不自动串行，因此 DMA 指令通常要和<a href="../pipeline-sync_zh/">向量流水线同步</a>页面里的事件或 buffer 协议配合使用。</p>
+<p>MTE2 / MTE3 DMA 引擎的执行模型本质上是一个多层嵌套循环。拷贝指令描述最内层 burst 行为，外层循环次数与步长则通过一组独立的配置指令写入硬件循环寄存器。</p>
+<hr />
+<h2 id="gm-tile-buffer">GM→向量 tile buffer 的循环与步长配置<a class="headerlink" href="#gm-tile-buffer" title="Permanent link">&para;</a></h2>
+<p>这组指令配置 MTE2 的硬件循环，用于 GM→向量 tile buffer 的搬运。它们必须先于 <code>pto.copy_gm_to_ubuf</code> 执行。</p>
+<h3 id="ptoset_loop_size_outtoub"><code>pto.set_loop_size_outtoub</code><a class="headerlink" href="#ptoset_loop_size_outtoub" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.set_loop_size_outtoub %loop1_count, %loop2_count : i64, i64</code></li>
+<li><strong>语义：</strong> 配置 GM→向量 tile buffer DMA 的两级硬件循环迭代次数。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>位宽</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%loop1_count</code></td>
+<td>21 位</td>
+<td>内层硬件循环次数</td>
+</tr>
+<tr>
+<td><code>%loop2_count</code></td>
+<td>21 位</td>
+<td>外层硬件循环次数</td>
+</tr>
+</tbody>
+</table>
+<p>如果这次搬运不需要多级循环，两个计数都应设为 <code>1</code>。</p>
+<h3 id="ptoset_loop2_stride_outtoub"><code>pto.set_loop2_stride_outtoub</code><a class="headerlink" href="#ptoset_loop2_stride_outtoub" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.set_loop2_stride_outtoub %src_stride, %dst_stride : i64, i64</code></li>
+<li><strong>语义：</strong> 配置外层循环 <code>loop2</code> 每轮结束后 GM 源地址与向量 tile buffer 目标地址的推进距离。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>位宽</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%src_stride</code></td>
+<td>40 位</td>
+<td>每次 <code>loop2</code> 结束后 GM 读指针前进的字节数</td>
+</tr>
+<tr>
+<td><code>%dst_stride</code></td>
+<td>21 位</td>
+<td>每次 <code>loop2</code> 结束后向量 tile buffer 写指针前进的字节数</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ptoset_loop1_stride_outtoub"><code>pto.set_loop1_stride_outtoub</code><a class="headerlink" href="#ptoset_loop1_stride_outtoub" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.set_loop1_stride_outtoub %src_stride, %dst_stride : i64, i64</code></li>
+<li><strong>语义：</strong> 配置内层循环 <code>loop1</code> 每轮结束后的地址推进距离。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>位宽</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%src_stride</code></td>
+<td>40 位</td>
+<td>每次 <code>loop1</code> 结束后 GM 读指针前进的字节数</td>
+</tr>
+<tr>
+<td><code>%dst_stride</code></td>
+<td>21 位</td>
+<td>每次 <code>loop1</code> 结束后向量 tile buffer 写指针前进的字节数</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="tile-buffergm">向量 tile buffer→GM 的循环与步长配置<a class="headerlink" href="#tile-buffergm" title="Permanent link">&para;</a></h2>
+<p>这组指令配置 MTE3 的硬件循环，用于向量 tile buffer→GM 的回写。它们必须先于 <code>pto.copy_ubuf_to_gm</code> 执行。</p>
+<p>向量 tile buffer 地址空间较小，因此相关 stride 字段只需要 21 位；GM 地址范围更大，因此 GM 侧 stride 使用 40 位。</p>
+<h3 id="ptoset_loop_size_ubtoout"><code>pto.set_loop_size_ubtoout</code><a class="headerlink" href="#ptoset_loop_size_ubtoout" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.set_loop_size_ubtoout %loop1_count, %loop2_count : i64, i64</code></li>
+<li><strong>语义：</strong> 配置向量 tile buffer→GM DMA 的两级硬件循环迭代次数。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>位宽</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%loop1_count</code></td>
+<td>21 位</td>
+<td>内层硬件循环次数</td>
+</tr>
+<tr>
+<td><code>%loop2_count</code></td>
+<td>21 位</td>
+<td>外层硬件循环次数</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ptoset_loop2_stride_ubtoout"><code>pto.set_loop2_stride_ubtoout</code><a class="headerlink" href="#ptoset_loop2_stride_ubtoout" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.set_loop2_stride_ubtoout %src_stride, %dst_stride : i64, i64</code></li>
+<li><strong>语义：</strong> 配置外层循环 <code>loop2</code> 的地址推进量。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>位宽</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%src_stride</code></td>
+<td>21 位</td>
+<td>每次 <code>loop2</code> 结束后向量 tile buffer 源地址前进的字节数</td>
+</tr>
+<tr>
+<td><code>%dst_stride</code></td>
+<td>40 位</td>
+<td>每次 <code>loop2</code> 结束后 GM 目标地址前进的字节数</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ptoset_loop1_stride_ubtoout"><code>pto.set_loop1_stride_ubtoout</code><a class="headerlink" href="#ptoset_loop1_stride_ubtoout" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong> <code>pto.set_loop1_stride_ubtoout %src_stride, %dst_stride : i64, i64</code></li>
+<li><strong>语义：</strong> 配置内层循环 <code>loop1</code> 的地址推进量。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>位宽</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%src_stride</code></td>
+<td>21 位</td>
+<td>每次 <code>loop1</code> 结束后向量 tile buffer 源地址前进的字节数</td>
+</tr>
+<tr>
+<td><code>%dst_stride</code></td>
+<td>40 位</td>
+<td>每次 <code>loop1</code> 结束后 GM 目标地址前进的字节数</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="dma_1">DMA 传输执行指令<a class="headerlink" href="#dma_1" title="Permanent link">&para;</a></h2>
+<h3 id="ptocopy_gm_to_ubuf"><code>pto.copy_gm_to_ubuf</code><a class="headerlink" href="#ptocopy_gm_to_ubuf" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong></li>
+</ul>
+<pre><code class="language-mlir">pto.copy_gm_to_ubuf %gm_src, %ub_dst,
+    %sid, %n_burst, %len_burst, %left_padding, %right_padding,
+    %data_select_bit, %l2_cache_ctl, %src_stride, %dst_stride
+    : !pto.ptr&lt;T, gm&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64, i64,
+      i64, i64, i1, i64, i64, i64
 </code></pre>
-<p>因此向量路径的 DMA 不是“可选细节”，而是向量计算可见数据路径的一部分。</p>
-<h2 id="_2">关键点<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li>GM 与 UB 之间通过 <code>copy_gm_to_ubuf</code> / <code>copy_ubuf_to_gm</code></li>
-<li>向量寄存器与 UB 之间通过 <code>vlds</code> / <code>vsts</code></li>
-<li>DMA 与向量计算之间必须通过 <code>set_flag</code> / <code>wait_flag</code> 建立顺序</li>
+<li><strong>语义：</strong> 从 GM 把一组 burst 行搬运到向量 tile buffer。</li>
 </ul>
-<h2 id="_3">不允许的情形<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%gm_src</code></td>
+<td>GM 源指针（<code>!pto.ptr&lt;T, gm&gt;</code>）</td>
+</tr>
+<tr>
+<td><code>%ub_dst</code></td>
+<td>向量 tile buffer 目标指针（<code>!pto.ptr&lt;T, ub&gt;</code>，要求 32B 对齐）</td>
+</tr>
+<tr>
+<td><code>%sid</code></td>
+<td>Stream ID，通常为 0</td>
+</tr>
+<tr>
+<td><code>%n_burst</code></td>
+<td>burst 行数</td>
+</tr>
+<tr>
+<td><code>%len_burst</code></td>
+<td>每一行连续搬运的有效字节数</td>
+</tr>
+<tr>
+<td><code>%left_padding</code></td>
+<td>左侧 padding 字节数</td>
+</tr>
+<tr>
+<td><code>%right_padding</code></td>
+<td>右侧 padding 字节数</td>
+</tr>
+<tr>
+<td><code>%data_select_bit</code></td>
+<td>padding / 数据选择控制位</td>
+</tr>
+<tr>
+<td><code>%l2_cache_ctl</code></td>
+<td>L2 cache 分配控制位，当前文档仍保留为待细化字段</td>
+</tr>
+<tr>
+<td><code>%src_stride</code></td>
+<td>GM 源行的起始地址到下一行起始地址的字节距离</td>
+</tr>
+<tr>
+<td><code>%dst_stride</code></td>
+<td>向量 tile buffer 目标行的起始地址到下一行起始地址的字节距离，要求 32B 对齐</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ptocopy_ubuf_to_gm"><code>pto.copy_ubuf_to_gm</code><a class="headerlink" href="#ptocopy_ubuf_to_gm" title="Permanent link">&para;</a></h3>
 <ul>
-<li>把 DMA 完成假设为向量计算的隐式前提</li>
-<li>把 UB 可见性误写成 GM 可见性</li>
+<li><strong>语法：</strong></li>
 </ul>
+<pre><code class="language-mlir">pto.copy_ubuf_to_gm %ub_src, %gm_dst,
+    %sid, %n_burst, %len_burst, %reserved, %dst_stride, %src_stride
+    : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, gm&gt;, i64, i64, i64, i64, i64, i64
+</code></pre>
+<ul>
+<li><strong>语义：</strong> 从向量 tile buffer 回写到 GM。MTE3 每一行只读取 <code>len_burst</code> 指定的有效字节，不会把前面装载时补到 32B 边界的 padding 一并写回。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%ub_src</code></td>
+<td>向量 tile buffer 源指针（<code>!pto.ptr&lt;T, ub&gt;</code>，要求 32B 对齐）</td>
+</tr>
+<tr>
+<td><code>%gm_dst</code></td>
+<td>GM 目标指针（<code>!pto.ptr&lt;T, gm&gt;</code>）</td>
+</tr>
+<tr>
+<td><code>%sid</code></td>
+<td>Stream ID，通常为 0</td>
+</tr>
+<tr>
+<td><code>%n_burst</code></td>
+<td>burst 行数</td>
+</tr>
+<tr>
+<td><code>%len_burst</code></td>
+<td>每行写回的有效字节数</td>
+</tr>
+<tr>
+<td><code>%reserved</code></td>
+<td>保留字段，应设为 0</td>
+</tr>
+<tr>
+<td><code>%dst_stride</code></td>
+<td>GM 目标行的起始地址跨度</td>
+</tr>
+<tr>
+<td><code>%src_stride</code></td>
+<td>向量 tile buffer 源行的起始地址跨度，要求 32B 对齐</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ptocopy_ubuf_to_ubuf"><code>pto.copy_ubuf_to_ubuf</code><a class="headerlink" href="#ptocopy_ubuf_to_ubuf" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>语法：</strong></li>
+</ul>
+<pre><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride
+    : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64 x5
+</code></pre>
+<ul>
+<li><strong>语义：</strong> 在向量 tile buffer 内部执行 DMA 风格的块搬运。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%source</code></td>
+<td>向量 tile buffer 源指针</td>
+</tr>
+<tr>
+<td><code>%dest</code></td>
+<td>向量 tile buffer 目标指针</td>
+</tr>
+<tr>
+<td><code>%sid</code></td>
+<td>Stream ID</td>
+</tr>
+<tr>
+<td><code>%n_burst</code></td>
+<td>burst 次数</td>
+</tr>
+<tr>
+<td><code>%len_burst</code></td>
+<td>每次 burst 的长度</td>
+</tr>
+<tr>
+<td><code>%src_stride</code></td>
+<td>源行跨度</td>
+</tr>
+<tr>
+<td><code>%dst_stride</code></td>
+<td>目标行跨度</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="burst-stride-padding">burst / stride / padding 模型<a class="headerlink" href="#burst-stride-padding" title="Permanent link">&para;</a></h2>
+<p>A5 的 DMA 地址模型是纯 stride 模型。这里的 stride 指“这一行起始地址到下一行起始地址的距离”，不是“有效数据长度之外的空洞长度”。因此约束是 <code>stride &gt;= len_burst</code>，而不是 <code>gap = stride - len_burst</code> 另外单独编码。</p>
+<h3 id="_1">关键术语<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">burst  = 每一行连续搬运的 lenBurst 字节
+stride = row[r] 起始地址到 row[r+1] 起始地址的字节距离
+pad    = ub_stride - lenBurst，用来把行尾补到 32B 对齐边界
+</code></pre>
+<h3 id="_2">对齐约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>向量 tile buffer 地址无论作为源还是目标，都必须 32 字节对齐。</li>
+<li>在 GM→向量 tile buffer 的方向上，如果 <code>data_select_bit = true</code>，则每一行有效数据之后会用 <code>pad_val</code> 补到 <code>dst_stride</code> 指定的 32B 对齐边界。</li>
+<li>在向量 tile buffer→GM 的方向上，MTE3 每行只读取 <code>len_burst</code> 字节，因此装载时补进去的 padding 会被自然丢弃，不会写回 GM。</li>
+</ul>
+<h3 id="gm-tile-buffer_1">GM→向量 tile buffer 的二维示意<a class="headerlink" href="#gm-tile-buffer_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">GM（源，!pto.ptr&lt;T, gm&gt;）：
+
+          |&lt;--- src_stride（起始到起始） ---&gt;|
+          |&lt;- len_burst -&gt;|                 |
+第 0 行： [##DATA########]..................|
+第 1 行： [##DATA########]..................|
+第 2 行： [##DATA########]..................|
+          ...
+第 N-1 行：[##DATA########]
+
+向量 tile buffer（目标，!pto.ptr&lt;T, ub&gt;，32B 对齐）：
+
+          |&lt;---------- dst_stride（32B 对齐） ----------&gt;|
+          |&lt;- len_burst -&gt;|&lt;- 补到 32B 边界的 pad -&gt;|   |
+第 0 行： [##DATA########][000000 PAD 000000000000000]
+第 1 行： [##DATA########][000000 PAD 000000000000000]
+第 2 行： [##DATA########][000000 PAD 000000000000000]
+          ...
+第 N-1 行：[##DATA########][000000 PAD 000000000000000]
+
+N      = n_burst
+stride = row[r] 起始地址到 row[r+1] 起始地址的距离
+pad    = 当 data_select_bit=true 时，用 pad_val 补到 32B 边界
+</code></pre>
+<h3 id="tile-buffergm_1">向量 tile buffer→GM 的二维示意<a class="headerlink" href="#tile-buffergm_1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">向量 tile buffer（源，!pto.ptr&lt;T, ub&gt;，32B 对齐）：
+
+          |&lt;---------- src_stride（32B 对齐） ---------&gt;|
+          |&lt;- len_burst -&gt;|&lt;-- pad（读取时忽略） --&gt;| |
+第 0 行： [##DATA########][000 pad 000000000000000000]
+第 1 行： [##DATA########][000 pad 000000000000000000]
+第 2 行： [##DATA########][000 pad 000000000000000000]
+          ...
+第 N-1 行：[##DATA########][000 pad 000000000000000000]
+
+GM（目标，!pto.ptr&lt;T, gm&gt;）：
+
+          |&lt;--- dst_stride（起始到起始） ---&gt;|
+          |&lt;- len_burst -&gt;|                 |
+第 0 行： [##DATA########]..................|
+第 1 行： [##DATA########]..................|
+第 2 行： [##DATA########]..................|
+          ...
+第 N-1 行：[##DATA########]
+
+N = n_burst
+MTE3 每行只读 len_burst 字节，因此不会把 padding 写回 GM。
+</code></pre>
+<hr />
+<h2 id="_3">多级循环的精确定义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>完整 DMA 搬运是一个三层嵌套循环：外层两级由 <code>set_loop_size_*</code> 和 <code>set_loop*_stride_*</code> 配置，最内层由拷贝指令的 burst 参数控制。</p>
+<h3 id="gm-tile-buffer_2">GM→向量 tile buffer<a class="headerlink" href="#gm-tile-buffer_2" title="Permanent link">&para;</a></h3>
+<pre><code class="language-c">for (int j = 0; j &lt; loop2_count; j++) {
+    uint8_t *gm1 = gm_src + j * loop2_src_stride;
+    uint8_t *ub1 = ub_dst + j * loop2_dst_stride;
+
+    for (int k = 0; k &lt; loop1_count; k++) {
+        uint8_t *gm2 = gm1 + k * loop1_src_stride;
+        uint8_t *ub2 = ub1 + k * loop1_dst_stride;
+
+        for (int r = 0; r &lt; n_burst; r++) {
+            memcpy(ub2 + r * dst_stride,
+                   gm2 + r * src_stride,
+                   len_burst);
+            if (data_select_bit)
+                memset(ub2 + r * dst_stride + len_burst,
+                       pad_val, dst_stride - len_burst);
+        }
+    }
+}
+</code></pre>
+<h3 id="tile-buffergm_2">向量 tile buffer→GM<a class="headerlink" href="#tile-buffergm_2" title="Permanent link">&para;</a></h3>
+<pre><code class="language-c">for (int j = 0; j &lt; loop2_count; j++) {
+    uint8_t *ub1 = ub_src + j * loop2_src_stride;
+    uint8_t *gm1 = gm_dst + j * loop2_dst_stride;
+
+    for (int k = 0; k &lt; loop1_count; k++) {
+        uint8_t *ub2 = ub1 + k * loop1_src_stride;
+        uint8_t *gm2 = gm1 + k * loop1_dst_stride;
+
+        for (int r = 0; r &lt; n_burst; r++) {
+            memcpy(gm2 + r * dst_stride,
+                   ub2 + r * src_stride,
+                   len_burst);
+        }
+    }
+}
+</code></pre>
+<hr />
+<h2 id="1-3232-f32-tile-gm-tile-buffer">示例 1：把 32×32 的 f32 tile 从 GM 装入向量 tile buffer<a class="headerlink" href="#1-3232-f32-tile-gm-tile-buffer" title="Permanent link">&para;</a></h2>
+<p>这是最简单的二维搬运形态，对应 <code>abs_kernel_2d</code> 这样的测试。</p>
+<pre><code class="language-text">GM 布局（32 × 32 f32，连续）：
+
+    |&lt;- len_burst = 128B（32 × 4） -&gt;|
+    |&lt;- src_stride = 128B ----------&gt;|
+    +--[#######TILE#######]--+  row 0
+    +--[#######TILE#######]--+  row 1
+    ...
+    +--[#######TILE#######]--+  row 31
+
+向量 tile buffer 布局（32 × 32 f32，32B 对齐，连续）：
+
+    |&lt;- dst_stride = 128B（天然满足 32B 对齐） -&gt;|
+    +--[#######TILE#######]--+  row 0
+    +--[#######TILE#######]--+  row 1
+    ...
+    +--[#######TILE#######]--+  row 31
+</code></pre>
+<pre><code class="language-mlir">pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
+
+pto.copy_gm_to_ubuf %arg0, %ub_in,
+    %c0_i64,
+    %c32_i64,
+    %c128_i64,
+    %c0_i64,
+    %c0_i64,
+    %false,
+    %c0_i64,
+    %c128_i64,
+    %c128_i64
+    : !pto.ptr&lt;f32, gm&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64, i64,
+      i64, i64, i1, i64, i64, i64
+</code></pre>
+<hr />
+<h2 id="2-64128-f16-tile">示例 2：从大矩阵中切出一个 64×128 的 f16 tile<a class="headerlink" href="#2-64128-f16-tile" title="Permanent link">&para;</a></h2>
+<p>从 1024×512 的 GM 矩阵里抽取一个 64×128 tile，装入向量 tile buffer。</p>
+<pre><code class="language-text">GM 中每一行总宽度 = 512 × 2 = 1024B
+tile 每一行有效数据 = 128 × 2 = 256B
+因此：
+len_burst  = 256B
+src_stride = 1024B
+dst_stride = 256B
+</code></pre>
+<pre><code class="language-mlir">pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
+pto.set_loop1_stride_outtoub %c0_i64, %c0_i64 : i64, i64
+pto.set_loop2_stride_outtoub %c0_i64, %c0_i64 : i64, i64
+
+pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr,
+    %c0_i64,
+    %c64_i64,
+    %c256_i64,
+    %c0_i64,
+    %c0_i64,
+    %false,
+    %c0_i64,
+    %c1024_i64,
+    %c256_i64
+    : !pto.ptr&lt;f16, gm&gt;, !pto.ptr&lt;f16, ub&gt;, i64, i64, i64,
+      i64, i64, i1, i64, i64, i64
+</code></pre>
+<hr />
+<h2 id="3-padding-gm-tile-buffer">示例 3：带 padding 的 GM→向量 tile buffer 装载<a class="headerlink" href="#3-padding-gm-tile-buffer" title="Permanent link">&para;</a></h2>
+<p>把 100 列有效的 f16 数据装入一个逻辑宽度为 128 的向量 tile。剩余 28 列由 DMA 在向量 tile buffer 行尾补齐。</p>
+<pre><code class="language-text">len_burst  = 100 × 2 = 200B
+src_stride = 200B
+dst_stride = 128 × 2 = 256B
+pad        = 256 - 200 = 56B
+</code></pre>
+<pre><code class="language-mlir">pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
+pto.set_loop1_stride_outtoub %c0_i64, %c0_i64 : i64, i64
+pto.set_loop2_stride_outtoub %c0_i64, %c0_i64 : i64, i64
+
+pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr,
+    %c0_i64,
+    %c64_i64,
+    %c200_i64,
+    %c0_i64,
+    %c0_i64,
+    %true,
+    %c0_i64,
+    %c200_i64,
+    %c256_i64
+    : !pto.ptr&lt;f16, gm&gt;, !pto.ptr&lt;f16, ub&gt;, i64, i64, i64,
+      i64, i64, i1, i64, i64, i64
+</code></pre>
+<p>这里真正起作用的是 <code>data_select_bit = true</code>。只要这个位被置位，DMA 就会把每一行有效数据后的空白区补成对齐后的目标宽度。</p>
+<hr />
+<h2 id="4-3232-f32-tile-tile-buffer-gm">示例 4：把 32×32 的 f32 tile 从向量 tile buffer 回写到 GM<a class="headerlink" href="#4-3232-f32-tile-tile-buffer-gm" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mlir">pto.set_loop_size_ubtoout %c1_i64, %c1_i64 : i64, i64
+
+pto.copy_ubuf_to_gm %ub_out, %arg1,
+    %c0_i64,
+    %c32_i64,
+    %c128_i64,
+    %c0_i64,
+    %c128_i64,
+    %c128_i64
+    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, gm&gt;, i64, i64, i64, i64, i64, i64
+</code></pre>
+<p>这个例子没有 padding：<code>len_burst == src_stride == dst_stride == 128B</code>。</p>
+<hr />
+<h2 id="5-64128-f16-tile">示例 5：把 64×128 的 f16 tile 写回大矩阵<a class="headerlink" href="#5-64128-f16-tile" title="Permanent link">&para;</a></h2>
+<p>向量 tile buffer 中每行是连续的 256B，但 GM 里的目标矩阵每一行总跨度是 1024B，因此回写时只写入前 256B，有效行间距由 <code>dst_stride</code> 保证。</p>
+<pre><code class="language-mlir">pto.set_loop_size_ubtoout %c1_i64, %c1_i64 : i64, i64
+pto.set_loop1_stride_ubtoout %c0_i64, %c0_i64 : i64, i64
+pto.set_loop2_stride_ubtoout %c0_i64, %c0_i64 : i64, i64
+
+pto.copy_ubuf_to_gm %ub_ptr, %gm_ptr,
+    %c0_i64,
+    %c64_i64,
+    %c256_i64,
+    %c0_i64,
+    %c1024_i64,
+    %c256_i64
+    : !pto.ptr&lt;f16, ub&gt;, !pto.ptr&lt;f16, gm&gt;, i64, i64, i64, i64, i64, i64
+</code></pre>
+<hr />
+<h2 id="6-tile">示例 6：利用多级循环搬运一批 tile<a class="headerlink" href="#6-tile" title="Permanent link">&para;</a></h2>
+<p>把一个 <code>[4, 8, 128]</code> 的 f16 张量按 batch 维度搬到向量 tile buffer。每个 batch 是 <code>8 × 128</code>，每行 256B，因此每个 batch 总大小是 <code>2048B</code>。</p>
+<pre><code class="language-mlir">pto.set_loop_size_outtoub %c4_i64, %c1_i64 : i64, i64
+pto.set_loop1_stride_outtoub %c2048_i64, %c2048_i64 : i64, i64
+pto.set_loop2_stride_outtoub %c0_i64, %c0_i64 : i64, i64
+
+pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr,
+    %c0_i64,
+    %c8_i64,
+    %c256_i64,
+    %c0_i64,
+    %c0_i64,
+    %false,
+    %c0_i64,
+    %c256_i64,
+    %c256_i64
+    : !pto.ptr&lt;f16, gm&gt;, !pto.ptr&lt;f16, ub&gt;, i64, i64, i64,
+      i64, i64, i1, i64, i64, i64
+</code></pre>
+<p>执行轨迹可以直接按 <code>loop1</code> 展开理解：</p>
+<pre><code class="language-text">loop1 第 0 轮：gm_ptr + 0×2048 → ub_ptr + 0×2048，搬 8 行 × 256B
+loop1 第 1 轮：gm_ptr + 1×2048 → ub_ptr + 1×2048，搬 8 行 × 256B
+loop1 第 2 轮：gm_ptr + 2×2048 → ub_ptr + 2×2048，搬 8 行 × 256B
+loop1 第 3 轮：gm_ptr + 3×2048 → ub_ptr + 3×2048，搬 8 行 × 256B
+</code></pre>
+<hr />
 <h2 id="_4">相关页面<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../vector-load-store_zh/">向量加载存储</a></li>
-<li><a href="../pipeline-sync_zh/">流水线同步</a></li>
+<li><a href="../vector-load-store_zh/">向量加载与存储</a></li>
+<li><a href="../pipeline-sync_zh/">向量流水线同步</a></li>
 <li><a href="../../scalar/dma-copy_zh/">标量 DMA 拷贝</a></li>
 </ul>
               

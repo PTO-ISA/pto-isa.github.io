@@ -932,18 +932,134 @@
                 <!-- Generated from `docs/isa/vector/ops/sfu-and-dsa-ops/vaxpy_zh.md` -->
 
 <h1 id="ptovaxpy">pto.vaxpy<a class="headerlink" href="#ptovaxpy" title="Permanent link">&para;</a></h1>
-<p>执行 AXPY 形式的融合运算。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%result = pto.vaxpy %src0, %src1, %alpha : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, T -&gt; !pto.vreg&lt;NxT&gt;
+<p><code>pto.vaxpy</code> 属于<a href="../../../sfu-and-dsa-ops_zh/">SFU 与 DSA 操作</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>执行 AXPY 形式的融合运算，也就是 <code>a * x + y</code>。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vaxpy</code> 把标量-向量乘法和逐元素加法融合为一条操作：</p>
+<pre><code class="language-text">dst[i] = alpha * x[i] + y[i]
 </code></pre>
-<p>A5 已文档化的支持形式：<code>f16</code> 与 <code>f32</code>。</p>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>可以把它理解为“带广播标量的 <code>vmula</code> 特化形式”。这种形式在数值内核、缩放残差和线性组合里很常见。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vaxpy %dst, %x, %y, %alpha, %mask : !pto.vreg&lt;NxT&gt;
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vaxpy %x, %y, %alpha, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, T, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
+</code></pre>
+<p>A5 当前文档化支持的类型：<code>f16</code>、<code>f32</code>。</p>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%x</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>被标量缩放的向量</td>
+</tr>
+<tr>
+<td><code>%y</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>加数向量</td>
+</tr>
+<tr>
+<td><code>%alpha</code></td>
+<td><code>T</code></td>
+<td>广播到各 lane 的标量乘子</td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>谓词掩码；掩码位为 1 的 lane 为活跃 lane</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>AXPY 结果向量</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令除了产生目标向量寄存器，没有其他架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li>某些操作只在特定 profile 或元素类型上受支持。</li>
-<li>lowering 不能把专用语义退化为未文档化的普通算术组合。</li>
+<li><code>%x</code>、<code>%y</code> 与 <code>%result</code> 必须有相同的元素类型和相同的向量宽度 <code>N</code>。</li>
+<li><code>%mask</code> 的宽度必须与 <code>N</code> 一致。</li>
+<li>当前文档只记录浮点形式。</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
+<li>约束部分列出的额外非法情形，同样属于 <code>pto.vaxpy</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 当前文档化支持：<code>f16</code>、<code>f32</code>。</li>
+<li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p>当前手册没有给出 <code>vaxpy</code> 的独立周期条目。</p>
+<h3 id="a2a3">A2/A3 吞吐<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p>英文 leaf 页当前沿用 fused/SFU 桶：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数值</th>
+<th>常量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>14</td>
+<td><code>A2A3_STARTUP_BINARY</code></td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td>26</td>
+<td><code>A2A3_COMPL_FP32_EXP</code></td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>2</td>
+<td><code>A2A3_RPT_2</code></td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18</td>
+<td><code>A2A3_INTERVAL</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = alpha * src0[i] + src1[i];
+</code></pre>
+<pre><code class="language-mlir">%result = pto.vaxpy %x, %y, %alpha, %mask
+    : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, f32, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vaxpy</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -968,9 +1084,11 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vaxpy</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../sfu-and-dsa-ops_zh/">SFU 与 DSA 指令集</a></li>
+<li>指令集总览：<a href="../../../sfu-and-dsa-ops_zh/">SFU 与 DSA 操作</a></li>
+<li>上一条指令：<a href="../vsubrelu_zh/">pto.vsubrelu</a></li>
+<li>下一条指令：<a href="../vaddreluconv_zh/">pto.vaddreluconv</a></li>
 </ul>
               
             </div>

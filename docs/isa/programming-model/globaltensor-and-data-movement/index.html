@@ -979,7 +979,7 @@
                 <!-- Generated from `docs/isa/programming-model/globaltensor-and-data-movement.md` -->
 
 <h1 id="globaltensor-and-data-movement">GlobalTensor And Data Movement<a class="headerlink" href="#globaltensor-and-data-movement" title="Permanent link">&para;</a></h1>
-<p>PTO does not hide movement between global memory and local execution state. <code>GlobalTensor</code> is the architecture-visible GM-facing object, and movement operations define when data enters or leaves the local payload instruction sets. The GM-facing types and the complete data paths to tile buffers and vector registers are described below.</p>
+<p>PTO does not hide movement between global memory and local execution state. <code>GlobalTensor</code> is the architecture-visible GM-facing object, and movement operations define when data enters or leaves local tile buffers or vector registers. PTO treats the vector tile buffer and the hardware Unified Buffer as the same architectural destination for <code>TileType::Vec</code>; this page avoids describing them as two separate user-visible concepts.</p>
 <h2 id="globaltensor">GlobalTensor<a class="headerlink" href="#globaltensor" title="Permanent link">&para;</a></h2>
 <h3 id="globaltensor-template-signature">GlobalTensor Template Signature<a class="headerlink" href="#globaltensor-template-signature" title="Permanent link">&para;</a></h3>
 <pre><code>GlobalTensor&lt;DType, Shape, Stride, Layout&gt;
@@ -1073,23 +1073,23 @@
 </tbody>
 </table>
 <h2 id="tile-instructions-data-path">Tile Instructions Data Path<a class="headerlink" href="#tile-instructions-data-path" title="Permanent link">&para;</a></h2>
-<p>The tile instructions (<code>pto.t*</code>) moves data between GM and tile buffers through MTE2/MTE3:</p>
+<p>The tile instructions (<code>pto.t*</code>) move data between GM and tile buffers through MTE2/MTE3. For <code>TileType::Vec</code>, the destination tile buffer is the hardware Unified Buffer; for <code>Left</code>, <code>Right</code>, and <code>Acc</code>, the destination tile buffers map to L0A, L0B, and L0C respectively.</p>
 <pre><code>GM
   │
   │  copy via DMA engine
   ▼
-UB (Unified Buffer, 256 KB on-chip)
+Local Tile Buffer (`Vec` uses hardware UB; `Left`/`Right`/`Acc` use L0A/L0B/L0C)
   │
-  │  implicit tile buffer fill
+  │  tile compute reads and writes the selected tile buffer role directly
   ▼
-Tile Buffer  ──►  Tile Compute  ──►  Tile Buffer
-                                     │
-                                     │  copy via DMA engine
-                                     ▼
-                                   GM
+Tile Compute
+  │
+  │  copy via DMA engine
+  ▼
+GM
 </code></pre>
 <h3 id="tload">TLOAD<a class="headerlink" href="#tload" title="Permanent link">&para;</a></h3>
-<p><code>TLOAD</code> moves data from a <code>GlobalTensor</code> into a tile buffer:</p>
+<p><code>TLOAD</code> moves data from a <code>GlobalTensor</code> into the destination tile buffer:</p>
 <pre><code>dst[i, j] = src[ r0 + i, c0 + j ]
 </code></pre>
 <p>Where <code>r0</code> and <code>c0</code> are the base offsets derived from the <code>GlobalTensor</code> shape/stride and the tile's declared valid region <code>(Rv, Cv)</code>.</p>
@@ -1100,7 +1100,7 @@ Tile Buffer  ──►  Tile Compute  ──►  Tile Buffer
   - <code>TileType::Vec</code>: ND→ND, DN→DN, NZ→NZ
   - <code>TileType::Mat</code>: ND→ND, DN→DN, NZ→NZ, ND→NZ, DN→ZN</p>
 <h3 id="tstore">TSTORE<a class="headerlink" href="#tstore" title="Permanent link">&para;</a></h3>
-<p><code>TSTORE</code> moves data from a tile buffer to a <code>GlobalTensor</code>:</p>
+<p><code>TSTORE</code> moves data from the source tile buffer to a <code>GlobalTensor</code>:</p>
 <pre><code>dst[ r0 + i, c0 + j ] = src[i, j]
 </code></pre>
 <p>Where <code>i ∈ [0, src.GetValidRow())</code>, <code>j ∈ [0, src.GetValidCol())</code>.</p>
@@ -1134,20 +1134,20 @@ Tile Buffer  ──►  Tile Compute  ──►  Tile Buffer
 </tbody>
 </table>
 <h2 id="vector-instructions-data-path">Vector Instructions Data Path<a class="headerlink" href="#vector-instructions-data-path" title="Permanent link">&para;</a></h2>
-<p>The vector instructions (<code>pto.v*</code>) requires an explicit GM↔UB DMA step before vector loads and after vector stores:</p>
+<p>The vector instructions (<code>pto.v*</code>) require an explicit GM↔vector-tile-buffer DMA step before vector loads and after vector stores:</p>
 <pre><code>GM
   │
   │  copy_ubuf_to_gm / copy_gm_to_ubuf (DMA, MTE2/MTE3)
   ▼
-UB (Unified Buffer, 256 KB on-chip)
+Vector Tile Buffer (hardware UB, 256 KB on-chip)
   │
-  │  vlds / vsld / vgather2 (vector load, from UB to vreg)
+  │  vlds / vsld / vgather2 (vector load, from the vector tile buffer to vreg)
   ▼
 Vector Registers  ──►  Vector Compute  ──►  Vector Registers
                                                 │
                                                 │  vsts / vsst / vscatter (vector store)
                                                 ▼
-                                            UB ──► GM
+                                   Vector Tile Buffer ──► GM
 </code></pre>
 <h3 id="dma-copy-operations">DMA Copy Operations<a class="headerlink" href="#dma-copy-operations" title="Permanent link">&para;</a></h3>
 <p>The following scalar/control operations configure and execute GM↔UB DMA:</p>
@@ -1162,18 +1162,18 @@ Vector Registers  ──►  Vector Compute  ──►  Vector Registers
 <tbody>
 <tr>
 <td><code>copy_gm_to_ubuf</code></td>
-<td>GM → UB</td>
-<td>Move data from GM to UB staging area</td>
+<td>GM → vector tile buffer</td>
+<td>Move data from GM into the vector tile buffer (hardware UB)</td>
 </tr>
 <tr>
 <td><code>copy_ubuf_to_gm</code></td>
-<td>UB → GM</td>
-<td>Move data from UB to GM</td>
+<td>vector tile buffer → GM</td>
+<td>Move data from the vector tile buffer back to GM</td>
 </tr>
 <tr>
 <td><code>copy_ubuf_to_ubuf</code></td>
-<td>UB → UB</td>
-<td>Copy within UB (e.g., double-buffering)</td>
+<td>vector tile buffer → vector tile buffer</td>
+<td>Copy within the vector tile buffer space (e.g., double-buffering)</td>
 </tr>
 </tbody>
 </table>
@@ -1191,23 +1191,23 @@ Vector Registers  ──►  Vector Compute  ──►  Vector Registers
 <tbody>
 <tr>
 <td><code>vlds</code></td>
-<td>UB → vreg</td>
+<td>vector tile buffer → vreg</td>
 <td>Standard vector load with distribution mode</td>
 </tr>
 <tr>
 <td><code>vsld</code></td>
-<td>vreg → UB</td>
+<td>vreg → vector tile buffer</td>
 <td>Standard vector store</td>
 </tr>
 <tr>
 <td><code>vgather2</code></td>
-<td>UB → vreg</td>
-<td>Strided/gather load from UB</td>
+<td>vector tile buffer → vreg</td>
+<td>Strided/gather load from the vector tile buffer</td>
 </tr>
 <tr>
 <td><code>vscatter</code></td>
-<td>vreg → UB</td>
-<td>Strided/scatter store to UB</td>
+<td>vreg → vector tile buffer</td>
+<td>Strided/scatter store to the vector tile buffer</td>
 </tr>
 </tbody>
 </table>
@@ -1268,21 +1268,21 @@ Vector Registers  ──►  Vector Compute  ──►  Vector Registers
 <tbody>
 <tr>
 <td><code>MTE1</code></td>
-<td>GM → UB</td>
+<td>GM → vector tile buffer</td>
 <td>Optional: explicit prefetch</td>
 <td>Pre-stage data before vector load</td>
 </tr>
 <tr>
 <td><code>MTE2</code></td>
-<td>GM → UB</td>
-<td>Load staging: GM→UB→tile buffer (via TLOAD)</td>
-<td>DMA copy: GM→UB (via <code>copy_gm_to_ubuf</code>)</td>
+<td>GM → local tile buffer</td>
+<td>Load staging into the selected local tile buffer (via <code>TLOAD</code>)</td>
+<td>DMA copy: GM→vector tile buffer (via <code>copy_gm_to_ubuf</code>)</td>
 </tr>
 <tr>
 <td><code>MTE3</code></td>
-<td>Tile → GM</td>
-<td>Store: tile→UB→GM (via TSTORE)</td>
-<td>DMA copy: UB→GM (via <code>copy_ubuf_to_gm</code>)</td>
+<td>local tile buffer → GM</td>
+<td>Store from the selected local tile buffer (via <code>TSTORE</code>)</td>
+<td>DMA copy: vector tile buffer → GM (via <code>copy_ubuf_to_gm</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -1310,10 +1310,10 @@ using namespace pto;
 void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&amp; ga,
              const GlobalTensor&lt;float&gt;&amp; gb) {
     Tile&lt;float, 16, 16&gt; a, b;
-    TLOAD(a, ga);           // GM → UB → Tile Buffer A
-    TLOAD(b, gb);           // GM → UB → Tile Buffer B
+    TLOAD(a, ga);           // GM → local tile buffer A
+    TLOAD(b, gb);           // GM → local tile buffer B
     TADD(c, a, b);          // c = a + b, iterated over c's valid region
-    TSTORE(gc, c);          // Tile Buffer C → UB → GM
+    TSTORE(gc, c);          // Local tile buffer C → GM
 }
 </code></pre>
 <h3 id="vector-instructions-fine-grained-vector-loadstore">Vector Instructions: Fine-Grained Vector Load/Store<a class="headerlink" href="#vector-instructions-fine-grained-vector-loadstore" title="Permanent link">&para;</a></h3>

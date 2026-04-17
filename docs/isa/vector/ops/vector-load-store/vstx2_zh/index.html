@@ -932,17 +932,58 @@
                 <!-- Generated from `docs/isa/vector/ops/vector-load-store/vstx2_zh.md` -->
 
 <h1 id="ptovstx2">pto.vstx2<a class="headerlink" href="#ptovstx2" title="Permanent link">&para;</a></h1>
-<p>执行双路存储或去交错存储。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vstx2</code> 属于<a href="../../../vector-load-store_zh/">向量加载与存储</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>双路交错存储，常用于 SoA → AoS 转换。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vstx2</code> 属于 PTO 的向量内存 / 数据搬运指令。它把两路源向量按选定交错布局写回 UB。这里的关键语义不是“写两次”，而是“两个源向量构成有顺序的交错对”。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vstx2 %low, %high, %dest[%offset], &quot;DIST&quot;, %mask
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">pto.vstx2 %low, %high, %dest[%offset], &quot;DIST&quot;, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, index, !pto.mask
 </code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>UB 地址空间与对齐要求必须满足。</li>
-<li>DMA 与向量计算之间的顺序边必须显式建立。</li>
+<li><code>%low</code>、<code>%high</code>：两路源向量</li>
+<li><code>%dest</code>：UB 基址</li>
+<li><code>%offset</code>：位移</li>
+<li><code>DIST</code>：交错布局</li>
+<li><code>%mask</code>：限定参与元素的谓词</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>这条指令没有 SSA 结果；它会把交错流写入 UB</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令会写 UB 可见内存。某些有状态的非对齐流式形式还可能推进对齐状态，但尾部 flush 仍可能需要单独指令完成。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>这条指令只对交错类分布合法。</li>
+<li>两个源向量构成一个有序对，交错语义必须保留，不能在 lowering 里交换。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>使用超出 UB 可见空间的地址，或违反所选分布模式的地址 / 对齐契约，都是非法的。</li>
+<li>约束部分列出的额外非法情形，同样属于 <code>pto.vstx2</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+</ul>
+<h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">// INTLV_B32
+for (int i = 0; i &lt; 64; i++) {
+    UB[base + 8*i]     = low[i];
+    UB[base + 8*i + 4] = high[i];
+}
+</code></pre>
+<h2 id="_10">详细说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="_11">支持的分布模式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<p><code>INTLV_B8</code>、<code>INTLV_B16</code>、<code>INTLV_B32</code></p>
+<h2 id="_12">性能<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h3 id="_13">时延与吞吐披露<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vstx2</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -967,9 +1008,11 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vstx2</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_14">相关页面<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../vector-load-store_zh/">向量加载存储指令集</a></li>
+<li>指令集总览：<a href="../../../vector-load-store_zh/">向量加载与存储</a></li>
+<li>上一条指令：<a href="../vsts_zh/">pto.vsts</a></li>
+<li>下一条指令：<a href="../vsst_zh/">pto.vsst</a></li>
 </ul>
               
             </div>

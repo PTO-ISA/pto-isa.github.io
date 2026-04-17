@@ -931,27 +931,23 @@
               
                 <!-- Generated from `docs/isa/tile/ops/reduce-and-expand/tcolargmax_zh.md` -->
 
-<h1 id="tcolargmax">TCOLARGMAX<a class="headerlink" href="#tcolargmax" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TCOLARGMAX tile operation" src="../../../../../figures/isa/TCOLARGMAX.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TCOLARGMAX</code> 对输入 Tile 的每一列做一次“取最大值位置”的归约，输出的是<strong>行索引</strong>，不是最大值本身。它适合放在需要后续定位、重排或选择的场景里；如果你只关心最大值本身，更直接的指令是 <code>TCOLMAX</code>。</p>
-<p>输出 Tile 只保留一行。第 <code>j</code> 列的结果 <code>dst[0, j]</code> 表示：在源 Tile 的第 <code>j</code> 列里，最大元素出现在第几行。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h1 id="ptotcolargmax">pto.tcolargmax<a class="headerlink" href="#ptotcolargmax" title="Permanent link">&para;</a></h1>
+<p><code>pto.tcolargmax</code> 属于<a href="../../../reduce-and-expand_zh/">归约与扩展</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>返回每一列最大值所在的行索引。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>设：</p>
 <ul>
 <li><code>R = src.GetValidRow()</code></li>
 <li><code>C = src.GetValidCol()</code></li>
 </ul>
-<p>对 <code>0 &lt;= j &lt; C</code>：</p>
+<p>则对 <code>0 &lt;= j &lt; C</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{0,j} = \underset{0 \le i &lt; R}{\operatorname{argmax}} \; \mathrm{src}_{i,j} \]</div>
-<p>当一列里有多个相同的最大值时，平局如何打破由实现决定。可移植代码不应依赖某个固定的 tie-breaking 行为。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>输出 tile 只保留一行，因此 <code>dst[0,j]</code> 表示“第 <code>j</code> 列的最大值落在哪一行”。若同一列有多个相同最大值，具体选哪一个索引由实现决定。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
 <pre><code class="language-text">%dst = tcolargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>在 lowering 过程中，backend 可能会引入临时 scratch Tile；C++ 内建接口因此显式接收 <code>tmp</code> 操作数。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -959,59 +955,49 @@
 <pre><code class="language-text">pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCOLARGMAX(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>src</code> 和 <code>dst</code> 都必须是 <code>TileType::Vec</code>。</li>
-<li><code>dst</code> 的元素类型必须是 <code>uint32_t</code> 或 <code>int32_t</code>。</li>
-<li><code>src</code> 必须使用非分形布局（<code>SLayout::NoneBox</code>）；当前实现允许 ND 或 DN 这两类非分形输入。</li>
-<li><code>dst</code> 必须是标准 ND 输出：row-major 且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
+<li><code>src</code>：源 tile</li>
+<li><code>tmp</code>：A2A3 路径可能使用的临时 tile</li>
+<li><code>dst</code>：目标索引 tile</li>
+</ul>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst[0,j]</code>：第 <code>j</code> 列最大值所在的行索引</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst</code> 与 <code>src</code> 必须为 <code>TileType::Vec</code></li>
+<li>源元素类型支持：<code>half</code>、<code>float</code>、<code>int32_t</code>、<code>int16_t</code></li>
+<li>目标元素类型支持：<code>uint32_t</code>、<code>int32_t</code></li>
 <li>运行时要求：</li>
 <li><code>src.GetValidRow() != 0</code></li>
 <li><code>src.GetValidCol() != 0</code></li>
-<li><code>dst.GetValidRow() == 1</code></li>
-<li><code>dst.GetValidCol() == src.GetValidCol()</code></li>
-<li>当前 backend 的编译期检查还要求 <code>TileDataIn::ValidCol</code> 取 <code>-1</code>（动态 validCol）或 <code>1</code>。</li>
+<li><code>src.GetValidCol() == dst.GetValidCol()</code></li>
 </ul>
-<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <ul>
-<li>支持的源元素类型是：
-  <code>half</code>、<code>float</code>、<code>uint16_t</code>、<code>uint32_t</code>。</li>
-<li><code>tmp</code> 的元素类型必须与 <code>src</code> 完全一致。</li>
-<li>A2/A3 路径里 <code>tmp</code> 会被真正使用，用来保存当前比较值和中间索引。</li>
+<li><code>src</code> 必须是标准 ND 布局：row-major 且非分形</li>
+<li><code>dst</code> 可为单行 ND，或 <code>Rows == 1</code> 的等价非分形形式</li>
+<li>当 <code>srcValidRow &gt; elementPerRepeat</code> 时，<code>tmp</code> 会被用于中间索引与比较值保存</li>
 </ul>
-<h4 id="a2a3-tmp">A2/A3 <code>tmp</code> 的使用方式<a class="headerlink" href="#a2a3-tmp" title="Permanent link">&para;</a></h4>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>tmp</code> 在单行空间内按三个区域组织：</li>
-<li>区域 0：当前行号计数器</li>
-<li>区域 1：当前列最大值</li>
-<li>区域 2：当前 argmax 结果</li>
-<li>当 <code>srcValidCol &gt;= elementPerRepeat</code> 时，临时区块宽度取 <code>elementPerRepeat</code>。</li>
-<li>当 <code>srcValidCol &lt; elementPerRepeat</code> 时，临时区块宽度按 block 对齐：</li>
+<li>A5 路径接口仍保留 <code>tmp</code>，但当前实现里不实际使用它</li>
 </ul>
-<pre><code class="language-text">tmpGapEles = ceil(validCol / elementPerBlock) * elementPerBlock
-</code></pre>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
-<li>在小 Tile 上，通常把 <code>tmp</code> 直接做成与 <code>src</code> 同尺寸就足够；若需要精确估算 stride，可按下面公式计算：</li>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
-<pre><code class="language-text">repeats = ceil(validCol / elementPerRepeat)
-stride = ceil(repeats * 2 / elementPerBlock) * elementPerBlock
-       + ceil(repeats / elementPerBlock) * elementPerBlock
-</code></pre>
-<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
-<ul>
-<li>A5 接受 8 位、16 位或 32 位源元素，因此覆盖：
-  <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>float</code>。</li>
-<li>A5 的接口仍保留 <code>tmp</code> 参数，但当前实现并不会使用它；它保留下来主要是为了和 A2/A3 共用一套 C++ 接口。</li>
-</ul>
-<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有把 <code>tcolargmax</code> 单列成公开 cost table。它应视为列索引归约路径，而不是普通数值归约。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 void example_auto() {
@@ -1024,29 +1010,10 @@ void example_auto() {
   TCOLARGMAX(dst, src, tmp);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 256, BLayout::RowMajor, -1, -1&gt;;
-  using DstT = Tile&lt;TileType::Vec, uint32_t, 1, 256, BLayout::RowMajor, -1, -1&gt;;
-  using TmpT = Tile&lt;TileType::Vec, float, 1, 32, BLayout::RowMajor, -1, -1&gt;;
-  SrcT src(16, 255);
-  DstT dst(1, 255);
-  TmpT tmp(1, 32);
-  TASSIGN(src, 0x0);
-  TASSIGN(dst, 0x1000);
-  TASSIGN(tmp, 0x2000);
-  TCOLARGMAX(dst, src, tmp);
-}
-</code></pre>
-<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../reduce-and-expand_zh/">归约与扩展指令集</a></li>
+<li>指令集总览：<a href="../../../reduce-and-expand_zh/">归约与扩展</a></li>
 <li><a href="../tcolmax_zh/">TCOLMAX</a></li>
-<li><a href="../../../../state-and-types/layout_zh/">布局参考</a></li>
 </ul>
               
             </div>

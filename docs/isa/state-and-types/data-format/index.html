@@ -90,9 +90,9 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#tile-buffer-format">Tile Buffer Format</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#in-memory-format-ub">In-Memory Format (UB)</a>
+    <li class="toctree-l3"><a class="reference internal" href="#in-memory-format">In-Memory Format</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#in-register-format-trf">In-Register Format (TRF)</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-register-view">Tile-Register View</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#address-alignment">Address Alignment</a>
     </li>
@@ -119,6 +119,8 @@
     <li class="toctree-l3"><a class="reference internal" href="#custom-pad-values-a5">Custom Pad Values (A5)</a>
     </li>
         </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#mx-block-scale-formats">MX Block-Scale Formats</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#fractal-layout-encoding">Fractal Layout Encoding</a>
     </li>
@@ -977,7 +979,7 @@
 <h1 id="data-format-reference">Data Format Reference<a class="headerlink" href="#data-format-reference" title="Permanent link">&para;</a></h1>
 <p>The <strong>physical data format</strong> defines how tiles, vectors, and scalars are represented in memory and in hardware registers. It covers memory spaces, element packing, address alignment, VLane architecture, and the relationship between the PTO logical view and the underlying storage.</p>
 <h2 id="memory-spaces">Memory Spaces<a class="headerlink" href="#memory-spaces" title="Permanent link">&para;</a></h2>
-<p>PTO distinguishes three memory spaces, each with different access semantics and bandwidth characteristics:</p>
+<p>PTO distinguishes global memory from local tile-buffer storage. The ISA-level concept is the <strong>tile buffer</strong>; the hardware names behind that concept depend on <code>TileType</code>.</p>
 <table>
 <thead>
 <tr>
@@ -994,35 +996,63 @@
 <td>Off-chip device DRAM</td>
 <td>Byte-granular</td>
 <td>Low</td>
-<td>Random access via UB DMA</td>
+<td>Global backing store</td>
 </tr>
 <tr>
-<td><strong>UB</strong> (Unified Buffer)</td>
-<td>On-chip SRAM</td>
-<td>32-byte block</td>
+<td><strong>Local tile buffers</strong></td>
+<td>On-chip local storage</td>
+<td>Role-specific</td>
 <td>High</td>
-<td>Bulk DMA transfer; no direct scalar access</td>
-</tr>
-<tr>
-<td><strong>Tile Register File</strong> (TRF)</td>
-<td>On-chip tile buffer</td>
-<td>Element-granular</td>
-<td>Highest</td>
-<td>Direct compute access; not directly addressable by scalar code</td>
+<td>Direct tile/vector access through the selected tile role</td>
 </tr>
 </tbody>
 </table>
-<p>Data movement between GM and UB is performed by the <strong>DMA engine</strong> (MTE1/MTE2/MTE3 pipelines). Data movement between UB and TRF is performed by <strong>load/store operations</strong> (<code>TLOAD</code>, <code>TSTORE</code>, <code>VLDS</code>, <code>VSTS</code>). Data inside the TRF is accessed by tile/vector compute pipelines directly without going through the UB.</p>
+<p>The hardware mapping of local tile buffers is:</p>
+<table>
+<thead>
+<tr>
+<th>PTO tile-buffer role</th>
+<th>Hardware-local buffer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TileType::Vec</code></td>
+<td>Unified Buffer (UB)</td>
+</tr>
+<tr>
+<td><code>TileType::Left</code></td>
+<td>L0A</td>
+</tr>
+<tr>
+<td><code>TileType::Right</code></td>
+<td>L0B</td>
+</tr>
+<tr>
+<td><code>TileType::Acc</code></td>
+<td>L0C</td>
+</tr>
+<tr>
+<td><code>TileType::ScaleLeft</code></td>
+<td>L0A scale buffer</td>
+</tr>
+<tr>
+<td><code>TileType::ScaleRight</code></td>
+<td>L0B scale buffer</td>
+</tr>
+</tbody>
+</table>
+<p><code>Tile Register File</code> terminology in the current manual should be read as the ISA abstraction over these local tile buffers, not as a second user-visible storage class separate from the buffers themselves.</p>
 <h2 id="tile-buffer-format">Tile Buffer Format<a class="headerlink" href="#tile-buffer-format" title="Permanent link">&para;</a></h2>
-<p>A tile occupies a contiguous region in either the TRF or UB. Its logical shape <code>(Rows, Cols)</code> is independent of its physical storage format.</p>
-<h3 id="in-memory-format-ub">In-Memory Format (UB)<a class="headerlink" href="#in-memory-format-ub" title="Permanent link">&para;</a></h3>
-<p>In the UB, tiles are stored in their <code>BLayout</code> order — either <code>RowMajor</code> or <code>ColMajor</code>. Each element occupies <code>sizeof(DType)</code> bytes.</p>
+<p>A tile occupies a contiguous region in one local tile buffer. Its logical shape <code>(Rows, Cols)</code> is independent of its physical storage format.</p>
+<h3 id="in-memory-format">In-Memory Format<a class="headerlink" href="#in-memory-format" title="Permanent link">&para;</a></h3>
+<p>In a local tile buffer, elements are stored in their <code>BLayout</code> order — either <code>RowMajor</code> or <code>ColMajor</code>. Each element occupies <code>sizeof(DType)</code> bytes. For <code>TileType::Vec</code>, that local tile buffer is the hardware Unified Buffer.</p>
 <p>For <code>BLayout = RowMajor</code>, shape <code>(R, C)</code>:</p>
 <div class="arithmatex">\[ \text{addr}(r, c) = (r \times C + c) \times \mathrm{sizeof(DType)} \]</div>
 <p>For <code>BLayout = ColMajor</code>, shape <code>(R, C)</code>:</p>
 <div class="arithmatex">\[ \text{addr}(r, c) = (c \times R + r) \times \mathrm{sizeof(DType)} \]</div>
-<h3 id="in-register-format-trf">In-Register Format (TRF)<a class="headerlink" href="#in-register-format-trf" title="Permanent link">&para;</a></h3>
-<p>The TRF (Tile Register File) holds tiles in their native <code>BLayout</code>. The TRF is not byte-addressable — tile data is moved in and out via explicit <code>TLOAD</code>/<code>TSTORE</code> operations. Compute pipelines (Vector, Matrix) access tile data directly from the TRF without going through the UB.</p>
+<h3 id="tile-register-view">Tile-Register View<a class="headerlink" href="#tile-register-view" title="Permanent link">&para;</a></h3>
+<p>The tile-register view is the ISA abstraction presented to authors. It names typed local tile buffers and hides the fact that different <code>TileType</code> values are backed by different hardware-local buffers. Tile data is moved in and out via explicit <code>TLOAD</code>/<code>TSTORE</code>/<code>TMOV*</code>-family operations rather than by scalar byte addressing.</p>
 <h3 id="address-alignment">Address Alignment<a class="headerlink" href="#address-alignment" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1037,12 +1067,12 @@
 <td>Element-size aligned (2 bytes for f16/i16, 4 bytes for f32)</td>
 </tr>
 <tr>
-<td>UB DMA transfer</td>
+<td>Vector tile buffer DMA transfer</td>
 <td>32-byte block aligned (DMA engine unit)</td>
 </tr>
 <tr>
-<td>TRF load/store</td>
-<td>Element-size aligned</td>
+<td>Local tile-buffer access</td>
+<td>Element-size aligned, plus any role-specific backend constraints</td>
 </tr>
 </tbody>
 </table>
@@ -1175,7 +1205,7 @@
 </tbody>
 </table>
 <h2 id="vector-register-format-vlane-architecture">Vector Register Format (VLane Architecture)<a class="headerlink" href="#vector-register-format-vlane-architecture" title="Permanent link">&para;</a></h2>
-<p>On A5 (Ascend 9xx-class), the vector register is organized as <strong>8 VLanes</strong> of 32 bytes each. A VLane is the atomic unit for group reduction operations. This architecture is architecturally visible in PTO.</p>
+<p>On A5 (Ascend 950 PR / DT), the vector register is organized as <strong>8 VLanes</strong> of 32 bytes each. A VLane is the atomic unit for group reduction operations. This architecture is architecturally visible in PTO.</p>
 <pre><code>vreg (256 bytes total):
 ┌─────────┬─────────┬─────────┬─────┬─────────┬─────────┐
 │ VLane 0 │ VLane 1 │ VLane 2 │ ... │ VLane 6 │ VLane 7 │
@@ -1283,6 +1313,15 @@ for (int g = 0; g &lt; 8; g++) {
 using TilePadNeg1 = Tile&lt;TileType::Vec, float, 16, 16, RowMajor, NoneBox, None, PadValueCustom(-1.0f)&gt;;
 </code></pre>
 <p>Custom pad values encode the float bit pattern in the upper bits of the 64-bit <code>PadValue</code> enum. They are processed by <code>PadValueMap</code> and applied via <code>GetPadValue()</code> at load time.</p>
+<h2 id="mx-block-scale-formats">MX Block-Scale Formats<a class="headerlink" href="#mx-block-scale-formats" title="Permanent link">&para;</a></h2>
+<p>MX block-scale matmul forms use extra scale tiles in addition to the left and right payload tiles. In the current codebase:</p>
+<ul>
+<li><code>TileLeft</code> corresponds to L0A</li>
+<li><code>TileRight</code> corresponds to L0B</li>
+<li><code>TileLeftScale</code> corresponds to the L0A-side scale buffer</li>
+<li><code>TileRightScale</code> corresponds to the L0B-side scale buffer</li>
+</ul>
+<p>The A5 <code>TMATMUL_MX</code> / <code>TGEMV_MX</code> code paths explicitly require both scale tiles, and the supported combinations include MX FP4 and MX FP8 families. These are block-scale formats, not plain elementwise FP formats.</p>
 <h2 id="fractal-layout-encoding">Fractal Layout Encoding<a class="headerlink" href="#fractal-layout-encoding" title="Permanent link">&para;</a></h2>
 <p>The <code>TileLayoutCustom</code> enum in <code>include/pto/common/constants.hpp</code> encodes the concrete layout used at runtime:</p>
 <table>
@@ -1319,7 +1358,7 @@ using TilePadNeg1 = Tile&lt;TileType::Vec, float, 16, 16, RowMajor, NoneBox, Non
 <td>RowMajor</td>
 <td>NZ</td>
 <td style="text-align: center;">512 B</td>
-<td>LHS matmul on A5</td>
+<td>Left/L0A-side matmul operand on A5</td>
 </tr>
 <tr>
 <td><code>ZN</code></td>
@@ -1385,19 +1424,19 @@ using TilePadNeg1 = Tile&lt;TileType::Vec, float, 16, 16, RowMajor, NoneBox, Non
 <td><code>MX_COL_LEN</code></td>
 <td>2</td>
 <td>elements</td>
-<td>MX matmul column block</td>
+<td>MX block-scale column block</td>
 </tr>
 <tr>
 <td><code>MX_ROW_LEN</code></td>
 <td>16</td>
 <td>elements</td>
-<td>MX matmul row block</td>
+<td>MX block-scale row block</td>
 </tr>
 <tr>
 <td><code>MX_BLOCK_SIZE</code></td>
 <td>32</td>
 <td>elements</td>
-<td>MX matmul block</td>
+<td>MX block-scale block</td>
 </tr>
 <tr>
 <td><code>TMP_UB_SIZE</code></td>

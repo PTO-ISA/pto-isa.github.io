@@ -932,17 +932,85 @@
                 <!-- Generated from `docs/isa/vector/ops/data-rearrangement/vintlvv2_zh.md` -->
 
 <h1 id="ptovintlvv2">pto.vintlvv2<a class="headerlink" href="#ptovintlvv2" title="Permanent link">&para;</a></h1>
-<p>对两个向量做 v2 交错组合。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.vintlvv2</code> 属于<a href="../../../data-rearrangement_zh/">数据重排</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>vintlv</code> 的变体，只返回交织结果的一半。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.vintlvv2</code> 保留了和 <code>vintlv</code> 相同的交织语义，但只把结果对中的一半通过 SSA 形式暴露出来。哪一半被返回，由 <code>PART</code> 选择器决定。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vintlvv2 %dst, %lhs, %rhs, &quot;PART&quot;
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vintlvv2 %lhs, %rhs, &quot;PART&quot; : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%lhs</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>第一个源向量</td>
+</tr>
+<tr>
+<td><code>%rhs</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>第二个源向量</td>
+</tr>
+<tr>
+<td><code>PART</code></td>
+<td>枚举</td>
+<td>指定返回交织结果的哪一半</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>选中的那一半交织结果</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令除了产生目标值，没有其他架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li>成对输出的顺序必须保留。</li>
-<li>不同重排形式只在文档化的元素宽度和模式下合法。</li>
+<li><code>PART</code> 决定返回成对交织结果中的哪一半。</li>
+<li><code>%lhs</code>、<code>%rhs</code> 与 <code>%result</code> 必须有相同的元素类型和相同的向量宽度。</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
+<li>约束部分列出的额外非法情形，同样属于 <code>pto.vintlvv2</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有为 <code>vintlvv2</code> 单列周期表。若代码对具体延迟敏感，应把它视为目标 profile 相关的寄存器重排路径。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mlir">%result = pto.vintlvv2 %lhs, %rhs, &quot;PART&quot; : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;
+</code></pre>
+<h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vintlvv2</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -967,9 +1035,11 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vintlvv2</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../data-rearrangement_zh/">数据重排指令集</a></li>
+<li>指令集总览：<a href="../../../data-rearrangement_zh/">数据重排</a></li>
+<li>上一条指令：<a href="../vzunpack_zh/">pto.vzunpack</a></li>
+<li>下一条指令：<a href="../vdintlvv2_zh/">pto.vdintlvv2</a></li>
 </ul>
               
             </div>

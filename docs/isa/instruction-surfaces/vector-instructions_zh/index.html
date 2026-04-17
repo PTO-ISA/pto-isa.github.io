@@ -932,92 +932,219 @@
                 <!-- Generated from `docs/isa/instruction-surfaces/vector-instructions_zh.md` -->
 
 <h1 id="_1">向量指令集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p><code>pto.v*</code> 指令集直接暴露向量流水线，用于对 lane 级寄存器、谓词和向量可见 UB 状态做细粒度控制。</p>
+<p><code>pto.v*</code> 指令集直接暴露向量流水线，用于对 lane 级寄存器、谓词和向量 tile buffer（硬件实现为 UB）做细粒度控制。</p>
 <h2 id="_2">指令集概览<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>向量指令是位于 tile 指令之下的细粒度计算层。它们不处理 tile 的 valid region，而是直接处理：</p>
+<ul>
+<li>向量寄存器 <code>!pto.vreg&lt;NxT&gt;</code></li>
+<li>谓词 <code>!pto.mask</code></li>
+<li>标量操作数</li>
+<li>向量 tile buffer 指针 <code>!pto.ptr&lt;T, ub&gt;</code></li>
+</ul>
+<p>向量宽度 <code>N</code> 由元素类型决定，而不是用户随意指定：</p>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th style="text-align: center;">向量宽度 N</th>
+<th style="text-align: center;">寄存器总大小</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f32</code></td>
+<td style="text-align: center;">64</td>
+<td style="text-align: center;">256 B</td>
+</tr>
+<tr>
+<td><code>f16</code> / <code>bf16</code></td>
+<td style="text-align: center;">128</td>
+<td style="text-align: center;">256 B</td>
+</tr>
+<tr>
+<td><code>i16</code> / <code>u16</code></td>
+<td style="text-align: center;">128</td>
+<td style="text-align: center;">256 B</td>
+</tr>
+<tr>
+<td><code>i8</code> / <code>u8</code></td>
+<td style="text-align: center;">256</td>
+<td style="text-align: center;">256 B</td>
+</tr>
+<tr>
+<td><code>f8e4m3</code> / <code>f8e5m2</code></td>
+<td style="text-align: center;">256</td>
+<td style="text-align: center;">256 B</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">数据流<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<pre><code class="language-text">向量 tile buffer（硬件实现为 UB）
+    │
+    │  vlds / vsld / vgather2
+    ▼
+Vector Registers (!pto.vreg&lt;NxT&gt;) ──► Vector Compute (pto.v*) ──► Vector Registers
+    │                                                            │
+    │  vsts / vsst / vscatter                                    │
+    └────────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+          向量 tile buffer（硬件实现为 UB） ──► copy_ubuf_to_gm ──► GM
+</code></pre>
+<h2 id="_4">指令分类<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>类别</th>
 <th>说明</th>
+<th>示例</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>向量加载存储</td>
-<td>UB 与向量寄存器之间的数据搬运</td>
+<td>向量 tile buffer 与向量寄存器之间搬运</td>
+<td><code>vlds</code>、<code>vldas</code>、<code>vldus</code>、<code>vgather2</code>、<code>vsts</code>、<code>vscatter</code></td>
 </tr>
 <tr>
 <td>谓词与物化</td>
-<td>广播、复制和谓词相关结果</td>
+<td>广播、复制、谓词相关物化</td>
+<td><code>vbr</code>、<code>vdup</code></td>
 </tr>
 <tr>
 <td>一元向量操作</td>
 <td>单输入 lane 级操作</td>
+<td><code>vabs</code>、<code>vneg</code>、<code>vexp</code>、<code>vsqrt</code>、<code>vrec</code>、<code>vrelu</code></td>
 </tr>
 <tr>
 <td>二元向量操作</td>
 <td>双输入 lane 级操作</td>
+<td><code>vadd</code>、<code>vsub</code>、<code>vmul</code>、<code>vdiv</code>、<code>vmax</code>、<code>vmin</code></td>
 </tr>
 <tr>
 <td>向量-标量操作</td>
-<td>向量与标量混合操作</td>
+<td>向量与标量混合</td>
+<td><code>vadds</code>、<code>vmuls</code>、<code>vshls</code>、<code>vlrelu</code></td>
 </tr>
 <tr>
 <td>转换操作</td>
-<td>类型转换和索引生成</td>
+<td>数值类型转换和索引生成</td>
+<td><code>vci</code>、<code>vcvt</code>、<code>vtrc</code></td>
 </tr>
 <tr>
 <td>归约操作</td>
-<td>跨 lane 的归约</td>
+<td>跨 lane 归约</td>
+<td><code>vcadd</code>、<code>vcmax</code>、<code>vcmin</code>、<code>vcgadd</code>、<code>vcgmax</code></td>
 </tr>
 <tr>
 <td>比较与选择</td>
-<td>比较、谓词生成和按 mask 选择</td>
+<td>比较、谓词生成、按 mask 选择</td>
+<td><code>vcmp</code>、<code>vcmps</code>、<code>vsel</code>、<code>vselr</code></td>
 </tr>
 <tr>
 <td>数据重排</td>
 <td>pack、permute、interleave、slide 等</td>
+<td><code>vintlv</code>、<code>vdintlv</code>、<code>vpack</code>、<code>vslide</code></td>
 </tr>
 <tr>
 <td>SFU 与 DSA</td>
-<td>特殊函数、融合形式和特定领域操作</td>
+<td>特殊函数与融合操作</td>
+<td><code>vprelu</code>、<code>vexpdiff</code>、<code>vaxpy</code>、<code>vtranspose</code>、<code>vsort32</code></td>
 </tr>
 </tbody>
 </table>
-<h2 id="_3">输入<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>向量指令集常见输入包括：</p>
+<h2 id="_5">输入<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>向量指令常见输入包括：</p>
 <ul>
 <li>向量寄存器 <code>!pto.vreg&lt;NxT&gt;</code></li>
 <li>标量寄存器或立即数</li>
-<li>谓词 mask</li>
-<li>UB 指针</li>
-<li>分布、舍入或对齐相关属性</li>
+<li>谓词 <code>!pto.mask</code></li>
+<li>向量 tile buffer 指针 <code>!pto.ptr&lt;T, ub&gt;</code></li>
+<li>distribution / rounding / alignment 相关属性</li>
 </ul>
-<h2 id="_4">输出<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="_6">预期输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>向量指令会产生：</p>
 <ul>
 <li>向量寄存器结果</li>
-<li>标量结果</li>
+<li>标量结果（如某些归约）</li>
 <li>谓词结果</li>
-<li>通过 vector store 写回的 UB 数据</li>
+<li>通过向量 store 写回向量 tile buffer 的数据</li>
 </ul>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_7">副作用<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<p>绝大多数向量指令是纯计算操作，没有额外架构副作用。真正有副作用的主要是：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>架构副作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>向量加载存储</td>
+<td>读写向量 tile buffer 可见内存</td>
+</tr>
+<tr>
+<td>比较与选择</td>
+<td>产生后续操作要消费的谓词结果</td>
+</tr>
+</tbody>
+</table>
+<h2 id="mask">Mask 行为<a class="headerlink" href="#mask" title="Permanent link">&para;</a></h2>
+<p>向量操作可以由谓词 mask 控制。mask 宽度必须与目标向量宽度匹配：</p>
 <ul>
-<li>向量宽度由元素类型决定，不是任意选择。</li>
-<li>谓词宽度必须与目标向量宽度匹配。</li>
-<li>某些对齐和非对齐 store 形式受 profile 限制。</li>
-<li>向量指令集没有 tile 层的 valid region 语义。</li>
+<li>mask 位为 <code>1</code> 的 lane 正常参与运算</li>
+<li>mask 位为 <code>0</code> 的 lane 是否保留原值、写 0、还是采用其他结果，必须以具体指令页为准</li>
 </ul>
-<h2 id="_6">不允许的情形<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>程序不能把 masked lane 的行为当作“默认固定契约”，除非该指令页明确说明。</p>
+<h2 id="_8">对齐状态<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<p>向量非对齐 store（<code>vstu</code>、<code>vstus</code>、<code>vstur</code>）需要维护显式对齐状态。该状态会随着每次 store 更新：</p>
+<pre><code class="language-mlir">%align_out, %offset_out = pto.vstu %align_in, %offset_in, %value, %base
+    : !pto.align, index, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, index
+</code></pre>
+<p>对于这类有状态 store，还需要尾部 flush 形式（例如 <code>vstar</code> / <code>vstas</code>）来提交缓存下来的尾部字节。这些形式是 <strong>A5 专属</strong>。</p>
+<h2 id="_9">约束<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>N</code> 由元素类型决定，不是自由参数。</li>
+<li>谓词宽度必须和目标向量宽度一致。</li>
+<li>对齐要求因操作和 profile 而异。</li>
+<li>某些非对齐 store 形式只在 A5 可用。</li>
+<li>不存在隐式类型提升；所有操作数类型必须显式兼容。</li>
+</ul>
+<h2 id="_10">不允许的情形<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <ul>
 <li>使用与向量宽度不匹配的谓词</li>
-<li>在不支持的 profile 上使用 A5 专属向量形式</li>
-<li>把未文档化的 masked lane 行为当作固定契约</li>
+<li>在目标 profile 不支持的情况下使用 A5 专属向量形式</li>
+<li>把 masked lane 的未文档化行为当成稳定契约</li>
+<li>没有经过显式同步就跨过 DMA / 向量计算之间的顺序边</li>
 </ul>
-<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_11">语法<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h3 id="pto-as">PTO-AS 形式<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
+<pre><code class="language-asm">vadd %vdst, %vsrc0, %vsrc1 : !pto.vreg&lt;f32, 64&gt;
+vlds %vreg, %ub_ptr[%offset] {dist = &quot;NORM&quot;} : !pto.ptr&lt;f32, ub&gt;
+</code></pre>
+<h3 id="ssa-as-level-1">SSA 形式（AS Level 1）<a class="headerlink" href="#ssa-as-level-1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%vdst = pto.vadd %vsrc0, %vsrc1, %mask
+    : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<h3 id="dps-as-level-2">DPS 形式（AS Level 2）<a class="headerlink" href="#dps-as-level-2" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.vadd ins(%vsrc0, %vsrc1, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask)
+          outs(%vdst : !pto.vreg&lt;64xf32&gt;)
+</code></pre>
+<p>完整语法见 <a href="../../syntax-and-operands/assembly-model_zh/">汇编拼写与操作数</a>。</p>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+PTO_INST void VADD(VecDst&amp; dst, VecSrc0&amp; src0, VecSrc1&amp; src1);
+PTO_INST void VLDS(VecData&amp; dst, PtrType addr);
+PTO_INST void VLDS(VecData&amp; dst, PtrType addr, MaskType pred);
+</code></pre>
+<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/vector-families_zh/">向量指令族</a></li>
 <li><a href="../../vector/README_zh/">向量参考入口</a></li>
+<li><a href="../../reference/format-of-instruction-descriptions_zh/">指令描述格式</a></li>
 </ul>
               
             </div>

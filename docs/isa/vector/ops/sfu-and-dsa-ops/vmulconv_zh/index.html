@@ -932,17 +932,126 @@
                 <!-- Generated from `docs/isa/vector/ops/sfu-and-dsa-ops/vmulconv_zh.md` -->
 
 <h1 id="ptovmulconv">pto.vmulconv<a class="headerlink" href="#ptovmulconv" title="Permanent link">&para;</a></h1>
-<p>执行乘法与转换融合操作。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%result = pto.vmulconv %lhs, %rhs : !pto.vreg&lt;NxT0&gt;, !pto.vreg&lt;NxT0&gt; -&gt; !pto.vreg&lt;MxT1&gt;
+<p><code>pto.vmulconv</code> 属于<a href="../../../sfu-and-dsa-ops_zh/">SFU 与 DSA 操作</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>把乘法和元素类型转换融合成一条硬件操作。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>它执行：</p>
+<pre><code class="language-text">dst[i] = convert(lhs[i] * rhs[i])
 </code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>当前页面沿用融合算子家族的描述口径：乘法与目标类型写回是在一条语义路径里完成的，不能随意拆成 <code>vmul</code> 再加一串普通转换而假定完全等价。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">vmulconv %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT0&gt;
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%result = pto.vmulconv %lhs, %rhs, %mask : (!pto.vreg&lt;NxT0&gt;, !pto.vreg&lt;NxT0&gt;, !pto.mask) -&gt; !pto.vreg&lt;MxT1&gt;
+</code></pre>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%lhs</code></td>
+<td><code>!pto.vreg&lt;NxT0&gt;</code></td>
+<td>左操作数向量</td>
+</tr>
+<tr>
+<td><code>%rhs</code></td>
+<td><code>!pto.vreg&lt;NxT0&gt;</code></td>
+<td>右操作数向量</td>
+</tr>
+<tr>
+<td><code>%mask</code></td>
+<td><code>!pto.mask</code></td>
+<td>谓词掩码；掩码位为 1 的 lane 为活跃 lane</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;MxT1&gt;</code></td>
+<td>融合 mul / convert 结果</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令除了产生目标向量寄存器，没有其他架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li>某些操作只在特定 profile 或元素类型上受支持。</li>
-<li>lowering 不能把专用语义退化为未文档化的普通算术组合。</li>
+<li>两个源向量必须具有相同的元素类型 <code>T0</code> 和相同的向量宽度 <code>N</code>。</li>
+<li><code>%mask</code> 的宽度必须与 <code>N</code> 一致。</li>
+<li>只允许后端支持的源 / 目标类型对。</li>
+<li>舍入、饱和和打包规则由这条融合指令本身定义。</li>
 </ul>
-<h2 id="_3">性能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="_4">时延与吞吐披露<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
+<li>约束部分列出的额外非法情形，同样属于 <code>pto.vmulconv</code> 的契约。</li>
+</ul>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p>当前手册没有给出 <code>vmulconv</code> 的独立周期条目。</p>
+<h3 id="a2a3">A2/A3 吞吐<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p>英文 leaf 页当前沿用 fused/SFU 桶：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数值</th>
+<th>常量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>14</td>
+<td><code>A2A3_STARTUP_BINARY</code></td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td>26</td>
+<td><code>A2A3_COMPL_FP32_EXP</code></td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>2</td>
+<td><code>A2A3_RPT_2</code></td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18</td>
+<td><code>A2A3_INTERVAL</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<pre><code class="language-c">// f16 -&gt; i8
+for (int i = 0; i &lt; 128; i++)
+    dst_i8[i] = f16_to_i8(src0_f16[i] * src1_f16[i]);
+</code></pre>
+<h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。
 对于 <code>pto.vmulconv</code>，这些公开来源说明了指令语义、操作数合法性和流水线位置，但<strong>没有</strong>发布数字时延或稳态吞吐。</p>
 <table>
@@ -967,9 +1076,11 @@
 </tbody>
 </table>
 <p>如果软件调度或性能建模依赖 <code>pto.vmulconv</code> 的确切成本，必须在具体 backend 上实测，而不能从当前公开手册里推导出一个并未公布的常数。</p>
-<h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../sfu-and-dsa-ops_zh/">SFU 与 DSA 指令集</a></li>
+<li>指令集总览：<a href="../../../sfu-and-dsa-ops_zh/">SFU 与 DSA 操作</a></li>
+<li>上一条指令：<a href="../vaddreluconv_zh/">pto.vaddreluconv</a></li>
+<li>下一条指令：<a href="../vmull_zh/">pto.vmull</a></li>
 </ul>
               
             </div>

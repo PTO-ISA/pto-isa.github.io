@@ -931,17 +931,15 @@
               
                 <!-- Generated from `docs/isa/tile/ops/memory-and-data-movement/tload_zh.md` -->
 
-<h1 id="tload">TLOAD<a class="headerlink" href="#tload" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TLOAD tile operation" src="../../../../../figures/isa/TLOAD.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TLOAD</code> 把 <code>GlobalTensor</code>（GM 视图）中的数据装入 Tile。它是 tile 数据路径进入本地缓冲的基本入口，因此除了元素值本身，合法的 shape、layout、valid region 和目标 profile 也都会影响这条指令能否成立。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>地址计算取决于 <code>GlobalTensor</code> 的 shape / stride 以及 Tile 的布局。用带基址偏移的二维视角表示时：</p>
+<h1 id="ptotload">pto.tload<a class="headerlink" href="#ptotload" title="Permanent link">&para;</a></h1>
+<p><code>pto.tload</code> 属于<a href="../../../memory-and-data-movement_zh/">内存与数据搬运</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>把 <code>GlobalTensor</code>（GM 视图）中的数据装入 tile。它是 tile 数据从 GM 进入本地缓冲的基本入口。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>若用带基址偏移的二维视角表示，可将其理解为：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{r_0 + i,\; c_0 + j} \]</div>
-<p>其中 <code>r_0</code>、<code>c_0</code> 由 <code>GlobalTensor</code> 的当前视图和 tile 的装载位置决定。真正的传输大小由目标 Tile 的 valid region 决定，而不是由 Tile 的物理矩形尺寸决定。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
+<p>其中 <code>r0 / c0</code> 由 <code>GlobalTensor</code> 当前视图和 tile 的装载位置共同决定。真正的搬运范围由目标 tile 的 valid region 决定，而不是物理 tile 矩形。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
 <pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
@@ -953,55 +951,57 @@
 <pre><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>sizeof(TileData::DType)</code> 必须与 <code>sizeof(GlobalData::DType)</code> 一致。</li>
-<li>实际传输大小取 <code>dst.GetValidRow()</code> 与 <code>dst.GetValidCol()</code>。</li>
-<li><code>src.GetShape(dim)</code> 以及 <code>dst.GetValidRow()/GetValidCol()</code> 在运行时都必须大于 <code>0</code>。</li>
+<li><code>src</code>：源 <code>GlobalTensor</code></li>
+<li><code>dst</code>：目标 tile</li>
 </ul>
-<h3 id="a2a3">A2/A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>TileData::DType</code> 必须属于：
-  <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>int64_t</code>、<code>uint64_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
-<li>目标 Tile 的位置类型必须是 <code>TileType::Vec</code> 或 <code>TileType::Mat</code>。</li>
-<li><code>TileType::Vec</code> 仅支持布局完全匹配的装载：
-  <code>ND -&gt; ND</code>、<code>DN -&gt; DN</code>、<code>NZ -&gt; NZ</code>。</li>
-<li><code>TileType::Mat</code> 还支持 <code>ND -&gt; NZ</code> 与 <code>DN -&gt; ZN</code>。</li>
-<li>对 <code>ND -&gt; NZ</code> 或 <code>DN -&gt; ZN</code>：
-  <code>GlobalData::staticShape[0..2] == 1</code>，且 <code>TileData::SFractalSize == 512</code>。</li>
-<li>对 <code>int64_t/uint64_t</code>，仅支持 <code>ND -&gt; ND</code> 与 <code>DN -&gt; DN</code>。</li>
+<li><code>dst</code>：按 tile 布局和 <code>GlobalTensor</code> stride 解释后的装载结果</li>
 </ul>
-<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>这条指令会从 GM 读取，并写入 tile 本地存储。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>sizeof(TileData::DType)</code> 必须为 <code>1</code>、<code>2</code>、<code>4</code> 或 <code>8</code> 字节，并与 <code>GlobalData::DType</code> 大小一致。</li>
-<li>对 <code>int64_t/uint64_t</code>，<code>TileData::PadVal</code> 必须是 <code>PadValue::Null</code> 或 <code>PadValue::Zero</code>。</li>
-<li><code>TileType::Vec</code> 仅支持以下布局对：</li>
+<li><code>sizeof(TileData::DType)</code> 必须与 <code>sizeof(GlobalData::DType)</code> 一致</li>
+<li>搬运范围由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定</li>
+<li><code>src.GetShape(dim)</code> 与 <code>dst.GetValidRow()/GetValidCol()</code> 在运行时都必须大于 0</li>
+</ul>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>目标 tile 位置必须为 <code>TileType::Vec</code> 或 <code>TileType::Mat</code></li>
+<li>支持类型：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>int64_t</code>、<code>uint64_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code></li>
+<li><code>Vec</code> 路径只支持布局完全匹配的装载：<code>ND→ND</code>、<code>DN→DN</code>、<code>NZ→NZ</code></li>
+<li><code>Mat</code> 路径额外支持 <code>ND→NZ</code>、<code>DN→ZN</code></li>
+<li>对 <code>ND→NZ</code> / <code>DN→ZN</code>，要求 <code>GlobalData::staticShape[0..2] == 1</code> 且 <code>TileData::SFractalSize == 512</code></li>
+<li>对 <code>int64_t/uint64_t</code>，仅支持 <code>ND→ND</code> 或 <code>DN→DN</code></li>
+</ul>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>sizeof(TileData::DType)</code> 必须为 <code>1/2/4/8</code> 字节，并与 <code>GlobalData</code> 一致</li>
+<li>对 <code>int64_t/uint64_t</code>，<code>TileData::PadVal</code> 必须为 <code>PadValue::Null</code> 或 <code>PadValue::Zero</code></li>
+<li><code>Vec</code> 路径只支持：</li>
 <li>ND + row-major + <code>SLayout::NoneBox</code></li>
 <li>DN + col-major + <code>SLayout::NoneBox</code></li>
 <li>NZ + <code>SLayout::RowMajor</code></li>
-<li>对编译期已知 shape 的 row-major ND-&gt;ND：</li>
-<li><code>TileData::ValidCol</code> 必须等于 <code>GlobalData::staticShape[4]</code></li>
-<li><code>TileData::ValidRow</code> 必须等于 <code>GlobalData::staticShape[0..3]</code> 的乘积</li>
-<li><code>TileType::Mat</code> 额外受 <code>TLoadCubeCheck</code> 限制，只允许特定 ND / DN / NZ 转换并受 L1 大小约束。</li>
-<li>A5 的 <code>TileType::Mat</code> 还覆盖 MX 格式装载：</li>
-<li><code>MX_A_ZZ/MX_A_ND/MX_A_DN -&gt; ZZ</code></li>
-<li><code>MX_B_NN/MX_B_ND/MX_B_DN -&gt; NN</code></li>
-<li>对 <code>MX_A_ZZ/MX_B_NN</code>：
-  <code>GlobalData::staticShape[3] == 16</code> 且 <code>GlobalData::staticShape[4] == 2</code>。</li>
-<li>对 <code>MX_A_ND/MX_A_DN/MX_B_ND/MX_B_DN</code>：
-  <code>GlobalData::staticShape[0] == 1</code>、<code>GlobalData::staticShape[1] == 1</code>、<code>GlobalData::staticShape[4] == 2</code>。</li>
-<li>对 scaleA，<code>dst.GetValidCol() % 2 == 0</code>；
-  对 scaleB，<code>dst.GetValidRow() % 2 == 0</code>。</li>
+<li>编译期已知 shape 的 row-major ND→ND 路径还要求：</li>
+<li><code>TileData::ValidCol == GlobalData::staticShape[4]</code></li>
+<li><code>TileData::ValidRow == product(GlobalData::staticShape[0..3])</code></li>
+<li><code>Mat</code> 路径额外受 <code>TLoadCubeCheck</code> 与 MX 格式规则约束</li>
 </ul>
-<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有把 <code>tload</code> 单列成完整公开周期表，但在 A2A3 的带宽模型里，GM → Vec Buffer 取 <code>128 B/cycle</code>，GM → Mat 取 <code>256 B/cycle</code>。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 template &lt;typename T&gt;
@@ -1016,29 +1016,10 @@ void example_auto(__gm__ T* in) {
   TLOAD(t, gin);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T&gt;
-void example_manual(__gm__ T* in) {
-  using TileT = Tile&lt;TileType::Vec, T, 16, 16&gt;;
-  using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
-  using GStride = BaseShape2D&lt;T, 16, 16, Layout::ND&gt;;
-  using GTensor = GlobalTensor&lt;T, GShape, GStride, Layout::ND&gt;;
-
-  GTensor gin(in);
-  TileT t;
-  TASSIGN(t, 0x1000);
-  TLOAD(t, gin);
-}
-</code></pre>
-<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../memory-and-data-movement_zh/">内存与数据搬运指令集</a></li>
+<li>指令集总览：<a href="../../../memory-and-data-movement_zh/">内存与数据搬运</a></li>
 <li><a href="../../../../programming-model/globaltensor-and-data-movement_zh/">GlobalTensor 与数据搬运</a></li>
-<li><a href="../../../../state-and-types/layout_zh/">布局参考</a></li>
 </ul>
               
             </div>

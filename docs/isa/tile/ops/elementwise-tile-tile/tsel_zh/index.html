@@ -931,23 +931,22 @@
               
                 <!-- Generated from `docs/isa/tile/ops/elementwise-tile-tile/tsel_zh.md` -->
 
-<h1 id="tsel">TSEL<a class="headerlink" href="#tsel" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSEL tile operation" src="../../../../../figures/isa/TSEL.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>使用掩码 Tile 在两个 Tile 之间进行选择（逐元素选择）。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
+<h1 id="ptotsel">pto.tsel<a class="headerlink" href="#ptotsel" title="Permanent link">&para;</a></h1>
+<p><code>pto.tsel</code> 属于<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>根据掩码 tile，在两个源 tile 之间逐元素选择。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对目标 tile 的 valid region 中每个 <code>(i, j)</code>：</p>
 <div class="arithmatex">\[
 \mathrm{dst}_{i,j} =
 \begin{cases}
-\mathrm{src0}_{i,j} &amp; \text{if } \mathrm{mask}_{i,j}\ \text{is true} \\
-\mathrm{src1}_{i,j} &amp; \text{otherwise}
+\mathrm{src0}_{i,j} &amp; \text{当 } \mathrm{mask}_{i,j}\ \text{为真} \\
+\mathrm{src1}_{i,j} &amp; \text{否则}
 \end{cases}
 \]</div>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<p>同步形式：</p>
+<p>掩码 tile 使用目标定义的 packed predicate 编码，<code>tmp</code> 用作谓词展开时的临时缓冲。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="pto-as">PTO-AS<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = tsel %mask, %src0, %src1 : !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
@@ -957,37 +956,87 @@
 <pre><code class="language-text">pto.tsel ins(%mask, %src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename TileData, typename MaskTile, typename TmpTile, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSEL(TileData &amp;dst, MaskTile &amp;selMask, TileData &amp;src0, TileData &amp;src1, TmpTile &amp;tmp, WaitEvents &amp;... events);
+PTO_INST RecordEvent TSEL(TileData &amp;dst, MaskTile &amp;selMask, TileData &amp;src0,
+                          TileData &amp;src1, TmpTile &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (A2A3)</strong>:<ul>
-<li><code>sizeof(TileData::DType)</code> 必须是 <code>2</code> 或 <code>4</code> 字节。</li>
-<li><code>TileData::DType</code> 必须是 <code>int16_t</code> 或 <code>uint16_t</code> 或 <code>int32_t</code> 或 <code>uint32_t</code> 或 <code>half</code> 或 <code>bfloat16_t</code> 或 <code>float</code>。</li>
-<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 必须使用相同的元素类型。</li>
-<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 必须是行主序。</li>
+<li><code>%mask</code>：掩码 tile</li>
+<li><code>%src0</code>：掩码为真时选择的 tile</li>
+<li><code>%src1</code>：掩码为假时选择的 tile</li>
+<li><code>%tmp</code>：谓词展开所需临时 tile</li>
+<li><code>%dst</code>：目标 tile</li>
+</ul>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>%dst</code>：逐元素选择后的结果 tile</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>sizeof(TileData::DType)</code> 必须是 2 或 4 字节。</li>
+<li><code>dst</code>、<code>src0</code>、<code>src1</code> 必须使用相同元素类型。</li>
+<li><code>dst</code>、<code>src0</code>、<code>src1</code> 必须是行主序。</li>
 <li>选择域由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定。</li>
+<li><code>tmp</code> 必须有足够容量承载谓词展开过程。</li>
 </ul>
-</li>
-<li><strong>实现检查 (A5)</strong>:<ul>
-<li><code>sizeof(TileData::DType)</code> 必须是 <code>2</code> 或 <code>4</code> 字节。</li>
-<li><code>TileData::DType</code> 必须是 <code>int16_t</code> 或 <code>uint16_t</code> 或 <code>int32_t</code> 或 <code>uint32_t</code> 或 <code>half</code> 或 <code>bfloat16_t</code> 或 <code>float</code>。</li>
-<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 必须使用相同的元素类型。</li>
-<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 必须是行主序。</li>
-<li>选择域由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定。</li>
+<h2 id="_8">不允许的情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst</code>、<code>src0</code>、<code>src1</code> 使用不同 shape。</li>
+<li>使用非行主序 tile。</li>
+<li>假设掩码 tile 的具体位打包格式是跨目标固定的。</li>
 </ul>
-</li>
-<li><strong>掩码编码</strong>:<ul>
-<li>掩码 tile 被解释为目标定义布局中的打包谓词位。</li>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>dtype</code> 必须是 2 或 4 字节</li>
+<li>支持类型：<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code></li>
 </ul>
-</li>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>dtype</code> 必须是 2 或 4 字节</li>
+<li>支持类型：<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3_1">A2A3<a class="headerlink" href="#a2a3_1" title="Permanent link">&para;</a></h3>
+<p>英文页当前把 <code>TSEL</code> 归到与二元算术同一类模型：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>FP</th>
+<th>INT</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td>14</td>
+<td>14</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td>19</td>
+<td>17</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td>18</td>
+<td>18</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a5_1">A5<a class="headerlink" href="#a5_1" title="Permanent link">&para;</a></h3>
+<p>当前手册未单列 <code>tsel</code> 的独立周期表，应视为目标 profile 相关。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 void example_auto() {
@@ -1000,43 +1049,12 @@ void example_auto() {
   TSEL(dst, mask, src0, src1, tmp);
 }
 </code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using MaskT = Tile&lt;TileType::Vec, uint8_t, 16, 32, BLayout::RowMajor, -1, -1&gt;;
-  using TmpT = Tile&lt;TileType::Vec, uint32_t, 1, 16&gt;;
-  TileT src0, src1, dst;
-  MaskT mask(16, 2);
-  TmpT tmp;
-  TASSIGN(src0, 0x1000);
-  TASSIGN(src1, 0x2000);
-  TASSIGN(dst,  0x3000);
-  TASSIGN(mask, 0x4000);
-  TASSIGN(tmp,  0x5000);
-  TSEL(dst, mask, src0, src1, tmp);
-}
-</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.tsel %mask, %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.tsel %mask, %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tsel %mask, %src0, %src1 : !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tsel ins(%mask, %src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></li>
+<li>上一条指令：<a href="../tcvt_zh/">pto.tcvt</a></li>
+<li>下一条指令：<a href="../trsqrt_zh/">pto.trsqrt</a></li>
+</ul>
               
             </div>
           </div><footer>

@@ -931,80 +931,10 @@
               
                 <!-- Generated from `docs/isa/tile/ops/sync-and-config/tsetfmatrix_zh.md` -->
 
-<h1 id="tsetfmatrix">TSETFMATRIX<a class="headerlink" href="#tsetfmatrix" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSETFMATRIX tile operation" src="../../../../../figures/isa/TSETFMATRIX.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TSETFMATRIX</code> 把 <code>Img2colTileConfig</code> 里的输入特征图尺寸和 padding 信息写入 FMATRIX 配置寄存器，供后续 <code>TIMG2COL</code> 一类操作读取。</p>
-<p>这条指令本身不产生张量算术结果。它的作用是“准备好后面数据重排要依赖的几何参数”。</p>
-<h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>从当前实现看，<code>TSETFMATRIX</code> 主要写入三类信息：</p>
-<ul>
-<li><code>fmapW</code></li>
-<li><code>fmapH</code></li>
-<li>四个 padding 字节</li>
-</ul>
-<p>在 A2/A3 和 A5 上，这些字段会被打包进一个 64 位配置字：</p>
-<ul>
-<li>低 16 位：<code>fmapW</code></li>
-<li>接下来的 16 位：<code>fmapH</code></li>
-<li>高 32 位：4 个 <code>padList</code> 字节</li>
-</ul>
-<p><code>SetFmatrixMode</code> 用来决定把这份配置写到 A 侧还是 B 侧寄存器。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tsetfmatrix %cfg : !pto.fmatrix_config -&gt; ()
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tsetfmatrix ins(%cfg : !pto.fmatrix_config) outs()
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename ConvTileData, SetFmatrixMode FmatrixMode = SetFmatrixMode::FMATRIX_A_MANUAL, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSETFMATRIX(ConvTileData &amp;src, WaitEvents&amp;... events);
-</code></pre>
-<p><code>SetFmatrixMode</code> 的可选值包括：</p>
-<ul>
-<li><code>FMATRIX_A_AUTO</code></li>
-<li><code>FMATRIX_B_AUTO</code></li>
-<li><code>FMATRIX_A_MANUAL</code></li>
-<li><code>FMATRIX_B_MANUAL</code></li>
-</ul>
-<p>对这条手动配置指令来说，真正有意义的是两个 <code>*_MANUAL</code> 变体。</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>src</code> 应是有效的 <code>Img2colTileConfig</code> 一类配置 Tile。</li>
-<li>这条指令只负责写配置，不会替你执行 <code>TIMG2COL</code>。</li>
-<li>在同一执行流里，通常应先配置，再发出依赖该配置的 IMG2COL 类指令。</li>
-</ul>
-<h3 id="cpu">CPU 模拟器<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
-<ul>
-<li>CPU 只做轻量检查：<code>src.GetFmapH() &gt; 0</code> 且 <code>src.GetFmapW() &gt; 0</code>。</li>
-</ul>
-<h3 id="a2a3-a5">A2/A3 与 A5 实现<a class="headerlink" href="#a2a3-a5" title="Permanent link">&para;</a></h3>
-<ul>
-<li>当 <code>FmatrixMode</code> 为 <code>FMATRIX_A_MANUAL</code> 或 <code>FMATRIX_B_MANUAL</code> 时，backend 才会真正写寄存器。</li>
-<li><code>FMATRIX_A_MANUAL</code> 写 A 侧 FMATRIX。</li>
-<li><code>FMATRIX_B_MANUAL</code> 写 B 侧 FMATRIX。</li>
-<li>若传的是 <code>*_AUTO</code> 变体，这条手动 setter 路径当前不会主动写寄存器；自动模式通常由消费方指令自己完成配置。</li>
-</ul>
-<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example(Img2colTileConfig&lt;uint16_t&gt;&amp; cfg) {
-  TSETFMATRIX&lt;Img2colTileConfig&lt;uint16_t&gt;, SetFmatrixMode::FMATRIX_A_MANUAL&gt;(cfg);
-}
-</code></pre>
-<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../tset-img2col-rpt_zh/">TSET_IMG2COL_RPT</a></li>
-<li><a href="../tset-img2col-padding_zh/">TSET_IMG2COL_PADDING</a></li>
-<li><a href="../../layout-and-rearrangement/timg2col_zh/">TIMG2COL</a></li>
-</ul>
+<h1 id="ptotsetfmatrix">pto.tsetfmatrix<a class="headerlink" href="#ptotsetfmatrix" title="Permanent link">&para;</a></h1>
+<p>旧路径兼容入口。规范页现已移动到标量/控制路径下的 <a href="../../../../scalar/ops/control-and-configuration/tsetfmatrix_zh/">pto.tsetfmatrix</a>。</p>
+<h2 id="_1">为什么移动<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.tsetfmatrix</code> 虽然保留历史 <code>t</code> 前缀，但其架构角色是控制 / 配置状态，而不是 tile payload 变换。</p>
               
             </div>
           </div><footer>

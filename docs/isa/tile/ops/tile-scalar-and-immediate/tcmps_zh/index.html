@@ -932,15 +932,83 @@
                 <!-- Generated from `docs/isa/tile/ops/tile-scalar-and-immediate/tcmps_zh.md` -->
 
 <h1 id="ptotcmps">pto.tcmps<a class="headerlink" href="#ptotcmps" title="Permanent link">&para;</a></h1>
-<p>规范兼容参考页：<a href="./tile/ops/tile-scalar-and-immediate/tcmps.md">pto.tcmps</a>.</p>
-<p>PTO ISA 手册现已把 tile、vector、scalar/control 操作统一组织到分组后的指令集路径下。根级旧路径保留为兼容入口。</p>
-<h2 id="_1">规范位置<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.tcmps</code> 属于<a href="../../../tile-scalar-and-immediate_zh/">Tile-标量与立即数</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>把 tile 和标量做逐元素比较，并把比较结果写入目标 tile。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对目标 tile 的有效区域内每个元素 <code>(i, j)</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \left(\mathrm{src}_{i,j}\ \mathrm{cmpMode}\ \mathrm{scalar}\right) \]</div>
+<p><code>cmpMode</code> 选择比较谓词。目标 tile 的精确编码由实现决定，但通常表现为掩码式结果。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>同步形式：</p>
+<pre><code class="language-text">%dst = tcmps %src, %scalar {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.tcmps %src, %scalar {cmpMode = #pto&lt;cmp xx&gt;} : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tcmps ins(%src, %scalar{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename T, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCMPS(TileDataDst&amp; dst, TileDataSrc0&amp; src0, T src1, CmpMode cmpMode, WaitEvents&amp;... events);
+</code></pre>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>指令集概览：<a href="./tile/tile-scalar-and-immediate_zh.md">Tile Scalar And Immediate</a></li>
-<li>规范 per-op 页面：<a href="./tile/ops/tile-scalar-and-immediate/tcmps.md">pto.tcmps</a></li>
+<li><code>src</code>：源 tile</li>
+<li><code>scalar</code>：广播到所有元素的标量比较值</li>
+<li><code>cmpMode</code>：比较模式</li>
+<li><code>dst</code>：目标 tile</li>
+<li>迭代域：<code>dst</code> 的 valid row / valid col</li>
 </ul>
-<h2 id="_2">兼容性说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>旧的根级链接仍通过该兼容页保留；新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst</code>：逐元素比较结果 tile</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>tile 位置必须是向量 tile。</li>
+<li>静态 valid 边界必须合法。</li>
+<li>运行时要求：<code>src0</code> 与 <code>dst</code> 的 valid row / valid col 一致。</li>
+<li>支持的比较模式包括 <code>EQ</code>、<code>NE</code>、<code>LT</code>、<code>GT</code>、<code>LE</code>、<code>GE</code>。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
+</ul>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TileData::DType</code> 必须属于：<code>int32_t</code>、<code>float</code>、<code>half</code>、<code>uint16_t</code>、<code>int16_t</code></li>
+<li>tile 布局必须是行主序</li>
+</ul>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TileData::DType</code> 必须属于：<code>int32_t</code>、<code>float</code>、<code>half</code>、<code>uint16_t</code>、<code>int16_t</code></li>
+<li>tile 布局必须是行主序</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有把 <code>tcmps</code> 单独落成公开 cost bucket。若代码依赖具体延迟，应把它视为目标 profile 相关的 tile-比较路径。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+void example_auto() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstT = Tile&lt;TileType::Vec, uint8_t, 16, 32, BLayout::RowMajor, -1, -1&gt;;
+  SrcT src;
+  DstT dst(16, 2);
+  TCMPS(dst, src, 0.0f, CmpMode::GT);
+}
+</code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../tile-scalar-and-immediate_zh/">Tile-标量与立即数</a></li>
+<li>上一条指令：<a href="../texpands_zh/">pto.texpands</a></li>
+<li>下一条指令：<a href="../tsels_zh/">pto.tsels</a></li>
+</ul>
               
             </div>
           </div><footer>

@@ -932,8 +932,8 @@
                 <!-- Generated from `docs/isa/tile/elementwise-tile-tile_zh.md` -->
 
 <h1 id="tile-tile">逐元素 Tile-Tile 指令集<a class="headerlink" href="#tile-tile" title="Permanent link">&para;</a></h1>
-<p>逐元素 Tile-Tile 操作按 lane 对两个或一个 tile 做逐元素运算。它们是 PTO 中最常用的 tile 计算类指令。</p>
-<h2 id="_1">操作<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>逐元素 Tile-Tile 操作用两个或一个 tile 作为输入，在目标 tile 的 valid region 上逐元素执行运算。它们是 PTO tile 计算路径里最常见、也最基础的一类指令。</p>
+<h2 id="_1">指令一览<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1015,8 +1015,8 @@
 </tr>
 <tr>
 <td><code>pto.taddc</code> / <code>pto.tsubc</code></td>
-<td>饱和加减</td>
-<td>Binary</td>
+<td>三输入融合加减</td>
+<td>Ternary-like Binary</td>
 </tr>
 <tr>
 <td><code>pto.tcvt</code></td>
@@ -1036,40 +1036,27 @@
 </tbody>
 </table>
 <h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>逐元素操作在目标 tile 的 valid region 上迭代：</p>
+<p>这组指令的共同点不是“都长得像算术”，而是<strong>都以目标 tile 的 valid region 为迭代域</strong>。无论源 tile 自己的 valid region 怎么声明，真正被遍历的坐标集合都由目标 tile 决定。</p>
+<p>对目标 tile 中每个 <code>(r, c)</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{r,c} = f(\mathrm{src0}_{r,c}, \mathrm{src1}_{r,c}) \]</div>
-<p>对 <code>TSEL</code>：</p>
+<p>对于 <code>TSEL</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{r,c} = (\mathrm{cmp}_{r,c} \neq 0) ? \mathrm{src0}_{r,c} : \mathrm{src1}_{r,c} \]</div>
 <h2 id="valid-region">Valid Region 兼容性<a class="headerlink" href="#valid-region" title="Permanent link">&para;</a></h2>
-<p>所有逐元素 Tile-Tile 操作都以 <strong>目标 tile 的 valid region</strong> 为迭代域。</p>
+<p>所有逐元素 Tile-Tile 操作都遵循同一条规则：</p>
 <ul>
-<li>会按相同 <code>(r, c)</code> 坐标读取源 tile</li>
-<li>若源 tile 在该坐标超出自身 valid region，则读取值属于 implementation-defined</li>
-<li>在没有单独文档化的情况下，不应依赖这些域外值</li>
+<li>迭代域总是目标 tile 的 valid region。</li>
+<li>源 tile 会在同一 <code>(r, c)</code> 坐标被读取。</li>
+<li>如果源 tile 在这个坐标超出了自己的 valid region，那么读到的值属于 implementation-defined。</li>
+<li>除非某条指令页单独收窄这一点，否则程序不能依赖这些域外值。</li>
 </ul>
-<h2 id="_3">饱和变体<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>带 <code>_c</code> 后缀的变体使用饱和算术，而不是 wrap 算术：</p>
-<table>
-<thead>
-<tr>
-<th>基础操作</th>
-<th>饱和变体</th>
-<th>溢出行为</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>TADD</code></td>
-<td><code>TADDC</code></td>
-<td>截断到类型上下界</td>
-</tr>
-<tr>
-<td><code>TSUB</code></td>
-<td><code>TSUBC</code></td>
-<td>截断到类型上下界</td>
-</tr>
-</tbody>
-</table>
+<p>这条规则非常重要。它意味着“源 tile 自己声明的有效区域较小”并不会自动把目标迭代域缩小，也不会自动补零或自动修复。</p>
+<h2 id="_c"><code>_c</code> 变体<a class="headerlink" href="#_c" title="Permanent link">&para;</a></h2>
+<p>当前这组指令里的 <code>_c</code> 变体并不是“饱和算术”的统一命名约定。以当前 canonical 叶子页和实现签名为准：</p>
+<ul>
+<li><code>TADDC</code> 表达的是三输入逐元素加法：<code>src0 + src1 + src2</code></li>
+<li><code>TSUBC</code> 表达的是三输入逐元素运算：<code>src0 - src1 + src2</code></li>
+</ul>
+<p>因此，不能把 <code>_c</code> 后缀一概理解成 saturating / carry 变体。具体语义必须看各自 per-op 页面。</p>
 <h2 id="profile">目标 Profile 支持<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1082,44 +1069,213 @@
 </thead>
 <tbody>
 <tr>
-<td>f32 / f16 / bf16</td>
+<td><code>f32 / f16 / bf16</code></td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
-<td>i8/u8, i16/u16, i32/u32, i64/u64</td>
+<td><code>i8/u8, i16/u16, i32/u32, i64/u64</code></td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
-<td>f8e4m3 / f8e5m2</td>
+<td><code>f8e4m3 / f8e5m2</code></td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 </tbody>
 </table>
-<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>具体到单条指令，支持子集仍以 per-op 页面为准。</p>
+<h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
-<li>layout、shape 和 valid-region 状态都会影响合法性</li>
-<li>源与目标 tile 的物理 shape 必须兼容</li>
-<li><code>TCMP</code> 产生谓词 tile，算术类产生数值 tile</li>
-<li><code>TCVT</code> 允许源和目标 dtype 不同，但必须落在文档化转换组内</li>
-<li>移位类要求第二操作数在元素位宽范围内</li>
+<li>layout、shape 和 valid-region 状态都会影响合法性。</li>
+<li>源与目标 tile 的物理 shape 必须兼容。</li>
+<li><code>TCMP</code> 产生的是谓词 tile，不是普通数值 tile。</li>
+<li><code>TCVT</code> 允许源和目标 dtype 不同，但必须落在文档化转换组内。</li>
+<li>位移类要求第二操作数小于元素位宽。</li>
 </ul>
-<h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_4">不允许的情形<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>假设存在隐式广播、隐式 reshape 或 valid-region 修复</li>
-<li>依赖源 tile 域外 lane 的确定值</li>
-<li>假设 <code>TADDC</code> / <code>TSUBC</code> 与非饱和版本对所有输入都位级一致</li>
-<li>使用超出元素位宽的 shift count</li>
+<li>假设存在隐式广播、隐式 reshape 或 valid-region 自动修复。</li>
+<li>依赖源 tile 域外 lane 的确定值。</li>
+<li>把 <code>_c</code> 后缀机械理解成“饱和变体”。</li>
+<li>使用超出元素位宽的 shift count。</li>
 </ul>
-<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="a2a3">A2/A3 吞吐与时延<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h2>
+<p>逐元素 tile-tile 操作在 A2/A3 上会落到 CCE 向量指令，由 <code>include/pto/costmodel/a2a3/</code> 下的模型负责估算。</p>
+<h3 id="_5">周期模型<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">total_cycles = startup + completion + repeats × per_repeat + (repeats - 1) × interval
+</code></pre>
+<p>其中 <code>repeats</code> 由 tile 布局、stride 和 valid region 共同决定。</p>
+<h3 id="_6">常见常量<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>常量</th>
+<th>周期</th>
+<th>适用范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动时延</td>
+<td><code>A2A3_STARTUP_BINARY</code></td>
+<td>14</td>
+<td>二元算术</td>
+</tr>
+<tr>
+<td>启动时延</td>
+<td><code>A2A3_STARTUP_REDUCE</code></td>
+<td>13</td>
+<td>一元 / 超越函数</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td><code>A2A3_COMPL_FP_BINOP</code></td>
+<td>19</td>
+<td>FP 加减、部分转换</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td><code>A2A3_COMPL_INT_BINOP</code></td>
+<td>17</td>
+<td>INT 加减、比较一类</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td><code>A2A3_COMPL_INT_MUL</code></td>
+<td>18</td>
+<td>INT 乘法</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td><code>A2A3_COMPL_FP_MUL</code></td>
+<td>20</td>
+<td>FP 乘法</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td><code>A2A3_COMPL_FP32_EXP</code></td>
+<td>26</td>
+<td><code>texp</code> 等</td>
+</tr>
+<tr>
+<td>完成时延</td>
+<td><code>A2A3_COMPL_FP32_SQRT</code></td>
+<td>27</td>
+<td><code>tsqrt</code> 等</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td><code>A2A3_RPT_1</code></td>
+<td>1</td>
+<td>一元 / 标量类</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td><code>A2A3_RPT_2</code></td>
+<td>2</td>
+<td>二元算术</td>
+</tr>
+<tr>
+<td>每次 repeat 吞吐</td>
+<td><code>A2A3_RPT_4</code></td>
+<td>4</td>
+<td>部分 f16 超越函数</td>
+</tr>
+<tr>
+<td>流水间隔</td>
+<td><code>A2A3_INTERVAL</code></td>
+<td>18</td>
+<td>向量路径通用</td>
+</tr>
+</tbody>
+</table>
+<h3 id="repeat">repeat 的影响<a class="headerlink" href="#repeat" title="Permanent link">&para;</a></h3>
+<p><code>TBinOp.hpp</code> / <code>TBinSOp.hpp</code> / <code>TUnaryOp.hpp</code> 会根据 tile 的 geometry 计算 <code>repeats</code>：</p>
+<ul>
+<li>连续 fast path：<code>repeats = validRow × validCol / elementsPerRepeat</code></li>
+<li>非连续路径：会按 stride 拆分为更一般的 repeat 序列</li>
+<li>小 shape 时还可能走 <code>Bin1LNormModeSmall</code> 之类的特化路径</li>
+</ul>
+<h3 id="layout">layout 的影响<a class="headerlink" href="#layout" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>布局</th>
+<th>stride 特征</th>
+<th>成本影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RowMajor</code></td>
+<td>源 / 目标 stride 连续</td>
+<td>最容易走 fast path</td>
+</tr>
+<tr>
+<td><code>ColMajor</code></td>
+<td>stride 不连续</td>
+<td>更容易走 general path</td>
+</tr>
+<tr>
+<td>混合布局 / 特殊布局</td>
+<td>非线性 stride</td>
+<td>只能走 general path</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_7">搬运带宽模型<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>路径</th>
+<th>带宽（B/cycle）</th>
+<th>常量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GM → Vec Buffer (<code>TLOAD</code>)</td>
+<td>128</td>
+<td><code>A2A3_BW_GM_VEC</code></td>
+</tr>
+<tr>
+<td>Vec → Vec (<code>TMOV</code>)</td>
+<td>128</td>
+<td><code>A2A3_BW_VEC_VEC</code></td>
+</tr>
+<tr>
+<td>GM → Mat</td>
+<td>256</td>
+<td><code>A2A3_BW_GM_MAT</code></td>
+</tr>
+<tr>
+<td>Mat → L0A</td>
+<td>256</td>
+<td><code>A2A3_BW_MAT_LEFT</code></td>
+</tr>
+<tr>
+<td>Mat → L0B</td>
+<td>128</td>
+<td><code>A2A3_BW_MAT_RIGHT</code></td>
+</tr>
+<tr>
+<td>Mat → Mat (<code>TEXTRACT</code>)</td>
+<td>32</td>
+<td><code>A2A3_BW_MAT_MAT</code></td>
+</tr>
+</tbody>
+</table>
+<p>搬运周期通常按 <code>ceil(bufferSize / bandwidth)</code> 估算。</p>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/tile-families_zh/">Tile 指令族</a></li>
-<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令集</a></li>
+<li><a href="../../instruction-surfaces/tile-instructions_zh/">Tile 指令面</a></li>
 </ul>
               
             </div>

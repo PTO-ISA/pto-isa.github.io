@@ -932,15 +932,86 @@
                 <!-- Generated from `docs/isa/tile/ops/tile-scalar-and-immediate/tands_zh.md` -->
 
 <h1 id="ptotands">pto.tands<a class="headerlink" href="#ptotands" title="Permanent link">&para;</a></h1>
-<p>规范兼容参考页：<a href="./tile/ops/tile-scalar-and-immediate/tands.md">pto.tands</a>.</p>
-<p>PTO ISA 手册现已把 tile、vector、scalar/control 操作统一组织到分组后的指令集路径下。根级旧路径保留为兼容入口。</p>
-<h2 id="_1">规范位置<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><code>pto.tands</code> 属于<a href="../../../tile-scalar-and-immediate_zh/">Tile-标量与立即数</a>指令集。</p>
+<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>对 tile 和标量逐元素做按位与。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.tands</code> 作用在 tile payload 上，而不是标量控制状态。对目标 tile 的有效区域内每个元素 <code>(i, j)</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{i,j} \;\&amp;\; \mathrm{scalar} \]</div>
+<p>标量会广播到整个 valid region。它本质上是 tile 版的按位掩码操作，适合做位域裁剪、标志位过滤和逐元素掩码化。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>同步形式：</p>
+<pre><code class="language-text">%dst = tands %src, %scalar : !pto.tile&lt;...&gt;, i32
+</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">%dst = pto.tands %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
+</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">pto.tands ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
+</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
+PTO_INST RecordEvent TANDS(TileDataDst &amp;dst, TileDataSrc &amp;src, typename TileDataDst::DType scalar, WaitEvents &amp;... events);
+</code></pre>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li>指令集概览：<a href="./tile/tile-scalar-and-immediate_zh.md">Tile Scalar And Immediate</a></li>
-<li>规范 per-op 页面：<a href="./tile/ops/tile-scalar-and-immediate/tands.md">pto.tands</a></li>
+<li><code>src</code>：源 tile</li>
+<li><code>scalar</code>：广播到所有元素的标量掩码</li>
+<li><code>dst</code>：目标 tile</li>
+<li>迭代域：<code>dst</code> 的 valid row / valid col</li>
 </ul>
-<h2 id="_2">兼容性说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>旧的根级链接仍通过该兼容页保留；新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dst</code>：逐元素按位与结果 tile</li>
+</ul>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除产生目标 tile 外，没有额外架构副作用。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>操作迭代域由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定。</li>
+<li>这条指令面向整数元素类型，不适用于浮点 tile。</li>
+</ul>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
+<li>程序不能依赖文档合法域之外的行为。</li>
+</ul>
+<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>面向整型元素类型。</li>
+<li><code>dst</code> 与 <code>src</code> 必须使用相同元素类型。</li>
+<li><code>dst</code> 与 <code>src</code> 必须是向量 tile。</li>
+<li>运行时要求：<code>src.GetValidRow() == dst.GetValidRow()</code> 且 <code>src.GetValidCol() == dst.GetValidCol()</code>。</li>
+<li>手动模式下，不支持把源 tile 与目标 tile 绑定到同一片内存。</li>
+</ul>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>面向 <code>TEXPANDS</code> 与 <code>TAND</code> 支持的整型元素类型。</li>
+<li><code>dst</code> 与 <code>src</code> 必须使用相同元素类型。</li>
+<li><code>dst</code> 与 <code>src</code> 必须是向量 tile。</li>
+<li>手动模式下，不支持把源 tile 与目标 tile 绑定到同一片内存。</li>
+</ul>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>当前仓内没有为 <code>tands</code> 单列公开 cost bucket。若代码依赖具体延迟，应把它视为目标 profile 相关的 tile 按位逻辑路径。</p>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+void example() {
+  using TileDst = Tile&lt;TileType::Vec, uint16_t, 16, 16&gt;;
+  using TileSrc = Tile&lt;TileType::Vec, uint16_t, 16, 16&gt;;
+  TileDst dst;
+  TileSrc src;
+  TANDS(dst, src, 0xffu);
+}
+</code></pre>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../tile-scalar-and-immediate_zh/">Tile-标量与立即数</a></li>
+<li>上一条指令：<a href="../tmaxs_zh/">pto.tmaxs</a></li>
+<li>下一条指令：<a href="../tors_zh/">pto.tors</a></li>
+</ul>
               
             </div>
           </div><footer>
