@@ -935,10 +935,11 @@
 <p>旧路径兼容入口。规范页见 <a href="../tile/ops/reduce-and-expand/trowargmax_zh/">pto.trowargmax</a>。</p>
 <p><img alt="TROWARGMAX tile operation" src="../../figures/isa/TROWARGMAX.svg" /></p>
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>获取每行最大值对应列索引。</p>
+<p>获取每行最大值对应列索引，或同时获取每行最大值及其对应列索引。</p>
 <h2 id="_2">数学语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>设 <code>R = src.GetValidRow()</code>，<code>C = src.GetValidCol()</code>。对 <code>0 &lt;= i &lt; R</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,0} = \underset{0 \le j &lt; C}{\operatorname{argmax}} \; \mathrm{src}_{i,j} \]</div>
+<div class="arithmatex">\[ \mathrm{dstval}_{i,0} = \max_{0 \le j &lt; C} \mathrm{src}_{i,j} \]</div>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS 规范</a>。</p>
 <p>同步形式：</p>
@@ -953,14 +954,23 @@
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>仅输出索引：</p>
 <pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWARGMAX(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
+</code></pre>
+<p>同时输出值和索引：</p>
+<pre><code class="language-cpp">template &lt;typename TileDataOutVal, typename TileDataOutIdx, typename TileDataIn, typename TileDataTmp,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TROWARGMAX(TileDataOutVal &amp;dstVal, TileDataOutIdx &amp;dstIdx, TileDataIn &amp;src, TileDataTmp &amp;tmp,
+                                WaitEvents &amp;... events)
 </code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <h3 id="_5">通用约束或检查<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>dst</code> 和 <code>src</code> 必须为 <code>TileType::Vec</code>。</li>
 <li>支持的源元素类型：<code>half</code>、<code>float</code>。</li>
+<li><code>src</code> 必须使用标准 ND 布局：行主且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
+<li>仅输出索引时：
+    -<code>dst</code> 和 <code>src</code> 必须为 <code>TileType::Vec</code>。<ul>
 <li>支持的目标元素类型：<code>uint32_t</code>、<code>int32_t</code>。</li>
 <li>运行时检查遵循共享的行归约检查路径：<ul>
 <li><code>src.GetValidRow() != 0</code></li>
@@ -968,29 +978,53 @@ PTO_INST RecordEvent TROWARGMAX(TileDataOut&amp; dst, TileDataIn&amp; src, TileD
 <li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
 </ul>
 </li>
-</ul>
-<h3 id="a2a3">A2A3 实现检查<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>src</code> 必须使用标准 ND 布局：行主且非分形（<code>BLayout::RowMajor</code>、<code>SLayout::NoneBox</code>）。</li>
 <li><code>dst</code> 通过共享的行归约索引检查路径约束，可使用以下任一非分形布局：<ul>
 <li>单列 DN 布局（<code>BLayout::ColMajor</code>、<code>Cols == 1</code>），或</li>
 <li>有效列数为 1 的 ND 布局。</li>
 </ul>
 </li>
 </ul>
-<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>dst</code> 和 <code>src</code> 必须满足 <code>TRowArgMax</code> 使用的共享行归约索引检查路径。</li>
-<li>在已检查到的 A5 实现路径中，接口仍接收 <code>tmp</code>，但 <code>TROWARGMAX_IMPL</code> 实际并不使用它。</li>
+</li>
+<li>同时输出值和索引时：<ul>
+<li><code>dstVal</code>、<code>dstIdx</code>、<code>src</code> 必须为 <code>TileType::Vec</code>。</li>
+<li><code>dstVal</code>的元素类型必须与<code>src</code>的元素类型一致。</li>
+<li>支持的目标元素类型：<ul>
+<li>源元素类型为<code>float</code>时，支持<code>uint32_t</code>、<code>int32_t</code>。</li>
+<li>源元素类型为<code>half</code>时，支持<code>uint16_t</code>、<code>int16_t</code>。</li>
 </ul>
-<h3 id="a3-tmptile">A3 <code>tmp</code>临时Tile相关说明<a class="headerlink" href="#a3-tmptile" title="Permanent link">&para;</a></h3>
+</li>
+<li>运行时检查遵循共享的行归约检查路径：<ul>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidRow() == dstIdx.GetValidRow()</code></li>
+<li><code>src.GetValidRow() == dstVal.GetValidRow()</code></li>
+</ul>
+</li>
+<li><code>dstVal</code>、<code>dstIdx</code>通过共享的行归约索引检查路径约束，可使用以下任一非分形布局：<ul>
+<li>单列 DN 布局（<code>BLayout::ColMajor</code>、<code>Cols == 1</code>），或</li>
+<li>有效列数为 1 的 ND 布局。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="tmptile"><code>tmp</code>临时Tile相关说明<a class="headerlink" href="#tmptile" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>tmp</code>临时Tile在<code>srcValidCol &lt;= ElementPerRepeat</code>时不使用，<code>srcValidCol &gt; ElementPerRepeat</code>时需要使用。</li>
+<li>仅A3使用<code>tmp</code>临时Tile，A5接收<code>tmp</code>但实际并不使用。</li>
+<li>仅输出索引时，<code>tmp</code>临时Tile在<code>srcValidCol &lt;= ElementPerRepeat</code>时不使用。</li>
+<li>同时输出值和索引且<code>srcValidCol &lt;= ElementPerRepeat</code>时，<code>tmp</code>临时Tile可使用以下任一非分形布局：<ul>
+<li>单列 DN 布局（<code>BLayout::ColMajor</code>、<code>Cols == 1</code>），有效行数为<code>srcValidRow * 2</code>。</li>
+<li>有效行数为<code>srcValidRow</code>且有效列数为 2 的 ND 布局。</li>
+</ul>
+</li>
+<li><code>srcValidCol &gt; ElementPerRepeat</code>时：<ul>
 <li><code>tmp</code> tile的行数和<code>src</code> tile的行数相同。</li>
 <li>按以下公式根据<code>src</code> tile的<code>validCol</code>算出<code>tmp</code> tile所需stride：</li>
 </ul>
+</li>
+</ul>
 <pre><code class="language-text">repeats = ceil(validCol / elementPerRepeat)
-stride = ceil(repeats * 2 / elementPerBlock) * elementPerBlock + ceil(repeats / elementPerBlock) * elementPerBlock
+stride = (ceil(repeats * 2 / elementPerBlock) + ceil(repeats / elementPerBlock)) * elementPerBlock
 </code></pre>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
@@ -1001,11 +1035,14 @@ using namespace pto;
 void example_auto() {
   using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   using DstT = Tile&lt;TileType::Vec, uint32_t, 16, 1, BLayout::ColMajor&gt;;
+  using DstValT = Tile&lt;TileType::Vec, float, 16, 1, BLayout::ColMajor&gt;;
   using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   SrcT src;
   DstT dst;
+  DstValT dst;
   TmpT tmp;
   TROWARGMAX(dst, src, tmp);
+  TROWARGMAX(dstVal, dst, src, tmp);
 }
 </code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
@@ -1016,14 +1053,18 @@ using namespace pto;
 void example_manual() {
   using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   using DstT = Tile&lt;TileType::Vec, uint32_t, 16, 1, BLayout::ColMajor&gt;;
+  using DstValT = Tile&lt;TileType::Vec, float, 16, 1, BLayout::ColMajor&gt;;
   using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   SrcT src;
   DstT dst;
+  DstValT dst;
   TmpT tmp;
   TASSIGN(src, 0x1000);
   TASSIGN(dst, 0x2000);
-  TASSIGN(tmp, 0x3000);
+  TASSIGN(dstVal, 0x3000);
+  TASSIGN(tmp, 0x4000);
   TROWARGMAX(dst, src, tmp);
+  TROWARGMAX(dstVal, dst, src, tmp);
 }
 </code></pre>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
