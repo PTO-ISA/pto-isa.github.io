@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -874,7 +878,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TFREE/">TFREE</a>
                 </li>
@@ -959,7 +963,7 @@
 <td>Tile sequence</td>
 </tr>
 <tr>
-<td><code>tdequant</code></td>
+<td><a href="../ops/non-isa-and-supporting-ops/tdequant_zh/">pto.tdequant</a></td>
 <td>把量化表示恢复成数值表示</td>
 <td>Quantize</td>
 </tr>
@@ -993,11 +997,6 @@
 <td>用随机值填充 tile</td>
 <td>Generation</td>
 </tr>
-<tr>
-<td><code>tquant</code></td>
-<td>把 tile 量化为整数或低精度格式</td>
-<td>Quantize</td>
-</tr>
 </tbody>
 </table>
 <h2 id="_2">机制摘要<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
@@ -1006,7 +1005,7 @@
 <h3 id="tile">Tile 序列<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
 <p><code>tconcat</code> 和 <code>tpack</code> 用于在 tile 序列层组织数据。它们描述的是更高层的组合关系，而不是单条底层算术指令。</p>
 <h3 id="_3">量化<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<p><code>tquant</code> / <code>tdequant</code> 在浮点表示和量化表示之间转换。scale、zero-point 以及目标格式都会进入合法性约束。</p>
+<p><code>tdequant</code> 负责在量化表示和浮点表示之间转换。当前作者维护树中，<a href="../ops/non-isa-and-supporting-ops/tdequant_zh/">pto.tdequant</a> 位于支撑操作路径；<code>pto.tquant</code> 仍位于 tile 不规则与复杂路径。</p>
 <h3 id="memory">Memory<a class="headerlink" href="#memory" title="Permanent link">&para;</a></h3>
 <p><code>tfree</code> 修改可复用的分配状态。它不会产生新的 tile 数据，但会影响后续资源使用。</p>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>

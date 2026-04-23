@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -551,8 +555,6 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#a2a3-throughput">A2/A3 Throughput</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#execution-throughput">Execution Throughput</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
@@ -565,7 +567,7 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
     </ul>
                 </li>
@@ -926,7 +928,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE/">TFREE</a>
                 </li>
@@ -988,12 +990,16 @@
 <h1 id="ptovadd">pto.vadd<a class="headerlink" href="#ptovadd" title="Permanent link">&para;</a></h1>
 <p><code>pto.vadd</code> is part of the <a href="../../../binary-vector-ops/">Binary Vector Instructions</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Lane-wise addition of two vector registers, producing a result vector register. Only lanes selected by the predicate mask are active; inactive lanes do not participate in the computation and their destination elements are left unchanged.</p>
+<p>Lane-wise addition of two vector registers, producing a result vector register. Only lanes where the predicate mask bit is 1 (active lanes) participate in the computation.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vadd</code> is a <code>pto.v*</code> compute operation. It reads two source vector registers lane-by-lane, adds the corresponding elements, and writes the result to the destination vector register. The iteration domain covers all N lanes; the predicate mask determines which lanes are active.</p>
+<p><code>pto.vadd</code> reads two source vector registers lane-by-lane, adds the corresponding elements, and writes the result to the destination vector register. The iteration domain covers all N lanes; the predicate mask determines which lanes are active.</p>
 <p>For each lane <code>i</code> where the predicate is true:</p>
 <div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{lhs}_i + \mathrm{rhs}_i \]</div>
-<p>Lanes where the predicate is false are <strong>inactive</strong>: the destination register element at that lane is unmodified.</p>
+<p>For each lane <code>i</code> where the predicate is false (inactive lanes):</p>
+<ul>
+<li>The destination register element at that lane is not modified by the operation.</li>
+<li>Programs must not rely on the value of inactive lanes after the operation.</li>
+</ul>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-mlir">%result = pto.vadd %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
@@ -1039,7 +1045,7 @@ vadd(dst, src0, src1, mask);
 </tr>
 </tbody>
 </table>
-<p>Both source registers MUST have the same element type and the same vector width <code>N</code>. The mask width MUST match <code>N</code>.</p>
+<p>All three registers must have the same element type and same vector width <code>N</code>. The mask width must match <code>N</code>.</p>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1053,30 +1059,30 @@ vadd(dst, src0, src1, mask);
 <tr>
 <td><code>%dst</code></td>
 <td><code>!pto.vreg&lt;NxT&gt;</code></td>
-<td>Lane-wise sum on active lanes; inactive lanes are unmodified</td>
+<td>Lane-wise sum on active lanes; inactive lanes are unchanged</td>
 </tr>
 </tbody>
 </table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation has no architectural side effect beyond producing its destination vector register. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
+<p>No architectural side effects. Does not reserve buffers, signal events, or establish fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Type match</strong>: <code>%lhs</code>, <code>%rhs</code>, and <code>%dst</code> MUST have identical element types.</li>
-<li><strong>Width match</strong>: All three registers MUST have the same vector width <code>N</code>.</li>
-<li><strong>Mask width</strong>: <code>%mask</code> MUST have width equal to <code>N</code>.</li>
-<li><strong>Active lanes</strong>: Only lanes where the mask bit is 1 (true) participate in the addition.</li>
-<li><strong>Inactive lanes</strong>: Destination elements at inactive lanes are unmodified.</li>
+<li><strong>Type match</strong>: <code>%lhs</code>, <code>%rhs</code>, and <code>%dst</code> must have identical element types.</li>
+<li><strong>Width match</strong>: All three registers must have the same vector width <code>N</code>.</li>
+<li><strong>Mask width</strong>: <code>%mask</code> must have width equal to <code>N</code>.</li>
+<li><strong>Active lanes</strong>: Only lanes where mask bit is 1 (true) participate in the addition.</li>
+<li><strong>Inactive lanes</strong>: Destination elements at inactive lanes are not modified by the operation. Programs must not assume any particular value in inactive lanes.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The verifier rejects illegal operand type mismatches, width mismatches, or mask width mismatches.</li>
-<li>Any additional illegality stated in the <a href="../../../binary-vector-ops/">Binary Vector Instructions</a> instruction set page is also part of the contract.</li>
+<li>Verifier rejects type mismatches, width mismatches, or mask width mismatches.</li>
+<li>Any additional illegality stated in the <a href="../../../binary-vector-ops/">Binary Vector Instructions</a> instruction set page is part of the contract.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Element Type</th>
+<th style="text-align: left;">Element Type</th>
 <th style="text-align: center;">CPU Simulator</th>
 <th style="text-align: center;">A2/A3</th>
 <th style="text-align: center;">A5</th>
@@ -1084,61 +1090,61 @@ vadd(dst, src0, src1, mask);
 </thead>
 <tbody>
 <tr>
-<td><code>f32</code></td>
+<td style="text-align: left;"><code>f32</code></td>
 <td style="text-align: center;">Simulated</td>
 <td style="text-align: center;">Simulated</td>
 <td style="text-align: center;">Supported</td>
 </tr>
 <tr>
-<td><code>f16</code> / <code>bf16</code></td>
+<td style="text-align: left;"><code>f16</code> / <code>bf16</code></td>
 <td style="text-align: center;">Simulated</td>
 <td style="text-align: center;">Simulated</td>
 <td style="text-align: center;">Supported</td>
 </tr>
 <tr>
-<td><code>i8</code>–<code>i64</code>, <code>u8</code>–<code>u64</code></td>
+<td style="text-align: left;"><code>i8</code>–<code>i64</code>, <code>u8</code>–<code>u64</code></td>
 <td style="text-align: center;">Simulated</td>
 <td style="text-align: center;">Simulated</td>
 <td style="text-align: center;">Supported</td>
 </tr>
 </tbody>
 </table>
-<p>A5 is the primary concrete profile for the vector instructions. CPU simulation and A2/A3-class targets emulate <code>pto.v*</code> operations using scalar loops while preserving the visible PTO contract. Code that depends on specific performance characteristics or latency should treat those dependencies as target-profile-specific.</p>
+<p>A5 is the primary concrete profile for vector instructions. CPU simulation and A2/A3-class targets emulate <code>pto.v*</code> operations using scalar loops while preserving the visible PTO contract. Code that depends on specific performance characteristics should treat those as target-profile-specific.</p>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
 <th>Element Type</th>
-<th>Latency (cycles)</th>
-<th>A5 RV</th>
+<th style="text-align: center;">Latency (cycles)</th>
+<th style="text-align: center;">A5 RV</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>f32</code></td>
-<td>7</td>
-<td><code>RV_VADD</code></td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;"><code>RV_VADD</code></td>
 </tr>
 <tr>
 <td><code>f16</code></td>
-<td>7</td>
-<td><code>RV_VADD</code></td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;"><code>RV_VADD</code></td>
 </tr>
 <tr>
 <td><code>i32</code></td>
-<td>7</td>
-<td><code>RV_VADD</code></td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;"><code>RV_VADD</code></td>
 </tr>
 <tr>
 <td><code>i16</code></td>
-<td>7</td>
-<td><code>RV_VADD</code></td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;"><code>RV_VADD</code></td>
 </tr>
 <tr>
 <td><code>i8</code></td>
-<td>7</td>
-<td><code>RV_VADD</code></td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;"><code>RV_VADD</code></td>
 </tr>
 </tbody>
 </table>
@@ -1147,56 +1153,52 @@ vadd(dst, src0, src1, mask);
 <thead>
 <tr>
 <th>Metric</th>
-<th>Value</th>
+<th style="text-align: center;">Value</th>
 <th>Applies To</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Startup latency</td>
-<td>14 (<code>A2A3_STARTUP_BINARY</code>)</td>
+<td style="text-align: center;">14</td>
 <td>all FP/INT binary ops</td>
 </tr>
 <tr>
 <td>Completion: FP32</td>
-<td>19 (<code>A2A3_COMPL_FP_BINOP</code>)</td>
+<td style="text-align: center;">19</td>
 <td>f32, i32</td>
 </tr>
 <tr>
 <td>Completion: INT16</td>
-<td>17 (<code>A2A3_COMPL_INT_BINOP</code>)</td>
+<td style="text-align: center;">17</td>
 <td>int16</td>
 </tr>
 <tr>
 <td>Per-repeat throughput</td>
-<td>2 (<code>A2A3_RPT_2</code>)</td>
+<td style="text-align: center;">2</td>
 <td>all binary ops</td>
 </tr>
 <tr>
 <td>Pipeline interval</td>
-<td>18 (<code>A2A3_INTERVAL</code>)</td>
+<td style="text-align: center;">18</td>
 <td>all vector ops</td>
 </tr>
 <tr>
 <td>Cycle model</td>
-<td><code>14 + C + 2R + (R-1)×18</code></td>
+<td style="text-align: center;"><code>14 + C + 2R + (R-1)×18</code></td>
 <td>C=completion, R=repeats</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Example</strong>: 1024 f32 elements with 16 iterations (<code>R=16</code>):</p>
+<p>Example: 1024 f32 elements with 16 iterations (<code>R=16</code>):</p>
 <pre><code>A5 total (pipelined): 7 + 15×2 = 37 cycles
 A2/A3 total: 14 + 19 + 32 + 270 = 335 cycles
 </code></pre>
-<h3 id="execution-throughput">Execution Throughput<a class="headerlink" href="#execution-throughput" title="Permanent link">&para;</a></h3>
-<p><code>vadd</code> has 2× the per-repeat throughput of unary ops, making it efficient for element-wise kernels. For batched processing, the vecscope loop hides latency through pipelining.</p>
-<hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="full-vector-addition-all-lanes-active">Full-vector addition (all lanes active)<a class="headerlink" href="#full-vector-addition-all-lanes-active" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
-// All lanes active: mask set to all-ones
 Mask&lt;64&gt; mask;
 mask.set_all(true);  // predicate all-true
 
@@ -1224,7 +1226,7 @@ void vector_add(Ptr&lt;ub_space_t, ub_t&gt; ub_a, Ptr&lt;ub_space_t, ub_t&gt; ub
     VSTS(vdst, ub_out);
 }
 </code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../binary-vector-ops/">Binary Vector Instructions</a></li>
 <li>Next op in instruction set: <a href="../vsub/">pto.vsub</a></li>

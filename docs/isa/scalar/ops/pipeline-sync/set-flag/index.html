@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -711,6 +715,10 @@
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pipe-identifiers">Pipe Identifiers</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
     </li>
@@ -718,13 +726,19 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#common-patterns">Common Patterns</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pattern-1-gm-ub-compute-ub-gm">Pattern 1: GM → UB → Compute → UB → GM</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pattern-2-ping-pong-double-buffering">Pattern 2: Ping-Pong Double Buffering</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
     </ul>
                 </li>
@@ -904,7 +918,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE/">TFREE</a>
                 </li>
@@ -966,9 +980,10 @@
 <h1 id="ptoset_flag">pto.set_flag<a class="headerlink" href="#ptoset_flag" title="Permanent link">&para;</a></h1>
 <p><code>pto.set_flag</code> is part of the <a href="../../../pipeline-sync/">Pipeline Sync</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Signal an event from one pipeline to another pipeline.</p>
+<p>Signal an event from one pipeline to another pipeline. This is the producer half of the explicit event protocol that connects MTE, vector, and other execution stages.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.set_flag</code> marks the named event as produced by the source pipeline and visible to the destination pipeline. It is the producer half of the explicit event protocol used to connect MTE, vector, and other execution stages.</p>
+<p><code>pto.set_flag</code> marks the named event as produced by the source pipeline. The signal is visible to matching <code>wait_flag</code> operations on the destination pipeline. The event is directional: both the source and destination pipe roles are part of the event identity.</p>
+<p>The two pipelines operate asynchronously. The event protocol ensures that the consumer pipeline does not proceed until the producer pipeline has reached a point where the shared data is ready.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">set_flag[&quot;SRC_PIPE&quot;, &quot;DST_PIPE&quot;, &quot;EVENT_ID&quot;]
@@ -989,7 +1004,7 @@
 <tr>
 <td><code>SRC_PIPE</code></td>
 <td>pipe identifier</td>
-<td>Pipeline that produces the event</td>
+<td>Pipeline that produces the event. Common values: <code>PIPE_MTE2</code>, <code>PIPE_V</code>, <code>PIPE_MTE3</code></td>
 </tr>
 <tr>
 <td><code>DST_PIPE</code></td>
@@ -999,54 +1014,112 @@
 <tr>
 <td><code>EVENT_ID</code></td>
 <td>event identifier</td>
-<td>Named event slot used for the producer-consumer edge</td>
+<td>Named event slot for this producer-consumer edge</td>
 </tr>
 </tbody>
 </table>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
+<h3 id="pipe-identifiers">Pipe Identifiers<a class="headerlink" href="#pipe-identifiers" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th>Result</th>
-<th>Type</th>
-<th>Description</th>
+<th>Pipe</th>
+<th>Role</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>None</td>
-<td><code>—</code></td>
-<td>This form does not return SSA values; it updates pipeline-event state.</td>
+<td><code>PIPE_MTE2</code></td>
+<td>DMA engine: GM → UB (load staging)</td>
+</tr>
+<tr>
+<td><code>PIPE_V</code></td>
+<td>Vector compute pipeline</td>
+</tr>
+<tr>
+<td><code>PIPE_MTE3</code></td>
+<td>DMA engine: UB → GM (store)</td>
 </tr>
 </tbody>
 </table>
+<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
+<p>None. This operation updates pipeline-event state but produces no SSA result.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>Signals the named event, making later <code>pto.wait_flag</code> operations on the matching <code>(SRC_PIPE, DST_PIPE, EVENT_ID)</code> tuple eligible to unblock.</p>
+<p>Signals the named event. After this operation completes, any <code>wait_flag</code> with the matching <code>(SRC_PIPE, DST_PIPE, EVENT_ID)</code> tuple becomes eligible to unblock on the destination pipeline.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The selected pipe identifiers and event identifier MUST be valid for the selected target profile.</li>
-<li>The event protocol is directional: the producer and consumer pipe roles matter.</li>
-<li>Portable code MUST pair event signaling with the corresponding wait in the intended dependency chain.</li>
+<li>The selected pipe identifiers must be valid for the target profile.</li>
+<li>The event identifier must be within the supported range for the target profile.</li>
+<li>The event protocol is directional; using the wrong pipe role is undefined behavior.</li>
+<li>Portable code must pair each <code>set_flag</code> with a corresponding <code>wait_flag</code> in the intended dependency chain.</li>
 </ul>
+<h2 id="common-patterns">Common Patterns<a class="headerlink" href="#common-patterns" title="Permanent link">&para;</a></h2>
+<h3 id="pattern-1-gm-ub-compute-ub-gm">Pattern 1: GM → UB → Compute → UB → GM<a class="headerlink" href="#pattern-1-gm-ub-compute-ub-gm" title="Permanent link">&para;</a></h3>
+<p>This is the standard three-stage pipeline used by vector programs:</p>
+<pre><code class="language-mlir">// Stage 1: MTE2 loads data from GM into UB
+pto.copy_gm_to_ubuf %gm_src, %ub_dst, ...
+
+// MTE2 signals: &quot;UB data is ready&quot;
+pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+
+// Stage 2: Vector compute waits, then consumes UB data
+pto.wait_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+// ... vector compute on UB data ...
+
+// Vector signals: &quot;UB output is ready&quot;
+pto.set_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
+
+// Stage 3: MTE3 waits, then stores result to GM
+pto.wait_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
+pto.copy_ubuf_to_gm %ub_src, %gm_dst, ...
+</code></pre>
+<h3 id="pattern-2-ping-pong-double-buffering">Pattern 2: Ping-Pong Double Buffering<a class="headerlink" href="#pattern-2-ping-pong-double-buffering" title="Permanent link">&para;</a></h3>
+<p>When overlapping successive tiles, use separate event IDs for each buffer slot:</p>
+<pre><code class="language-mlir">// Buffer 0: set forward event
+pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVT_IN_FWD_0&quot;]
+// Buffer 1: set forward event
+pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVT_IN_FWD_1&quot;]
+</code></pre>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The verifier rejects illegal operand shapes, unsupported pipe or event identifiers, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
-<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
+<li>Using invalid pipe identifiers or out-of-range event identifiers is rejected by the verifier.</li>
+<li>Signaling an event before the producing operation has started produces undefined results.</li>
+<li>Consuming an event that has not been signaled causes the consumer pipeline to wait indefinitely.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>CPU simulation preserves the visible event protocol but may not expose all low-level hazards that motivate it on hardware.</li>
-<li>A2/A3 and A5 may use different concrete pipe and event spaces; portable code must rely on the documented PTO contract plus the selected target profile.</li>
-</ul>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
-</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Profile</th>
+<th>Pipe Support</th>
+<th>Event ID Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CPU Simulator</td>
+<td>All pipes emulated</td>
+<td>Unlimited</td>
+</tr>
+<tr>
+<td>A2/A3</td>
+<td><code>PIPE_MTE2</code>, <code>PIPE_V</code>, <code>PIPE_MTE3</code></td>
+<td>Profile-defined</td>
+</tr>
+<tr>
+<td>A5</td>
+<td><code>PIPE_MTE2</code>, <code>PIPE_V</code>, <code>PIPE_MTE3</code></td>
+<td>Profile-defined</td>
+</tr>
+</tbody>
+</table>
+<p>CPU simulation preserves the event protocol semantics but may not expose all low-level hazards that motivate it on hardware.</p>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../pipeline-sync/">Pipeline Sync</a></li>
-<li>Previous op in instruction set: (none)</li>
 <li>Next op in instruction set: <a href="../wait-flag/">pto.wait_flag</a></li>
 <li>Control-shell overview: <a href="../../../control-and-configuration/">Control and configuration</a></li>
+<li><code>pto.wait_flag</code> for the consumer half of the event protocol</li>
+<li><code>pto.pipe_barrier</code> for draining all pending operations on a pipe</li>
 </ul>
               
             </div>

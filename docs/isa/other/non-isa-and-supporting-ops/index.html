@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -878,7 +882,7 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#tile-sequence-tconcat-tpack">Tile Sequence (TCONCAT, TPACK)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#quantization-tquant-tdequant">Quantization (TQUANT, TDEQUANT)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#quantization-tdequant">Quantization (TDEQUANT)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#memory-tfree">Memory (TFREE)</a>
     </li>
@@ -902,7 +906,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TFREE/">TFREE</a>
                 </li>
@@ -989,7 +993,7 @@
 <td>Tile sequence</td>
 </tr>
 <tr>
-<td><a href="../../TDEQUANT/">TDEQUANT</a></td>
+<td><a href="../ops/non-isa-and-supporting-ops/tdequant/">pto.tdequant</a></td>
 <td>Dequantize a tile from quantized format</td>
 <td>Quantize</td>
 </tr>
@@ -1023,11 +1027,6 @@
 <td>Fill tile with random values</td>
 <td>Generation</td>
 </tr>
-<tr>
-<td><a href="../../TQUANT/">TQUANT</a></td>
-<td>Quantize a tile to integer format</td>
-<td>Quantize</td>
-</tr>
 </tbody>
 </table>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
@@ -1037,8 +1036,12 @@
 <p>Fused multiply-add: <code>dst = src0 * scalar + src1</code>. This is a convenience operation that may be implemented as a single hardware instruction or expanded to <code>TMUL</code> + <code>TADD</code>.</p>
 <h3 id="tile-sequence-tconcat-tpack">Tile Sequence (TCONCAT, TPACK)<a class="headerlink" href="#tile-sequence-tconcat-tpack" title="Permanent link">&para;</a></h3>
 <p><code>TCONCAT</code> concatenates two tiles along a specified axis. <code>TPACK</code> packs multiple tiles into a single buffer for storage.</p>
-<h3 id="quantization-tquant-tdequant">Quantization (TQUANT, TDEQUANT)<a class="headerlink" href="#quantization-tquant-tdequant" title="Permanent link">&para;</a></h3>
-<p>Convert between floating-point and quantized integer representations. Quantized formats include INT8, UINT8, INT4, UINT4, FP4, FP8, etc.</p>
+<h3 id="quantization-tdequant">Quantization (TDEQUANT)<a class="headerlink" href="#quantization-tdequant" title="Permanent link">&para;</a></h3>
+<p>Convert between floating-point and quantized integer representations. In the current authored tree:</p>
+<ul>
+<li><a href="../../tile/ops/irregular-and-complex/tquant/">pto.tquant</a> remains on the tile irregular/complex path.</li>
+<li><a href="../ops/non-isa-and-supporting-ops/tdequant/">pto.tdequant</a> is documented under supporting ops.</li>
+</ul>
 <p>Requires scale and zero-point tensors:</p>
 <div class="arithmatex">\[ \mathrm{dst} = \mathrm{round}(\mathrm{src} \times \mathrm{scale} + \mathrm{zero\_point}) \]</div>
 <h3 id="memory-tfree">Memory (TFREE)<a class="headerlink" href="#memory-tfree" title="Permanent link">&para;</a></h3>

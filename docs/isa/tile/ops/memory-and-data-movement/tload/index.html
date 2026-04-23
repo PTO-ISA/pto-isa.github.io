@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -330,13 +334,11 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
         <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -350,25 +352,15 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#layout-compatibility">Layout Compatibility</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
     </ul>
                 </li>
@@ -922,7 +914,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE/">TFREE</a>
                 </li>
@@ -984,14 +976,15 @@
 <h1 id="ptotload">pto.tload<a class="headerlink" href="#ptotload" title="Permanent link">&para;</a></h1>
 <p><code>pto.tload</code> is part of the <a href="../../../memory-and-data-movement/">Memory And Data Movement</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Load data from a GlobalTensor (GM) into a Tile.</p>
+<p>Load data from global memory into a tile. The transfer is rectangular, spanning <code>dst.GetValidRow()</code> by <code>dst.GetValidCol()</code> elements.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Load data from a GlobalTensor (GM) into a Tile. It is part of the tile memory/data-movement instruction set, so the visible behavior includes explicit transfer between GM-visible data and tile-visible state.</p>
-<p>Notation depends on the <code>GlobalTensor</code> shape/stride and the <code>Tile</code> layout. Conceptually (2D view, with a base offset):</p>
+<p><code>pto.tload</code> initiates a DMA transfer from the source GlobalTensor to the destination tile buffer. The transfer reads a rectangular region from the GlobalTensor and writes it into the tile's on-chip storage.</p>
+<p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. The transfer size is <code>R × C</code> elements. The element mapping depends on the GlobalTensor layout:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{r_0 + i,\; c_0 + j} \]</div>
+<p>where <code>(r_0, c_0)</code> is the base offset within the GlobalTensor. The exact address computation also depends on the GlobalTensor stride.</p>
+<p>The operation is asynchronous. A <code>RecordEvent</code> token is returned; use <code>TSYNC</code> or <code>set_flag</code>/<code>wait_flag</code> before reading the tile data.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
-<p>Synchronous form:</p>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
@@ -999,14 +992,8 @@
 !pto.tile&lt;loc, dtype, rows, cols, blayout, slayout, fractal, pad&gt;
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
-!pto.tile&lt;loc, dtype, rows, cols, blayout, slayout, fractal, pad&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+<pre><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
+          outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
@@ -1014,68 +1001,124 @@
 PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src</code> is the source GlobalTensor to load from.</li>
-<li><code>dst</code> names the destination tile. The operation uses dst's valid region for the transfer shape.</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dst</code></td>
+<td>Destination tile. The transfer shape is <code>dst.GetValidRow()</code> × <code>dst.GetValidCol()</code>.</td>
+</tr>
+<tr>
+<td><code>src</code></td>
+<td>Source GlobalTensor. Must be addressable from the local NPU.</td>
+</tr>
+<tr>
+<td><code>events...</code></td>
+<td>Optional <code>RecordEvent</code> tokens to wait on before issuing the operation</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> contains the loaded data from <code>src</code>, with element layout determined by the tile layout and global tensor stride.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RecordEvent</code></td>
+<td><code>RecordEvent</code></td>
+<td>Token signaling completion of the load. Must be waited on before the tile data is consumed.</td>
+</tr>
+</tbody>
+</table>
+<p>After the load completes, <code>dst</code> contains the loaded data with element layout determined by the tile layout and GlobalTensor stride.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation reads from global memory and writes to the tile local storage. Does not implicitly fence unrelated traffic.</p>
+<p>Reads from global memory and writes to the tile buffer. Does not implicitly fence unrelated tile traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Valid region</strong>:<ul>
-<li>The implementation uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the transfer size.</li>
+<li><strong>Valid region</strong>: The transfer size is <code>dst.GetValidRow()</code> × <code>dst.GetValidCol()</code>.</li>
+<li><strong>Element size match</strong>: <code>sizeof(tile.dtype) == sizeof(gtensor.dtype)</code>.</li>
+<li><strong>Layout compatibility</strong>: Source (GlobalTensor) layout and destination (tile) layout must be a supported combination. See the layout compatibility table in <a href="../../../memory-and-data-movement/">Memory And Data Movement</a>.</li>
+<li><strong>Shape positivity</strong>: <code>src.GetShape(dim) &gt; 0</code> and <code>dst.GetValidRow() &gt; 0</code> and <code>dst.GetValidCol() &gt; 0</code> at runtime.</li>
 </ul>
-</li>
-</ul>
+<h2 id="layout-compatibility">Layout Compatibility<a class="headerlink" href="#layout-compatibility" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>TileType</th>
+<th style="text-align: center;">ND→ND</th>
+<th style="text-align: center;">DN→DN</th>
+<th style="text-align: center;">NZ→NZ</th>
+<th style="text-align: center;">ND→NZ</th>
+<th style="text-align: center;">DN→ZN</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TileType::Vec</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">No</td>
+</tr>
+<tr>
+<td><code>TileType::Mat</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr>
+<td><code>TileType::Acc</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">No</td>
+</tr>
+</tbody>
+</table>
+<p>Additional constraints (A5):
+- <code>Vec</code> with <code>ND→NZ</code> or <code>DN→ZN</code>: requires <code>GlobalData::staticShape[0..2] == 1</code> and <code>TileData::SFractalSize == 512</code>.
+- <code>Vec</code> with <code>int64_t/uint64_t</code>: only <code>ND→ND</code> or <code>DN→DN</code> supported.</p>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
+<li>Programs must not rely on behavior outside the documented legal domain of this operation.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>
-<p><strong>Implementation checks (A2A3)</strong>:</p>
-<ul>
-<li><code>TileData::DType</code> must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>int64_t</code>, <code>uint64_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
-<li>Destination tile location must be <code>TileType::Vec</code> or <code>TileType::Mat</code>.</li>
-<li><code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>.</li>
-<li>Runtime: all <code>src.GetShape(dim)</code> values and <code>dst.GetValidRow()/GetValidCol()</code> must be <code>&gt; 0</code>.</li>
-<li><code>TileType::Vec</code> loads only support matching layouts: ND-&gt;ND, DN-&gt;DN, NZ-&gt;NZ.</li>
-<li><code>TileType::Mat</code> loads support: ND-&gt;ND, DN-&gt;DN, NZ-&gt;NZ, plus ND-&gt;NZ and DN-&gt;ZN.</li>
-<li>For ND-&gt;NZ or DN-&gt;ZN: <code>GlobalData::staticShape[0..2] == 1</code> and <code>TileData::SFractalSize == 512</code>.</li>
-<li>For <code>int64_t/uint64_t</code>, only ND-&gt;ND or DN-&gt;DN are supported.</li>
-</ul>
-</li>
-<li>
-<p><strong>Implementation checks (A5)</strong>:</p>
-<ul>
-<li><code>sizeof(TileData::DType)</code> must be <code>1</code>, <code>2</code>, <code>4</code>, or <code>8</code> bytes, and must match <code>sizeof(GlobalData::DType)</code>.</li>
-<li>For <code>int64_t/uint64_t</code>, <code>TileData::PadVal</code> must be <code>PadValue::Null</code> or <code>PadValue::Zero</code>.</li>
-<li><code>TileType::Vec</code> loads require one of the following layout pairs:</li>
-<li>ND with row-major + <code>SLayout::NoneBox</code> (ND-&gt;ND),</li>
-<li>DN with col-major + <code>SLayout::NoneBox</code> (DN-&gt;DN),</li>
-<li>NZ with <code>SLayout::RowMajor</code> (NZ-&gt;NZ).</li>
-<li>For row-major ND-&gt;ND with compile-time-known shapes, <code>TileData::ValidCol</code> must equal <code>GlobalData::staticShape[4]</code>, and <code>TileData::ValidRow</code> must equal the product of <code>GlobalData::staticShape[0..3]</code>.</li>
-<li><code>TileType::Mat</code> loads are additionally constrained by <code>TLoadCubeCheck</code> (e.g., only specific ND/DN/NZ conversions and L1-size limits).</li>
-<li><code>TileType::Mat</code> loads also handle loads for mx format, which include <code>MX_A_ZZ/MX_A_ND/MX_A_DN</code> to ZZ for scalarA and <code>MX_B_NN/MX_B_ND/MX_B_DN</code> to NN for scalarB.</li>
-<li>for <code>MX_A_ZZ/MX_B_NN</code>: <code>GlobalData::staticShape[3] == 16</code> and <code>GlobalData::staticShape[4] == 2</code>.</li>
-<li>for <code>MX_A_ND/MX_ADN/MX_B_ND/MX_B_DN</code>: <code>GlobalData::staticShape[0] == 1</code> and <code>GlobalData::staticShape[1] == 1</code> and <code>GlobalData::staticShape[4] == 2</code>.</li>
-<li>for scaleA, <code>dst.GetValidCol() % 2 == 0</code>.</li>
-<li>for scaleB, <code>dst.GetValidRow() % 2 == 0</code></li>
-</ul>
-</li>
-</ul>
+<p><strong>A2/A3</strong>:
+- <code>TileData::DType</code> must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>int64_t</code>, <code>uint64_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.
+- Destination tile location must be <code>TileType::Vec</code> or <code>TileType::Mat</code>.
+- <code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code>.
+- <code>Vec</code> loads: layouts must match (ND→ND, DN→DN, NZ→NZ).
+- <code>Mat</code> loads: supports all combinations including ND→NZ and DN→ZN.
+- For ND→NZ or DN→ZN: <code>GlobalData::staticShape[0..2] == 1</code> and <code>TileData::SFractalSize == 512</code>.
+- <code>int64_t/uint64_t</code>: only ND→ND or DN→DN.</p>
+<p><strong>A5</strong>:
+- <code>sizeof(TileData::DType)</code> must be 1, 2, 4, or 8 bytes, and must match <code>sizeof(GlobalData::DType)</code>.
+- <code>Vec</code> loads: row-major ND→ND, col-major DN→DN, or row-major NZ→NZ only.
+- <code>Mat</code> loads: constrained by <code>TLoadCubeCheck</code> (specific ND/DN/NZ conversions and L1-size limits).
+- <code>Mat</code> loads also handle <code>mx</code> format loads including <code>MX_A_ZZ/MX_A_ND/MX_A_DN</code> to ZZ for scalarA and <code>MX_B_NN/MX_B_ND/MX_B_DN</code> to NN for scalarB.
+- For <code>MX_A_ZZ/MX_B_NN</code>: <code>GlobalData::staticShape[3] == 16</code> and <code>GlobalData::staticShape[4] == 2</code>.
+- For <code>MX_A_ND/MX_ADN/MX_B_ND/MX_B_DN</code>: <code>GlobalData::staticShape[0] == 1</code> and <code>GlobalData::staticShape[1] == 1</code> and <code>GlobalData::staticShape[4] == 2</code>.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
 template &lt;typename T&gt;
-void example_auto(__gm__ T* in) {
+void example(__gm__ T* in) {
   using TileT = Tile&lt;TileType::Vec, T, 16, 16&gt;;
   using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
   using GStride = BaseShape2D&lt;T, 16, 16, Layout::ND&gt;;
@@ -1083,44 +1126,11 @@ void example_auto(__gm__ T* in) {
 
   GTensor gin(in);
   TileT t;
-  TLOAD(t, gin);
+  RecordEvent e = TLOAD(t, gin);
+  TSYNC(e);
 }
 </code></pre>
-<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T&gt;
-void example_manual(__gm__ T* in) {
-  using TileT = Tile&lt;TileType::Vec, T, 16, 16&gt;;
-  using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
-  using GStride = BaseShape2D&lt;T, 16, 16, Layout::ND&gt;;
-  using GTensor = GlobalTensor&lt;T, GShape, GStride, Layout::ND&gt;;
-
-  GTensor gin(in);
-  TileT t;
-  TASSIGN(t, 0x1000);
-  TLOAD(t, gin);
-}
-</code></pre>
-<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
-</code></pre>
-<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
-# Optional for tile operands:
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
-</code></pre>
-<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../memory-and-data-movement/">Memory And Data Movement</a></li>
 <li>Next op in instruction set: <a href="../tprefetch/">pto.tprefetch</a></li>

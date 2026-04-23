@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -842,15 +846,23 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">TBROADCAST</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
+    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
@@ -859,6 +871,8 @@
     <li class="toctree-l4"><a class="reference internal" href="#ping-pong-broadcast-double-buffering">Ping-Pong Broadcast (Double Buffering)</a>
     </li>
         </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
     </ul>
                 </li>
@@ -894,7 +908,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TFREE/">TFREE</a>
                 </li>
@@ -954,20 +968,20 @@
                 <!-- Generated from `docs/isa/comm/TBROADCAST.md` -->
 
 <h1 id="tbroadcast">TBROADCAST<a class="headerlink" href="#tbroadcast" title="Permanent link">&para;</a></h1>
-<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Broadcast data from current NPU to all ranks in the parallel group. The calling NPU is the root and its data is copied to all other NPUs.</p>
-<p>Only the root needs to execute <code>TBROADCAST</code>. Non-root ranks only need to ensure their destination buffers are allocated and writable for the duration of the operation. Calling <code>TBROADCAST</code> on non-root ranks is undefined behavior.</p>
-<p><strong>Large Tile Support</strong>: When the GlobalTensor exceeds the UB (Unified Buffer) tile capacity in rows and/or columns, the transfer is automatically chunked via 2D sliding.</p>
-<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
-<p>After the operation:</p>
-<div class="arithmatex">\[ \mathrm{dst}^{(k)}_{i,j} = \mathrm{src}^{(\text{root})}_{i,j} \quad \forall k \in [0, N) \]</div>
-<p>where <span class="arithmatex">\(N\)</span> is the number of ranks and <code>root</code> is the calling NPU.</p>
+<p><code>TBROADCAST</code> is part of the <a href="../collective-communication.md">Collective Communication</a> instruction set.</p>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>Broadcast data from one NPU (the root) to all NPUs in a parallel group. Each rank receives an identical copy of the root's data.</p>
+<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
+<p>The broadcasting NPU (root) distributes its local data to every other NPU in the parallel group. The operation uses the parallel group to identify the set of participating ranks.</p>
+<p>After the operation, for all ranks <code>k</code> in the parallel group:</p>
+<div class="arithmatex">\[ \mathrm{dst}^{(k)}_{i,j} = \mathrm{src}^{(\text{root})}_{i,j} \]</div>
+<p>where <code>root</code> is identified by <code>parallelGroup.GetRootIdx()</code>.</p>
+<p>The data path uses UB as a staging area: GM → local UB (root) → interconnect → remote UB (all ranks) → GM. A staging tile (or ping/pong tile pair for double buffering) provides the local buffer for this transfer.</p>
+<p><strong>Large tile support</strong>: When the GlobalTensor exceeds the UB tile capacity, the transfer is automatically chunked via 2D sliding.</p>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
-<p>Synchronous form:</p>
 <pre><code class="language-text">tbroadcast %group, %src : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
 </code></pre>
-<p>Lowering introduces UB staging tile(s) for the GM→UB→GM data path; the C++ intrinsic requires explicit <code>stagingTileData</code> (or <code>pingTile</code> / <code>pongTile</code>) operand(s).</p>
+<p>Lowering introduces UB staging tile(s) for the GM → UB → interconnect → GM data path. The C++ intrinsic requires explicit <code>stagingTileData</code> (or <code>pingTile</code> / <code>pongTile</code>) operand(s).</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code>:</p>
 <pre><code class="language-cpp">// Basic broadcast (single staging tile)
@@ -980,84 +994,120 @@ template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileDa
 PTO_INST RecordEvent TBROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
                                 TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
 </code></pre>
+<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>parallelGroup</code></td>
+<td><code>ParallelGroup</code> identifying participating ranks and their destination buffers</td>
+</tr>
+<tr>
+<td><code>srcGlobalData</code></td>
+<td>Source GlobalTensor on the root NPU</td>
+</tr>
+<tr>
+<td><code>stagingTileData</code></td>
+<td>UB staging tile for the transfer</td>
+</tr>
+<tr>
+<td><code>pingTile</code>, <code>pongTile</code></td>
+<td>Pair of UB staging tiles for ping-pong double buffering</td>
+</tr>
+</tbody>
+</table>
+<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RecordEvent</code></td>
+<td><code>RecordEvent</code></td>
+<td>Token signaling completion</td>
+</tr>
+</tbody>
+</table>
+<p>After the operation, each non-root rank has the root's data written to the buffer described by <code>parallelGroup.tensors[k]</code>.</p>
+<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
+<p>Participates in collective communication over the interconnect. Only the root rank needs to execute the operation; non-root ranks must ensure their destination buffers are allocated and writable.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Type constraints</strong>:<ul>
+<li><strong>Type constraints</strong>:</li>
 <li><code>ParallelGroup::value_type::RawDType</code> must equal <code>GlobalSrcData::RawDType</code>.</li>
 <li><code>TileData::DType</code> must equal <code>GlobalSrcData::RawDType</code>.</li>
-</ul>
-</li>
-<li><strong>Memory constraints</strong>:<ul>
+<li><strong>Memory constraints</strong>:</li>
 <li><code>srcGlobalData</code> must point to local memory (current NPU).</li>
-<li><code>stagingTileData</code> (or <code>pingTile</code> / <code>pongTile</code>) must be pre-allocated in UB.</li>
-</ul>
-</li>
-<li><strong>ParallelGroup constraints</strong>:<ul>
-<li><code>parallelGroup.tensors[k]</code> must refer to rank <code>k</code>'s destination buffer (remote GM as seen by the root).</li>
-<li><code>parallelGroup.GetRootIdx()</code> identifies the calling NPU as the broadcast root.</li>
+<li>Staging tiles must be pre-allocated in UB.</li>
+<li><strong>ParallelGroup constraints</strong>:</li>
+<li><code>parallelGroup.tensors[k]</code> must refer to rank <code>k</code>'s destination buffer.</li>
+<li><code>parallelGroup.GetRootIdx()</code> identifies the broadcast root.</li>
 <li>All destination tensors are assumed to have the same shape and strides.</li>
+<li><strong>Chunked mode constraints</strong> (when data exceeds a single UB tile):</li>
+<li>If <code>TileData</code> has static <code>ValidRow</code>, <code>GetShape(DIM_3)</code> must be divisible by <code>ValidRow</code>. Use a tile with <code>DYNAMIC</code> ValidRow for partial row support.</li>
+<li>If <code>TileData</code> has static <code>ValidCol</code>, <code>GetShape(DIM_4)</code> must be divisible by <code>ValidCol</code>. Use a tile with <code>DYNAMIC</code> ValidCol for partial column support.</li>
 </ul>
-</li>
-<li><strong>Chunked mode constraints</strong> (when data exceeds a single UB tile):<ul>
-<li>If <code>TileData</code> has static <code>ValidRow</code>, <code>GetShape(DIM_3)</code> must be divisible by <code>ValidRow</code>. Use a Tile with <code>DYNAMIC</code> ValidRow for partial row support.</li>
-<li>If <code>TileData</code> has static <code>ValidCol</code>, <code>GetShape(DIM_4)</code> must be divisible by <code>ValidCol</code>. Use a Tile with <code>DYNAMIC</code> ValidCol for partial column support.</li>
-</ul>
-</li>
+<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Non-root ranks calling <code>TBROADCAST</code> produces undefined behavior.</li>
+<li>Using incompatible tensor types or ranks is rejected by the verifier.</li>
+<li>Accessing a rank's destination buffer outside its declared shape is undefined.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-broadcast">Basic Broadcast<a class="headerlink" href="#basic-broadcast" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
 using namespace pto;
 
 template &lt;typename T, int ROWS, int COLS, int TILE_ROWS, int TILE_COLS, int NRANKS&gt;
 void broadcast(__gm__ T* group_addrs[NRANKS], __gm__ T* my_data, int my_rank) {
-    // Tile dimensions can differ from tensor dimensions.
-    // The 2D sliding chunked path automatically tiles both row and column.
-    using TileT = Tile&lt;TileType::Vec, T, TILE_ROWS, TILE_COLS, BLayout::RowMajor, -1, -1&gt;;
-    using GTensor = GlobalTensor&lt;T, Shape&lt;1,1,1,ROWS,COLS&gt;,
-                                 BaseShape2D&lt;T, ROWS, COLS, Layout::ND&gt;, Layout::ND&gt;;
+  using TileT = Tile&lt;TileType::Vec, T, TILE_ROWS, TILE_COLS, BLayout::RowMajor, -1, -1&gt;;
+  using GTensor = GlobalTensor&lt;T, Shape&lt;1,1,1,ROWS,COLS&gt;,
+                               BaseShape2D&lt;T, ROWS, COLS, Layout::ND&gt;, Layout::ND&gt;;
 
-    GTensor tensors[NRANKS];
-    for (int i = 0; i &lt; NRANKS; ++i) {
-        tensors[i] = GTensor(group_addrs[i]);
-    }
+  GTensor tensors[NRANKS];
+  for (int i = 0; i &lt; NRANKS; ++i)
+    tensors[i] = GTensor(group_addrs[i]);
 
-    comm::ParallelGroup&lt;GTensor&gt; group(tensors, NRANKS, my_rank);
-    GTensor srcG(my_data);
-    TileT stagingTile(TILE_ROWS, TILE_COLS);
+  comm::ParallelGroup&lt;GTensor&gt; group(tensors, NRANKS, my_rank);
+  GTensor srcG(my_data);
+  TileT stagingTile(TILE_ROWS, TILE_COLS);
 
-    // Current NPU broadcasts its data to all others
-    comm::TBROADCAST(group, srcG, stagingTile);
+  comm::TBROADCAST(group, srcG, stagingTile);
 }
 </code></pre>
 <h3 id="ping-pong-broadcast-double-buffering">Ping-Pong Broadcast (Double Buffering)<a class="headerlink" href="#ping-pong-broadcast-double-buffering" title="Permanent link">&para;</a></h3>
-<p>Uses two UB tiles to overlap TLOAD of the next chunk with TSTORE of the current chunk.</p>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T, int ROWS, int COLS, int TILE_ROWS, int TILE_COLS, int NRANKS&gt;
+<pre><code class="language-cpp">template &lt;typename T, int ROWS, int COLS, int TILE_ROWS, int TILE_COLS, int NRANKS&gt;
 void broadcast_pingpong(__gm__ T* group_addrs[NRANKS], __gm__ T* my_data, int my_rank) {
+  using TileT = Tile&lt;TileType::Vec, T, TILE_ROWS, TILE_COLS, BLayout::RowMajor, -1, -1&gt;;
+  using GPerRank = GlobalTensor&lt;T, Shape&lt;1,1,1,ROWS,COLS&gt;,
+                                BaseShape2D&lt;T, ROWS, COLS, Layout::ND&gt;, Layout::ND&gt;;
 
-    using TileT = Tile&lt;TileType::Vec, T, TILE_ROWS, TILE_COLS, BLayout::RowMajor, -1, -1&gt;;
-    using GPerRank = GlobalTensor&lt;T, Shape&lt;1,1,1,ROWS,COLS&gt;,
-                                  BaseShape2D&lt;T, ROWS, COLS, Layout::ND&gt;, Layout::ND&gt;;
+  GPerRank tensors[NRANKS];
+  for (int i = 0; i &lt; NRANKS; ++i)
+    tensors[i] = GPerRank(group_addrs[i]);
 
-    GPerRank tensors[NRANKS];
-    for (int i = 0; i &lt; NRANKS; ++i) {
-        tensors[i] = GPerRank(group_addrs[i]);
-    }
+  comm::ParallelGroup&lt;GPerRank&gt; group(tensors, NRANKS, my_rank);
+  GPerRank srcG(my_data);
+  TileT pingTile(TILE_ROWS, TILE_COLS);
+  TileT pongTile(TILE_ROWS, TILE_COLS);
 
-    comm::ParallelGroup&lt;GPerRank&gt; group(tensors, NRANKS, my_rank);
-    GPerRank srcG(my_data);
-    TileT pingTile(TILE_ROWS, TILE_COLS);
-    TileT pongTile(TILE_ROWS, TILE_COLS);
-
-    // Ping-pong: overlaps TLOAD and TSTORE for better throughput
-    comm::TBROADCAST(group, srcG, pingTile, pongTile);
+  comm::TBROADCAST(group, srcG, pingTile, pongTile);
 }
 </code></pre>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Instruction set overview: <a href="../collective-communication.md">Collective Communication</a></li>
+</ul>
               
             </div>
           </div><footer>

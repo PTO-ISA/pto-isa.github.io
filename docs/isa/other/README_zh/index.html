@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -874,7 +878,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TFREE/">TFREE</a>
                 </li>
@@ -932,14 +936,133 @@
                 <!-- Generated from `docs/isa/other/README_zh.md` -->
 
 <h1 id="_1">其他与通信<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>本节包含不属于 Tile、Vector 或标量/控制主干的残余指令和通信操作。</p>
-<h2 id="_2">本章内容<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>本节覆盖那些不适合归入 Tile、Vector 或标量/控制主干的架构可见操作。</p>
+<h2 id="_2">通信与运行时<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>跨 NPU 的点对点与集合通信。</p>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../comm/TBROADCAST_zh/">TBROADCAST</a></td>
+<td>从根 NPU 向所有 rank 广播数据</td>
+</tr>
+<tr>
+<td><a href="../../comm/TGET_zh/">TGET</a></td>
+<td>从远端 NPU 读取数据</td>
+</tr>
+<tr>
+<td><a href="../../comm/TGET_ASYNC_zh/">TGET_ASYNC</a></td>
+<td><code>TGET</code> 的异步形式</td>
+</tr>
+<tr>
+<td><a href="../../comm/TNOTIFY_zh/">TNOTIFY</a></td>
+<td>通知其他 rank 发生某个事件</td>
+</tr>
+<tr>
+<td><a href="../../comm/TPUT_zh/">TPUT</a></td>
+<td>向远端 NPU 写入数据</td>
+</tr>
+<tr>
+<td><a href="../../comm/TPUT_ASYNC_zh/">TPUT_ASYNC</a></td>
+<td><code>TPUT</code> 的异步形式</td>
+</tr>
+<tr>
+<td><a href="../../comm/TREDUCE_zh/">TREDUCE</a></td>
+<td>并行组上的集合归约</td>
+</tr>
+<tr>
+<td><a href="../../comm/TSCATTER_zh/">TSCATTER</a></td>
+<td>从根 NPU 向所有 rank 分发数据</td>
+</tr>
+<tr>
+<td><a href="../../comm/TGATHER_zh/">TGATHER</a></td>
+<td>从所有 rank 收集数据到根 NPU</td>
+</tr>
+<tr>
+<td><a href="../../comm/TTEST_zh/">TTEST</a></td>
+<td>测试通知是否已到达</td>
+</tr>
+<tr>
+<td><a href="../../comm/TWAIT_zh/">TWAIT</a></td>
+<td>等待通知或信号成立</td>
+</tr>
+</tbody>
+</table>
+<p>详见 <a href="../communication-and-runtime_zh/">通信与运行时</a>。</p>
+<h2 id="isa">非 ISA 与支撑操作<a class="headerlink" href="#isa" title="Permanent link">&para;</a></h2>
+<p>更高层的 tile 序列、量化和资源管理语义。</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>说明</th>
+<th>类别</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../TALIAS_zh/">TALIAS</a></td>
+<td>在不复制数据的前提下创建 tile 别名视图</td>
+<td>Alias</td>
+</tr>
+<tr>
+<td><a href="../../TAXPY_zh/">TAXPY</a></td>
+<td>融合乘加：<code>dst = src0 * scalar + src1</code></td>
+<td>Fused compute</td>
+</tr>
+<tr>
+<td><a href="../../TCONCAT_zh/">TCONCAT</a></td>
+<td>按指定维度拼接 tile</td>
+<td>Tile sequence</td>
+</tr>
+<tr>
+<td><a href="../ops/non-isa-and-supporting-ops/tdequant_zh/">pto.tdequant</a></td>
+<td>把量化表示恢复成数值表示</td>
+<td>Quantize</td>
+</tr>
+<tr>
+<td><a href="../../TFREE_zh/">TFREE</a></td>
+<td>释放先前分配的 tile 或缓冲区</td>
+<td>Memory</td>
+</tr>
+<tr>
+<td><a href="../../THISTOGRAM_zh/">THISTOGRAM</a></td>
+<td>统计 tile 元素直方图</td>
+<td>Statistics</td>
+</tr>
+<tr>
+<td><a href="../../TPACK_zh/">TPACK</a></td>
+<td>将多个 tile 打包进单一 tile buffer</td>
+<td>Tile sequence</td>
+</tr>
+<tr>
+<td><a href="../../TPOP_zh/">TPOP</a></td>
+<td>计算谓词 mask 的 population count</td>
+<td>Predicate</td>
+</tr>
+<tr>
+<td><a href="../../TPUSH_zh/">TPUSH</a></td>
+<td>计算谓词 mask 的 push count</td>
+<td>Predicate</td>
+</tr>
+<tr>
+<td><a href="../../TRANDOM_zh/">TRANDOM</a></td>
+<td>用随机值填充 tile</td>
+<td>Generation</td>
+</tr>
+</tbody>
+</table>
+<p>详见 <a href="../non-isa-and-supporting-ops_zh/">非 ISA 与支撑操作</a>。</p>
+<h2 id="_3">相关页面<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../communication-and-runtime_zh/">通信与运行时</a> — 点对点通信、集合操作和运行时支持</li>
-<li><a href="../non-isa-and-supporting-ops_zh/">非 ISA 与支持操作</a> — 边界外的支持操作</li>
+<li><a href="../../instruction-surfaces/other-instructions_zh/">其他指令集</a></li>
+<li><a href="../../instruction-families/other-families_zh/">其他指令族</a></li>
 </ul>
-<h2 id="_3">章节定位<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>本章属于手册第 7 章（指令集）的补充部分。当一个操作不属于 Tile/Vector/标量主干时，归入本节。</p>
               
             </div>
           </div><footer>

@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -874,7 +878,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TFREE/">TFREE</a>
                 </li>
@@ -1023,30 +1027,6 @@
 <td>Quantize</td>
 <td style="text-align: center;">A2A3 / A5</td>
 </tr>
-<tr>
-<td><a href="../../TDEQUANT_zh/">pto.tdequant</a></td>
-<td>反量化</td>
-<td>Quantize</td>
-<td style="text-align: center;">A2A3 / A5</td>
-</tr>
-<tr>
-<td><a href="../../TPACK_zh/">pto.tpack</a></td>
-<td>数据打包</td>
-<td>Pack</td>
-<td style="text-align: center;">A5</td>
-</tr>
-<tr>
-<td><a href="../../TRANDOM_zh/">pto.trandom</a></td>
-<td>随机数生成</td>
-<td>Random</td>
-<td style="text-align: center;">A5</td>
-</tr>
-<tr>
-<td><a href="../../THISTOGRAM_zh/">pto.thistogram</a></td>
-<td>直方图统计</td>
-<td>Histogram</td>
-<td style="text-align: center;">A5</td>
-</tr>
 </tbody>
 </table>
 <h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
@@ -1064,9 +1044,7 @@
 <h3 id="partial-reduction">Partial Reduction<a class="headerlink" href="#partial-reduction" title="Permanent link">&para;</a></h3>
 <p><code>TPART*</code> 系列不是完整的行 / 列归约，而是先做一段局部规约，得到后续还要继续合并的中间 tile。它们的价值在于分阶段地表达更大规模的 reduction。</p>
 <h3 id="_5">量化<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<p><code>TQUANT</code> / <code>TDEQUANT</code> 负责在浮点表示和量化表示之间转换，通常需要 scale、zero-point 等参数。它们不是 CPU 模拟器上的主路径，target 约束也明显更强。</p>
-<h3 id="a5">A5 专属操作<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
-<p><code>TPACK</code>、<code>TRANDOM</code>、<code>THISTOGRAM</code> 目前属于 A5 专属能力。它们之所以放在这一组，是因为它们同样不适合归入标准逐元素或标准搬运家族。</p>
+<p>当前作者维护树中，<code>TQUANT</code> 保留在 tile 不规则与复杂路径；<code>TDEQUANT</code>、<code>TPACK</code>、<code>TRANDOM</code>、<code>THISTOGRAM</code> 则在“其他 / 支撑操作”路径中单独说明。</p>
 <h2 id="profile">目标 Profile 支持<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1104,13 +1082,11 @@
 <li>量化要求 scale 非零，且 zero-point 落在合法范围内。</li>
 <li><code>TSCATTER</code> 要求索引非负且落在目标范围内。</li>
 <li><code>TPART*</code> 的具体行为可能随 profile 缩窄。</li>
-<li><code>TPACK</code>、<code>TRANDOM</code>、<code>THISTOGRAM</code> 不能在 CPU 或 A2A3 上使用。</li>
 </ul>
 <h2 id="_7">不允许的情形<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
 <li>使用非法 scale 或越界 zero-point 做量化；</li>
 <li>scatter 到目标 tile 形状之外；</li>
-<li>在 CPU / A2A3 上使用 A5 专属操作；</li>
 <li>把某个 target 上偶然可接受的行为当成可移植合同。</li>
 </ul>
 <h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>

@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -268,6 +272,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
         <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
@@ -284,13 +290,15 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
+    <li class="toctree-l4"><a class="reference internal" href="#tile-types">Tile Types</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#layout">Layout</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#valid-region">Valid Region</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#element-types">Element Types</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
         <ul>
@@ -302,25 +310,13 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#layout-and-shape-impact">Layout and Shape Impact</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#valid-region-sensitivity">Valid Region Sensitivity</a>
-    </li>
         </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
     </ul>
                 </li>
@@ -936,7 +932,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE/">TFREE</a>
                 </li>
@@ -998,22 +994,22 @@
 <h1 id="ptotrowsum">pto.trowsum<a class="headerlink" href="#ptotrowsum" title="Permanent link">&para;</a></h1>
 <p><code>pto.trowsum</code> is part of the <a href="../../../reduce-and-expand/">Reduce And Expand</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Reduce each row by summing across columns.</p>
+<p>Reduce each row of a source tile by summing all elements in that row, producing a column vector of row sums.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Reduce each row by summing across columns.</p>
-<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code>:</p>
+<p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For each row <code>i</code> from <code>0</code> to <code>R-1</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,0} = \sum_{j=0}^{C-1} \mathrm{src}_{i,j} \]</div>
+<p>The result tile has the same number of rows as the source and one column. The <code>tmp</code> tile provides scratch storage for the reduction tree; its shape and layout are constrained by the implementation.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
-<p>Synchronous form:</p>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = trowsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 </code></pre>
-<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
+<p>Note: Lowering may introduce internal scratch tiles. The C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%dst = pto.trowsum %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trowsum ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+<pre><code class="language-text">pto.trowsum ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
+          outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
@@ -1021,61 +1017,73 @@
 PTO_INST RecordEvent TROWSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src</code> is the source tile.</li>
-<li><code>tmp</code> is a temporary tile used for intermediate storage.</li>
-<li><code>dst</code> names the destination tile. The operation iterates over dst's valid region.</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src</code></td>
+<td>Source tile. Must be <code>TileType::Vec</code>. Must use standard ND layout (row-major, non-fractal).</td>
+</tr>
+<tr>
+<td><code>tmp</code></td>
+<td>Temporary scratch tile. Used for intermediate reduction storage. Shape and layout constraints are enforced by the implementation.</td>
+</tr>
+<tr>
+<td><code>dst</code></td>
+<td>Destination tile. Must be <code>TileType::Vec</code>. Must have <code>dst.GetValidRow() == src.GetValidRow()</code>.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the row-wise sum: for each row <code>i</code>, <code>dst[i,0]</code> = sum of all elements in row <code>i</code> of <code>src</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RecordEvent</code></td>
+<td><code>RecordEvent</code></td>
+<td>Token signaling completion of the reduction</td>
+</tr>
+<tr>
+<td><code>dst</code></td>
+<td>tile</td>
+<td>Row sums: <code>dst[i,0]</code> = sum of all elements in row <code>i</code> of <code>src</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
+<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated tile traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
+<h3 id="tile-types">Tile Types<a class="headerlink" href="#tile-types" title="Permanent link">&para;</a></h3>
 <ul>
-<li>
-<p><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code>.</p>
-</li>
-<li>
-<p><code>src</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</p>
-</li>
-<li>
-<p><code>dst</code> must use one of the following non-fractal layouts:</p>
-</li>
-<li>ND layout (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>), or</li>
-<li>
-<p>DN layout with exactly one column (<code>BLayout::ColMajor</code>, <code>SLayout::NoneBox</code>, <code>Cols == 1</code>).</p>
-</li>
-<li>
-<p><code>dst</code> and <code>src</code> must use the same element type.</p>
-</li>
-<li>
-<p>Runtime valid-region checks:</p>
-</li>
-<li><code>src.GetValidRow() != 0</code></li>
-<li><code>src.GetValidCol() != 0</code></li>
-<li>
-<p><code>src.GetValidRow() == dst.GetValidRow()</code></p>
-</li>
-<li>
-<p>Supported element types: <code>half</code>, <code>float</code>, <code>int32_t</code>, <code>int16_t</code>.</p>
-</li>
-<li>
-<p>The implementation accepts both ND output and DN output with <code>Cols == 1</code>; it is not limited to DN output.</p>
-</li>
-<li>
-<p>The current implementation path passes <code>tmp</code> into the backend call, but this document does not add extra <code>tmp</code> shape/layout constraints beyond what is explicitly enforced by the checked implementation.</p>
-</li>
+<li><code>src</code> and <code>dst</code> must both be <code>TileType::Vec</code>.</li>
 </ul>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<h3 id="layout">Layout<a class="headerlink" href="#layout" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
+<li><code>src</code> must use standard ND layout: <code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>.</li>
+<li><code>dst</code> must use one of:</li>
+<li>ND layout: <code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>, <code>Cols == 1</code>, or</li>
+<li>DN layout: <code>BLayout::ColMajor</code>, <code>SLayout::NoneBox</code>, <code>Cols == 1</code>.</li>
+<li><code>src</code> and <code>dst</code> must have the same element type.</li>
 </ul>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<h3 id="valid-region">Valid Region<a class="headerlink" href="#valid-region" title="Permanent link">&para;</a></h3>
 <ul>
-<li>The intrinsic signature requires an explicit <code>tmp</code> operand.</li>
+<li><code>src.GetValidRow() &gt; 0</code></li>
+<li><code>src.GetValidCol() &gt; 0</code></li>
+<li><code>dst.GetValidRow() == src.GetValidRow()</code></li>
 </ul>
+<h3 id="element-types">Element Types<a class="headerlink" href="#element-types" title="Permanent link">&para;</a></h3>
+<p>Supported: <code>half</code>, <code>float</code>, <code>int32_t</code>, <code>int16_t</code>.</p>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a2a3-cycle-count">A2/A3 Cycle Count<a class="headerlink" href="#a2a3-cycle-count" title="Permanent link">&para;</a></h3>
 <p><code>TROWSUM</code> compiles to a multi-phase CCE instruction sequence. The <code>TRowReduceOp.hpp</code> header determines the instruction sequence based on tile geometry.</p>
@@ -1083,13 +1091,12 @@ PTO_INST RecordEvent TROWSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileData
 <pre><code>total = startup + Σ(completion_i) + Σ(repeats_i × per_repeat_i) + Σ((repeats_i - 1) × interval)
 </code></pre>
 <h3 id="instruction-sequence-by-shape-fp32">Instruction Sequence by Shape (FP32)<a class="headerlink" href="#instruction-sequence-by-shape-fp32" title="Permanent link">&para;</a></h3>
-<p>The performance model applies special optimized sequences for specific FP32 shapes:</p>
 <table>
 <thead>
 <tr>
 <th>Valid Shape</th>
 <th>Instruction Sequence</th>
-<th>Total Estimated Cycles</th>
+<th>Estimated Cycles</th>
 </tr>
 </thead>
 <tbody>
@@ -1119,8 +1126,8 @@ PTO_INST RecordEvent TROWSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileData
 <p>For non-special shapes or non-FP32 types:</p>
 <ol>
 <li><strong>Fill phase</strong>: <code>copy_ubuf_to_ubuf</code> to initialize tmp (if <code>validCol &gt;= 2 × 8</code>)</li>
-<li><strong>Loop-fill</strong>: For each row, apply <code>vadd</code>/<code>vmax</code>/<code>vmin</code> with per-row repeats</li>
-<li><strong>Merge phase</strong>: <code>vadd</code>/<code>vmax</code>/<code>vmin</code> per row again</li>
+<li><strong>Loop-fill</strong>: For each row, apply <code>vadd</code> with per-row repeats</li>
+<li><strong>Merge phase</strong>: <code>vadd</code> per row again</li>
 <li><strong>Final reduction</strong>: <code>vcadd</code>/<code>vcmax</code>/<code>vcmin</code> with <code>PIPE_V</code> barrier</li>
 </ol>
 <h3 id="layout-and-shape-impact">Layout and Shape Impact<a class="headerlink" href="#layout-and-shape-impact" title="Permanent link">&para;</a></h3>
@@ -1155,21 +1162,17 @@ PTO_INST RecordEvent TROWSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileData
 </tr>
 </tbody>
 </table>
-<p><strong>Integer types</strong> (int16_t/int32_t): Use simplified path with direct <code>vadd</code>/<code>vmax</code>/<code>vmin</code> per block — no tree reduction.</p>
-<h3 id="valid-region-sensitivity">Valid Region Sensitivity<a class="headerlink" href="#valid-region-sensitivity" title="Permanent link">&para;</a></h3>
+<p>Integer types (int16_t/int32_t): Use simplified path with direct <code>vadd</code> per block — no tree reduction.</p>
+<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>src.GetValidRow() == 0</code> → undefined behavior</li>
-<li><code>src.GetValidCol() == 0</code> → undefined behavior</li>
-<li><code>src.GetValidRow() != dst.GetValidRow()</code> → rejected by runtime check</li>
+<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
+<li>Programs must not rely on behavior outside the documented legal domain.</li>
 </ul>
-<hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
-void example_auto() {
+void example() {
   using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   using DstT = Tile&lt;TileType::Vec, float, 16, 1, BLayout::ColMajor&gt;;
   using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
@@ -1179,41 +1182,7 @@ void example_auto() {
   TROWSUM(dst, src, tmp);
 }
 </code></pre>
-<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 16, 1, BLayout::ColMajor&gt;;
-  using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  SrcT src;
-  DstT dst;
-  TmpT tmp;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TASSIGN(tmp, 0x3000);
-  TROWSUM(dst, src, tmp);
-}
-</code></pre>
-<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-%dst = pto.trowsum %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
-# Optional for tile operands:
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.trowsum %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = trowsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.trowsum ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../reduce-and-expand/">Reduce And Expand</a></li>
 <li>Next op in instruction set: <a href="../tcolsum/">pto.tcolsum</a></li>

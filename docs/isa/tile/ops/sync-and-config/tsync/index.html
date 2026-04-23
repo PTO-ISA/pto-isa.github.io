@@ -135,11 +135,15 @@
     <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#event-wait-form-tsyncevents">Event-Wait Form: TSYNC(events...)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#barrier-form-tsyncop">Barrier Form: TSYNC&lt;Op&gt;()</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
-    </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
         </ul>
@@ -160,15 +164,13 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
+    <li class="toctree-l4"><a class="reference internal" href="#event-wait">Event-wait</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    <li class="toctree-l4"><a class="reference internal" href="#pipeline-barrier">Pipeline barrier</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
     </ul>
                 </li>
@@ -240,6 +242,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -271,6 +275,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -914,7 +920,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE/">TFREE</a>
                 </li>
@@ -976,10 +982,14 @@
 <h1 id="ptotsync">pto.tsync<a class="headerlink" href="#ptotsync" title="Permanent link">&para;</a></h1>
 <p><code>pto.tsync</code> is part of the <a href="../../../sync-and-config/">Sync And Config</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Synchronize PTO execution (wait on events or insert a per-op pipeline barrier).</p>
+<p>Synchronize PTO execution. Two forms exist: the event-wait form blocks until specified event tokens are ready, and the barrier form inserts a pipeline drain for all operations of a given class.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>TSYNC(events...)</code> waits on a set of explicit event tokens. <code>TSYNC&lt;Op&gt;()</code> inserts a pipeline barrier for a single operation class.</p>
-<p>Many intrinsics in <code>include/pto/common/pto_instr.hpp</code> call <code>TSYNC(events...)</code> internally before issuing the instruction. It is part of the tile synchronization or configuration shell, so the visible effect is ordering or state setup rather than arithmetic payload transformation.</p>
+<h3 id="event-wait-form-tsyncevents">Event-Wait Form: <code>TSYNC(events...)</code><a class="headerlink" href="#event-wait-form-tsyncevents" title="Permanent link">&para;</a></h3>
+<p>Waits on one or more <code>RecordEvent</code> tokens. Each token is produced by a prior tile operation (<code>TLOAD</code>, <code>TSTORE</code>, <code>TADD</code>, <code>TMATMUL</code>, etc.). The call does not return until all supplied events have been recorded. After this point, the tile data produced by the operations that created these events is guaranteed to be visible to subsequent operations.</p>
+<p>The underlying mechanism calls <code>events.Wait()</code> on each event token. In Auto mode, this may be a no-op when the compiler/runtime proves ordering by construction.</p>
+<h3 id="barrier-form-tsyncop">Barrier Form: <code>TSYNC&lt;Op&gt;()</code><a class="headerlink" href="#barrier-form-tsyncop" title="Permanent link">&para;</a></h3>
+<p>Inserts a pipeline barrier for all operations of the specified operation class. All operations of class <code>Op</code> that appear before the barrier complete before any operation of class <code>Op</code> that appears after the barrier begins. The barrier does not affect other operation classes.</p>
+<p><code>TSYNC&lt;Op&gt;()</code> only supports vector-pipeline operations. Attempting to use it for non-vector operations produces undefined results.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Event operand form:</p>
@@ -988,60 +998,77 @@
 <p>Single-op barrier form:</p>
 <pre><code class="language-text">tsync.op #pto.op&lt;TADD&gt;
 </code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<p>The SSA form for <code>TSYNC</code> does not use explicit event SSA values. The ISA-level primitive is the C++ <code>RecordEvent</code> chaining via <code>WaitEvents...</code> on tile intrinsics. SSA-level representations of event ordering use <code>record_event</code> / <code>wait_event</code> (see below) which are PTO-DSL internal IR nodes, not the portable ISA instruction set.</p>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <p>The AS Level 2 form exposes explicit event ordering primitives:</p>
 <pre><code class="language-text">pto.record_event[src_op, dst_op, eventID]
-// Supported ops: TLOAD, TSTORE_ACC, TSTORE_VEC, TMOV_M2L, TMOV_M2S,
-//                 TMOV_M2B, TMOV_M2V, TMOV_V2M, TMATMUL, TVEC
 pto.wait_event[src_op, dst_op, eventID]
-// Supported ops: same as record_event
 pto.barrier(op)
-// Supported ops: TVEC, TMATMUL
 </code></pre>
-<p>In the current PTO-DSL front-end flow, <code>record_event</code> and <code>wait_event</code> should be treated as low-level TSYNC forms. Front-end kernels SHOULD normally stay free of explicit event wiring and rely on <code>ptoas --enable-insert-sync</code> instead.</p>
+<p><code>record_event</code> / <code>wait_event</code> are low-level TSYNC forms. Front-end kernels should normally stay free of explicit event wiring and rely on <code>ptoas --enable-insert-sync</code> instead.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;Op OpCode&gt;
+<pre><code class="language-cpp">// Barrier for a single operation class
+template &lt;Op OpCode&gt;
 PTO_INST void TSYNC();
 
+// Wait on one or more RecordEvent tokens
 template &lt;typename... WaitEvents&gt;
 PTO_INST void TSYNC(WaitEvents &amp;... events);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>TSYNC(events...)</code> takes one or more <code>RecordEvent</code> values as operands. Each <code>RecordEvent</code> is produced by a prior tile operation (<code>TLOAD</code>, <code>TADD</code>, <code>TMATMUL</code>, etc.). The call waits for all supplied events before proceeding.</p>
-<p><code>TSYNC&lt;Op&gt;()</code> takes a compile-time operation tag (<code>Op::TLOAD</code>, <code>Op::TADD</code>, <code>Op::TMATMUL</code>, etc.) and inserts a pipeline barrier for all operations of that class.</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Operands</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Event-wait</td>
+<td><code>events...</code></td>
+<td>One or more <code>RecordEvent</code> values produced by prior tile operations</td>
+</tr>
+<tr>
+<td>Barrier</td>
+<td><code>Op</code> template parameter</td>
+<td>Operation class tag (<code>Op::TLOAD</code>, <code>Op::TADD</code>, <code>Op::TMATMUL</code>, etc.)</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>This form is defined primarily by its ordering or configuration effect. It does not introduce a new payload tile beyond any explicit state object named by the syntax.</p>
+<p>The event-wait form produces no value; it blocks until events are ready.
+The barrier form produces no value; it blocks until the barrier completes.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation may establish a synchronization edge, bind or configure architectural tile state, or update implementation-defined configuration that later tile instructions consume.</p>
+<ul>
+<li>Event-wait: may block the scalar unit until all specified events are recorded.</li>
+<li>Barrier: may block the specified pipeline until all prior operations of that class complete.</li>
+</ul>
+<p>Does not affect unrelated tile traffic or other operation classes (barrier form only).</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong><code>TSYNC(events...)</code> semantics</strong>:<ul>
-<li><code>TSYNC(events...)</code> calls <code>WaitAllEvents(events...)</code>, which invokes <code>events.Wait()</code> on each event token. In auto mode, this is no-op.</li>
-</ul>
-</li>
+<li><code>TSYNC(events...)</code>: If no events are supplied, the call is a no-op.</li>
+<li><code>TSYNC&lt;Op&gt;()</code>: Only valid for vector-pipeline operations. Attempting to use it for tile, matrix, or scalar operations is undefined.</li>
+<li>All events must be produced by operations that precede the <code>TSYNC</code> in program order.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
+<li>Supplying events that are not produced by any preceding operation causes undefined behavior.</li>
+<li>Using <code>TSYNC&lt;Op&gt;()</code> with an unsupported operation class is rejected by the verifier.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Implementation checks (<code>TSYNC&lt;Op&gt;()</code>)</strong>:<ul>
-<li><code>TSYNC_IMPL&lt;Op&gt;()</code> only supports vector-pipeline ops (<code>static_assert(pipe == PIPE_V)</code> in <code>include/pto/common/event.hpp</code>).</li>
-</ul>
-</li>
+<li>CPU simulation: <code>TSYNC</code> emulates the ordering semantics but may not reflect hardware pipeline latency.</li>
+<li>A2/A3: <code>TSYNC&lt;Op&gt;()</code> only supports vector-pipeline ops.</li>
+<li>A5: same as A2/A3.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h3 id="event-wait">Event-wait<a class="headerlink" href="#event-wait" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
-void example_auto(__gm__ float* in) {
+void example(__gm__ float* in) {
   using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
   using GStride = BaseShape2D&lt;float, 16, 16, Layout::ND&gt;;
@@ -1050,33 +1077,26 @@ void example_auto(__gm__ float* in) {
   GT gin(in);
   TileT t;
   RecordEvent e = TLOAD(t, gin);  // TLOAD returns RecordEvent
-  TSYNC(e);                       // wait for load to complete
+  TSYNC(e);                        // wait for load to complete
 }
 </code></pre>
-<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<h3 id="pipeline-barrier">Pipeline barrier<a class="headerlink" href="#pipeline-barrier" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
-void example_manual() {
+void example() {
   using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   TileT a, b, c;
-  RecordEvent e = TADD(c, a, b);  // TADD returns RecordEvent
-  TSYNC&lt;Op::TADD&gt;();              // pipeline barrier for TADD
-  TSYNC(e);                       // explicit wait
+  RecordEvent e = TADD(c, a, b);     // returns RecordEvent
+  TSYNC&lt;Op::TADD&gt;();                 // drain all TADD operations
+  TSYNC(e);                           // wait for this specific TADD
 }
 </code></pre>
-<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<p>Event-wait form (bare assembly):</p>
-<pre><code class="language-text">tsync %e0, %e1 : !pto.event&lt;...&gt;, !pto.event&lt;...&gt;
-</code></pre>
-<p>Barrier form:</p>
-<pre><code class="language-text">tsync.op #pto.op&lt;TADD&gt;
-</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../sync-and-config/">Sync And Config</a></li>
 <li>Next op in instruction set: <a href="../tassign/">pto.tassign</a></li>
+<li><a href="../../../../machine-model/ordering-and-synchronization/">Ordering and Synchronization</a> for the full event model</li>
 </ul>
               
             </div>

@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -451,19 +455,15 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#distribution-modes">Distribution Modes</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#timing-disclosure">Timing Disclosure</a>
-    </li>
-        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#detailed-notes">Detailed Notes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
@@ -912,7 +912,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE/">TFREE</a>
                 </li>
@@ -974,9 +974,12 @@
 <h1 id="ptovlds">pto.vlds<a class="headerlink" href="#ptovlds" title="Permanent link">&para;</a></h1>
 <p><code>pto.vlds</code> is part of the <a href="../../../vector-load-store/">Vector Load Store</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Vector load with distribution mode.</p>
+<p>Load a vector register from the Unified Buffer (UB). The data layout within the vector is determined by the distribution mode attribute.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.vlds</code> is part of the PTO vector memory/data-movement instruction set. It keeps UB addressing, distribution, mask behavior, and any alignment-state threading explicit in SSA form rather than hiding those details in backend-specific lowering.</p>
+<p><code>pto.vlds</code> reads data from UB into a vector register. The effective address is <code>UB[base + offset]</code>. The distribution mode controls how bytes map into destination lanes.</p>
+<p>For each lane <code>i</code> in the vector register:</p>
+<div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{UB}[\mathrm{base} + \mathrm{offset} + \mathrm{dispatch}(i, \mathrm{mode})] \]</div>
+<p>where <code>dispatch</code> selects the memory address per lane based on the distribution mode.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">vlds %result, %source[%offset] {dist = &quot;DIST&quot;}
@@ -985,123 +988,200 @@
 <pre><code class="language-mlir">%result = pto.vlds %source[%offset] {dist = &quot;DIST&quot;} : !pto.ptr&lt;T, ub&gt; -&gt; !pto.vreg&lt;NxT&gt;
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<p><code>%source</code> is the UB base address, <code>%offset</code> is the load displacement, and
-  <code>DIST</code> selects the distribution mode.</p>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>%result</code> is the loaded vector register value.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation reads UB-visible storage and returns SSA results. It does not by itself allocate buffers, signal events, or establish a fence.</p>
-<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>The effective address MUST satisfy the alignment rule of the selected
-  distribution mode. <code>NORM</code> reads one full vector footprint. Broadcast,
-  upsample, downsample, unpack, split-channel, and deinterleave modes change
-  how memory bytes are mapped into destination lanes, but they do not change the
-  fact that the source is UB memory.</p>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>It is illegal to use addresses outside the required UB-visible space or to violate the alignment/distribution contract of the selected form.</li>
-<li>Masked-off lanes or inactive blocks do not make an otherwise-illegal address valid unless the operation text explicitly says so.</li>
-<li>Any additional illegality stated in the constraints section is also part of the contract.</li>
-</ul>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
-<li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
-</ul>
-<h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
-<p>The current public VPTO timing material for PTO micro instructions remains limited.
-For <code>pto.vlds</code>, those public sources describe the instruction semantics, operand legality, and pipeline placement, but they do <strong>not</strong> publish a numeric latency or steady-state throughput.</p>
 <table>
 <thead>
 <tr>
-<th>Metric</th>
-<th>Status</th>
-<th>Source Basis</th>
+<th>Operand</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>A5 latency</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
+<td><code>%source</code></td>
+<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
+<td>UB base address</td>
 </tr>
 <tr>
-<td>Steady-state throughput</td>
-<td>Not publicly published</td>
-<td>Current public VPTO timing material</td>
+<td><code>%offset</code></td>
+<td>index</td>
+<td>Load displacement</td>
+</tr>
+<tr>
+<td><code>dist</code></td>
+<td>string attribute</td>
+<td>Distribution mode</td>
 </tr>
 </tbody>
 </table>
-<p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vlds</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%v = pto.vlds %ub[%offset] {dist = &quot;NORM&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
-<pre><code class="language-mlir">%v = pto.vlds %ub[%c0] {dist = &quot;BRC_B32&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
-<h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
-<p><strong>Distribution modes:</strong></p>
+<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%result</code></td>
+<td><code>!pto.vreg&lt;NxT&gt;</code></td>
+<td>Loaded vector register value</td>
+</tr>
+</tbody>
+</table>
+<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
+<p>Reads from UB-visible storage. Does not allocate buffers, signal events, or establish fences.</p>
+<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<p>The effective address must satisfy the alignment requirement of the selected distribution mode. Each mode has specific alignment constraints documented below.</p>
+<p>Inactive lanes (masked-off blocks) do not issue memory requests unless the operation explicitly documents otherwise.</p>
+<h2 id="distribution-modes">Distribution Modes<a class="headerlink" href="#distribution-modes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>Mode</th>
+<th style="text-align: center;">Contiguous Bytes</th>
 <th>Description</th>
 <th>C Semantics</th>
+<th>Alignment</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>NORM</code></td>
-<td>Contiguous 256B load</td>
-<td><code>dst[i] = UB[base + i * sizeof(T)]</code></td>
+<td style="text-align: center;">256 B</td>
+<td>Contiguous load</td>
+<td><code>dst[i] = UB[base + offset + i * sizeof(T)]</code></td>
+<td>32 B</td>
 </tr>
 <tr>
-<td><code>BRC_B8/B16/B32</code></td>
-<td>Broadcast single element</td>
-<td><code>dst[i] = UB[base]</code> for all i</td>
+<td><code>BRC_B8</code></td>
+<td style="text-align: center;">32 B</td>
+<td>Broadcast 1 byte</td>
+<td><code>dst[i] = UB[base]</code></td>
+<td>32 B</td>
 </tr>
 <tr>
-<td><code>US_B8/B16</code></td>
-<td>Upsample (duplicate each element)</td>
+<td><code>BRC_B16</code></td>
+<td style="text-align: center;">32 B</td>
+<td>Broadcast 2 bytes</td>
+<td><code>dst[i] = UB[base]</code></td>
+<td>32 B</td>
+</tr>
+<tr>
+<td><code>BRC_B32</code></td>
+<td style="text-align: center;">32 B</td>
+<td>Broadcast 4 bytes</td>
+<td><code>dst[i] = UB[base]</code></td>
+<td>32 B</td>
+</tr>
+<tr>
+<td><code>US_B8</code></td>
+<td style="text-align: center;">128 B</td>
+<td>Upsample: duplicate each byte</td>
 <td><code>dst[2*i] = dst[2*i+1] = UB[base + i]</code></td>
+<td>32 B</td>
 </tr>
 <tr>
-<td><code>DS_B8/B16</code></td>
-<td>Downsample (every 2nd element)</td>
+<td><code>US_B16</code></td>
+<td style="text-align: center;">256 B</td>
+<td>Upsample: duplicate each half</td>
+<td><code>dst[2*i] = dst[2*i+1] = UB[base + i]</code></td>
+<td>32 B</td>
+</tr>
+<tr>
+<td><code>DS_B8</code></td>
+<td style="text-align: center;">128 B</td>
+<td>Downsample: every 2nd byte</td>
 <td><code>dst[i] = UB[base + 2*i]</code></td>
+<td>32 B</td>
 </tr>
 <tr>
-<td><code>UNPK_B8/B16/B32</code></td>
-<td>Unpack (zero-extend to wider type)</td>
+<td><code>DS_B16</code></td>
+<td style="text-align: center;">256 B</td>
+<td>Downsample: every 2nd half</td>
+<td><code>dst[i] = UB[base + 2*i]</code></td>
+<td>32 B</td>
+</tr>
+<tr>
+<td><code>UNPK_B8</code></td>
+<td style="text-align: center;">64 B</td>
+<td>Unpack: zero-extend byte to word</td>
+<td><code>dst_i32[i] = (uint32_t)UB_i8[base + i]</code></td>
+<td>32 B</td>
+</tr>
+<tr>
+<td><code>UNPK_B16</code></td>
+<td style="text-align: center;">128 B</td>
+<td>Unpack: zero-extend half to word</td>
 <td><code>dst_i32[i] = (uint32_t)UB_i16[base + 2*i]</code></td>
+<td>32 B</td>
+</tr>
+<tr>
+<td><code>UNPK_B32</code></td>
+<td style="text-align: center;">256 B</td>
+<td>Unpack: zero-extend word to dword</td>
+<td><code>dst_i32[i] = (uint32_t)UB_i32[base + 4*i]</code></td>
+<td>32 B</td>
 </tr>
 <tr>
 <td><code>SPLT4CHN_B8</code></td>
+<td style="text-align: center;">128 B</td>
 <td>Split 4-channel (RGBA → R plane)</td>
-<td>Extract every 4th byte</td>
+<td><code>dst[i] = UB[base + 4*i]</code></td>
+<td>32 B</td>
 </tr>
 <tr>
-<td><code>SPLT2CHN_B8/B16</code></td>
+<td><code>SPLT2CHN_B8</code></td>
+<td style="text-align: center;">64 B</td>
 <td>Split 2-channel</td>
-<td>Extract every 2nd element</td>
+<td><code>dst[i] = UB[base + 2*i]</code></td>
+<td>32 B</td>
+</tr>
+<tr>
+<td><code>SPLT2CHN_B16</code></td>
+<td style="text-align: center;">128 B</td>
+<td>Split 2-channel</td>
+<td><code>dst[i] = UB[base + 2*i]</code></td>
+<td>32 B</td>
 </tr>
 <tr>
 <td><code>DINTLV_B32</code></td>
+<td style="text-align: center;">256 B</td>
 <td>Deinterleave 32-bit</td>
-<td>Even elements only</td>
+<td><code>dst[i] = UB[base + 8*i]</code> (even elements)</td>
+<td>32 B</td>
 </tr>
 <tr>
 <td><code>BLK</code></td>
+<td style="text-align: center;">varies</td>
 <td>Block load</td>
 <td>Blocked access pattern</td>
+<td>varies</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Example — Contiguous load:</strong></p>
+<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Using an address outside UB-visible space is illegal.</li>
+<li>Violating the alignment or distribution contract of the selected form is illegal.</li>
+<li>Masked-off lanes do not validate the address; an illegal address is still illegal even if no active lane touches it.</li>
+</ul>
+<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<p>A5 is the primary concrete profile for vector instructions. CPU simulation and A2/A3-class targets emulate the behavior while preserving the PTO contract, but may support narrower subsets.</p>
+<p>Code that depends on a specific distribution mode list or timing should treat that dependency as target-profile-specific.</p>
+<h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
+<p>The current public PTO timing material does not publish numeric latency or steady-state throughput for <code>pto.vlds</code>. If software scheduling or performance modeling depends on the exact cost, measure it on the concrete backend rather than inferring a constant.</p>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<p>Contiguous load of f32 vector:</p>
 <pre><code class="language-mlir">%v = pto.vlds %ub[%offset] {dist = &quot;NORM&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 </code></pre>
-<p><strong>Example — Broadcast scalar to all lanes:</strong></p>
+<p>Broadcast scalar to all lanes:</p>
 <pre><code class="language-mlir">%v = pto.vlds %ub[%c0] {dist = &quot;BRC_B32&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+</code></pre>
+<p>Deinterleave even elements from interleaved data:</p>
+<pre><code class="language-mlir">%v = pto.vlds %ub[%offset] {dist = &quot;DINTLV_B32&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 </code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>

@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -402,9 +406,7 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#partial-reductions-tpartadd-tpartmul-tpartmax-tpartmin">Partial Reductions (TPARTADD, TPARTMUL, TPARTMAX, TPARTMIN)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#quantization-tquant-tdequant">Quantization (TQUANT, TDEQUANT)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#a5-only-operations">A5-Only Operations</a>
+    <li class="toctree-l4"><a class="reference internal" href="#quantization-tquant">Quantization (TQUANT)</a>
     </li>
         </ul>
     </li>
@@ -904,7 +906,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TFREE/">TFREE</a>
                 </li>
@@ -1054,30 +1056,6 @@
 <td>Quantize</td>
 <td style="text-align: center;">A2/A3, A5</td>
 </tr>
-<tr>
-<td><a href="../../TDEQUANT/">pto.tdequant</a></td>
-<td>Dequantize tile to floating-point</td>
-<td>Quantize</td>
-<td style="text-align: center;">A2/A3, A5</td>
-</tr>
-<tr>
-<td><a href="../../TPACK/">pto.tpack</a></td>
-<td>Pack tile data</td>
-<td>Pack</td>
-<td style="text-align: center;">A5 only</td>
-</tr>
-<tr>
-<td><a href="../../TRANDOM/">pto.trandom</a></td>
-<td>Random number generation</td>
-<td>Random</td>
-<td style="text-align: center;">A5 only</td>
-</tr>
-<tr>
-<td><a href="../../THISTOGRAM/">pto.thistogram</a></td>
-<td>Histogram computation</td>
-<td>Histogram</td>
-<td style="text-align: center;">A5 only</td>
-</tr>
 </tbody>
 </table>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
@@ -1089,31 +1067,8 @@
 <div class="arithmatex">\[ \mathrm{dst}_{\mathrm{index}_i} = \mathrm{src}_i \quad \text{(scatter)} \]</div>
 <h3 id="partial-reductions-tpartadd-tpartmul-tpartmax-tpartmin">Partial Reductions (TPARTADD, TPARTMUL, TPARTMAX, TPARTMIN)<a class="headerlink" href="#partial-reductions-tpartadd-tpartmul-tpartmax-tpartmin" title="Permanent link">&para;</a></h3>
 <p>Partial reductions compute intermediate results that are later combined across tiles. Unlike full row/column reductions, partial reductions produce tiles with reduced but non-singular extent — they divide the reduction axis into segments.</p>
-<h3 id="quantization-tquant-tdequant">Quantization (TQUANT, TDEQUANT)<a class="headerlink" href="#quantization-tquant-tdequant" title="Permanent link">&para;</a></h3>
-<p>Convert between floating-point and quantized integer representations. Quantized formats include INT8, UINT8, INT4, UINT4, FP4, NF4. Requires scale and zero-point tensors. These operations are <strong>not available</strong> on the CPU simulator.</p>
-<h3 id="a5-only-operations">A5-Only Operations<a class="headerlink" href="#a5-only-operations" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Operation</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>TPACK</code></td>
-<td>Pack tile data into a compact format</td>
-</tr>
-<tr>
-<td><code>TRANDOM</code></td>
-<td>Generate random numbers into tile</td>
-</tr>
-<tr>
-<td><code>THISTOGRAM</code></td>
-<td>Compute histogram of tile elements</td>
-</tr>
-</tbody>
-</table>
+<h3 id="quantization-tquant">Quantization (TQUANT)<a class="headerlink" href="#quantization-tquant" title="Permanent link">&para;</a></h3>
+<p><code>TQUANT</code> converts floating-point tile data into quantized representations. In the current authored tree, <code>TDEQUANT</code>, <code>TPACK</code>, <code>TRANDOM</code>, and <code>THISTOGRAM</code> are documented under the supporting-op / other path rather than this tile family page.</p>
 <h2 id="type-support-by-target-profile">Type Support by Target Profile<a class="headerlink" href="#type-support-by-target-profile" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1181,13 +1136,11 @@
 <li>Quantization requires valid scale (non-zero) and zero-point values within representable range.</li>
 <li>Scatter requires a valid index tile with non-negative indices within the destination bounds.</li>
 <li>Partial reductions may have different behavior across profiles.</li>
-<li>A5-only operations MUST NOT be used on CPU simulator, A2, or A3.</li>
 </ul>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>MUST NOT</strong> use quantization with invalid scale (zero or NaN) or out-of-range zero-point.</li>
 <li><strong>MUST NOT</strong> scatter to indices outside the destination tile's declared shape bounds.</li>
-<li><strong>MUST NOT</strong> use A5-only operations (<code>TPACK</code>, <code>TRANDOM</code>, <code>THISTOGRAM</code>) on CPU simulator, A2, or A3.</li>
 <li><strong>MUST NOT</strong> use sort operations with element types incompatible with the sort variant (e.g., <code>TSORT32</code> on i8).</li>
 </ul>
 <h2 id="performance-notes">Performance Notes<a class="headerlink" href="#performance-notes" title="Permanent link">&para;</a></h2>
@@ -1214,8 +1167,6 @@ PTO_INST RecordEvent TSCATTER(TileDst&amp; dst, TileIdx&amp; indices, TileSrc&am
 template &lt;typename TileDst, typename TileSrc, typename TileScale, typename TileZp&gt;
 PTO_INST RecordEvent TQUANT(TileDst&amp; dst, TileSrc&amp; src, TileScale&amp; scale, TileZp&amp; zp);
 
-template &lt;typename TileDst, typename TileSrc, typename TileScale, typename TileZp&gt;
-PTO_INST RecordEvent TDEQUANT(TileDst&amp; dst, TileSrc&amp; src, TileScale&amp; scale, TileZp&amp; zp);
 </code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>

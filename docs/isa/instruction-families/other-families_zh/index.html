@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -874,7 +878,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TFREE/">TFREE</a>
                 </li>
@@ -955,32 +959,93 @@
 </tr>
 </tbody>
 </table>
-<h2 id="_3">共享操作数模型<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="_3">通信与运行时<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>这组操作跨越并行组，需要 <code>ParallelGroup</code> 句柄，并引入网络 / 互连可见的排序与副作用。</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>集合广播</td>
+<td><code>tbroadcast</code>、<code>tscatter</code>、<code>tgather</code></td>
+</tr>
+<tr>
+<td>点对点</td>
+<td><code>tget</code>、<code>tget_async</code>、<code>tput</code>、<code>tput_async</code></td>
+</tr>
+<tr>
+<td>集合归约</td>
+<td><code>treduce</code></td>
+</tr>
+<tr>
+<td>通知协议</td>
+<td><code>tnotify</code>、<code>ttest</code>、<code>twait</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="isa">非 ISA 与支撑操作<a class="headerlink" href="#isa" title="Permanent link">&para;</a></h3>
+<p>这组操作提供更高层的序列、量化和资源语义：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tile 序列</td>
+<td><code>talias</code>、<code>tconcat</code>、<code>taxpy</code></td>
+</tr>
+<tr>
+<td>内存管理</td>
+<td><code>tfree</code></td>
+</tr>
+<tr>
+<td>量化</td>
+<td><code>tdequant</code></td>
+</tr>
+<tr>
+<td>计数 / 谓词辅助</td>
+<td><code>tpop</code>、<code>tpush</code></td>
+</tr>
+<tr>
+<td>A5 专属</td>
+<td><code>thistogram</code>、<code>tpack</code>、<code>trandom</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">共享操作数模型<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li>通信族使用并行组句柄、GM 视图、暂存 tile 和异步事件对象。</li>
 <li>支撑族使用 tile、tile 序列、量化参数和资源句柄。</li>
 </ul>
-<h2 id="_4">共享副作用<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="_5">共享副作用<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li>通信族会引入跨 NPU 的排序与可见性副作用。</li>
 <li>支撑族可能改变资源状态、量化表示或 tile 序列结构。</li>
 </ul>
-<h2 id="_5">共享约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_6">共享约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
 <li>并行组一致性</li>
 <li>缓冲区角色与尺寸匹配</li>
 <li>量化参数合法</li>
 <li>profile 支持子集明确可见</li>
 </ul>
-<h2 id="_6">不允许的情形<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_7">不允许的情形<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
 <li>集合操作中各 rank 的协议不一致</li>
 <li>依赖未声明的 backend 便利实现</li>
 <li>在不支持的 profile 上使用 A5 专属支撑操作</li>
 </ul>
-<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-surfaces/other-instructions_zh/">其他指令集</a></li>
+<li><a href="../../other/README_zh/">其他与通信参考</a></li>
 <li><a href="../../other/communication-and-runtime_zh/">通信与运行时</a></li>
 <li><a href="../../other/non-isa-and-supporting-ops_zh/">非 ISA 与支撑操作</a></li>
 </ul>

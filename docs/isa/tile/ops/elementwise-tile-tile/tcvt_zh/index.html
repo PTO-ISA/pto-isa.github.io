@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -874,7 +878,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE/">TFREE</a>
                 </li>
@@ -958,20 +962,20 @@
 <td>就近舍入，ties to even</td>
 </tr>
 <tr>
-<td><code>CAST_RZ</code></td>
-<td>向 0 舍入</td>
+<td><code>CAST_ROUND</code></td>
+<td>就近舍入，ties away from zero</td>
 </tr>
 <tr>
-<td><code>CAST_RP</code></td>
-<td>向正无穷舍入</td>
-</tr>
-<tr>
-<td><code>CAST_RM</code></td>
+<td><code>CAST_FLOOR</code></td>
 <td>向负无穷舍入</td>
 </tr>
 <tr>
-<td><code>CAST_RN</code></td>
-<td>就近舍入，ties away from zero</td>
+<td><code>CAST_CEIL</code></td>
+<td>向正无穷舍入</td>
+</tr>
+<tr>
+<td><code>CAST_TRUNC</code></td>
+<td>向 0 舍入</td>
 </tr>
 </tbody>
 </table>
@@ -985,12 +989,12 @@
 </thead>
 <tbody>
 <tr>
-<td><code>NONE</code></td>
-<td>不饱和，溢出时 wrap 或走目标定义行为</td>
+<td><code>ON</code></td>
+<td>开启饱和</td>
 </tr>
 <tr>
-<td><code>SAT</code></td>
-<td>饱和到目标类型可表示范围</td>
+<td><code>OFF</code></td>
+<td>关闭饱和</td>
 </tr>
 </tbody>
 </table>
@@ -1005,13 +1009,21 @@
 <pre><code class="language-text">pto.tcvt ins(%src {rmode = #pto.round_mode&lt;CAST_RINT&gt;}: !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode, SaturationMode satMode, WaitEvents &amp;... events);
+<pre><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename TmpTileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, TmpTileData &amp;tmp, RoundMode mode,
+                          SaturationMode satMode, WaitEvents &amp;... events);
+
+template &lt;typename TileDataD, typename TileDataS, typename TmpTileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, TmpTileData &amp;tmp, RoundMode mode, WaitEvents &amp;... events);
+
+template &lt;typename TileDataD, typename TileDataS, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode, SaturationMode satMode,
+                          WaitEvents &amp;... events);
 
 template &lt;typename TileDataD, typename TileDataS, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode, WaitEvents &amp;... events);
 </code></pre>
-<p>CPU 模拟器当前只实现了不显式传入 <code>SaturationMode</code> 的形式。</p>
+<p><code>tmp</code> 版本用于那些需要显式 scratch tile 的转换路径。</p>
 <h2 id="_6">输入<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1035,12 +1047,17 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode
 <tr>
 <td><code>mode</code></td>
 <td>舍入模式</td>
-<td><code>CAST_RINT</code> / <code>CAST_RZ</code> / <code>CAST_RP</code> / <code>CAST_RM</code> / <code>CAST_RN</code></td>
+<td><code>CAST_RINT</code> / <code>CAST_ROUND</code> / <code>CAST_FLOOR</code> / <code>CAST_CEIL</code> / <code>CAST_TRUNC</code></td>
 </tr>
 <tr>
 <td><code>satMode</code></td>
 <td>可选饱和模式</td>
-<td><code>NONE</code> / <code>SAT</code></td>
+<td><code>ON</code> / <code>OFF</code></td>
+</tr>
+<tr>
+<td><code>tmp</code></td>
+<td>可选临时 tile</td>
+<td>需要显式 scratch 的路径使用</td>
 </tr>
 </tbody>
 </table>
@@ -1068,90 +1085,20 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode
 <li><code>src</code> 与 <code>dst</code> 必须在 shape 和 valid region 上兼容。</li>
 <li>源 / 目标类型对必须属于目标 profile 支持的集合。</li>
 <li>给定类型对必须支持所选 rounding mode。</li>
-<li><code>dst</code> 与 <code>src</code> 必须是不同元素类型。</li>
+<li>对于需要显式 scratch 的路径，调用方必须使用 <code>tmp</code> 版本。</li>
+<li>关闭饱和可能改变某些低精度整数转换路径的溢出语义。</li>
 </ul>
 <h2 id="_10">不允许的情形<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <ul>
 <li>使用目标 profile 不支持的类型对。</li>
 <li>使用该类型对不支持的 rounding mode。</li>
+<li>在关闭饱和时仍假设溢出会被 clamp。</li>
 </ul>
 <h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>特性</th>
-<th style="text-align: center;">CPU Simulator</th>
-<th style="text-align: center;">A2A3</th>
-<th style="text-align: center;">A5</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>默认饱和形式</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr>
-<td>显式 <code>SaturationMode</code></td>
-<td style="text-align: center;">No</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr>
-<td><code>f32 -&gt; f16</code></td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr>
-<td><code>f16 -&gt; f32</code></td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr>
-<td><code>f32 -&gt; bf16</code></td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr>
-<td><code>bf16 -&gt; f32</code></td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr>
-<td><code>f32 -&gt; int32_t</code></td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr>
-<td><code>int32_t -&gt; f32</code></td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr>
-<td><code>f16 -&gt; bf16</code></td>
-<td style="text-align: center;">No</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr>
-<td>FP8 类型</td>
-<td style="text-align: center;">No</td>
-<td style="text-align: center;">No</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-</tbody>
-</table>
-<h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
-<p>当前仓内没有把 <code>tcvt</code> 作为 tile 路径单独落成公开 cost bucket。若代码依赖具体延迟，应把它视为目标 profile 相关的 tile 类型转换路径。</p>
-<h2 id="_12">示例<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
-<h3 id="_13">自动模式<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<p><code>pto.tcvt</code> 在 CPU 仿真、A2/A3 和 A5 上都保留 PTO 可见语义，但具体支持的类型对、是否需要 scratch、以及饱和关闭后的溢出处理仍然依赖 backend。</p>
+<p>当前 checkout 中，fp16 → int8 的非饱和路径通过带 scratch 的 helper 实现，并且会按行做子分块处理。</p>
+<h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h3 id="_12">自动模式<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
@@ -1163,10 +1110,12 @@ void example_auto() {
   TCVT(dst, src, RoundMode::CAST_RINT);
 }
 </code></pre>
-<h3 id="_14">显式饱和<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">TCVT(dst, src, RoundMode::CAST_RINT, SaturationMode::SAT);
+<h3 id="scratch">显式饱和 / scratch<a class="headerlink" href="#scratch" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">using TmpT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
+TmpT tmp;
+TCVT(dst, src, tmp, RoundMode::CAST_TRUNC, SaturationMode::OFF);
 </code></pre>
-<h2 id="_15">相关页面<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h2>
+<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></li>
 <li>上一条指令：<a href="../tsubc_zh/">pto.tsubc</a></li>

@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -352,13 +356,11 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
         <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -377,20 +379,8 @@
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
     </ul>
                 </li>
@@ -922,7 +912,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE/">TFREE</a>
                 </li>
@@ -984,104 +974,126 @@
 <h1 id="ptotmatmul">pto.tmatmul<a class="headerlink" href="#ptotmatmul" title="Permanent link">&para;</a></h1>
 <p><code>pto.tmatmul</code> is part of the <a href="../../../matrix-and-matrix-vector/">Matrix And Matrix Vector</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Matrix multiply (GEMM) producing an accumulator/output tile.</p>
+<p>Matrix multiply (GEMM) on tile operands, producing a result in an accumulator tile.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Matrix multiply (GEMM) producing an accumulator/output tile. It operates on tile payloads rather than scalar control state, and its legality is constrained by tile shape, layout, valid-region, and target-profile support.</p>
-<p>Let:</p>
-<ul>
-<li><code>M = aMatrix.GetValidRow()</code></li>
-<li><code>K = aMatrix.GetValidCol()</code></li>
-<li><code>N = bMatrix.GetValidCol()</code></li>
-</ul>
-<p>For <code>0 &lt;= i &lt; M</code> and <code>0 &lt;= j &lt; N</code> (output elements in the effective matmul domain):</p>
+<p>Let:
+- <code>M = aMatrix.GetValidRow()</code>
+- <code>K = aMatrix.GetValidCol()</code>
+- <code>N = bMatrix.GetValidCol()</code></p>
+<p>For <code>0 &lt;= i &lt; M</code> and <code>0 &lt;= j &lt; N</code>:</p>
 <div class="arithmatex">\[ \mathrm{C}_{i,j} = \sum_{k=0}^{K-1} \mathrm{A}_{i,k} \cdot \mathrm{B}_{k,j} \]</div>
-<p>Exact accumulator behavior and datatype promotion are target/implementation-defined.</p>
+<p>The operation consumes three tiles with specific roles: <code>aMatrix</code> (left input, <code>TileType::Left</code>), <code>bMatrix</code> (right input, <code>TileType::Right</code>), and <code>cMatrix</code> (accumulator, <code>TileType::Acc</code>). The accumulator tile may start with existing values (accumulation semantics) or may be zero-initialized first.</p>
+<p>Exact accumulator behavior and datatype promotion are target/implementation-defined. Consult the target profile for precision and rounding details.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
-<p>Synchronous form:</p>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%acc = tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">%c = pto.tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 </code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmatmul ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmatmul ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
+<pre><code class="language-text">pto.tmatmul ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
+          outs(%c : !pto.tile_buf&lt;...&gt;)
 </code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
+<pre><code class="language-cpp">// Basic matmul
+template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix,
+                            WaitEvents &amp;... events);
 
+// Matmul with accumulator phase
 template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
+PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix,
+                            WaitEvents &amp;... events);
 </code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>a</code> is the left operand tile (must be TileLeft location).</li>
-<li><code>b</code> is the right operand tile (must be TileRight location).</li>
-<li><code>dst</code> names the destination accumulator tile. The operation iterates over dst's valid region.</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cMatrix</code></td>
+<td>Destination accumulator tile. Must be <code>TileType::Acc</code>.</td>
+</tr>
+<tr>
+<td><code>aMatrix</code></td>
+<td>Left input tile. Must be <code>TileType::Left</code>.</td>
+</tr>
+<tr>
+<td><code>bMatrix</code></td>
+<td>Right input tile. Must be <code>TileType::Right</code>.</td>
+</tr>
+<tr>
+<td><code>Phase</code></td>
+<td>Optional accumulator phase for multi-pass matmul.</td>
+</tr>
+<tr>
+<td><code>events...</code></td>
+<td>Optional <code>RecordEvent</code> tokens to wait on before issuing.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the matrix multiply result: <code>dst[i,j]</code> = sum over <code>k</code> of <code>a[i,k] * b[k,j]</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RecordEvent</code></td>
+<td><code>RecordEvent</code></td>
+<td>Token signaling completion</td>
+</tr>
+</tbody>
+</table>
+<p>The accumulator tile holds <code>dst[i,j]</code> = sum over <code>k</code> of <code>a[i,k] * b[k,j]</code> after the operation.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
+<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated tile traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li>
-<p>Source and destination shapes, layouts, and element types MUST satisfy the legality rules documented by the instruction set and target profile.</p>
-</li>
-<li>
-<p>Programs must not assume implicit broadcasting, reshaping, or valid-region repair unless the operation documents it.</p>
-</li>
+<li><strong>Shape constraints</strong>:</li>
+<li><code>aMatrix.GetValidRow()</code> = <code>cMatrix.GetValidRow()</code> = <code>M</code></li>
+<li><code>aMatrix.GetValidCol()</code> = <code>bMatrix.GetValidRow()</code> = <code>K</code></li>
+<li><code>bMatrix.GetValidCol()</code> = <code>cMatrix.GetValidCol()</code> = <code>N</code></li>
+<li>Runtime <code>m/k/n</code> must be in <code>[1, 4095]</code></li>
+<li><strong>Tile roles</strong>: <code>aMatrix.Loc == Left</code>, <code>bMatrix.Loc == Right</code>, <code>cMatrix.Loc == Acc</code>.</li>
+<li>Programs must not assume implicit broadcasting, reshaping, or valid-region repair.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
+<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier.</li>
+<li>Programs must not rely on behavior outside the documented legal domain.</li>
 </ul>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li>
-<p><strong>Implementation checks (A2A3)</strong>:</p>
-<ul>
-<li>Supported <code>(CType, AType, BType)</code> triples:</li>
-<li><code>(int32_t, int8_t, int8_t)</code></li>
-<li><code>(float, half, half)</code></li>
-<li><code>(float, float, float)</code></li>
-<li><code>(float, bfloat16_t, bfloat16_t)</code></li>
-<li>Static shape constraints: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</li>
-<li>Tile locations: <code>TileLeft::Loc == Left</code>, <code>TileRight::Loc == Right</code>, <code>TileRes::Loc == Acc</code>.</li>
-<li>Runtime: <code>m/k/n</code> (taken from <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code>.</li>
-</ul>
-</li>
-<li>
-<p><strong>Implementation checks (A5)</strong>:</p>
-<ul>
-<li>Accumulator type must be <code>int32_t</code> or <code>float</code>.</li>
-<li>If <code>int32_t</code>: <code>AType == int8_t</code> and <code>BType == int8_t</code>.</li>
-<li>If <code>float</code>: supports <code>half/bfloat16_t/float</code> and selected fp8 pairs (target-defined).</li>
-<li>Static shape constraints: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</li>
-<li>Fractal/layout constraints are enforced:</li>
-<li>Left: <code>Loc == Left</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></li>
-<li>Right: <code>Loc == Right</code>, <code>isRowMajor</code>, <code>SFractal == ColMajor</code></li>
-<li>Acc: <code>Loc == Acc</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></li>
-<li>Runtime: <code>m/k/n</code> (taken from <code>aMatrix.GetValidRow()</code>, <code>aMatrix.GetValidCol()</code>, <code>bMatrix.GetValidCol()</code>) must be in <code>[1, 4095]</code>.</li>
-</ul>
-</li>
-</ul>
+<p><strong>A2/A3</strong>:
+- Supported <code>(CType, AType, BType)</code> triples:
+  - <code>(int32_t, int8_t, int8_t)</code>
+  - <code>(float, half, half)</code>
+  - <code>(float, float, float)</code>
+  - <code>(float, bfloat16_t, bfloat16_t)</code>
+- Static shape: <code>TileLeft::Rows == TileRes::Rows</code>, <code>TileLeft::Cols == TileRight::Rows</code>, <code>TileRight::Cols == TileRes::Cols</code>.</p>
+<p><strong>A5</strong>:
+- Accumulator type: <code>int32_t</code> or <code>float</code>.
+- If <code>int32_t</code>: <code>AType == int8_t</code> and <code>BType == int8_t</code>.
+- If <code>float</code>: supports <code>half/bfloat16_t/float</code> and selected fp8 pairs.
+- Fractal/layout constraints:
+  - Left: <code>Loc == Left</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code>
+  - Right: <code>Loc == Right</code>, <code>isRowMajor</code>, <code>SFractal == ColMajor</code>
+  - Acc: <code>Loc == Acc</code>, <code>!isRowMajor</code>, <code>SFractal == RowMajor</code></p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
-void example_auto() {
+void example() {
   using A = TileLeft&lt;half, 16, 16&gt;;
   using B = TileRight&lt;half, 16, 16&gt;;
   using C = TileAcc&lt;float, 16, 16&gt;;
@@ -1091,41 +1103,7 @@ void example_auto() {
   TMATMUL(c, a, b);
 }
 </code></pre>
-<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_manual() {
-  using A = TileLeft&lt;half, 16, 16&gt;;
-  using B = TileRight&lt;half, 16, 16&gt;;
-  using C = TileAcc&lt;float, 16, 16&gt;;
-  A a;
-  B b;
-  C c;
-  TASSIGN(a, 0x1000);
-  TASSIGN(b, 0x2000);
-  TASSIGN(c, 0x3000);
-  TMATMUL(c, a, b);
-}
-</code></pre>
-<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-%c = pto.tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
-# Optional for tile operands:
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%c = pto.tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
-<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%acc = tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tmatmul ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../matrix-and-matrix-vector/">Matrix And Matrix Vector</a></li>
 <li>Previous op in instruction set: <a href="../tmatmul-mx/">pto.tmatmul_mx</a></li>

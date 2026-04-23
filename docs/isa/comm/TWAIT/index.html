@@ -200,6 +200,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -231,6 +233,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -862,15 +866,27 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">TWAIT</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
+    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#comparison-operators">Comparison Operators</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
@@ -878,11 +894,11 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#wait-for-signal-matrix">Wait for Signal Matrix</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#wait-for-counter-threshold">Wait for Counter Threshold</a>
-    </li>
     <li class="toctree-l4"><a class="reference internal" href="#producer-consumer-pattern">Producer-Consumer Pattern</a>
     </li>
         </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
     </ul>
                 </li>
@@ -898,7 +914,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../TFREE/">TFREE</a>
                 </li>
@@ -958,18 +974,15 @@
                 <!-- Generated from `docs/isa/comm/TWAIT.md` -->
 
 <h1 id="twait">TWAIT<a class="headerlink" href="#twait" title="Permanent link">&para;</a></h1>
-<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Blocking wait until signal(s) meet comparison condition. Used in conjunction with <code>TNOTIFY</code> for flag-based synchronization.</p>
-<p>Supports single signal or multi-dimensional signal tensor (up to 5-D, shape derived from GlobalTensor).</p>
-<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
-<p>Wait (spin) until the following condition is satisfied:</p>
-<p>Single signal:</p>
-<div class="arithmatex">\[ \mathrm{signal} \;\mathtt{cmp}\; \mathrm{cmpValue} \]</div>
-<p>Signal tensor (all elements must satisfy):</p>
-<div class="arithmatex">\[ \forall d_0, d_1, d_2, d_3, d_4: \mathrm{signal}_{d_0, d_1, d_2, d_3, d_4} \;\mathtt{cmp}\; \mathrm{cmpValue} \]</div>
-<p>where <code>cmp</code> ∈ {<code>EQ</code>, <code>NE</code>, <code>GT</code>, <code>GE</code>, <code>LT</code>, <code>LE</code>}</p>
+<p><code>TWAIT</code> is part of the <a href="../non-isa-supporting-ops.md">Non-ISA Supporting Ops</a> instruction set.</p>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>Blocking wait until a signal (or all elements of a signal tensor) satisfies a comparison condition against a constant. Used with <code>TNOTIFY</code> for inter-NPU flag-based synchronization.</p>
+<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
+<p><code>TWAIT</code> spins on a signal location until the comparison condition is satisfied. The operation halts the current NPU's scalar unit until the condition becomes true.</p>
+<p>Single signal: the NPU waits until the scalar at the signal address satisfies <code>signal cmp cmpValue</code>.</p>
+<p>Signal tensor: the NPU waits until <strong>all</strong> elements in the tensor satisfy the condition simultaneously.</p>
+<p>The signal address must point to local (on-chip) memory on the current NPU.</p>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
-<p>PTO-AS form: see <a href="../../../assembly/PTO-AS/">PTO-AS Specification</a>.</p>
 <pre><code class="language-text">twait %signal, %cmp_value {cmp = #pto.cmp&lt;EQ&gt;} : (!pto.memref&lt;i32&gt;, i32)
 twait %signal_matrix, %cmp_value {cmp = #pto.cmp&lt;GE&gt;} : (!pto.memref&lt;i32, MxN&gt;, i32)
 </code></pre>
@@ -978,90 +991,114 @@ twait %signal_matrix, %cmp_value {cmp = #pto.cmp&lt;GE&gt;} : (!pto.memref&lt;i3
 <pre><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
 PTO_INST void TWAIT(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp cmp, WaitEvents&amp;... events);
 </code></pre>
+<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>signalData</code></td>
+<td>Signal or signal tensor. Must be on local NPU memory.</td>
+</tr>
+<tr>
+<td><code>cmpValue</code></td>
+<td>Constant comparison value.</td>
+</tr>
+<tr>
+<td><code>cmp</code></td>
+<td>Comparison operator.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="comparison-operators">Comparison Operators<a class="headerlink" href="#comparison-operators" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EQ</code></td>
+<td><code>signal == cmpValue</code></td>
+</tr>
+<tr>
+<td><code>NE</code></td>
+<td><code>signal != cmpValue</code></td>
+</tr>
+<tr>
+<td><code>GT</code></td>
+<td><code>signal &gt; cmpValue</code></td>
+</tr>
+<tr>
+<td><code>GE</code></td>
+<td><code>signal &gt;= cmpValue</code></td>
+</tr>
+<tr>
+<td><code>LT</code></td>
+<td><code>signal &lt; cmpValue</code></td>
+</tr>
+<tr>
+<td><code>LE</code></td>
+<td><code>signal &lt;= cmpValue</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
+<p>None. The operation blocks until the condition is satisfied.</p>
+<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
+<p>Halts the scalar unit. Does not affect other NPUs.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Type constraints</strong>:<ul>
-<li><code>GlobalSignalData::DType</code> must be <code>int32_t</code> (32-bit signal).</li>
+<li><code>GlobalSignalData::DType</code> must be <code>int32_t</code>.</li>
+<li><code>signalData</code> must point to local address on the current NPU.</li>
+<li>For signal tensors: all elements must satisfy the condition simultaneously.</li>
+<li>Up to 5-D tensor shapes are supported.</li>
 </ul>
-</li>
-<li><strong>Memory constraints</strong>:<ul>
-<li><code>signalData</code> must point to local address (on current NPU).</li>
-</ul>
-</li>
-<li><strong>Shape semantics</strong>:<ul>
-<li>For single signal: Shape is <code>&lt;1,1,1,1,1&gt;</code>.</li>
-<li>For signal tensor: Shape determines the multi-dimensional region (up to 5-D) to wait on. All signals in the tensor must satisfy the condition.</li>
-</ul>
-</li>
-<li><strong>Comparison operators</strong> (WaitCmp):
-  | Value | Condition |
-  |-------|-----------|
-  | <code>EQ</code> | <code>signal == cmpValue</code> |
-  | <code>NE</code> | <code>signal != cmpValue</code> |
-  | <code>GT</code> | <code>signal &gt; cmpValue</code> |
-  | <code>GE</code> | <code>signal &gt;= cmpValue</code> |
-  | <code>LT</code> | <code>signal &lt; cmpValue</code> |
-  | <code>LE</code> | <code>signal &lt;= cmpValue</code> |</li>
+<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Using a non-local signal address is undefined behavior.</li>
+<li>The signal address must be accessible throughout the wait duration.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="wait-for-single-signal">Wait for Single Signal<a class="headerlink" href="#wait-for-single-signal" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
 using namespace pto;
 
-void wait_for_ready(__gm__ int32_t* local_signal) {
-    comm::Signal sig(local_signal);
-
-    // Wait until signal == 1
-    comm::TWAIT(sig, 1, comm::WaitCmp::EQ);
+void wait_ready(__gm__ int32_t* local_signal) {
+  comm::Signal sig(local_signal);
+  comm::TWAIT(sig, 1, comm::WaitCmp::EQ);
 }
 </code></pre>
 <h3 id="wait-for-signal-matrix">Wait for Signal Matrix<a class="headerlink" href="#wait-for-signal-matrix" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-// Wait for signals from a 4x8 dense grid of workers
-void wait_worker_grid(__gm__ int32_t* signal_matrix) {
-    comm::Signal2D&lt;4, 8&gt; grid(signal_matrix);
-
-    // Wait until all 32 signals == 1
-    comm::TWAIT(grid, 1, comm::WaitCmp::EQ);
-}
-</code></pre>
-<h3 id="wait-for-counter-threshold">Wait for Counter Threshold<a class="headerlink" href="#wait-for-counter-threshold" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-void wait_for_count(__gm__ int32_t* local_counter, int expected_count) {
-    comm::Signal counter(local_counter);
-
-    // Wait until counter &gt;= expected_count
-    comm::TWAIT(counter, expected_count, comm::WaitCmp::GE);
+<pre><code class="language-cpp">void wait_worker_grid(__gm__ int32_t* signal_matrix) {
+  comm::Signal2D&lt;4, 8&gt; grid(signal_matrix);
+  comm::TWAIT(grid, 1, comm::WaitCmp::EQ);  // waits until all 32 signals == 1
 }
 </code></pre>
 <h3 id="producer-consumer-pattern">Producer-Consumer Pattern<a class="headerlink" href="#producer-consumer-pattern" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
-
-using namespace pto;
-
-// Producer: notify when data is ready
+<pre><code class="language-cpp">// Producer
 void producer(__gm__ int32_t* remote_flag) {
-    // ... produce data ...
-
-    comm::Signal flag(remote_flag);
-    comm::TNOTIFY(flag, 1, comm::NotifyOp::Set);
+  comm::Signal flag(remote_flag);
+  comm::TNOTIFY(flag, 1, comm::NotifyOp::Set);
 }
 
-// Consumer: wait for data
+// Consumer
 void consumer(__gm__ int32_t* local_flag) {
-    comm::Signal flag(local_flag);
-    comm::TWAIT(flag, 1, comm::WaitCmp::EQ);
-
-    // ... consume data ...
+  comm::Signal flag(local_flag);
+  comm::TWAIT(flag, 1, comm::WaitCmp::EQ);
 }
 </code></pre>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../collective-communication.md">Collective Communication</a> for related operations</li>
+<li><code>TNOTIFY</code> for the signaling half of this protocol</li>
+</ul>
               
             </div>
           </div><footer>

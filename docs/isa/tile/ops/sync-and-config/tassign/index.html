@@ -144,10 +144,6 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
@@ -168,25 +164,17 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#runtime-address-no-compile-time-check">Runtime address (no compile-time check)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#runtime-address">Runtime address</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#compile-time-address-with-static-bounds-check">Compile-time address (with static bounds check)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#ping-pong-l0-buffer-allocation">Ping-pong L0 buffer allocation</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
-    </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#see-also">See Also</a>
     </li>
     </ul>
                 </li>
@@ -256,6 +244,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/texp/">pto.texp</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/tpow/">pto.tpow</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/tnot/">pto.tnot</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../elementwise-tile-tile/trelu/">pto.trelu</a>
@@ -287,6 +277,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tdivs/">pto.tdivs</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tmuls/">pto.tmuls</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tpows/">pto.tpows</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile-scalar-and-immediate/tfmods/">pto.tfmods</a>
                 </li>
@@ -930,7 +922,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TCONCAT/">TCONCAT</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../TDEQUANT/">TDEQUANT</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../TFREE/">TFREE</a>
                 </li>
@@ -992,14 +984,12 @@
 <h1 id="ptotassign">pto.tassign<a class="headerlink" href="#ptotassign" title="Permanent link">&para;</a></h1>
 <p><code>pto.tassign</code> is part of the <a href="../../../sync-and-config/">Sync And Config</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Bind a Tile object to an implementation-defined on-chip address (manual placement).</p>
+<p>Bind a Tile object to an on-chip physical address. In Manual mode, this is how the author controls which tile buffer holds which logical tile variable.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Bind a Tile object to an implementation-defined on-chip address (manual placement). It is part of the tile synchronization or configuration shell, so the visible effect is ordering or state setup rather than arithmetic payload transformation.</p>
-<p>Not applicable.</p>
+<p><code>TASSIGN</code> maps a tile variable to a physical storage address within the tile buffer space (UB, L0A, L0B, L0C, etc.). The mapping is immediate and persists until the tile is rebound or the program ends.</p>
+<p>Without <code>TASSIGN</code>, the compiler/runtime assigns tile buffers automatically (Auto mode). With <code>TASSIGN</code>, the author overrides this assignment for Manual mode code.</p>
+<p>The physical address is interpreted by the tile buffer controller on the AI Core. The exact encoding and addressing scheme within the buffer space is implementation-defined.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
-<p><code>TASSIGN</code> is typically introduced by bufferization/lowering when mapping SSA tiles to physical storage.</p>
-<p>Synchronous form:</p>
 <pre><code class="language-text">tassign %tile, %addr : !pto.tile&lt;...&gt;, index
 </code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
@@ -1008,34 +998,25 @@
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre><code class="language-text">pto.tassign ins(%tile, %addr : !pto.tile_buf&lt;...&gt;, dtype)
 </code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tassign %tile, %addr : !pto.tile&lt;...&gt;, dtype
-</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tassign ins(%tile, %addr : !pto.tile_buf&lt;...&gt;, dtype)
-</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>.</p>
 <h3 id="form-1-runtime-address">Form 1: Runtime address<a class="headerlink" href="#form-1-runtime-address" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">template &lt;typename T, typename AddrType&gt;
 PTO_INST void TASSIGN(T&amp; obj, AddrType addr);
 </code></pre>
-<p>Binds <code>obj</code> to the on-chip address <code>addr</code>. No compile-time bounds checking is
-performed (the address value is not available at compile time).</p>
+<p>Binds <code>obj</code> to the on-chip address <code>addr</code>. The address value is interpreted at runtime; no compile-time bounds checking is performed.</p>
 <h3 id="form-2-compile-time-address-with-static-bounds-check">Form 2: Compile-time address (with static bounds check)<a class="headerlink" href="#form-2-compile-time-address-with-static-bounds-check" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">template &lt;std::size_t Addr, typename T&gt;
 PTO_INST void TASSIGN(T&amp; obj);
 </code></pre>
-<p>Binds <code>obj</code> to the on-chip address <code>Addr</code>. Because <code>Addr</code> is a non-type
-template parameter, the compiler performs the following <strong>compile-time</strong> checks
-via <code>static_assert</code>:</p>
+<p>Binds <code>obj</code> to the on-chip address <code>Addr</code>. Because <code>Addr</code> is a non-type template parameter, the compiler performs static bounds checks at compile time:</p>
 <table>
 <thead>
 <tr>
 <th>Check</th>
 <th>Condition</th>
-<th>Assertion ID</th>
-<th>Error message</th>
+<th>Error ID</th>
+<th>Error Message</th>
 </tr>
 </thead>
 <tbody>
@@ -1065,151 +1046,146 @@ via <code>static_assert</code>:</p>
 </tr>
 </tbody>
 </table>
-<p>See <code>docs/coding/debug.md</code> (fix recipe <code>FIX-A12</code>) for suggested remedies.</p>
-<p>The memory space, capacity, and alignment are determined automatically from the
-Tile's <code>TileType</code> (i.e. <code>Loc</code> template parameter):</p>
+<p>The memory space, capacity, and alignment are determined from the tile's <code>TileType</code>:</p>
 <table>
 <thead>
 <tr>
 <th>TileType</th>
-<th>Memory</th>
-<th>Capacity (A2A3)</th>
-<th>Capacity (A5)</th>
-<th>Capacity (Kirin9030)</th>
-<th>Capacity (KirinX90)</th>
-<th>Alignment</th>
+<th>Buffer</th>
+<th style="text-align: center;">Capacity (A2A3)</th>
+<th style="text-align: center;">Capacity (A5)</th>
+<th style="text-align: center;">Capacity (Kirin9030)</th>
+<th style="text-align: center;">Capacity (KirinX90)</th>
+<th style="text-align: center;">Alignment</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Vec</td>
 <td>UB</td>
-<td>192 KB</td>
-<td>256 KB</td>
-<td>128 KB</td>
-<td>128 KB</td>
-<td>32 B</td>
+<td style="text-align: center;">192 KB</td>
+<td style="text-align: center;">256 KB</td>
+<td style="text-align: center;">128 KB</td>
+<td style="text-align: center;">128 KB</td>
+<td style="text-align: center;">32 B</td>
 </tr>
 <tr>
 <td>Mat</td>
 <td>L1</td>
-<td>512 KB</td>
-<td>512 KB</td>
-<td>512 KB</td>
-<td>1024 KB</td>
-<td>32 B</td>
+<td style="text-align: center;">512 KB</td>
+<td style="text-align: center;">512 KB</td>
+<td style="text-align: center;">512 KB</td>
+<td style="text-align: center;">1024 KB</td>
+<td style="text-align: center;">32 B</td>
 </tr>
 <tr>
 <td>Left</td>
 <td>L0A</td>
-<td>64 KB</td>
-<td>64 KB</td>
-<td>32 KB</td>
-<td>64 KB</td>
-<td>32 B</td>
+<td style="text-align: center;">64 KB</td>
+<td style="text-align: center;">64 KB</td>
+<td style="text-align: center;">32 KB</td>
+<td style="text-align: center;">64 KB</td>
+<td style="text-align: center;">32 B</td>
 </tr>
 <tr>
 <td>Right</td>
 <td>L0B</td>
-<td>64 KB</td>
-<td>64 KB</td>
-<td>32 KB</td>
-<td>64 KB</td>
-<td>32 B</td>
+<td style="text-align: center;">64 KB</td>
+<td style="text-align: center;">64 KB</td>
+<td style="text-align: center;">32 KB</td>
+<td style="text-align: center;">64 KB</td>
+<td style="text-align: center;">32 B</td>
 </tr>
 <tr>
 <td>Acc</td>
 <td>L0C</td>
-<td>128 KB</td>
-<td>256 KB</td>
-<td>64 KB</td>
-<td>128 KB</td>
-<td>32 B</td>
+<td style="text-align: center;">128 KB</td>
+<td style="text-align: center;">256 KB</td>
+<td style="text-align: center;">64 KB</td>
+<td style="text-align: center;">128 KB</td>
+<td style="text-align: center;">32 B</td>
 </tr>
 <tr>
 <td>Bias</td>
 <td>Bias</td>
-<td>1 KB</td>
-<td>4 KB</td>
-<td>1 KB</td>
-<td>1 KB</td>
-<td>32 B</td>
+<td style="text-align: center;">1 KB</td>
+<td style="text-align: center;">4 KB</td>
+<td style="text-align: center;">1 KB</td>
+<td style="text-align: center;">1 KB</td>
+<td style="text-align: center;">32 B</td>
 </tr>
 <tr>
 <td>Scaling</td>
 <td>FBuffer</td>
-<td>2 KB</td>
-<td>4 KB</td>
-<td>7 KB</td>
-<td>6 KB</td>
-<td>32 B</td>
+<td style="text-align: center;">2 KB</td>
+<td style="text-align: center;">4 KB</td>
+<td style="text-align: center;">7 KB</td>
+<td style="text-align: center;">6 KB</td>
+<td style="text-align: center;">32 B</td>
 </tr>
 <tr>
 <td>ScaleLeft</td>
 <td>L0A</td>
-<td>N/A</td>
-<td>4 KB</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>32 B</td>
+<td style="text-align: center;">N/A</td>
+<td style="text-align: center;">4 KB</td>
+<td style="text-align: center;">N/A</td>
+<td style="text-align: center;">N/A</td>
+<td style="text-align: center;">32 B</td>
 </tr>
 <tr>
 <td>ScaleRight</td>
 <td>L0B</td>
-<td>N/A</td>
-<td>4 KB</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>32 B</td>
+<td style="text-align: center;">N/A</td>
+<td style="text-align: center;">4 KB</td>
+<td style="text-align: center;">N/A</td>
+<td style="text-align: center;">N/A</td>
+<td style="text-align: center;">32 B</td>
 </tr>
 </tbody>
 </table>
-<p>Capacities can be overridden at build time via <code>-D</code> flags (e.g.
-<code>-DPTO_UBUF_SIZE_BYTES=262144</code>). See <code>include/pto/common/buffer_limits.hpp</code>.</p>
-<p><strong>Note:</strong> This overload is only available for <code>Tile</code> and <code>ConvTile</code> types. For
-<code>GlobalTensor</code>, use <code>TASSIGN(obj, pointer)</code> (Form 1).</p>
+<p>Capacities can be overridden at build time via <code>-D</code> flags (e.g., <code>-DPTO_UBUF_SIZE_BYTES=262144</code>). See <code>include/pto/common/buffer_limits.hpp</code>.</p>
+<p>Form 2 is only available for <code>Tile</code> and <code>ConvTile</code> types. For <code>GlobalTensor</code>, use Form 1.</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>tile</code> is the tile to bind.</li>
-<li><code>addr</code> is the on-chip address to bind the tile to.</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>Operand</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tile</code></td>
+<td>The tile object to bind</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>The on-chip address to bind (runtime value or compile-time constant)</td>
+</tr>
+</tbody>
+</table>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>This form is defined primarily by its ordering or configuration effect. It does not introduce a new payload tile beyond any explicit state object named by the syntax.</p>
+<p>None. The binding takes effect immediately; subsequent tile operations on <code>tile</code> use the bound physical address.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation may establish a synchronization edge, bind or configure architectural tile state, or update implementation-defined configuration that later tile instructions consume.</p>
+<p>Binds the tile variable to a physical address. Using the same physical address for two non-alias tiles simultaneously produces undefined results.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li>
-<p>Configuration and synchronization state MUST only be used where later instructions document the dependency.</p>
-</li>
-<li>
-<p>Programs must not treat implementation-defined manual placement as a portable substitute for legal PTO behavior.</p>
-</li>
+<li>Two non-alias tiles must not use the same physical address without an intervening <code>TSYNC</code>.</li>
+<li>Configuration state must only be used where later instructions document the dependency.</li>
+<li>Programs must not treat manual placement as a portable substitute for legal PTO behavior.</li>
 </ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
-</ul>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>Implementation checks</strong>:<ul>
-<li>If <code>obj</code> is a Tile:</li>
-<li>In manual mode (when <code>__PTO_AUTO__</code> is not defined), <code>addr</code> must be an integral type and is reinterpreted as the tile's storage address.</li>
-<li>In auto mode (when <code>__PTO_AUTO__</code> is defined), <code>TASSIGN(tile, addr)</code> is a no-op.</li>
-<li>If <code>obj</code> is a <code>GlobalTensor</code>:</li>
-<li><code>addr</code> must be a pointer type.</li>
-<li>The pointed-to element type must match <code>GlobalTensor::DType</code>.</li>
-</ul>
-</li>
+<li>In Auto mode, <code>TASSIGN(tile, addr)</code> is a no-op because the compiler/runtime manages placement.</li>
+<li>If <code>obj</code> is a <code>GlobalTensor</code>, <code>addr</code> must be a pointer type matching <code>GlobalTensor::DType</code>.</li>
+<li>Using <code>TASSIGN</code> with an out-of-bounds address triggers a compile-time error (Form 2) or undefined behavior (Form 1).</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="runtime-address-no-compile-time-check">Runtime address (no compile-time check)<a class="headerlink" href="#runtime-address-no-compile-time-check" title="Permanent link">&para;</a></h3>
+<h3 id="runtime-address">Runtime address<a class="headerlink" href="#runtime-address" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
-void example_runtime() {
+void example() {
   using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   TileT a, b, c;
   TASSIGN(a, 0x1000);
@@ -1220,69 +1196,45 @@ void example_runtime() {
 </code></pre>
 <h3 id="compile-time-address-with-static-bounds-check">Compile-time address (with static bounds check)<a class="headerlink" href="#compile-time-address-with-static-bounds-check" title="Permanent link">&para;</a></h3>
 <pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
-void example_checked() {
+void example() {
   using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   TileT a, b, c;
-
-  TASSIGN&lt;0x0000&gt;(a);   // OK: 0x0000 + 1024 &lt;= 192KB
-  TASSIGN&lt;0x0400&gt;(b);   // OK: 0x0400 + 1024 &lt;= 192KB
-  TASSIGN&lt;0x0800&gt;(c);   // OK: 0x0800 + 1024 &lt;= 192KB
+  TASSIGN&lt;0x0000&gt;(a);    // OK: 0 + 1024 &lt;= 192KB
+  TASSIGN&lt;0x0400&gt;(b);    // OK: 0x0400 + 1024 &lt;= 192KB
+  TASSIGN&lt;0x0800&gt;(c);    // OK: 0x0800 + 1024 &lt;= 192KB
   TADD(c, a, b);
 }
 </code></pre>
-<p>The following triggers a compile error:</p>
-<pre><code class="language-cpp">void example_oob() {
-  // Tile&lt;Vec, float, 256, 256&gt; occupies 256*256*4 = 256KB
-  using BigTile = Tile&lt;TileType::Vec, float, 256, 256&gt;;
+<p>Compile-time errors for out-of-bounds placement:</p>
+<pre><code class="language-cpp">// Compile error: tile size exceeds buffer capacity
+void bad1() {
+  using BigTile = Tile&lt;TileType::Vec, float, 256, 256&gt;;  // 256KB
   BigTile t;
-
-  // static_assert fires: tile_size (256KB) &gt; UB capacity (192KB on A2A3)
-  TASSIGN&lt;0x0&gt;(t);
+  TASSIGN&lt;0x0&gt;(t);  // SA-0352: exceeds 192KB on A2A3
 }
-</code></pre>
-<pre><code class="language-cpp">void example_oob_addr() {
+
+// Compile error: address + tile size exceeds capacity
+void bad2() {
   using TileT = Tile&lt;TileType::Vec, float, 128, 128&gt;;  // 64KB
   TileT t;
-
-  // static_assert fires: 0x20000 (128KB) + 64KB = 192KB,
-  //                       but 0x20001 + 64KB &gt; 192KB
-  TASSIGN&lt;0x20001&gt;(t);
+  TASSIGN&lt;0x20001&gt;(t);  // SA-0353: 0x20001 + 64KB &gt; 192KB
 }
 </code></pre>
 <h3 id="ping-pong-l0-buffer-allocation">Ping-pong L0 buffer allocation<a class="headerlink" href="#ping-pong-l0-buffer-allocation" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void example_pingpong() {
-  using L0ATile = TileLeft&lt;half, 64, 128&gt;;   // L0A tile
-  using L0BTile = TileRight&lt;half, 128, 64&gt;;  // L0B tile
-
+<pre><code class="language-cpp">void pingpong() {
+  using L0ATile = TileLeft&lt;half, 64, 128&gt;;
+  using L0BTile = TileRight&lt;half, 128, 64&gt;;
   L0ATile a0, a1;
   L0BTile b0, b1;
-
   TASSIGN&lt;0x0000&gt;(a0);   // L0A ping
   TASSIGN&lt;0x8000&gt;(a1);   // L0A pong
-  TASSIGN&lt;0x0000&gt;(b0);   // L0B ping  (separate physical memory from L0A)
+  TASSIGN&lt;0x0000&gt;(b0);   // L0B ping (separate physical memory)
   TASSIGN&lt;0x8000&gt;(b1);   // L0B pong
 }
 </code></pre>
-<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-pto.tassign %tile, %addr : !pto.tile&lt;...&gt;, dtype
-</code></pre>
-<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
-# Optional for tile operands:
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-pto.tassign %tile, %addr : !pto.tile&lt;...&gt;, dtype
-</code></pre>
-<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">tassign %tile, %addr : !pto.tile&lt;...&gt;, index
-# AS Level 2 (DPS)
-pto.tassign ins(%tile, %addr : !pto.tile_buf&lt;...&gt;, dtype)
-</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../sync-and-config/">Sync And Config</a></li>
 <li>Previous op in instruction set: <a href="../tsync/">pto.tsync</a></li>
