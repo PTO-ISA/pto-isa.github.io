@@ -935,12 +935,12 @@
               
                 <!-- Generated from `docs/isa/tile/ops/sync-and-config/tset-img2col-rpt_zh.md` -->
 
-<h1 id="tset_img2col_rpt">TSET_IMG2COL_RPT<a class="headerlink" href="#tset_img2col_rpt" title="Permanent link">&para;</a></h1>
+<h1 id="set_img2col_rpt">SET_IMG2COL_RPT<a class="headerlink" href="#set_img2col_rpt" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSET_IMG2COL_RPT tile operation" src="../../../../../figures/isa/TSET_IMG2COL_RPT.svg" /></p>
+<p><img alt="SET_IMG2COL_RPT tile operation" src="../../../../../figures/isa/SET_IMG2COL_RPT.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TSET_IMG2COL_RPT</code> 把 <code>Img2colTileConfig</code> 里的重复控制字段写入 IMG2COL 相关寄存器，供后续 <code>TIMG2COL</code> 一类操作使用。</p>
-<p>如果 <code>TSETFMATRIX</code> 负责写“输入特征图几何信息”，那么这条指令负责写“IMG2COL 应该按什么重复方式工作”。</p>
+<p><code>SET_IMG2COL_RPT</code> 把 <code>Img2colTileConfig</code> 里的重复控制字段写入 IMG2COL 相关寄存器，供后续 <code>TIMG2COL</code> 一类操作使用。</p>
+<p>如果 <code>SETFMATRIX</code> 负责写“输入特征图几何信息”，那么这条指令负责写“IMG2COL 应该按什么重复方式工作”。</p>
 <h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>A2/A3 与 A5 都会从配置 Tile 中读取 <code>repeat</code> 相关字段，但两代硬件暴露的字段不完全一样。</p>
 <h3 id="a2a3">A2/A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
@@ -971,10 +971,10 @@
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre><code class="language-cpp">template &lt;typename ConvTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);
+PTO_INST RecordEvent SET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);
 
 template &lt;typename ConvTileData, SetFmatrixMode FmatrixMode = SetFmatrixMode::FMATRIX_A_MANUAL, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);
+PTO_INST RecordEvent SET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);
 </code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
@@ -1010,13 +1010,13 @@ PTO_INST RecordEvent TSET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;...
 using namespace pto;
 
 void example_set_img2col_rpt(Img2colTileConfig&lt;uint16_t&gt;&amp; cfg) {
-  TSET_IMG2COL_RPT(cfg);
+  SET_IMG2COL_RPT(cfg);
 }
 </code></pre>
 <h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../../scalar/ops/control-and-configuration/tsetfmatrix_zh/">TSETFMATRIX</a></li>
-<li><a href="../tset-img2col-padding_zh/">TSET_IMG2COL_PADDING</a></li>
+<li><a href="../../../../scalar/ops/control-and-configuration/tsetfmatrix_zh/">SETFMATRIX</a></li>
+<li><a href="../tset-img2col-padding_zh/">SET_IMG2COL_PADDING</a></li>
 <li><a href="../../layout-and-rearrangement/timg2col_zh/">TIMG2COL</a></li>
 </ul>
               

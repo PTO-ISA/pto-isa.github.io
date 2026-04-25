@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TSET_IMG2COL_RPT_zh/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/SETFMATRIX_zh/" />
       <link rel="shortcut icon" href="../../../img/favicon.ico" />
-    <title>TSET IMG2COL RPT zh - PTO ISA Manual</title>
+    <title>SETFMATRIX zh - PTO ISA Manual</title>
     <link rel="stylesheet" href="../../../css/theme.css" />
     <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "TSET IMG2COL RPT zh";
-        var mkdocs_page_input_path = "docs/isa/TSET_IMG2COL_RPT_zh.md";
-        var mkdocs_page_url = "/docs/isa/TSET_IMG2COL_RPT_zh/";
+        var mkdocs_page_name = "SETFMATRIX zh";
+        var mkdocs_page_input_path = "docs/isa/SETFMATRIX_zh.md";
+        var mkdocs_page_url = "/docs/isa/SETFMATRIX_zh/";
       </script>
     
     <!--[if lt IE 9]>
@@ -924,7 +924,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">TSET IMG2COL RPT zh</li>
+      <li class="breadcrumb-item active">SETFMATRIX zh</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -933,51 +933,15 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/isa/TSET_IMG2COL_RPT_zh.md` -->
+                <!-- Generated from `docs/isa/SETFMATRIX_zh.md` -->
 
-<h1 id="tset_img2col_rpt">TSET_IMG2COL_RPT<a class="headerlink" href="#tset_img2col_rpt" title="Permanent link">&para;</a></h1>
-<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSET_IMG2COL_RPT tile operation" src="../../figures/isa/TSET_IMG2COL_RPT.svg" /></p>
-<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>从 IMG2COL 配置 Tile 设置 IMG2COL 重复次数元数据。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>该指令本身不产生直接的张量算术结果，而是更新供后续数据搬运操作使用的 IMG2COL 控制状态。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../assembly/PTO-AS_zh/">PTO-AS Specification</a>.</p>
-<p>示意形式：</p>
-<pre><code class="language-text">tset_img2col_rpt %cfg
-</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tset_img2col_rpt %cfg : !pto.fmatrix_config -&gt; ()
-</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tset_img2col_rpt ins(%cfg : !pto.fmatrix_config) outs()
-</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename ConvTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);
-
-template &lt;typename ConvTileData, SetFmatrixMode FmatrixMode = SetFmatrixMode::FMATRIX_A_MANUAL, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);
-</code></pre>
-<p>For <code>MEMORY_BASE</code> targets, an overload without <code>SetFmatrixMode</code> is also provided.</p>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h1 id="setfmatrix">SETFMATRIX<a class="headerlink" href="#setfmatrix" title="Permanent link">&para;</a></h1>
+<p>根路径兼容入口。规范页见标量/控制路径下的 <a href="../scalar/ops/control-and-configuration/tsetfmatrix_zh/">SETFMATRIX</a>。</p>
 <ul>
-<li>This instruction is backend-specific and available only for backends that expose IMG2COL configuration state.</li>
-<li><code>src</code> must be a valid IMG2COL configuration tile type accepted by the backend implementation.</li>
-<li>The exact register/metadata fields updated by this instruction are implementation-defined.</li>
-<li>Use this instruction before dependent <code>TIMG2COL</code> operations in the same execution stream.</li>
+<li>指令集：<a href="../scalar/control-and-configuration_zh/">控制与配置</a></li>
+<li>规范页：<a href="../scalar/ops/control-and-configuration/tsetfmatrix_zh/">SETFMATRIX</a></li>
 </ul>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_set_img2col_rpt(Img2colTileConfig&lt;uint64_t&gt;&amp; cfg) {
-  TSET_IMG2COL_RPT(cfg);
-}
-</code></pre>
+<p>新的 PTO ISA 文档应直接链接到分组后的指令集路径。</p>
               
             </div>
           </div><footer>
