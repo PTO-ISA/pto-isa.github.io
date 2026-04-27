@@ -48,7 +48,7 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../introduction/goals-of-pto/">Goals Of PTO</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../introduction/pto-isa-version-1-0/">PTO ISA Version 1.0</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../introduction/current-isa-scope/">Current PTO ISA Scope</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../introduction/design-goals-and-boundaries/">Scope And Boundaries</a>
                   </li>
@@ -97,33 +97,48 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">7. Instruction Set Overview</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-surfaces/">Overview</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-surfaces/tile-instructions/">Tile Instructions</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-surfaces/vector-instructions/">Vector Instructions</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-surfaces/scalar-and-control-instructions/">Scalar And Control Instructions</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../instruction-surfaces/other-instructions/">Other Instructions</a>
-                  </li>
-              </ul>
-              <p class="caption"><span class="caption-text">8. Instruction Set Contracts</span></p>
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Tile Instruction Set</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a>
+    <li class="toctree-l2"><a class="reference internal" href="#instruction-overview">Instruction Overview</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#data-flow">Data Flow</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#instruction-classes">Instruction Classes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#inputs">Inputs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#side-effects">Side Effects</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#shared-constraints">Shared Constraints</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#valid-region-compatibility">Valid Region Compatibility</a>
+    <li class="toctree-l2"><a class="reference internal" href="#valid-region-model">Valid Region Model</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#constraints">Constraints</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cases-that-are-not-allowed">Cases That Are Not Allowed</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#saturating-variants">Saturating Variants</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#type-support-by-profile">Type Support by Profile</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#syntax">Syntax</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-form-pto-as">Assembly Form (PTO-AS)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ssa-form-as-level-1">SSA Form (AS Level 1)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#dps-form-as-level-2">DPS Form (AS Level 2)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#navigation">Navigation</a>
     </li>
@@ -135,10 +150,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../scalar-and-control-families/">Scalar And Control Instruction Set</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../other-families/">Other Instruction Set</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../communication-families/">Communication Instruction Set</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../system-scheduling-families/">System Scheduling Instruction Set</a>
                   </li>
               </ul>
-              <p class="caption"><span class="caption-text">9. Tile Instruction Reference</span></p>
+              <p class="caption"><span class="caption-text">8. Tile Instruction Reference</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
@@ -150,19 +167,21 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tassign/">pto.tassign</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsethf32mode/">pto.tsethf32mode</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/talias/">pto.talias</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsettf32mode/">pto.tsettf32mode</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/sethf32mode/">pto.sethf32mode</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsetfmatrix/">pto.tsetfmatrix</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/settf32mode/">pto.settf32mode</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tset-img2col-rpt/">pto.tset_img2col_rpt</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/setfmatrix/">pto.setfmatrix</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tset-img2col-padding/">pto.tset_img2col_padding</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/set-img2col-rpt/">pto.set_img2col_rpt</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsubview/">pto.tsubview</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/set-img2col-padding/">pto.set_img2col_padding</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tget-scale-addr/">pto.tget_scale_addr</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/subview/">pto.subview</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/get-scale-addr/">pto.get_scale_addr</a>
                 </li>
     </ul>
                   </li>
@@ -235,6 +254,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/tile-scalar-and-immediate/">Instruction Set Contract</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/texpands/">pto.texpands</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/taxpy/">pto.taxpy</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/tile-scalar-and-immediate/tcmps/">pto.tcmps</a>
                 </li>
@@ -348,8 +369,6 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tstore/">pto.tstore</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tstore-fp/">pto.tstore_fp</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/mgather/">pto.mgather</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/mscatter/">pto.mscatter</a>
@@ -384,13 +403,9 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/textract/">pto.textract</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/textract-fp/">pto.textract_fp</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/timg2col/">pto.timg2col</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tinsert/">pto.tinsert</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tinsert-fp/">pto.tinsert_fp</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tfillpad/">pto.tfillpad</a>
                 </li>
@@ -400,7 +415,9 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tmov/">pto.tmov</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tmov-fp/">pto.tmov_fp</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tconcat/">pto.tconcat</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/tpack/">pto.tpack</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/layout-and-rearrangement/treshape/">pto.treshape</a>
                 </li>
@@ -438,10 +455,16 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tquant/">pto.tquant</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/tdequant/">pto.tdequant</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/trandom/">pto.trandom</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/irregular-and-complex/thistogram/">pto.thistogram</a>
+                </li>
     </ul>
                   </li>
               </ul>
-              <p class="caption"><span class="caption-text">10. Vector ISA Reference</span></p>
+              <p class="caption"><span class="caption-text">9. Vector Instruction Reference</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../vector/">Overview</a>
                   </li>
@@ -706,11 +729,15 @@
     </ul>
                   </li>
               </ul>
-              <p class="caption"><span class="caption-text">11. Scalar And Control Reference</span></p>
+              <p class="caption"><span class="caption-text">10. Scalar And Control Reference</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../scalar/">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../scalar/control-and-configuration/">Control And Configuration</a>
+                  <li class="toctree-l1"><a class="reference internal" >Control And Configuration</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../scalar/control-and-configuration/">Instruction Set Overview</a>
+                </li>
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Pipeline Sync</a>
     <ul>
@@ -843,72 +870,46 @@
     </ul>
                   </li>
               </ul>
-              <p class="caption"><span class="caption-text">11A. PTO-AS Reference</span></p>
+              <p class="caption"><span class="caption-text">11. Communication ISA Reference</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../../assembly/PTO-AS/">PTO-AS Specification</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../../assembly/PTO-AS_zh/">PTO-AS 规范</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/communication-runtime/">Instruction Set Contract</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TBROADCAST/">pto.tbroadcast</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TGET/">pto.tget</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TGET_ASYNC/">pto.tget_async</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TGATHER/">pto.tgather</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TNOTIFY/">pto.tnotify</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TPUT/">pto.tput</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TPUT_ASYNC/">pto.tput_async</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TREDUCE/">pto.treduce</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TSCATTER/">pto.tscatter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TTEST/">pto.ttest</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../comm/TWAIT/">pto.twait</a>
                   </li>
               </ul>
-              <p class="caption"><span class="caption-text">12. Other And Communication Reference</span></p>
+              <p class="caption"><span class="caption-text">12. System Scheduling ISA Reference</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../other/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../system/">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" >Communication And Runtime</a>
-    <ul>
-                <li class="toctree-l2"><a class="reference internal" href="../../other/communication-and-runtime/">Instruction Set Contract</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/">Communication Overview</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TBROADCAST/">TBROADCAST</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TGET/">TGET</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TGET_ASYNC/">TGET_ASYNC</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TGATHER/">TGATHER</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TNOTIFY/">TNOTIFY</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TPUT/">TPUT</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TPUT_ASYNC/">TPUT_ASYNC</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TREDUCE/">TREDUCE</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TSCATTER/">TSCATTER</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TTEST/">TTEST</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../comm/TWAIT/">TWAIT</a>
-                </li>
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../system-scheduling-families/">System Scheduling Instruction Set</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" >Non ISA And Supporting Ops</a>
-    <ul>
-                <li class="toctree-l2"><a class="reference internal" href="../../other/non-isa-and-supporting-ops/">Instruction Set Contract</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TALIAS/">TALIAS</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TAXPY/">TAXPY</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TCONCAT/">TCONCAT</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../other/ops/non-isa-and-supporting-ops/tdequant/">TDEQUANT</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TFREE/">TFREE</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../THISTOGRAM/">THISTOGRAM</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TPACK/">TPACK</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TPOP/">TPOP</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TPUSH/">TPUSH</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../TRANDOM/">TRANDOM</a>
-                </li>
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../system/ops/TFREE/">pto.tfree</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../system/ops/TPOP/">pto.tpop</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../system/ops/TPUSH/">pto.tpush</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">13. Reference Notes</span></p>
@@ -940,7 +941,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../.." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">8. Instruction Set Contracts</li>
+          <li class="breadcrumb-item">7. Instruction Set Overview</li>
       <li class="breadcrumb-item active">Tile Instruction Set</li>
     <li class="wy-breadcrumbs-aside">
     </li>
@@ -953,84 +954,167 @@
                 <!-- Generated from `docs/isa/instruction-families/tile-families.md` -->
 
 <h1 id="tile-instruction-set">Tile Instruction Set<a class="headerlink" href="#tile-instruction-set" title="Permanent link">&para;</a></h1>
-<p>Tile-instruction set documentation explains how <code>pto.t*</code> groups behave. Each instruction set describes the shared mechanism, operand model, constraints, and target-profile narrowing before the standalone per-op pages under <code>tile/ops/</code>.</p>
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p><code>pto.t*</code> is the tile-oriented instruction set of PTO ISA. It defines how tile payloads are loaded from global memory, transformed element-wise, reduced, expanded, synchronized, and written back to global memory.</p>
+<h2 id="instruction-overview">Instruction Overview<a class="headerlink" href="#instruction-overview" title="Permanent link">&para;</a></h2>
+<p>Tile instructions operate over tiles whose shapes, layouts, roles, and valid regions are architecturally visible. The result is usually another tile, a changed valid-region interpretation, or a synchronization edge.</p>
+<p><strong>Tile operands</strong> (<code>!pto.tile&lt;T, R, C&gt;</code> or <code>!pto.tile_buf&lt;...&gt;</code>) are the primary operands of this instruction set. Unlike vector registers or scalar registers, tiles carry explicit metadata about which elements are valid and what layout the data uses.</p>
+<h3 id="data-flow">Data Flow<a class="headerlink" href="#data-flow" title="Permanent link">&para;</a></h3>
+<pre><code>GlobalMemory
+    │
+    │  pto.tload: GM → local tile buffer
+    ▼
+Tile Buffer ──► Tile Compute ──► Tile Buffer ──► pto.tstore: Tile Buffer → GM
+(Vec/Mat/Acc)    (pto.tadd, pto.tmatmul, etc.)       (Vec/Mat/Acc)
+</code></pre>
+<h2 id="instruction-classes">Instruction Classes<a class="headerlink" href="#instruction-classes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Instruction Set</th>
-<th>Prefix</th>
+<th></th>
+<th>Class</th>
 <th>Description</th>
+<th>Examples</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="../../tile/sync-and-config/">Sync and Config</a></td>
-<td><code>pto.tassign</code>, <code>pto.tsync</code>, <code>pto.tset_img2col_*</code>, <code>pto.tsubview</code></td>
-<td>Resource binding, event setup, tile-local config</td>
+<td></td>
+<td>Sync and Config</td>
+<td>Resource binding, tile address assignment, alias views, pipeline synchronization</td>
+<td><code>pto.tassign</code>, <code>pto.tsync</code>, <code>pto.talias</code>, <code>pto.sethf32mode</code>, <code>pto.settf32mode</code>, <code>pto.setfmatrix</code>, <code>pto.set_img2col_rpt</code>, <code>pto.set_img2col_padding</code>, <code>pto.subview</code>, <code>pto.get_scale_addr</code></td>
 </tr>
 <tr>
-<td><a href="../../tile/elementwise-tile-tile/">Elementwise Tile-Tile</a></td>
-<td><code>pto.tadd</code>, <code>pto.tmul</code>, <code>pto.tpow</code>, <code>pto.tcmp</code>, <code>pto.tcvt</code></td>
+<td></td>
+<td>Elementwise Tile-Tile</td>
 <td>Lane-wise binary and unary operations</td>
+<td><code>pto.tadd</code>, <code>pto.tmul</code>, <code>pto.tpow</code>, <code>pto.tcmp</code>, <code>pto.tcvt</code>, <code>pto.tsel</code>, <code>pto.trelu</code></td>
 </tr>
 <tr>
-<td><a href="../../tile/tile-scalar-and-immediate/">Tile-Scalar and Immediate</a></td>
-<td><code>pto.tadds</code>, <code>pto.tmuls</code>, <code>pto.tpows</code>, <code>pto.tmins</code></td>
-<td>Tile combined with scalar or immediate operand</td>
+<td></td>
+<td>Tile-Scalar and Immediate</td>
+<td>Tile combined with scalar or immediate operands</td>
+<td><code>pto.tadds</code>, <code>pto.taxpy</code>, <code>pto.tmuls</code>, <code>pto.tpows</code>, <code>pto.tlrelu</code>, <code>pto.tcmps</code></td>
 </tr>
 <tr>
-<td><a href="../../tile/reduce-and-expand/">Reduce and Expand</a></td>
-<td><code>pto.trowsum</code>, <code>pto.tcolmax</code>, <code>pto.trowexpand</code></td>
+<td></td>
+<td>Reduce and Expand</td>
 <td>Row/column reductions and expansions</td>
+<td><code>pto.trowsum</code>, <code>pto.tcolmax</code>, <code>pto.trowexpand</code>, <code>pto.tcolexpand</code></td>
 </tr>
 <tr>
-<td><a href="../../tile/memory-and-data-movement/">Memory and Data Movement</a></td>
-<td><code>pto.tload</code>, <code>pto.tstore</code>, <code>pto.mgather</code></td>
+<td></td>
+<td>Memory and Data Movement</td>
 <td>GM↔tile transfer, gather/scatter</td>
+<td><code>pto.tload</code>, <code>pto.tstore</code>, <code>pto.mgather</code>, <code>pto.mscatter</code></td>
 </tr>
 <tr>
-<td><a href="../../tile/matrix-and-matrix-vector/">Matrix and Matrix-Vector</a></td>
-<td><code>pto.tgemv</code>, <code>pto.tmatmul</code>, <code>pto.tmatmul_bias</code></td>
+<td></td>
+<td>Matrix and Matrix-Vector</td>
 <td>GEMV, matmul, and variants</td>
+<td><code>pto.tgemv</code>, <code>pto.tgemv_mx</code>, <code>pto.tmatmul</code>, <code>pto.tmatmul_acc</code>, <code>pto.tmatmul_bias</code></td>
 </tr>
 <tr>
-<td><a href="../../tile/layout-and-rearrangement/">Layout and Rearrangement</a></td>
-<td><code>pto.tmov</code>, <code>pto.ttrans</code>, <code>pto.textract</code></td>
-<td>Reshape, transpose, extract, insert</td>
+<td></td>
+<td>Layout and Rearrangement</td>
+<td>Reshape, transpose, extract, insert, concatenate, pack</td>
+<td><code>pto.tmov</code>, <code>pto.ttrans</code>, <code>pto.tconcat</code>, <code>pto.tpack</code>, <code>pto.treshape</code>, <code>pto.textract</code>, <code>pto.tinsert</code>, <code>pto.timg2col</code></td>
 </tr>
 <tr>
-<td><a href="../../tile/irregular-and-complex/">Irregular and Complex</a></td>
-<td><code>pto.tmrgsort</code>, <code>pto.tquant</code>, <code>pto.tprint</code></td>
-<td>Sort, quantize, histogram, print</td>
+<td></td>
+<td>Irregular and Complex</td>
+<td>Sort, quantize, dequantize, generated state, index movement, partial reductions</td>
+<td><code>pto.tmrgsort</code>, <code>pto.tsort32</code>, <code>pto.tquant</code>, <code>pto.tdequant</code>, <code>pto.trandom</code>, <code>pto.thistogram</code>, <code>pto.tgather</code>, <code>pto.tpartadd</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Configuration tile-side modes</strong> (<code>pto.sethf32mode</code>, <code>pto.settf32mode</code>, <code>pto.setfmatrix</code>, <code>pto.set_img2col_rpt</code>, <code>pto.set_img2col_padding</code>, <code>pto.subview</code>, <code>pto.get_scale_addr</code>) are Tile ISA instructions that program tile-mode registers. They are architecturally tile-state configuration, not scalar control-shell ops. They are documented in the <a href="../../tile/sync-and-config/">Sync and Config</a> group.</p>
+</blockquote>
+<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
+<p>Tile instructions consume combinations of:</p>
+<ul>
+<li>Source tiles (read-only operands): <code>!pto.tile&lt;...&gt;</code></li>
+<li>Destination tiles (write-only or read-write operands): <code>!pto.tile_buf&lt;...&gt;</code></li>
+<li>Scalar modifiers or immediate operands</li>
+<li>GM-facing views: <code>!pto.partition_tensor_view&lt;...&gt;</code></li>
+<li>Optional <code>RecordEvent</code> event tokens or <code>WaitEvents...</code> for chaining</li>
+</ul>
+<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
+<p>Tile instructions produce:</p>
+<ul>
+<li>Destination tile payloads carrying the result</li>
+<li>Changed valid-region interpretations</li>
+<li>Explicit state updates (e.g., assigned addresses) or synchronization edges (<code>RecordEvent</code>)</li>
+</ul>
+<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
+<p>Some tile instructions have architectural side effects beyond the destination tile:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Class</th>
+<th>Side Effects</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Memory and Data Movement</td>
+<td>Reads from or writes to GM-visible storage (<code>pto.tload</code>, <code>pto.tstore</code>)</td>
+</tr>
+<tr>
+<td></td>
+<td>Sync and Config</td>
+<td>Establishes synchronization edges or binds tile addresses (<code>pto.tassign</code>, <code>pto.tsync</code>)</td>
+</tr>
+<tr>
+<td></td>
+<td>Irregular and Complex</td>
+<td>May produce debug output (<code>pto.tprint</code>) or modify allocation state</td>
 </tr>
 </tbody>
 </table>
 <h2 id="shared-constraints">Shared Constraints<a class="headerlink" href="#shared-constraints" title="Permanent link">&para;</a></h2>
-<p>All tile instruction set must state:</p>
+<p>All tile instruction groups must state:</p>
 <ol>
 <li><strong>Valid-region interaction</strong> — How the instruction set interprets source tile valid regions relative to the destination.</li>
 <li><strong>Layout and role restrictions</strong> — Which tile layouts, TileTypes, and roles the instruction set accepts.</li>
 <li><strong>Target-profile restrictions</strong> — Where A2/A3 and A5 differ from each other and from the portable ISA contract.</li>
 <li><strong>Cases that are not allowed</strong> — Conditions that are illegal across the instruction set.</li>
 </ol>
-<h2 id="valid-region-compatibility">Valid Region Compatibility<a class="headerlink" href="#valid-region-compatibility" title="Permanent link">&para;</a></h2>
-<p>All elementwise tile-tile operations iterate over the <strong>destination tile's valid region</strong>. For each lane <code>(r, c)</code> in the destination's valid region:</p>
+<h2 id="valid-region-model">Valid Region Model<a class="headerlink" href="#valid-region-model" title="Permanent link">&para;</a></h2>
+<p>All tile elementwise operations iterate over the <strong>destination tile's valid region</strong>. For each lane <code>(r, c)</code> in the destination's valid region:</p>
 <ul>
 <li>The corresponding lane <code>(r, c)</code> from each source tile is read, <strong>regardless of whether that lane is within the source tile's own valid region</strong></li>
-<li>Source tiles whose valid region does not cover <code>(r, c)</code> read <strong>implementation-defined values</strong></li>
+<li>Source tiles whose valid region does not cover <code>(r, c)</code> read <strong>target-specific undefined values</strong>:</li>
+<li>On A2/A3 and A5: Reads produce undefined values; the underlying tile buffer SRAM content is unpredictable</li>
+<li>On CPU simulator: Reads produce whatever bits are present in the backing memory</li>
 <li>Programs MUST NOT rely on any particular value being read from an out-of-region source lane unless the operation explicitly documents the behavior</li>
 </ul>
-<p>Producers that need defined behavior when valid regions differ SHOULD either:</p>
+<p>See <a href="../../programming-model/tiles-and-valid-regions/">Tiles And Valid Regions</a> for the full model.</p>
+<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Ensure all operands have matching valid regions, or</li>
-<li>Use a fill/pad operation to expand the source before the elementwise operation</li>
+<li><strong>Tile legality</strong> depends on more than dtype; shape, layout, role, and valid region all matter.</li>
+<li>Operations with multiple tiles must define valid-region interaction explicitly.</li>
+<li>Some tile instruction groups are profile-gated: MX block-scale tiles (<code>Left</code>, <code>Right</code>, <code>ScaleLeft</code>, <code>ScaleRight</code>) are A5-only; FP8/FP4-family element types are A5-only.</li>
+<li>Tile instructions do <strong>not</strong> inherit vector-register semantics; they operate on architecturally visible tile state.</li>
+<li>No implicit broadcasting: all source tiles must have shapes compatible with the destination tile.</li>
+</ul>
+<h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Reading undefined out-of-valid-region data as if it were meaningful.</li>
+<li>Assuming tile instructions inherit vector-register semantics.</li>
+<li>Relying on target-specific support gaps as universal architecture rules.</li>
+<li>Assuming implicit broadcasting, reshaping, or valid-region repair unless documented.</li>
+<li>Using MX format tiles (<code>TileType::Left</code>/<code>Right</code>) on CPU or A2/A3 profiles.</li>
+<li>Using FP8 element types on CPU or A2/A3 profiles.</li>
 </ul>
 <h2 id="saturating-variants">Saturating Variants<a class="headerlink" href="#saturating-variants" title="Permanent link">&para;</a></h2>
 <p>Operations with the <code>_c</code> suffix perform saturating arithmetic:</p>
 <table>
 <thead>
 <tr>
+<th></th>
 <th>Variant</th>
 <th>Base Op</th>
 <th>Overflow/Underflow Behavior</th>
@@ -1038,32 +1122,25 @@
 </thead>
 <tbody>
 <tr>
-<td><code>TADD</code></td>
-<td>Addition</td>
-<td>Wrapping: result wraps around the type's representable range</td>
-</tr>
-<tr>
-<td><code>TADDC</code></td>
+<td></td>
+<td><code>pto.taddc</code></td>
 <td>Addition</td>
 <td>Saturating: result is clamped to the type's min/max representable value</td>
 </tr>
 <tr>
-<td><code>TSUB</code></td>
-<td>Subtraction</td>
-<td>Wrapping: result wraps around the type's representable range</td>
-</tr>
-<tr>
-<td><code>TSUBC</code></td>
+<td></td>
+<td><code>pto.tsubc</code></td>
 <td>Subtraction</td>
 <td>Saturating: result is clamped to the type's min/max representable value</td>
 </tr>
 </tbody>
 </table>
-<p>Programs MUST NOT assume that <code>TADDC</code> and <code>TADD</code> produce identical results when overflow does not occur; they MAY differ even for in-range values due to implementation precision choices.</p>
+<p>Programs MUST NOT assume that <code>taddc</code> and <code>tadd</code> produce identical results when overflow does not occur; they MAY differ even for in-range values due to implementation precision choices.</p>
 <h2 id="type-support-by-profile">Type Support by Profile<a class="headerlink" href="#type-support-by-profile" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
+<th></th>
 <th>Element Type</th>
 <th style="text-align: center;">CPU Simulator</th>
 <th style="text-align: center;">A2/A3</th>
@@ -1072,54 +1149,63 @@
 </thead>
 <tbody>
 <tr>
+<td></td>
 <td>f32 (float)</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
+<td></td>
 <td>f16 (half)</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
+<td></td>
 <td>bf16 (bfloat16_t)</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
+<td></td>
 <td>i8/u8</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
+<td></td>
 <td>i16/u16</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
+<td></td>
 <td>i32/u32</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
+<td></td>
 <td>i64/u64</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
+<td></td>
 <td>f8e4m3 / f8e5m2</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;">Yes</td>
 </tr>
 <tr>
+<td></td>
 <td>hifloat8_t / float4_e*</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;">No</td>
@@ -1127,11 +1213,42 @@
 </tr>
 </tbody>
 </table>
+<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<h3 id="assembly-form-pto-as">Assembly Form (PTO-AS)<a class="headerlink" href="#assembly-form-pto-as" title="Permanent link">&para;</a></h3>
+<pre><code class="language-asm">pto.tadd %dst, %src0, %src1 : !pto.tile&lt;f32, 16, 16&gt;
+</code></pre>
+<h3 id="ssa-form-as-level-1">SSA Form (AS Level 1)<a class="headerlink" href="#ssa-form-as-level-1" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">%dst = pto.tadd %src0, %src1
+    : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;)
+    -&gt; !pto.tile&lt;f32, 16, 16&gt;
+</code></pre>
+<h3 id="dps-form-as-level-2">DPS Form (AS Level 2)<a class="headerlink" href="#dps-form-as-level-2" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mlir">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
+          outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)
+</code></pre>
+<p>See <a href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a> for the full syntax specification.</p>
+<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
+<p>Tile instructions are available as C++ intrinsics declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
+<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+using namespace pto;
+
+// Elementwise: tile = tile op tile
+template &lt;typename TileDst, typename TileSrc0, typename TileSrc1&gt;
+PTO_INST RecordEvent TADD(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; src1);
+
+// Memory transfer: tile = GM view
+template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TLOAD(TileData&amp; dst, GlobalData&amp; src, WaitEvents&amp;... events);
+
+// Matmul: acc = matmul(lhs, rhs)
+template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMATMUL(TileRes&amp; cMatrix, TileLeft&amp; aMatrix, TileRight&amp; bMatrix,
+                             WaitEvents&amp;... events);
+</code></pre>
 <h2 id="navigation">Navigation<a class="headerlink" href="#navigation" title="Permanent link">&para;</a></h2>
 <p>See the <a href="../../tile/">Tile ISA reference</a> for the full per-op reference under <code>tile/ops/</code>.</p>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../instruction-surfaces/tile-instructions/">Tile instruction set</a> — High-level instruction set description</li>
 <li><a href="../">Instruction sets</a> — All instruction sets</li>
 <li><a href="../../reference/format-of-instruction-descriptions/">Format of instruction descriptions</a> — Per-op page standard</li>
 </ul>
