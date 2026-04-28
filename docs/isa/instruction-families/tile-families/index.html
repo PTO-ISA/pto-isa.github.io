@@ -959,13 +959,12 @@
 <p>Tile instructions operate over tiles whose shapes, layouts, roles, and valid regions are architecturally visible. The result is usually another tile, a changed valid-region interpretation, or a synchronization edge.</p>
 <p><strong>Tile operands</strong> (<code>!pto.tile&lt;T, R, C&gt;</code> or <code>!pto.tile_buf&lt;...&gt;</code>) are the primary operands of this instruction set. Unlike vector registers or scalar registers, tiles carry explicit metadata about which elements are valid and what layout the data uses.</p>
 <h3 id="data-flow">Data Flow<a class="headerlink" href="#data-flow" title="Permanent link">&para;</a></h3>
-<pre><code>GlobalMemory
+<pre class="highlight"><code>GlobalMemory
     │
     │  pto.tload: GM → local tile buffer
     ▼
 Tile Buffer ──► Tile Compute ──► Tile Buffer ──► pto.tstore: Tile Buffer → GM
-(Vec/Mat/Acc)    (pto.tadd, pto.tmatmul, etc.)       (Vec/Mat/Acc)
-</code></pre>
+(Vec/Mat/Acc)    (pto.tadd, pto.tmatmul, etc.)       (Vec/Mat/Acc)</code></pre>
 <h2 id="instruction-classes">Instruction Classes<a class="headerlink" href="#instruction-classes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1093,6 +1092,8 @@ Tile Buffer ──► Tile Compute ──► Tile Buffer ──► pto.tstore: T
 </ul>
 <p>See <a href="../../programming-model/tiles-and-valid-regions/">Tiles And Valid Regions</a> for the full model.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Tile legality</strong> depends on more than dtype; shape, layout, role, and valid region all matter.</li>
 <li>Operations with multiple tiles must define valid-region interaction explicitly.</li>
@@ -1100,7 +1101,10 @@ Tile Buffer ──► Tile Compute ──► Tile Buffer ──► pto.tstore: T
 <li>Tile instructions do <strong>not</strong> inherit vector-register semantics; they operate on architecturally visible tile state.</li>
 <li>No implicit broadcasting: all source tiles must have shapes compatible with the destination tile.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Reading undefined out-of-valid-region data as if it were meaningful.</li>
 <li>Assuming tile instructions inherit vector-register semantics.</li>
@@ -1109,6 +1113,7 @@ Tile Buffer ──► Tile Compute ──► Tile Buffer ──► pto.tstore: T
 <li>Using MX format tiles (<code>TileType::Left</code>/<code>Right</code>) on CPU or A2/A3 profiles.</li>
 <li>Using FP8 element types on CPU or A2/A3 profiles.</li>
 </ul>
+</div>
 <h2 id="saturating-variants">Saturating Variants<a class="headerlink" href="#saturating-variants" title="Permanent link">&para;</a></h2>
 <p>Operations with the <code>_c</code> suffix perform saturating arithmetic:</p>
 <table>
@@ -1215,21 +1220,18 @@ Tile Buffer ──► Tile Compute ──► Tile Buffer ──► pto.tstore: T
 </table>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="assembly-form-pto-as">Assembly Form (PTO-AS)<a class="headerlink" href="#assembly-form-pto-as" title="Permanent link">&para;</a></h3>
-<pre><code class="language-asm">pto.tadd %dst, %src0, %src1 : !pto.tile&lt;f32, 16, 16&gt;
-</code></pre>
+<pre class="highlight"><code class="language-asm">pto.tadd %dst, %src0, %src1 : !pto.tile&lt;f32, 16, 16&gt;</code></pre>
 <h3 id="ssa-form-as-level-1">SSA Form (AS Level 1)<a class="headerlink" href="#ssa-form-as-level-1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.tadd %src0, %src1
+<pre class="highlight"><code class="language-mlir">%dst = pto.tadd %src0, %src1
     : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;)
-    -&gt; !pto.tile&lt;f32, 16, 16&gt;
-</code></pre>
+    -&gt; !pto.tile&lt;f32, 16, 16&gt;</code></pre>
 <h3 id="dps-form-as-level-2">DPS Form (AS Level 2)<a class="headerlink" href="#dps-form-as-level-2" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
-          outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
+          outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)</code></pre>
 <p>See <a href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a> for the full syntax specification.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Tile instructions are available as C++ intrinsics declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Elementwise: tile = tile op tile
@@ -1243,8 +1245,7 @@ PTO_INST RecordEvent TLOAD(TileData&amp; dst, GlobalData&amp; src, WaitEvents&am
 // Matmul: acc = matmul(lhs, rhs)
 template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL(TileRes&amp; cMatrix, TileLeft&amp; aMatrix, TileRight&amp; bMatrix,
-                             WaitEvents&amp;... events);
-</code></pre>
+                             WaitEvents&amp;... events);</code></pre>
 <h2 id="navigation">Navigation<a class="headerlink" href="#navigation" title="Permanent link">&para;</a></h2>
 <p>See the <a href="../../tile/">Tile ISA reference</a> for the full per-op reference under <code>tile/ops/</code>.</p>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>

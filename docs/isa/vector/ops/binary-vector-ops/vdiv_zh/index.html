@@ -919,11 +919,9 @@
 <p>这条指令当前只记录浮点形式，不包含整数除法。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vdiv %result, %lhs, %rhs, %mask
-</code></pre>
+<pre class="highlight"><code class="language-text">vdiv %result, %lhs, %rhs, %mask</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vdiv %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vdiv %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <p>A5 当前文档化的形式只有 <code>f16</code> 与 <code>f32</code>。</p>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
@@ -938,22 +936,31 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生 SSA 结果外，没有其他架构副作用。除非具体形式另有说明，它不会隐式占用 buffer、发送事件，也不会建立内存栅栏。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>只支持浮点元素类型。</li>
 <li>活跃 lane 上如果除数是 <code>+0</code> 或 <code>-0</code>，其行为遵循目标平台的异常语义。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的向量形状、不支持的元素类型，以及不合法的属性组合。</li>
 <li>除零、域外输入等数值异常，仍由所选 backend profile 决定，除非本页进一步收窄。</li>
 <li>约束部分列出的额外非法情形同样属于 <code>pto.vdiv</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 当前文档化支持：仅 <code>f16</code>、<code>f32</code>，不支持整数除法。</li>
 <li>A5 是当前手册中最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 <li>任何依赖具体指令类型清单、分布模式或融合路径的代码，都应视为 profile 相关。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <table>
@@ -1011,9 +1018,8 @@
 </table>
 <p><strong>性能说明：</strong> 除法显著慢于乘法。A5 上 <code>vdiv</code> 需要 17–22 周期，而 <code>vmul</code> 只要 8 周期。若精度允许，更建议先求倒数，再用乘法实现。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] / src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] / src1[i];</code></pre>
 <h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。

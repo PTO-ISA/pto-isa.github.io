@@ -966,15 +966,12 @@
 <p>The shift count <code>rhs[i]</code> is treated as unsigned. Bits shifted out are discarded. Inactive lanes leave the destination unchanged.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vshl %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">vshl %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vshl %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vshl %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vshl ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
-          outs(%result : !pto.vreg&lt;NxT&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vshl ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
+          outs(%result : !pto.vreg&lt;NxT&gt;)</code></pre>
 <p>Supported element types: all integer types (<code>i8</code>–<code>i64</code>, <code>u8</code>–<code>u64</code>).</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -1024,6 +1021,8 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation has no architectural side effect beyond producing its destination vector register. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type</strong>: Integer element types only (no floating-point).</li>
 <li><strong>Type match</strong>: <code>%lhs</code>, <code>%rhs</code>, and <code>%result</code> MUST have identical element types.</li>
@@ -1033,12 +1032,18 @@
 <li><strong>Active lanes</strong>: Only lanes where the mask bit is 1 participate.</li>
 <li><strong>Inactive lanes</strong>: Destination elements at inactive lanes are unmodified.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>The verifier rejects non-integer element types, type mismatches, width mismatches, or mask width mismatches.</li>
 <li>Any additional illegality stated in the <a href="../../../binary-vector-ops/">Binary Vector Instructions</a> instruction set page is also part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1060,6 +1065,7 @@
 </tbody>
 </table>
 <p>A5 is the primary concrete profile for the vector instructions.</p>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
 <table>
@@ -1120,17 +1126,15 @@
 <hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="c-semantics">C Semantics<a class="headerlink" href="#c-semantics" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] &lt;&lt; src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] &lt;&lt; src1[i];</code></pre>
 <h3 id="mlir-usage">MLIR Usage<a class="headerlink" href="#mlir-usage" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Left shift by scalar count (broadcast to all lanes)
+<pre class="highlight"><code class="language-mlir">// Left shift by scalar count (broadcast to all lanes)
 %count = pto.vbroadcast %c3 : i32 -&gt; !pto.vreg&lt;64xi32&gt;
 %shifted = pto.vshl %data, %count, %active : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xi32&gt;
 
 // Per-lane variable shift
-%shifted2 = pto.vshl %data, %counts, %active : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xi32&gt;
-</code></pre>
+%shifted2 = pto.vshl %data, %counts, %active : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xi32&gt;</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../binary-vector-ops/">Binary Vector Instructions</a></li>

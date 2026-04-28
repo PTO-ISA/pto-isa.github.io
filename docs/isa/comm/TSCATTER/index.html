@@ -940,12 +940,11 @@
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>PTO-AS form: see <a href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a>.</p>
 <p>Synchronous form:</p>
-<pre><code class="language-text">pto.tscatter %group, %src : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tscatter %group, %src : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>Lowering introduces UB staging tile(s) for the GM→UB→GM data path; the C++ intrinsic requires explicit <code>stagingTileData</code> (or <code>pingTile</code> / <code>pongTile</code>) operand(s).</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code>:</p>
-<pre><code class="language-cpp">// Basic scatter (single staging tile)
+<pre class="highlight"><code class="language-cpp">// Basic scatter (single staging tile)
 template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent SCATTER(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
                              TileData &amp;stagingTileData, WaitEvents&amp;... events);
@@ -953,9 +952,10 @@ PTO_INST RecordEvent SCATTER(ParallelGroupType &amp;parallelGroup, GlobalSrcData
 // Ping-pong scatter (double buffering with two staging tiles)
 template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent SCATTER(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
-                             TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
-</code></pre>
+                             TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type constraints</strong>:<ul>
 <li><code>ParallelGroup::value_type::RawDType</code> must equal <code>GlobalSrcData::RawDType</code>.</li>
@@ -980,11 +980,12 @@ PTO_INST RecordEvent SCATTER(ParallelGroupType &amp;parallelGroup, GlobalSrcData
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-scatter-single-staging-tile">Basic Scatter (Single Staging Tile)<a class="headerlink" href="#basic-scatter-single-staging-tile" title="Permanent link">&para;</a></h3>
 <p>Root has <code>NRANKS * ROWS</code> rows of width <code>COLS</code>. Each rank receives <code>ROWS × COLS</code>, split along DIM_3.
 The tile size (<code>TILE_ROWS × TILE_COLS</code>) can be smaller than the per-rank data — when it is, the implementation automatically chunks the transfer along both DIM_3 and DIM_4 via 2D sliding.</p>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -1006,11 +1007,10 @@ void scatter(__gm__ T* local_data, __gm__ T* group_addrs[NRANKS], int my_rank) {
     TileT stagingTile(TILE_ROWS, TILE_COLS);
 
     comm::SCATTER(group, srcG, stagingTile);
-}
-</code></pre>
+}</code></pre>
 <h3 id="ping-pong-scatter-double-buffering">Ping-Pong Scatter (Double Buffering)<a class="headerlink" href="#ping-pong-scatter-double-buffering" title="Permanent link">&para;</a></h3>
 <p>Uses two UB tiles to overlap TLOAD of the next chunk (MTE2) with TSTORE of the current chunk (MTE3).</p>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -1033,8 +1033,7 @@ void scatter_pingpong(__gm__ T* local_data, __gm__ T* group_addrs[NRANKS], int m
     TileT pongTile(TILE_ROWS, TILE_COLS);
 
     comm::SCATTER(group, srcG, pingTile, pongTile);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

@@ -962,21 +962,17 @@ $$ base\_out = base + \mathrm{sizeof}(predicate) \]</div>
 <p>The <code>%align_out</code> state carries forward into the next <code>pstu</code> call, enabling streaming writes without per-op synchronization.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%align_out, %base_out = pto.pstu %align_in, %mask, %base_in : !pto.align, !pto.mask, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align_out, %base_out = pto.pstu %align_in, %mask, %base_in : !pto.align, !pto.mask, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%align_out, %base_out = pto.pstu %align_in, %mask, %base_in : !pto.align, !pto.mask, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align_out, %base_out = pto.pstu %align_in, %mask, %base_in : !pto.align, !pto.mask, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.pstu ins(%align_in, %mask, %base_in : !pto.align, !pto.mask, !pto.ptr&lt;T, ub&gt;)
-       outs(%align_out, %base_out : !pto.align, !pto.ptr&lt;T, ub&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.pstu ins(%align_in, %mask, %base_in : !pto.align, !pto.mask, !pto.ptr&lt;T, ub&gt;)
+       outs(%align_out, %base_out : !pto.align, !pto.ptr&lt;T, ub&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_align alignData;
+<pre class="highlight"><code class="language-cpp">vector_align alignData;
 vector_bool src;
 __ubuf__ uint32_t *base;
-pstu(alignData, src, base);
-</code></pre>
+pstu(alignData, src, base);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1033,20 +1029,28 @@ pstu(alignData, src, base);
 <li>UB memory at the target address is modified; write atomicity per 64-bit word is <strong>not guaranteed</strong>.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Alignment state</strong>: <code>%align_in</code> MUST be the alignment state from the previous <code>pstu</code> call, or from a <code>pld</code>-instruction set operation. Using an uninitialized alignment state is <strong>illegal</strong>.</li>
 <li><strong>Alignment state chaining</strong>: Programs MUST pass <code>%align_out</code> from one <code>pstu</code> to the <code>%align_in</code> of the next. Breaking the chain without re-initializing the alignment state is <strong>illegal</strong>.</li>
 <li><strong>Write atomicity</strong>: Unlike <code>psts</code>, the 64-bit predicate word is NOT guaranteed to be atomically written. Programs that require exact predicate state restoration MUST use <code>psts</code>, not <code>pstu</code>.</li>
 <li><strong>UB address space</strong>: <code>%base_in</code> MUST have address space <code>ub</code>.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if <code>%align_in</code> is not initialized from a prior <code>pstu</code> or <code>pld</code> operation.</li>
 <li>Illegal if alignment state chain is broken.</li>
 <li>Illegal if <code>%base_in</code> is not a UB-space pointer.</li>
 <li><code>pstu</code> MUST NOT be used when exact predicate save/restore is required.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1078,9 +1082,10 @@ pstu(alignData, src, base);
 </tbody>
 </table>
 <p>CPU simulator does not implement <code>pstu</code>. Portable programs MUST use <code>psts</code> for exact predicate persistence or provide a CPU-sim fallback.</p>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="streaming-predicate-writes">Streaming predicate writes<a class="headerlink" href="#streaming-predicate-writes" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void stream_masks(Ptr&lt;ub_space_t, ub_t&gt; dst_base,
@@ -1091,21 +1096,20 @@ void stream_masks(Ptr&lt;ub_space_t, ub_t&gt; dst_base,
         PSTU(masks[i], dst_base, align_state, align_state);
         dst_base = dst_base + (predicate_width_bytes);
     }
-}
-</code></pre>
+}</code></pre>
 <h3 id="ssa-form-chaining-stream-stores">SSA form — chaining stream stores<a class="headerlink" href="#ssa-form-chaining-stream-stores" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Initialize alignment state (e.g., from a dummy load or zero)
+<pre class="highlight"><code class="language-mlir">// Initialize alignment state (e.g., from a dummy load or zero)
 %align0 = pto.plds %ub_dummy : !pto.ptr&lt;i64, ub&gt; -&gt; !pto.mask
 
 // Stream store first predicate; align_out carries forward
 %align1, %base1 = pto.pstu %align0, %mask0, %base0 : !pto.align, !pto.mask, !pto.ptr&lt;i64, ub&gt; -&gt; !pto.align, !pto.ptr&lt;i64, ub&gt;
 
 // Stream store second predicate using updated alignment state
-%align2, %base2 = pto.pstu %align1, %mask1, %base1 : !pto.align, !pto.mask, !pto.ptr&lt;i64, ub&gt; -&gt; !pto.align, !pto.ptr&lt;i64, ub&gt;
-</code></pre>
-<blockquote>
-<p><strong>Note</strong>: For exact predicate save/restore across kernel boundaries, use <code>psts</code> instead. <code>pstu</code> is intended for high-throughput streaming scenarios where some loss of per-word atomicity is acceptable.</p>
-</blockquote>
+%align2, %base2 = pto.pstu %align1, %mask1, %base1 : !pto.align, !pto.mask, !pto.ptr&lt;i64, ub&gt; -&gt; !pto.align, !pto.ptr&lt;i64, ub&gt;</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For exact predicate save/restore across kernel boundaries, use <code>psts</code> instead. <code>pstu</code> is intended for high-throughput streaming scenarios where some loss of per-word atomicity is acceptable.</p>
+</div>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-load-store/">Predicate Load Store</a></li>

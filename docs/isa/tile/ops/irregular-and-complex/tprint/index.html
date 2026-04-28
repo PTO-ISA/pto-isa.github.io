@@ -1002,30 +1002,24 @@
 </ul>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
-<pre><code class="language-text">tprint %src : !pto.tile&lt;...&gt; | !pto.global&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">tprint %src : !pto.tile&lt;...&gt; | !pto.global&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
 <h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()</code></pre>
 <h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">// For printing GlobalTensor or Vec-type Tile
+<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:
+<pre class="highlight"><code class="language-cpp">// For printing GlobalTensor or Vec-type Tile
 template &lt;typename TileData&gt;
 PTO_INST void TPRINT(TileData &amp;src);
 
 // For printing Acc-type Tile and Mat-type Tile (Mat printing is currently A3-only)
 template &lt;typename TileData, typename GlobalData&gt;
-PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);
-</code></pre>
+PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);</code></pre></p>
 <h3 id="supported-types-for-t">Supported Types for T<a class="headerlink" href="#supported-types-for-t" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Tile</strong>: <code>TileType</code> may be <code>Vec</code>, <code>Acc</code>, or <code>Mat</code> (Mat printing is currently supported on A3 only).</li>
@@ -1040,6 +1034,8 @@ PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation emits debug output via <code>cce::printf</code>. It synchronizes by inserting a <code>pipe_barrier(PIPE_ALL)</code> before printing. Significant runtime overhead is expected.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>
 <p><strong>Supported element type</strong>:</p>
@@ -1059,18 +1055,25 @@ PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);
 <p>When <code>TileType</code> is <code>Mat</code>, the output is formatted according to <code>Layout::ND</code>; other layouts may appear misaligned.</p>
 </li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
 <li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>A5 does not yet support printing <code>TileType::Mat</code>.</li>
 </ul>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="print-a-tile">Print a Tile<a class="headerlink" href="#print-a-tile" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 PTO_INTERNAL void DebugTile(__gm__ float *src) {
   using ValidSrcShape = TileShape2D&lt;float, 16, 16&gt;;
@@ -1084,10 +1087,9 @@ PTO_INTERNAL void DebugTile(__gm__ float *src) {
 
   TLOAD(srcTile, srcGlobal);
   TPRINT(srcTile);
-}
-</code></pre>
+}</code></pre>
 <h3 id="print-a-globaltensor">Print a GlobalTensor<a class="headerlink" href="#print-a-globaltensor" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 PTO_INTERNAL void DebugGlobalTensor(__gm__ float *src) {
   using ValidSrcShape = TileShape2D&lt;float, 16, 16&gt;;
@@ -1096,24 +1098,20 @@ PTO_INTERNAL void DebugGlobalTensor(__gm__ float *src) {
   GlobalDataSrc srcGlobal(src);
 
   TPRINT(srcGlobal);
-}
-</code></pre>
+}</code></pre>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
+pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
 # Optional for tile operands:
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
-pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
-</code></pre>
+pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()</code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
+<pre class="highlight"><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
 # AS Level 2 (DPS)
-pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-</code></pre>
+pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../irregular-and-complex/">Irregular And Complex</a></li>

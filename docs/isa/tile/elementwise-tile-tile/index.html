@@ -1217,6 +1217,8 @@
 </tbody>
 </table>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>Tile layout, shape, and valid-region state affect legality.</li>
 <li>Type support varies by target profile (see per-op pages for exact restrictions).</li>
@@ -1225,15 +1227,19 @@
 <li>All source and destination tiles MUST have the same physical shape <code>(Rows, Cols)</code>.</li>
 <li>Shift operations (<code>TSHL</code>, <code>TSHR</code>) interpret the second operand as an unsigned shift count; shift count MUST be <code>&lt;</code> element bit-width.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li><strong>MUST NOT</strong> assume implicit broadcasting, reshaping, or valid-region repair.</li>
 <li><strong>MUST NOT</strong> rely on a defined value from a source tile lane outside its valid region.</li>
 <li><strong>MUST NOT</strong> infer a generic saturating-arithmetic meaning from the <code>_c</code> suffix alone.</li>
 <li><strong>MUST NOT</strong> use a shift count <code>&gt;=</code> element bit-width.</li>
 </ul>
+</div>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Binary elementwise
@@ -1259,13 +1265,11 @@ PTO_INST RecordEvent TCVT(TileDst&amp; dst, TileSrc&amp; src);
 
 // Comparison (produces predicate tile)
 template &lt;typename TileDst, typename TileSrc0, typename TileSrc1&gt;
-PTO_INST RecordEvent TCMP(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; src1, CompareMode cmp);
-</code></pre>
+PTO_INST RecordEvent TCMP(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; src1, CompareMode cmp);</code></pre>
 <h2 id="throughput-and-latency-a2a3">Throughput and Latency (A2/A3)<a class="headerlink" href="#throughput-and-latency-a2a3" title="Permanent link">&para;</a></h2>
 <p>Tile elementwise operations use the Vector Core (PIPE_V) via the CCE instruction set. The performance model is defined in <code>include/pto/costmodel/a2a3/</code>.</p>
 <h3 id="cycle-model-formula">Cycle Model Formula<a class="headerlink" href="#cycle-model-formula" title="Permanent link">&para;</a></h3>
-<pre><code>total_cycles = startup + completion + repeats × per_repeat + (repeats - 1) × interval
-</code></pre>
+<pre class="highlight"><code>total_cycles = startup + completion + repeats × per_repeat + (repeats - 1) × interval</code></pre>
 <p>Where <code>repeats</code> is computed from tile layout and valid region shape.</p>
 <h3 id="cce-instruction-parameters">CCE Instruction Parameters<a class="headerlink" href="#cce-instruction-parameters" title="Permanent link">&para;</a></h3>
 <table>
@@ -1354,9 +1358,8 @@ PTO_INST RecordEvent TCMP(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; sr
 </table>
 <h3 id="instruction-repeat-calculation">Instruction Repeat Calculation<a class="headerlink" href="#instruction-repeat-calculation" title="Permanent link">&para;</a></h3>
 <p>The <code>TBinOp.hpp</code> / <code>TBinSOp.hpp</code> / <code>TUnaryOp.hpp</code> headers compute <code>repeats</code> from tile geometry:</p>
-<p><strong>Continuous (fast) path</strong> (source stride == destination stride == 1):</p>
-<pre><code>repeats = validRow × validCol / elementsPerRepeat
-</code></pre>
+<p><strong>Continuous (fast) path</strong> (source stride == destination stride == 1):
+<pre class="highlight"><code>repeats = validRow × validCol / elementsPerRepeat</code></pre></p>
 <p><strong>General path</strong>: handles arbitrary stride combinations, including small-shape optimization (<code>Bin1LNormModeSmall</code>) where one repeat covers an entire row.</p>
 <h3 id="layout-and-shape-impact">Layout and Shape Impact<a class="headerlink" href="#layout-and-shape-impact" title="Permanent link">&para;</a></h3>
 <p>Tile layout (<code>RowMajor</code>, <code>ColMajor</code>, <code>Zigzag</code>, etc.) affects stride alignment and determines which optimization path is taken:</p>

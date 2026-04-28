@@ -941,13 +941,12 @@
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Synchronous form:</p>
-<pre><code class="language-text">pto.treduce %group, %dst {op = #pto.reduce_op&lt;Sum&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
-pto.treduce %group, %dst {op = #pto.reduce_op&lt;Max&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.treduce %group, %dst {op = #pto.reduce_op&lt;Sum&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
+pto.treduce %group, %dst {op = #pto.reduce_op&lt;Max&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>Lowering introduces internal accumulator and receive tiles for the reduce pipeline; the C++ intrinsic requires explicit <code>accTileData</code>, <code>recvTileData</code> (or <code>accTileData</code>, <code>pingTileData</code>, <code>pongTileData</code>) operand(s).</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code>:</p>
-<pre><code class="language-cpp">// Basic reduce (accumulator + receive tile)
+<pre class="highlight"><code class="language-cpp">// Basic reduce (accumulator + receive tile)
 template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent REDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
                            TileData &amp;accTileData, TileData &amp;recvTileData, ReduceOp op, WaitEvents&amp;... events);
@@ -956,9 +955,10 @@ PTO_INST RecordEvent REDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData 
 template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent REDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
                            TileData &amp;accTileData, TileData &amp;pingTileData, TileData &amp;pongTileData,
-                           ReduceOp op, WaitEvents&amp;... events);
-</code></pre>
+                           ReduceOp op, WaitEvents&amp;... events);</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type constraints</strong>:<ul>
 <li><code>ParallelGroup::value_type::RawDType</code> must equal <code>GlobalDstData::RawDType</code>.</li>
@@ -982,9 +982,10 @@ PTO_INST RecordEvent REDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData 
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-reduce-sum">Basic Reduce Sum<a class="headerlink" href="#basic-reduce-sum" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -1005,10 +1006,9 @@ void reduce_sum(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_rank) {
     TileT accTile, recvTile;
 
     comm::REDUCE(group, dstG, accTile, recvTile, comm::ReduceOp::Sum);
-}
-</code></pre>
+}</code></pre>
 <h3 id="max-reduce">Max Reduce<a class="headerlink" href="#max-reduce" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -1028,8 +1028,7 @@ void reduce_max(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_rank) {
     TileT accTile, recvTile;
 
     comm::REDUCE(group, dstG, accTile, recvTile, comm::ReduceOp::Max);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

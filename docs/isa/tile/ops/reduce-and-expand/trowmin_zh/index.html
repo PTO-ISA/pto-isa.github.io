@@ -923,18 +923,14 @@
 <p>它与 <code>trowmax</code> 对应，都是“保留行、折叠列”的行归约。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = trowmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = trowmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trowmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.trowmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trowmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.trowmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
-PTO_INST RecordEvent TROWMIN(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
+PTO_INST RecordEvent TROWMIN(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code>：源 tile</li>
@@ -948,6 +944,8 @@ PTO_INST RecordEvent TROWMIN(TileDataOut &amp;dst, TileDataIn &amp;src, TileData
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>除产生目标 tile 外，没有额外架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>dst</code> 与 <code>src</code> 必须都为 <code>TileType::Vec</code></li>
 <li><code>src</code> 必须使用标准 ND 布局：行主且非分形</li>
@@ -964,14 +962,18 @@ PTO_INST RecordEvent TROWMIN(TileDataOut &amp;dst, TileDataIn &amp;src, TileData
 <li>实现同时接受 ND 输出和 <code>Cols == 1</code> 的 DN 输出</li>
 <li>当前实现路径会把 <code>tmp</code> 传入后端调用，但文档不额外引入 checked implementation 没声明的 <code>tmp</code> 限制</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
+</div>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>当前仓内没有把 <code>trowmin</code> 单列成公开 cost table。它应视为行归约类路径，而不是普通二元逐元素算术。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example_auto() {
@@ -982,8 +984,7 @@ void example_auto() {
   DstT dst;
   TmpT tmp;
   TROWMIN(dst, src, tmp);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../reduce-and-expand_zh/">归约与扩展</a></li>

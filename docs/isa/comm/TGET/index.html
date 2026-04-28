@@ -946,23 +946,22 @@
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>PTO-AS form: see <a href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a>.</p>
 <p>Synchronous form:</p>
-<pre><code class="language-text">pto.tget %dst_local, %src_remote : (!pto.memref&lt;...&gt;, !pto.memref&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tget %dst_local, %src_remote : (!pto.memref&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>Lowering introduces UB staging tile(s) for the GM→UB→GM data path; the C++ intrinsic requires explicit <code>stagingTileData</code> (or <code>pingTile</code> / <code>pongTile</code>) operand(s).</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code></p>
 <h3 id="single-tile-auto-chunking">Single-tile (auto-chunking)<a class="headerlink" href="#single-tile-auto-chunking" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent GET(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
-                        TileData &amp;stagingTileData, WaitEvents&amp;... events);
-</code></pre>
+                        TileData &amp;stagingTileData, WaitEvents&amp;... events);</code></pre>
 <h3 id="ping-pong-double-buffering">Ping-pong double buffering<a class="headerlink" href="#ping-pong-double-buffering" title="Permanent link">&para;</a></h3>
 <p>Uses two staging tiles to overlap TLOAD and TSTORE for adjacent chunks, hiding one DMA transfer behind the other.</p>
-<pre><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent GET(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
-                        TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
-</code></pre>
+                        TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type constraints</strong>:<ul>
 <li><code>GlobalSrcData::RawDType</code> must equal <code>GlobalDstData::RawDType</code>.</li>
@@ -986,9 +985,10 @@ PTO_INST RecordEvent GET(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;sr
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -1012,18 +1012,16 @@ void example_get(__gm__ T* local_data, __gm__ T* remote_addr) {
 
     // Basic remote read
     comm::GET(dstG, srcG, stagingTile);
-}
-</code></pre>
+}</code></pre>
 <h3 id="ping-pong-double-buffering_1">Ping-pong Double Buffering<a class="headerlink" href="#ping-pong-double-buffering_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">constexpr size_t tileUBBytes = ((64 * 64 * sizeof(float) + 1023) / 1024) * 1024;
+<pre class="highlight"><code class="language-cpp">constexpr size_t tileUBBytes = ((64 * 64 * sizeof(float) + 1023) / 1024) * 1024;
 TileT pingTile(64, 64);
 TileT pongTile(64, 64);
 TASSIGN(pingTile, 0);
 TASSIGN(pongTile, tileUBBytes);  // Non-overlapping UB region
 
 // Overlaps TLOAD[i+1] with TSTORE[i] for better pipeline utilization
-comm::GET(dstG, srcG, pingTile, pongTile);
-</code></pre>
+comm::GET(dstG, srcG, pingTile, pongTile);</code></pre>
               
             </div>
           </div><footer>

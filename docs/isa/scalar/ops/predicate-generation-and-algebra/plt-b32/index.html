@@ -959,18 +959,14 @@
 <p>In practice, this is the public CCE helper used for remainder-mask generation: the returned mask enables the currently active lanes, and the scalar reference carries the post-update state into the next step.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask, %scalar_out = pto.plt_b32 %scalar_in {post_update} : i32 -&gt; !pto.mask, i32
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask, %scalar_out = pto.plt_b32 %scalar_in {post_update} : i32 -&gt; !pto.mask, i32</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask, %scalar_out = pto.plt_b32 %scalar_in {post_update} : i32 -&gt; !pto.mask, i32
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask, %scalar_out = pto.plt_b32 %scalar_in {post_update} : i32 -&gt; !pto.mask, i32</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.plt_b32 ins(%scalar_in : i32) outs(%mask, %scalar_out : !pto.mask, i32)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.plt_b32 ins(%scalar_in : i32) outs(%mask, %scalar_out : !pto.mask, i32)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">uint32_t scalar = elementCount;
-vector_bool mask = plt_b32(scalar, __cce_simd::POST_UPDATE);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">uint32_t scalar = elementCount;
+vector_bool mask = plt_b32(scalar, __cce_simd::POST_UPDATE);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1020,17 +1016,25 @@ vector_bool mask = plt_b32(scalar, __cce_simd::POST_UPDATE);
 <li>The public CCE call updates the scalar reference argument in place.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>The installed public CCE surface for <code>plt_b32</code> uses a <code>uint32_t &amp;</code> scalar plus <code>__cce_simd::POST_UPDATE</code>.</li>
 <li>Programs that chain multiple <code>plt_b32</code> calls must thread the updated scalar value forward explicitly.</li>
 <li>The returned predicate width is fixed by the <code>_b32</code> suffix.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if the selected target profile does not support the requested predicate width.</li>
 <li>Illegal if the post-update scalar state is consumed in a way that breaks the required chaining discipline.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1055,14 +1059,13 @@ vector_bool mask = plt_b32(scalar, __cce_simd::POST_UPDATE);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="c-usage">C++ usage<a class="headerlink" href="#c-usage" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">uint32_t scalar = elementCount;
-vector_bool mask = plt_b32(scalar, __cce_simd::POST_UPDATE);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">uint32_t scalar = elementCount;
+vector_bool mask = plt_b32(scalar, __cce_simd::POST_UPDATE);</code></pre>
 <h3 id="ssa-form">SSA form<a class="headerlink" href="#ssa-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask, %scalar_out = pto.plt_b32 %scalar_in {post_update} : i32 -&gt; !pto.mask, i32
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask, %scalar_out = pto.plt_b32 %scalar_in {post_update} : i32 -&gt; !pto.mask, i32</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

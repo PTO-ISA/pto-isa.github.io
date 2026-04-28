@@ -916,11 +916,9 @@
 <p><code>pto.vdintlvv2</code> 保留了与 <code>vdintlv</code> 相同的去交织语义，但只把结果对中的一半通过 SSA 暴露出来。哪一半被返回，由 <code>PART</code> 选择器决定。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vdintlvv2 %dst, %lhs, %rhs, &quot;PART&quot;
-</code></pre>
+<pre class="highlight"><code class="language-text">vdintlvv2 %dst, %lhs, %rhs, "PART"</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vdintlvv2 %lhs, %rhs, &quot;PART&quot; : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vdintlvv2 %lhs, %rhs, "PART" : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -968,24 +966,32 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生目标值，没有其他架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>PART</code> 决定返回成对去交织结果中的哪一半。</li>
 <li><code>%lhs</code>、<code>%rhs</code> 与 <code>%result</code> 必须有相同的元素类型和相同的向量宽度。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vdintlvv2</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>当前仓内没有为 <code>vdintlvv2</code> 单列周期表。若代码对具体延迟敏感，应把它视为目标 profile 相关的寄存器重排路径。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%result = pto.vdintlvv2 %lhs, %rhs, &quot;PART&quot; : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vdintlvv2 %lhs, %rhs, "PART" : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。

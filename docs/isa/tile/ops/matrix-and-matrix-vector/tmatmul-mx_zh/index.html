@@ -927,23 +927,20 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>示意形式：</p>
-<pre><code class="language-text">%c = tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+<pre class="highlight"><code class="language-text">%c = tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c_out = tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-%c = tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+%c = tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+<pre class="highlight"><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c_out = pto.tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-%c = pto.tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+%c = pto.tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
+<pre class="highlight"><code class="language-text">pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
 pto.tmatmul.mx.acc ins(%c_in, %a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
-pto.tmatmul.mx.bias ins(%a, %a_scale, %b, %b_scale, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+pto.tmatmul.mx.bias ins(%a, %a_scale, %b, %b_scale, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix,
                                 TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
@@ -956,10 +953,11 @@ PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix,
 template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename TileBias, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix,
-                                TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
-</code></pre>
+                                TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);</code></pre>
 <p><code>AccPhase</code> 的模板重载与普通 <code>TMATMUL</code> 一样，主要用于目标实现侧的 unit-flag 选择。</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="a5-mx">A5 真正支持的 MX 语义<a class="headerlink" href="#a5-mx" title="Permanent link">&para;</a></h3>
 <ul>
 <li>当前仓库里，只有 A5 backend 真正实现了 MX 语义。</li>
@@ -1002,9 +1000,10 @@ PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <li>如果你要验证真正的 MX 语义，应以 A5 为准。</li>
 <li>CPU 只能用来跑接口形态或近似流程，不适合作为 MX 数值语义的最终依据。</li>
 </ul>
+</div>
 <h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1022,10 +1021,9 @@ void example_auto() {
   Bias bias;
   C c;
   TMATMUL_MX(c, a, scaleA, b, scaleB, bias);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1049,8 +1047,7 @@ void example_manual() {
   TASSIGN(bias, 0x3000);
   TASSIGN(c, 0x4000);
   TMATMUL_MX(c, a, scaleA, b, scaleB, bias);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../tgemv-mx_zh/">TGEMV_MX</a></li>

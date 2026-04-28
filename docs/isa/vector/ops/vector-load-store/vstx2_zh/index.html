@@ -916,11 +916,9 @@
 <p><code>pto.vstx2</code> 属于 PTO 的向量内存 / 数据搬运指令。它把两路源向量按选定交错布局写回 UB。这里的关键语义不是“写两次”，而是“两个源向量构成有顺序的交错对”。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vstx2 %low, %high, %dest[%offset], &quot;DIST&quot;, %mask
-</code></pre>
+<pre class="highlight"><code class="language-text">vstx2 %low, %high, %dest[%offset], "DIST", %mask</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vstx2 %low, %high, %dest[%offset], &quot;DIST&quot;, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, index, !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vstx2 %low, %high, %dest[%offset], "DIST", %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, index, !pto.mask</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%low</code>、<code>%high</code>：两路源向量</li>
@@ -936,26 +934,34 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会写 UB 可见内存。某些有状态的非对齐流式形式还可能推进对齐状态，但尾部 flush 仍可能需要单独指令完成。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>这条指令只对交错类分布合法。</li>
 <li>两个源向量构成一个有序对，交错语义必须保留，不能在 lowering 里交换。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>使用超出 UB 可见空间的地址，或违反所选分布模式的地址 / 对齐契约，都是非法的。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vstx2</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">// INTLV_B32
+<pre class="highlight"><code class="language-c">// INTLV_B32
 for (int i = 0; i &lt; 64; i++) {
     UB[base + 8*i]     = low[i];
     UB[base + 8*i + 4] = high[i];
-}
-</code></pre>
+}</code></pre>
 <h2 id="_10">详细说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="_11">支持的分布模式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <p><code>INTLV_B8</code>、<code>INTLV_B16</code>、<code>INTLV_B32</code></p>

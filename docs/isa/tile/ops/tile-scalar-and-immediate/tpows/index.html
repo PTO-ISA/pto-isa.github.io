@@ -954,21 +954,17 @@
 <p>Like <code>pto.tpow</code>, the C++ intrinsic requires a <code>tmp</code> scratch tile even though the scalar exponent itself is the only semantic non-tile input.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tpows %base, %exp : !pto.tile&lt;...&gt;, dtype -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tpows %base, %exp : !pto.tile&lt;...&gt;, dtype -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tpows %base, %exp : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tpows %base, %exp : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tpows ins(%base, %exp : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tpows ins(%base, %exp : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;auto PrecisionType = PowAlgorithm::DEFAULT, typename DstTile, typename BaseTile, typename TmpTile,
+<pre class="highlight"><code class="language-cpp">template &lt;auto PrecisionType = PowAlgorithm::DEFAULT, typename DstTile, typename BaseTile, typename TmpTile,
           typename... WaitEvents&gt;
 PTO_INTERNAL RecordEvent TPOWS(DstTile &amp;dst, BaseTile &amp;base, typename DstTile::DType exp, TmpTile &amp;tmp,
-                               WaitEvents &amp;... events);
-</code></pre>
+                               WaitEvents &amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1006,6 +1002,8 @@ PTO_INTERNAL RecordEvent TPOWS(DstTile &amp;dst, BaseTile &amp;base, typename Ds
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. The <code>tmp</code> tile may be used as backend scratch storage.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>dst</code> and <code>base</code> must use the same element type.</li>
 <li><code>dst</code> and <code>base</code> must have matching valid-row and valid-column extents.</li>
@@ -1014,16 +1012,23 @@ PTO_INTERNAL RecordEvent TPOWS(DstTile &amp;dst, BaseTile &amp;base, typename Ds
 <li><code>PowAlgorithm::DEFAULT</code> accepts <code>float</code>, <code>half</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int8_t</code>, and <code>uint8_t</code>.</li>
 <li><code>PowAlgorithm::HIGH_PRECISION</code> accepts <code>float</code>, <code>half</code>, and <code>bfloat16_t</code>.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Unsupported type/layout combinations and mismatched valid regions are rejected by backend legality checks.</li>
 <li>Programs must not infer CPU-simulator or A2/A3 support from the public template alone.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <p>The current authored tree documents concrete <code>tpows</code> implementation behavior for A5. This checkout does not provide a stable documented CPU-simulator or A2/A3 implementation contract for <code>tpows</code>.</p>
 <p>Portable code should treat <code>pto.tpows</code> as A5-specific unless a target-profile page explicitly widens that guarantee.</p>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1035,8 +1040,7 @@ void example() {
 
   TPOWS(dst, base, 2.0f, tmp);
   TPOWS&lt;PowAlgorithm::HIGH_PRECISION&gt;(dst, base, 2.0f, tmp);
-}
-</code></pre>
+}</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../tile-scalar-and-immediate/">Tile Scalar And Immediate</a></li>

@@ -360,12 +360,6 @@
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#a2a3">A2/A3</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#a5">A5</a>
-    </li>
-        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
     </li>
@@ -1011,7 +1005,7 @@
 <div class="arithmatex">\[ \mathrm{dst}_{r_0 + i,\; c_0 + j} = \mathrm{Quantize}\!\left(\mathrm{src}_{i,j};\ \mathrm{fp}\right) \]</div>
 <h2 id="variants">Variants<a class="headerlink" href="#variants" title="Permanent link">&para;</a></h2>
 <h3 id="variant-1-standard-store">Variant 1: Standard Store<a class="headerlink" href="#variant-1-standard-store" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// Basic store
+<pre class="highlight"><code class="language-cpp">// Basic store
 template &lt;typename TileData, typename GlobalData, AtomicType atomicType = AtomicType::AtomicNone,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TSTORE(GlobalData &amp;dst, TileData &amp;src, WaitEvents &amp;... events);
@@ -1019,39 +1013,33 @@ PTO_INST RecordEvent TSTORE(GlobalData &amp;dst, TileData &amp;src, WaitEvents &
 // Pre-quantization scalar (Acc tiles only)
 template &lt;typename TileData, typename GlobalData, AtomicType atomicType = AtomicType::AtomicNone,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TSTORE(GlobalData &amp;dst, TileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);
-</code></pre>
+PTO_INST RecordEvent TSTORE(GlobalData &amp;dst, TileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);</code></pre>
 <h3 id="variant-2-fix-pipe-store-tstore_fp">Variant 2: Fix-Pipe Store (<code>TSTORE_FP</code>)<a class="headerlink" href="#variant-2-fix-pipe-store-tstore_fp" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// Fix-pipe quantized store — the _fp suffix means fix pipe, NOT floating point
+<pre class="highlight"><code class="language-cpp">// Fix-pipe quantized store — the _fp suffix means fix pipe, NOT floating point
 template &lt;typename TileData, typename GlobalData, typename FpTileData,
           AtomicType atomicType = AtomicType::AtomicNone,
           ReluPreMode reluPreMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
-</code></pre>
+PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);</code></pre>
 <p>The <code>TSTORE_FP</code> overload is only legal for <code>TileType::Acc</code> tiles. It is the production path for quantized output — the <code>fp</code> tile carries quantization parameters (scale, zero-point) consumed by the fix-pipe.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <p>Standard store:</p>
-<pre><code class="language-text">tstore %t1, %sv_out[%c0, %c0]
-</code></pre>
+<pre class="highlight"><code class="language-text">tstore %t1, %sv_out[%c0, %c0]</code></pre>
 <p>Fix-pipe store:</p>
-<pre><code class="language-text">tstore.fp %t1, %fp, %sv_out[%c0, %c0]
-</code></pre>
+<pre class="highlight"><code class="language-text">tstore.fp %t1, %fp, %sv_out[%c0, %c0]</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Standard
+<pre class="highlight"><code class="language-mlir">// Standard
 pto.tstore %src, %mem : (!pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()
 
 // Fix-pipe
-pto.tstore.fp %src, %fp, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()
-</code></pre>
+pto.tstore.fp %src, %fp, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Standard
+<pre class="highlight"><code class="language-mlir">// Standard
 pto.tstore ins(%src : !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
 
 // Fix-pipe
-pto.tstore.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-</code></pre>
+pto.tstore.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1118,6 +1106,8 @@ pto.tstore.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;
 <li><strong>Fix-pipe store</strong>: Programs fix-pipe sideband state (<code>set_fpc</code>) before the DMA transfer executes. Writes to global memory through the quantized path.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Valid region</strong>: Transfer size is <code>src.GetValidRow()</code> × <code>src.GetValidCol()</code>.</li>
 <li><strong>Element size match</strong>: <code>sizeof(tile.dtype) == sizeof(gtensor.dtype)</code>.</li>
@@ -1125,8 +1115,13 @@ pto.tstore.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;
 <li><strong>Atomic modes</strong>: Only supported on <code>TileType::Acc</code>. Supported modes: <code>AtomicNone</code>, <code>AtomicAdd</code>, <code>AtomicMax</code>, <code>AtomicMin</code> (A5 only).</li>
 <li><strong>Fix-pipe</strong>: Only <code>TileType::Acc</code> is supported as the source. The <code>fp</code> tile must be <code>TileType::Scaling</code>. The fix-pipe path does not support arbitrary <code>ReluPreMode</code> on all backends — see target restrictions.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<h3 id="a2a3">A2/A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">A2/A3</label><label for="__tabbed_1_2">A5</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <p><strong>Standard store:</strong></p>
 <table>
 <thead>
@@ -1189,7 +1184,8 @@ pto.tstore.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;
 </tr>
 </tbody>
 </table>
-<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+</div>
+<div class="tabbed-block">
 <p><strong>Standard store:</strong></p>
 <table>
 <thead>
@@ -1236,15 +1232,22 @@ pto.tstore.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;
 </tr>
 </tbody>
 </table>
+</div>
+</div>
+</div>
+</details>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier.</li>
 <li>Programs must not rely on behavior outside the documented legal domain.</li>
 <li>Calling <code>TSTORE_FP</code> on a non-accumulator tile is rejected by the backend.</li>
 </ul>
+</div>
 <h2 id="common-patterns">Common Patterns<a class="headerlink" href="#common-patterns" title="Permanent link">&para;</a></h2>
 <h3 id="pattern-1-basic-vector-tile-store">Pattern 1: Basic Vector Tile Store<a class="headerlink" href="#pattern-1-basic-vector-tile-store" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;typename T&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename T&gt;
 void storeResult(__gm__ T* out) {
   using TileT = Tile&lt;TileType::Vec, T, 16, 16&gt;;
   using GShape = Shape&lt;1, 1, 1, 16, 16&gt;;
@@ -1255,16 +1258,14 @@ void storeResult(__gm__ T* out) {
   TileT t;
   // ... compute into t ...
   TSTORE(gout, t);
-}
-</code></pre>
+}</code></pre>
 <h3 id="pattern-2-atomic-accumulation">Pattern 2: Atomic Accumulation<a class="headerlink" href="#pattern-2-atomic-accumulation" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void atomicStore(GlobalTensor&lt;int32_t&gt;&amp; gout, TileAcc&lt;int32_t, 64, 64&gt;&amp; acc) {
+<pre class="highlight"><code class="language-cpp">void atomicStore(GlobalTensor&lt;int32_t&gt;&amp; gout, TileAcc&lt;int32_t, 64, 64&gt;&amp; acc) {
   // Atomically add accumulator to GM location
   TSTORE(gout, acc, AtomicType::AtomicAdd);
-}
-</code></pre>
+}</code></pre>
 <h3 id="pattern-3-fix-pipe-quantized-store-production-inference">Pattern 3: Fix-Pipe Quantized Store (Production Inference)<a class="headerlink" href="#pattern-3-fix-pipe-quantized-store-production-inference" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void quantizedStore(__gm__ int8_t* out) {
+<pre class="highlight"><code class="language-cpp">void quantizedStore(__gm__ int8_t* out) {
   using AccT = TileAcc&lt;float, 16, 16&gt;;
   using FpT = Tile&lt;TileType::Scaling, uint64_t, 1, 16,
                    BLayout::RowMajor, 1, DYNAMIC, SLayout::NoneBox&gt;;
@@ -1279,10 +1280,9 @@ void storeResult(__gm__ T* out) {
   // ... compute into acc ...
   // Apply fix-pipe quantization: float32 acc → int8 output via fp scales
   TSTORE_FP(gout, acc, fp);
-}
-</code></pre>
+}</code></pre>
 <h3 id="pattern-4-manual-mode-with-tassign">Pattern 4: Manual Mode with TASSIGN<a class="headerlink" href="#pattern-4-manual-mode-with-tassign" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void manualStore(__gm__ float* out) {
+<pre class="highlight"><code class="language-cpp">void manualStore(__gm__ float* out) {
   using TileT = Tile&lt;TileType::Vec, float, 32, 32&gt;;
   using GShape = Shape&lt;1, 1, 1, 32, 32&gt;;
   using GStride = BaseShape2D&lt;float, 32, 32, Layout::ND&gt;;
@@ -1293,8 +1293,7 @@ void storeResult(__gm__ T* out) {
   TASSIGN(t, 0x1000);
   // ... compute into t ...
   TSTORE(gout, t);
-}
-</code></pre>
+}</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../memory-and-data-movement/">Memory And Data Movement</a></li>

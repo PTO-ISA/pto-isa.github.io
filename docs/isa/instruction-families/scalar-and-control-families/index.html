@@ -1089,7 +1089,7 @@
 </tr>
 </tbody>
 </table>
-<pre><code>Producer pipeline                          Consumer pipeline
+<pre class="highlight"><code>Producer pipeline                          Consumer pipeline
   │                                          │
   │  issue DMA or compute                    │
   │  ▼                                       │
@@ -1100,8 +1100,7 @@
   │                            (consumes the event)
   │                                          │
   │  data/result available                   │
-  ▼                                          ▼
-</code></pre>
+  ▼                                          ▼</code></pre>
 <p>Waiting on an event that was never established by a matching producer is <strong>illegal</strong>.</p>
 <h2 id="pipe-spaces-by-target-profile">Pipe Spaces by Target Profile<a class="headerlink" href="#pipe-spaces-by-target-profile" title="Permanent link">&para;</a></h2>
 <table>
@@ -1155,6 +1154,8 @@
 <h2 id="shared-dialect-instruction-sets">Shared Dialect Instruction Sets<a class="headerlink" href="#shared-dialect-instruction-sets" title="Permanent link">&para;</a></h2>
 <p>Some scalar/control ops belong to shared dialect instruction sets (e.g., <code>scf.if</code>, <code>scf.for</code>) that extend the core ISA with structured control flow. These ops are marked as part of the documented PTO source instruction set, not as PTO-specific mnemonics.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Pipe/event spaces</strong> differ between A2/A3 and A5 profiles; portable code must use the documented PTO contract plus the selected profile.</li>
 <li><strong>Event ordering</strong> requires matching <code>set_flag</code>/<code>wait_flag</code> pairs; waiting on an unestablished event is illegal.</li>
@@ -1162,7 +1163,10 @@
 <li><strong>Predicate width</strong> must match the expected mask width for the target profile.</li>
 <li><strong>Pipe identifiers</strong> not supported by the target profile produce verification errors.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Using pipe or event identifiers not supported by the target profile.</li>
 <li>Waiting on an event that was never established by a matching producer.</li>
@@ -1171,21 +1175,20 @@
 <li>Issuing a vector load before <code>copy_gm_to_ubuf</code> completes without an intervening <code>wait_flag</code>.</li>
 <li>Issuing <code>copy_ubuf_to_gm</code> before vector store completes without an intervening <code>wait_flag</code>.</li>
 </ul>
+</div>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="assembly-form-pto-as">Assembly Form (PTO-AS)<a class="headerlink" href="#assembly-form-pto-as" title="Permanent link">&para;</a></h3>
-<pre><code class="language-asm">set_flag PIPE_MTE2, PIPE_V, EVENT_ID0
+<pre class="highlight"><code class="language-asm">set_flag PIPE_MTE2, PIPE_V, EVENT_ID0
 wait_flag PIPE_MTE2, PIPE_V, EVENT_ID0
-pipe_barrier PIPE_V
-</code></pre>
+pipe_barrier PIPE_V</code></pre>
 <h3 id="ssa-form-as-level-1">SSA Form (AS Level 1)<a class="headerlink" href="#ssa-form-as-level-1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
-pto.wait_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
-pto.pipe_barrier[&quot;PIPE_V&quot;]
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.set_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]
+pto.wait_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]
+pto.pipe_barrier["PIPE_V"]</code></pre>
 <p>See <a href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a> for the full syntax specification.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Scalar/control instructions are available as C++ intrinsics declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Set synchronization flag
@@ -1205,8 +1208,7 @@ PTO_INST void copy_gm_to_ubuf(ub_ptr dst, gm_ptr src, uint64_t sid,
 // DMA copy: vector tile buffer / hardware UB → GM
 PTO_INST void copy_ubuf_to_gm(gm_ptr dst, ub_ptr src, uint64_t sid,
                               uint64_t n_burst, uint64_t len_burst,
-                              uint64_t reserved, uint64_t dst_stride, uint64_t src_stride);
-</code></pre>
+                              uint64_t reserved, uint64_t dst_stride, uint64_t src_stride);</code></pre>
 <h2 id="navigation">Navigation<a class="headerlink" href="#navigation" title="Permanent link">&para;</a></h2>
 <p>See the [Scalar/Control ISA reference../scalar/README.md) for the full per-op reference under <code>scalar/ops/</code>.</p>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>

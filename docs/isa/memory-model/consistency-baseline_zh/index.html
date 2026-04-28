@@ -979,15 +979,13 @@
 <p>同一 tile buffer 或同一向量寄存器中的操作按程序顺序排列，不需要额外同步。</p>
 <h3 id="event-order">Event Order<a class="headerlink" href="#event-order" title="Permanent link">&para;</a></h3>
 <p>不同 buffer 或不同 pipeline 之间的数据依赖必须通过事件建立：</p>
-<pre><code class="language-cpp">RecordEvent e0 = TLOAD(a, ga);
+<pre class="highlight"><code class="language-cpp">RecordEvent e0 = TLOAD(a, ga);
 RecordEvent e1 = TLOAD(b, gb);
-TMATMUL(c, a, b, e0, e1);
-</code></pre>
+TMATMUL(c, a, b, e0, e1);</code></pre>
 <h3 id="barrier-order">Barrier Order<a class="headerlink" href="#barrier-order" title="Permanent link">&para;</a></h3>
 <p>多 block 之间的同步需要 grid 范围的 barrier 或 collective：</p>
-<pre><code class="language-mlir">pto.tbroadcast %tensor, %src : ...
-pto.twait
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.tbroadcast %tensor, %src : ...
+pto.twait</code></pre>
 <h2 id="pto">PTO 不自动保证的内容<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h2>
 <p>PTO <strong>不会</strong>自动保证：</p>
 <table>
@@ -1099,12 +1097,15 @@ pto.twait
 </tbody>
 </table>
 <h2 id="_4">不允许的情形<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>把实现细节写成可移植内存模型</li>
 <li>用“通常有序”这种模糊语句替代明确顺序边</li>
 <li>把调度启发式混进内存模型保证</li>
 <li>在没有显式同步操作时声称跨 block 可见</li>
 </ul>
+</div>
 <h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../producer-consumer-ordering_zh/">生产者-消费者排序</a></li>

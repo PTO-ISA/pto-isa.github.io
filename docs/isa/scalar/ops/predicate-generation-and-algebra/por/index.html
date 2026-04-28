@@ -959,21 +959,17 @@
 <div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{src0}_i \lor \mathrm{src1}_i \]</div>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.por %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.por %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.por %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.por %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.por ins(%src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask) outs(%dst : !pto.mask)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.por ins(%src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask) outs(%dst : !pto.mask)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool dst;
+<pre class="highlight"><code class="language-cpp">vector_bool dst;
 vector_bool src0;
 vector_bool src1;
 vector_bool mask;
-por(dst, src0, src1, mask);
-</code></pre>
+por(dst, src0, src1, mask);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1021,14 +1017,22 @@ por(dst, src0, src1, mask);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Operand widths</strong>: All predicate operands MUST have the same width.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if predicate operand widths are not consistent.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1047,19 +1051,19 @@ por(dst, src0, src1, mask);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="combine-predicates-from-two-conditions">Combine predicates from two conditions<a class="headerlink" href="#combine-predicates-from-two-conditions" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void union_masks(RegBuf&lt;predicate_t&gt;&amp; dst,
                  const RegBuf&lt;predicate_t&gt;&amp; mask_a,
                  const RegBuf&lt;predicate_t&gt;&amp; mask_b) {
     POR(dst, mask_a, mask_b, mask_a);
-}
-</code></pre>
+}</code></pre>
 <h3 id="ssa-form-union-of-two-predicates">SSA form — union of two predicates<a class="headerlink" href="#ssa-form-union-of-two-predicates" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// %mask_a: lanes where a[i] &lt; threshold_a
+<pre class="highlight"><code class="language-mlir">// %mask_a: lanes where a[i] &lt; threshold_a
 // %mask_b: lanes where b[i] &gt; threshold_b
 
 // Union: lanes satisfying either condition
@@ -1067,8 +1071,7 @@ void union_masks(RegBuf&lt;predicate_t&gt;&amp; dst,
 
 // Reconstruct full-width predicate from two halves
 %lo_combined = pto.por %mask_a_lo, %mask_b_lo, %mask_a_lo : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-%hi_combined = pto.por %mask_a_hi, %mask_b_hi, %mask_a_hi : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+%hi_combined = pto.por %mask_a_hi, %mask_b_hi, %mask_a_hi : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

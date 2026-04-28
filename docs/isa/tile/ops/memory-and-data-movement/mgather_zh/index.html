@@ -918,19 +918,15 @@
 <p>和连续 <code>TLOAD</code> 不同，这条指令不再沿一个矩形区域顺序搬运，而是通过索引 tile 指定每个元素应该从 GM 的哪个位置取值。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = mgather %mem, %idx : !pto.memref&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = mgather %mem, %idx : !pto.memref&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.mgather %mem, %idx : (!pto.partition_tensor_view&lt;MxNxdtype&gt;, pto.tile&lt;...&gt;)
--&gt; !pto.tile&lt;loc, dtype, rows, cols, blayout, slayout, fractal, pad&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.mgather %mem, %idx : (!pto.partition_tensor_view&lt;MxNxdtype&gt;, pto.tile&lt;...&gt;)
+-&gt; !pto.tile&lt;loc, dtype, rows, cols, blayout, slayout, fractal, pad&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.mgather ins(%mem, %idx : !pto.partition_tensor_view&lt;MxNxdtype&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.mgather ins(%mem, %idx : !pto.partition_tensor_view&lt;MxNxdtype&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;typename TileDst, typename GlobalData, typename TileInd, typename... WaitEvents&gt;
-PTO_INST RecordEvent MGATHER(TileDst &amp;dst, GlobalData &amp;src, TileInd &amp;indexes, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDst, typename GlobalData, typename TileInd, typename... WaitEvents&gt;
+PTO_INST RecordEvent MGATHER(TileDst &amp;dst, GlobalData &amp;src, TileInd &amp;indexes, WaitEvents &amp;... events);</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code>：源 <code>GlobalTensor</code></li>
@@ -944,6 +940,8 @@ PTO_INST RecordEvent MGATHER(TileDst &amp;dst, GlobalData &amp;src, TileInd &amp
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会从 GM 读取。索引越界的行为由目标 profile 定义。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>dst/src</code> 元素类型必须属于：
   <code>uint8_t</code>、<code>int8_t</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>uint32_t</code>、<code>int32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code></li>
@@ -955,11 +953,15 @@ PTO_INST RecordEvent MGATHER(TileDst &amp;dst, GlobalData &amp;src, TileInd &amp
 <li><code>indexes</code> 可以是 <code>[N,1]</code> 或 <code>[N,M]</code></li>
 <li><code>dst</code> 的行宽必须满足 32B 对齐</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 <li>CPU 模拟器不会对 <code>indexes</code> 做强制越界检查。</li>
 </ul>
+</div>
 <h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>pto.mgather</code> 在 CPU 仿真、A2/A3 和 A5 上都保留相同的 PTO 可见语义，但具体支持子集和索引解释仍取决于 profile。</li>
@@ -967,8 +969,7 @@ PTO_INST RecordEvent MGATHER(TileDst &amp;dst, GlobalData &amp;src, TileInd &amp
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>当前手册未单列 <code>mgather</code> 的公开周期表。它的成本通常主要受访存离散程度和目标实现的 gather 路径影响。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-text">%dst = pto.mgather %mem, %idx : (!pto.partition_tensor_view&lt;MxNxdtype&gt;, pto.tile&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.mgather %mem, %idx : (!pto.partition_tensor_view&lt;MxNxdtype&gt;, pto.tile&lt;...&gt;)</code></pre>
 <h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../memory-and-data-movement_zh/">内存与数据搬运</a></li>

@@ -930,8 +930,7 @@
 <p><strong>语法</strong>：<code>%block = pto.get_block_idx</code></p>
 <p><strong>结果类型</strong>：<code>i64</code></p>
 <p><strong>语义</strong>：返回当前 block 的编号，取值范围为 <code>[0, pto.get_block_num())</code>。</p>
-<pre><code class="language-c">block = block_idx();
-</code></pre>
+<pre class="highlight"><code class="language-c">block = block_idx();</code></pre>
 <h3 id="_5">输入<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <p>无。</p>
 <h3 id="_6">预期输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
@@ -957,14 +956,12 @@
 <li>这类查询只在定义了 block 维度的 kernel 启动上下文中有意义。</li>
 </ul>
 <h3 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%block = pto.get_block_idx
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%block = pto.get_block_idx</code></pre>
 <h2 id="ptoget_subblock_idx"><code>pto.get_subblock_idx</code><a class="headerlink" href="#ptoget_subblock_idx" title="Permanent link">&para;</a></h2>
 <p><strong>语法</strong>：<code>%subblock = pto.get_subblock_idx</code></p>
 <p><strong>结果类型</strong>：<code>i64</code></p>
 <p><strong>语义</strong>：返回当前 subblock 的编号，取值范围为 <code>[0, pto.get_subblock_num())</code>。</p>
-<pre><code class="language-c">subblock = subblock_idx();
-</code></pre>
+<pre class="highlight"><code class="language-c">subblock = subblock_idx();</code></pre>
 <h3 id="_9">输入<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <p>无。</p>
 <h3 id="_10">预期输出<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
@@ -989,14 +986,12 @@
 <li>返回值必须位于 <code>[0, get_subblock_num())</code>。</li>
 </ul>
 <h3 id="_12">示例<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%subblock = pto.get_subblock_idx
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%subblock = pto.get_subblock_idx</code></pre>
 <h2 id="ptoget_block_num"><code>pto.get_block_num</code><a class="headerlink" href="#ptoget_block_num" title="Permanent link">&para;</a></h2>
 <p><strong>语法</strong>：<code>%block_num = pto.get_block_num</code></p>
 <p><strong>结果类型</strong>：<code>i64</code></p>
 <p><strong>语义</strong>：返回当前 kernel 启动时可见的 block 总数。</p>
-<pre><code class="language-c">block_num = block_num();
-</code></pre>
+<pre class="highlight"><code class="language-c">block_num = block_num();</code></pre>
 <h3 id="_13">输入<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
 <p>无。</p>
 <h3 id="_14">预期输出<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
@@ -1021,14 +1016,12 @@
 <li>返回值必须是正整数。</li>
 </ul>
 <h3 id="_16">示例<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%block_num = pto.get_block_num
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%block_num = pto.get_block_num</code></pre>
 <h2 id="ptoget_subblock_num"><code>pto.get_subblock_num</code><a class="headerlink" href="#ptoget_subblock_num" title="Permanent link">&para;</a></h2>
 <p><strong>语法</strong>：<code>%subblock_num = pto.get_subblock_num</code></p>
 <p><strong>结果类型</strong>：<code>i64</code></p>
 <p><strong>语义</strong>：返回当前执行实例可见的 subblock 总数。</p>
-<pre><code class="language-c">subblock_num = subblock_num();
-</code></pre>
+<pre class="highlight"><code class="language-c">subblock_num = subblock_num();</code></pre>
 <h3 id="_17">输入<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h3>
 <p>无。</p>
 <h3 id="_18">预期输出<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h3>
@@ -1053,7 +1046,7 @@
 <li>返回值必须是正整数。</li>
 </ul>
 <h2 id="block">典型用法：按 block 切分数据<a class="headerlink" href="#block" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%block = pto.get_block_idx
+<pre class="highlight"><code class="language-mlir">%block = pto.get_block_idx
 %block_num = pto.get_block_num
 
 %block_len = arith.constant 2048 : index
@@ -1063,8 +1056,7 @@
 %offset = arith.muli %base, %block_len : index
 
 %block_in = pto.addptr %gm_in, %offset : !pto.ptr&lt;f32, gm&gt; -&gt; !pto.ptr&lt;f32, gm&gt;
-%block_out = pto.addptr %gm_out, %offset : !pto.ptr&lt;f32, gm&gt; -&gt; !pto.ptr&lt;f32, gm&gt;
-</code></pre>
+%block_out = pto.addptr %gm_out, %offset : !pto.ptr&lt;f32, gm&gt; -&gt; !pto.ptr&lt;f32, gm&gt;</code></pre>
 <p>在这种写法里，所有 block 执行的是同一份 kernel body，但每个 block 会看到不同的 <code>%block</code>，因此算出不同的 GM 区间。</p>
 <h3 id="grid">Grid 设计考虑<a class="headerlink" href="#grid" title="Permanent link">&para;</a></h3>
 <table>

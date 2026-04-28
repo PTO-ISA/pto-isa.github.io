@@ -975,22 +975,18 @@
 </ul>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vadd %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vadd %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vadd %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vadd %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vadd ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
-          outs(%result : !pto.vreg&lt;NxT&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vadd ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
+          outs(%result : !pto.vreg&lt;NxT&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_f32 dst;
+<pre class="highlight"><code class="language-cpp">vector_f32 dst;
 vector_f32 src0;
 vector_f32 src1;
 vector_bool mask;
-vadd(dst, src0, src1, mask);
-</code></pre>
+vadd(dst, src0, src1, mask);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1039,6 +1035,8 @@ vadd(dst, src0, src1, mask);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects. Does not reserve buffers, signal events, or establish fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type match</strong>: <code>%lhs</code>, <code>%rhs</code>, and <code>%dst</code> must have identical element types.</li>
 <li><strong>Width match</strong>: All three registers must have the same vector width <code>N</code>.</li>
@@ -1046,12 +1044,18 @@ vadd(dst, src0, src1, mask);
 <li><strong>Active lanes</strong>: Only lanes where mask bit is 1 (true) participate in the addition.</li>
 <li><strong>Inactive lanes</strong>: Destination elements at inactive lanes are not modified by the operation. Programs must not assume any particular value in inactive lanes.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Verifier rejects type mismatches, width mismatches, or mask width mismatches.</li>
 <li>Any additional illegality stated in the <a href="../../../binary-vector-ops/">Binary Vector Instructions</a> instruction set page is part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1083,6 +1087,7 @@ vadd(dst, src0, src1, mask);
 </tbody>
 </table>
 <p>A5 is the primary concrete profile for vector instructions. CPU simulation and A2/A3-class targets emulate <code>pto.v*</code> operations using scalar loops while preserving the visible PTO contract. Code that depends on specific performance characteristics should treat those as target-profile-specific.</p>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
 <table>
@@ -1164,25 +1169,22 @@ vadd(dst, src0, src1, mask);
 </tbody>
 </table>
 <p>Example: 1024 f32 elements with 16 iterations (<code>R=16</code>):</p>
-<pre><code>A5 total (pipelined): 7 + 15×2 = 37 cycles
-A2/A3 total: 14 + 19 + 32 + 270 = 335 cycles
-</code></pre>
+<pre class="highlight"><code>A5 total (pipelined): 7 + 15×2 = 37 cycles
+A2/A3 total: 14 + 19 + 32 + 270 = 335 cycles</code></pre>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="full-vector-addition-all-lanes-active">Full-vector addition (all lanes active)<a class="headerlink" href="#full-vector-addition-all-lanes-active" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 Mask&lt;64&gt; mask;
 mask.set_all(true);  // predicate all-true
 
-VADD(vdst, va, vb, mask);
-</code></pre>
+VADD(vdst, va, vb, mask);</code></pre>
 <h3 id="partial-predication">Partial predication<a class="headerlink" href="#partial-predication" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Only lanes where %cond is true participate in addition
-%result = pto.vadd %va, %vb, %cond : (!pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask) -&gt; !pto.vreg&lt;128xf16&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">// Only lanes where %cond is true participate in addition
+%result = pto.vadd %va, %vb, %cond : (!pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask) -&gt; !pto.vreg&lt;128xf16&gt;</code></pre>
 <h3 id="complete-vector-load-compute-vector-store-pipeline">Complete vector-load / compute / vector-store pipeline<a class="headerlink" href="#complete-vector-load-compute-vector-store-pipeline" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void vector_add(Ptr&lt;ub_space_t, ub_t&gt; ub_a, Ptr&lt;ub_space_t, ub_t&gt; ub_b,
@@ -1191,14 +1193,13 @@ void vector_add(Ptr&lt;ub_space_t, ub_t&gt; ub_a, Ptr&lt;ub_space_t, ub_t&gt; ub
     Mask&lt;64&gt; mask;
     mask.set_all(true);
 
-    VLDS(va, ub_a, &quot;NORM&quot;);
-    VLDS(vb, ub_b, &quot;NORM&quot;);
+    VLDS(va, ub_a, "NORM");
+    VLDS(vb, ub_b, "NORM");
 
     VADD(vdst, va, vb, mask);
 
     VSTS(vdst, ub_out);
-}
-</code></pre>
+}</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../binary-vector-ops/">Binary Vector Instructions</a></li>

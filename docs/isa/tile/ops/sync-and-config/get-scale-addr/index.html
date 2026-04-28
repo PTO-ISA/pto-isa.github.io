@@ -951,19 +951,15 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Synchronous form:</p>
-<pre><code class="language-text">%dst = pto.get_scale_addr %src : !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.get_scale_addr %src : !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.get_scale_addr %src : (!pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.get_scale_addr %src : (!pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.get_scale_addr ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.get_scale_addr ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent GET_SCALE_ADDR(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEvents&amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
+PTO_INST RecordEvent GET_SCALE_ADDR(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEvents&amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -992,17 +988,23 @@ PTO_INST RecordEvent GET_SCALE_ADDR(TileDataDst &amp;dst, TileDataSrc &amp;src, 
 <li><strong>CPU simulator</strong>: Updates the software tile descriptor's address field with the right-shifted value.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Both <code>src</code> and <code>dst</code> must be Tile instances</strong>.</li>
 <li>Currently only works in Auto mode (Manual mode support planned for future releases).</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Calling <code>pto.get_scale_addr</code> on A2/A3 profiles (unsupported).</li>
 <li>Using <code>pto.get_scale_addr</code> in Manual mode (not yet supported).</li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 template &lt;typename T, int ARows, int ACols, int BRows, int BCols&gt;
@@ -1019,8 +1021,7 @@ void example() {
 
     GET_SCALE_ADDR(aScaleTile, aTile);
     GET_SCALE_ADDR(bScaleTile, bTile);
-}
-</code></pre>
+}</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../sync-and-config/">Sync And Config</a></li>

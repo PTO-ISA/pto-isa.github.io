@@ -939,28 +939,26 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = tfillpad %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tfillpad %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tfillpad %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tfillpad %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tfillpad ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tfillpad ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileData, PadValue PadVal = PadValue::Zero, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileData, PadValue PadVal = PadValue::Zero, typename... WaitEvents&gt;
 PTO_INST RecordEvent TFILLPAD(TileData &amp;dst, TileData &amp;src, WaitEvents &amp;... events);
 
 template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TFILLPAD(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);
-</code></pre>
+PTO_INST RecordEvent TFILLPAD(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);</code></pre>
 <p>相关的同族接口还有：</p>
 <ul>
 <li><code>TFILLPAD_INPLACE(dst, src)</code>：原位填充</li>
 <li><code>TFILLPAD_EXPAND(dst, src)</code>：允许 <code>dst</code> 比 <code>src</code> 更大</li>
 </ul>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Vec Tile 版本要求 <code>TileDataDst::PadVal != PadValue::Null</code>。</li>
@@ -981,9 +979,10 @@ PTO_INST RecordEvent TFILLPAD(DstTileData &amp;dst, SrcTileData &amp;src, WaitEv
 <li><code>TileData::PadVal</code> 为 <code>PadValue::Zero</code> 或 <code>PadValue::Null</code></li>
 <li>这条 Mat 特化更像“把矩阵 Tile 的未覆盖区域置成可接受的默认值”，而不是通用的 Vec copy+pad。</li>
 </ul>
+</div>
 <h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <h3 id="vec-tile">Vec Tile<a class="headerlink" href="#vec-tile" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -996,10 +995,9 @@ void example_vec() {
   SrcT src;
   DstT dst;
   TFILLPAD(dst, src);
-}
-</code></pre>
+}</code></pre>
 <h3 id="mat-tile_1">Mat Tile<a class="headerlink" href="#mat-tile_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1010,8 +1008,7 @@ void example_mat() {
 
   TileMatData matTile;
   TFILLPAD(matTile, matTile);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../../layout-and-rearrangement_zh/">布局与重排指令集</a></li>

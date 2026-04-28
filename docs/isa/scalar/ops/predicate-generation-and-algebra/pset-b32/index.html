@@ -967,17 +967,13 @@
 <p>The <code>_b32</code> variant is the widest directly-constructable predicate segment. For wider predicates, use <code>ppack</code> to combine two <code>_b32</code> predicates.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.pset_b32 &quot;PATTERN&quot; : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.pset_b32 "PATTERN" : !pto.mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.pset_b32 &quot;PATTERN&quot; : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.pset_b32 "PATTERN" : !pto.mask</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.pset_b32 &quot;PATTERN&quot; outs(%mask : !pto.mask)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.pset_b32 "PATTERN" outs(%mask : !pto.mask)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool mask = pset_b32(__cce_simd::PAT_VL16);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">vector_bool mask = pset_b32(__cce_simd::PAT_VL16);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1062,16 +1058,24 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Pattern token validity</strong>: The pattern token MUST be valid for a 32-bit predicate width. Using a <code>PAT_VL*</code> token with N &gt; 32 is <strong>illegal</strong>.</li>
 <li><strong>Predicate context</strong>: The <code>_b32</code> predicate can be combined with another <code>_b32</code> using <code>ppack</code> to form a 64-bit predicate for f32 vector width (N=64).</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if the pattern token is not valid for the <code>_b32</code> (32-bit) variant.</li>
 <li>Illegal if the pattern token is not supported by the target profile.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1096,26 +1100,24 @@
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="construct-all-active-mask">Construct all-active mask<a class="headerlink" href="#construct-all-active-mask" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void set_all_active(RegBuf&lt;predicate_t&gt;&amp; dst) {
-    PSET_B32(dst, &quot;PAT_ALL&quot;);
-}
-</code></pre>
+    PSET_B32(dst, "PAT_ALL");
+}</code></pre>
 <h3 id="use-as-active-lane-mask-for-f32-vector-operations">Use as active-lane mask for f32 vector operations<a class="headerlink" href="#use-as-active-lane-mask-for-f32-vector-operations" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// All lanes active for f32 (64-bit predicate = pack two b32)
-%all32 = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
-%all64_lo = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
-%all64_hi = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
-%all64 = pto.ppack %all64_lo, &quot;LOWER&quot; : !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">// All lanes active for f32 (64-bit predicate = pack two b32)
+%all32 = pto.pset_b32 "PAT_ALL" : !pto.mask
+%all64_lo = pto.pset_b32 "PAT_ALL" : !pto.mask
+%all64_hi = pto.pset_b32 "PAT_ALL" : !pto.mask
+%all64 = pto.ppack %all64_lo, "LOWER" : !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="construct-remainder-mask">Construct remainder mask<a class="headerlink" href="#construct-remainder-mask" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// First 12 lanes active (remainder loop)
-%remainder = pto.pset_b32 &quot;PAT_VL12&quot; : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">// First 12 lanes active (remainder loop)
+%remainder = pto.pset_b32 "PAT_VL12" : !pto.mask</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

@@ -962,21 +962,17 @@ $$ \mathrm{WRITE\_UB}_{64}(\mathrm{addr}, mask) \]</div>
 <p>The immediate offset is encoded directly in the instruction word, in units of 8 bytes (64 bits).</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.psti %mask, %ub_ptr, %imm, &quot;DIST&quot; : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.psti %mask, %ub_ptr, %imm, "DIST" : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.psti %mask, %ub_ptr, %imm, &quot;DIST&quot; : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.psti %mask, %ub_ptr, %imm, "DIST" : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.psti ins(%mask, %ub_ptr, %imm, &quot;DIST&quot; : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.psti ins(%mask, %ub_ptr, %imm, "DIST" : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool src;
+<pre class="highlight"><code class="language-cpp">vector_bool src;
 __ubuf__ uint32_t *base;
 int32_t offset = 0;
 psti(src, base, offset, __cce_simd::NORM);
-psti(src, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
-</code></pre>
+psti(src, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1017,6 +1013,8 @@ psti(src, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
 <li>UB memory at the target address is modified.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>UB address space</strong>: <code>%ub_ptr</code> MUST have address space <code>ub</code>.</li>
 <li><strong>Offset alignment</strong>: The effective address MUST be 64-bit aligned. That is, <code>imm * 8</code> MUST be a multiple of 8. Misaligned effective addresses are <strong>illegal</strong>.</li>
@@ -1025,14 +1023,20 @@ psti(src, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
 <li><strong>Predicate width</strong>: The store transfers exactly 64 bits, which MUST match the active element type context.</li>
 <li><strong>Write atomicity</strong>: The 64-bit predicate word is written atomically.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if <code>%ub_ptr</code> is not a UB-space pointer.</li>
 <li>Illegal if the effective address is not 64-bit aligned.</li>
 <li>Illegal if the immediate offset is out of range for the target profile.</li>
 <li>Illegal if <code>dist</code> attribute is not <code>"NORM"</code> or <code>"PK"</code>.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1069,24 +1073,23 @@ psti(src, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="store-predicate-with-immediate-offset">Store predicate with immediate offset<a class="headerlink" href="#store-predicate-with-immediate-offset" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void store_immediate(RegBuf&lt;predicate_t&gt;&amp; src,
                      Ptr&lt;ub_space_t, ub_t&gt; base) {
     // Store predicate to base + 2 * 8 = base + 16 bytes
-    PSTI(src, base, 2, &quot;NORM&quot;);
-}
-</code></pre>
+    PSTI(src, base, 2, "NORM");
+}</code></pre>
 <h3 id="ssa-form">SSA form<a class="headerlink" href="#ssa-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Generate predicate from comparison
-%mask = pto.vcmp %v0, %v1, %seed, &quot;lt&quot; : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
+<pre class="highlight"><code class="language-mlir">// Generate predicate from comparison
+%mask = pto.vcmp %v0, %v1, %seed, "lt" : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
 
 // Store predicate to UB at base + 4 * 8 = base + 32 bytes
-pto.psti %mask, %ub_base, 4, &quot;NORM&quot; : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32
-</code></pre>
+pto.psti %mask, %ub_base, 4, "NORM" : !pto.mask, !pto.ptr&lt;i64, ub&gt;, i32</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-load-store/">Predicate Load Store</a></li>

@@ -934,19 +934,15 @@
 <h2 id="_5">汇编语法<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>同步形式：</p>
-<pre><code class="language-text">%acc = tgemv %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%acc = tgemv %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tgemv %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%c = pto.tgemv %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tgemv ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tgemv ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGEMV(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
+PTO_INST RecordEvent TGEMV(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);</code></pre>
 <h2 id="_6">输入与输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>aMatrix</code>：左操作数 tile，必须是 <code>Left</code>。</li>
@@ -955,6 +951,8 @@ PTO_INST RecordEvent TGEMV(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRigh
 </ul>
 <p>输出合同是：生成一行结果 <code>C[0, j]</code>。这条指令不会把普通 vector buffer 直接提升成 cube 合同。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="_8">通用约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <ul>
 <li>静态 shape 必须满足：</li>
@@ -985,17 +983,20 @@ PTO_INST RecordEvent TGEMV(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRigh
 <li>若累加器为 <code>float</code>，当前实现支持 <code>half</code>、<code>bfloat16_t</code>、<code>float</code> 和部分 fp8 输入对；</li>
 <li>A5 的 <code>Right</code> 角色有独立布局 / fractal 约束，不能拿 A2A3 的右操作数布局直接套用。</li>
 </ul>
+</div>
 <h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li><code>m != 1</code>；</li>
 <li>角色不是 <code>Left</code> / <code>Right</code> / <code>Acc</code>；</li>
 <li>形状不满足 GEMV 兼容关系；</li>
 <li>在不支持的 target 上使用不支持的 dtype 组合。</li>
 </ul>
+</div>
 <h2 id="_10">性能与吞吐<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <p>仓内 A2A3 costmodel 对 <code>TGEMV</code> 与 <code>TMATMUL</code> 共用 <code>mad/mmad</code> 模型，只是 GEMV 固定 <code>m = 1</code>，因此公式可直接写成：</p>
-<pre><code class="language-text">cycles = 14 + ceil(N/16) * ceil(K / baskK) * repeat_cost
-</code></pre>
+<pre class="highlight"><code class="language-text">cycles = 14 + ceil(N/16) * ceil(K / baskK) * repeat_cost</code></pre>
 <p>其中：</p>
 <ul>
 <li><code>baskK = 32 / sizeof(left_element_type)</code>；</li>
@@ -1005,7 +1006,7 @@ PTO_INST RecordEvent TGEMV(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRigh
 <p>当前仓库没有公开单列的 A5 latency / throughput 表。</p>
 <h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1017,10 +1018,9 @@ void example_auto() {
   B b;
   C c;
   TGEMV(c, a, b);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1035,8 +1035,7 @@ void example_manual() {
   TASSIGN(b, 0x2000);
   TASSIGN(c, 0x3000);
   TGEMV(c, a, b);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../tgemv-acc_zh/">TGEMV_ACC</a></li>

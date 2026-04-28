@@ -959,17 +959,13 @@
 <p>This page therefore models <code>pto.pge_b16</code> as pattern-based predicate materialization: the chosen token determines which lanes are active in the returned predicate register.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.pge_b16 &quot;PAT_VL8&quot; : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.pge_b16 "PAT_VL8" : !pto.mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.pge_b16 &quot;PAT_VL8&quot; : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.pge_b16 "PAT_VL8" : !pto.mask</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.pge_b16 &quot;PAT_VL8&quot; outs(%mask : !pto.mask)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.pge_b16 "PAT_VL8" outs(%mask : !pto.mask)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool mask = pge_b16(__cce_simd::PAT_VL8);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">vector_bool mask = pge_b16(__cce_simd::PAT_VL8);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1007,17 +1003,25 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>The installed public CCE API accepts documented <code>Pat*</code> marker types only; there is no public runtime-scalar overload for <code>pge_b16</code> in the shipped 3510 header.</li>
 <li>Programs must use a pattern token that is valid for the selected target profile.</li>
 <li>This operation materializes a predicate register only; it does not update any scalar input in place.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if the pattern token is not supported by the selected target profile.</li>
 <li>Illegal if the result is consumed in a predicate-width context that the selected backend does not support.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1042,13 +1046,12 @@
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="c-usage">C++ usage<a class="headerlink" href="#c-usage" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">vector_bool mask = pge_b16(__cce_simd::PAT_VL8);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">vector_bool mask = pge_b16(__cce_simd::PAT_VL8);</code></pre>
 <h3 id="ssa-form">SSA form<a class="headerlink" href="#ssa-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.pge_b16 &quot;PAT_VL8&quot; : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.pge_b16 "PAT_VL8" : !pto.mask</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

@@ -938,14 +938,12 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tquant ins(%src, %qp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tquant ins(%src, %qp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataExp, typename TileDataMax,
+<pre class="highlight"><code class="language-cpp">template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataExp, typename TileDataMax,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
                             TileDataSrc *scaling, WaitEvents &amp;... events);
@@ -958,9 +956,10 @@ PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileData
 
 template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataPara, typename... WaitEvents&gt;
 PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataPara &amp;scale,
-                            TileDataPara *offset = nullptr, WaitEvents &amp;... events);
-</code></pre>
+                            TileDataPara *offset = nullptr, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="a2a3">A2/A3 实现<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <ul>
 <li>A2/A3 当前只实现：</li>
@@ -1002,9 +1001,10 @@ PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileData
 <li>如果目标是 A5，才应把 <code>MXFP8</code> 当成主路径之一。</li>
 <li>如果你依赖 <code>exp_zz</code> 或 <code>vgather_idx</code> 这类接口，先确认目标 backend 是否真的实现了它，而不要只看通用 C++ 声明。</li>
 </ul>
+</div>
 <h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="int8">对称 INT8<a class="headerlink" href="#int8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1017,10 +1017,9 @@ void example_int8_sym() {
   DstT dst;
   ParaT scale;
   TQUANT&lt;QuantType::INT8_SYM&gt;(dst, src, scale);
-}
-</code></pre>
+}</code></pre>
 <h3 id="mxfp8_1">MXFP8<a class="headerlink" href="#mxfp8_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1035,8 +1034,7 @@ void example_mxfp8() {
   ExpT exp;
   MaxT max;
   TQUANT&lt;QuantType::MXFP8&gt;(dst, src, &amp;exp, &amp;max, &amp;scaling);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../layout-and-rearrangement/tmov_zh/">TMOV</a></li>

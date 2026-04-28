@@ -960,19 +960,16 @@
 <p><code>pto.vbitsort</code> is a UB-to-UB accelerator operation. It reads score values from <code>%src</code>, uses <code>%indices</code> as the companion index stream, sorts the pairs by score in descending order, and writes packed output records to <code>%dest</code>.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vbitsort %dest, %src, %indices, %repeat_times : (!pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vbitsort %dest, %src, %indices, %repeat_times : (!pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vbitsort %dest, %src, %indices, %repeat_times : (!pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vbitsort %dest, %src, %indices, %repeat_times : (!pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>The installed Bisheng public intrinsic exposes both score-only and score-plus-index overloads; this page corresponds to the score-plus-index <code>VBS32</code> form.</p>
-<pre><code class="language-cpp">__ubuf__ float *dst;
+<pre class="highlight"><code class="language-cpp">__ubuf__ float *dst;
 __ubuf__ float *scores;
 __ubuf__ unsigned int *indices;
 uint8_t repeat = 1;
-vbitsort(dst, scores, indices, repeat);
-</code></pre>
+vbitsort(dst, scores, indices, repeat);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1010,36 +1007,43 @@ vbitsort(dst, scores, indices, repeat);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation mutates <code>%dest</code> in UB memory. It does not reserve buffers, signal events, or establish fences beyond the visible memory write.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>%dest</code>, <code>%src</code>, and <code>%indices</code> MUST all refer to UB-backed storage.</li>
 <li>The hardware operation processes 32-element groups; <code>%repeat_times</code> scales that fixed group size.</li>
 <li>The page-level contract assumes descending score order.</li>
 <li>Buffer alignment and layout MUST satisfy the target-profile backend contract for the selected form.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>The verifier rejects illegal pointer spaces or unsupported element types.</li>
 <li>Illegal repeat counts or malformed buffer contracts are target-profile-specific errors.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>This operation is documented as A5-oriented sort acceleration.</li>
 <li>CPU simulation may preserve the visible PTO contract with a software fallback.</li>
 <li>Availability on narrower profiles is target-specific and should not be assumed without profile documentation.</li>
 </ul>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <p><code>pto.vbitsort</code> is a dedicated sort helper rather than a standard vector ALU opcode. For throughput-sensitive code, batch work in 32-element groups and keep the source and destination buffers in UB.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="sort-one-32-element-group">Sort one 32-element group<a class="headerlink" href="#sort-one-32-element-group" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vbitsort %sorted_records, %score_buf, %idx_buf, %c1
-    : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vbitsort %sorted_records, %score_buf, %idx_buf, %c1
+    : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()</code></pre>
 <h3 id="nms-style-pipeline-setup">NMS-style pipeline setup<a class="headerlink" href="#nms-style-pipeline-setup" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%idx = pto.vci %c0 {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
+<pre class="highlight"><code class="language-mlir">%idx = pto.vci %c0 {order = "ASC"} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
 pto.copy_vreg_to_ub %idx_ub, %idx, %c64 : !pto.ptr&lt;i32, ub&gt;, !pto.vreg&lt;64xi32&gt;, index
 pto.vbitsort %sorted_records, %scores_ub, %idx_ub, %c1
-    : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()
-</code></pre>
+    : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;i32, ub&gt;, index) -&gt; ()</code></pre>
 <h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
 <p><code>pto.vbitsort</code> is the score-ordering primitive in proposal and top-K style pipelines. The installed public C++ surface also exposes a score-only <code>VBS16</code> form, but this PTO page documents the score-plus-index form that preserves original element identity through the sorted output stream.</p>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>

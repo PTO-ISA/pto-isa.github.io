@@ -1005,7 +1005,7 @@
 </tbody>
 </table>
 <h3 id="data-flow">Data Flow<a class="headerlink" href="#data-flow" title="Permanent link">&para;</a></h3>
-<pre><code>UnifiedBuffer (UB)
+<pre class="highlight"><code>UnifiedBuffer (UB)
     │
     │  vlds / vsld / vgather2 (UB → vreg)
     ▼
@@ -1015,8 +1015,7 @@ Vector Registers (!pto.vreg&lt;NxT&gt;) ──► Vector Compute (pto.v*) ──
     └─────────────────────────────────────────────────────────┘
                     │
                     ▼
-             UnifiedBuffer (UB) ──► copy_ubuf_to_gm ──► GlobalMemory
-</code></pre>
+             UnifiedBuffer (UB) ──► copy_ubuf_to_gm ──► GlobalMemory</code></pre>
 <h2 id="instruction-classes">Instruction Classes<a class="headerlink" href="#instruction-classes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1222,15 +1221,15 @@ Vector Registers (!pto.vreg&lt;NxT&gt;) ──► Vector Compute (pto.v*) ──
 <p>Programs MUST NOT rely on the identity-element behavior of masked lanes unless the operation explicitly documents it.</p>
 <h2 id="alignment-state">Alignment State<a class="headerlink" href="#alignment-state" title="Permanent link">&para;</a></h2>
 <p>Vector unaligned store operations (<code>vstu</code>, <code>vstus</code>, <code>vstur</code>) maintain an alignment state that evolves across successive stores. The state consists of an alignment offset that is updated after each store:</p>
-<pre><code>%align_out, %offset_out = pto.vstu %align_in, %offset_in, %value, %base
-    : !pto.align, index, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, index
-</code></pre>
+<pre class="highlight"><code>%align_out, %offset_out = pto.vstu %align_in, %offset_in, %value, %base
+    : !pto.align, index, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, index</code></pre>
 <p>A trailing flush form (<code>vstar</code> / <code>vstas</code>) is required to commit any buffered tail bytes. These ops are <strong>A5-only</strong>.</p>
 <h2 id="pipeline-handoff">Pipeline Handoff<a class="headerlink" href="#pipeline-handoff" title="Permanent link">&para;</a></h2>
 <p>Vector instruction data movement requires explicit synchronization between DMA and vector register instructions:</p>
-<pre><code>copy_gm_to_ubuf ──(set_flag)──► wait_flag ──► vlds ──► vadd ──► vsts ──(set_flag)──► wait_flag ──► copy_ubuf_to_gm
-</code></pre>
+<pre class="highlight"><code>copy_gm_to_ubuf ──(set_flag)──► wait_flag ──► vlds ──► vadd ──► vsts ──(set_flag)──► wait_flag ──► copy_ubuf_to_gm</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Vector length</strong> (<code>N</code>) is determined by the element type (see table above); programs do not choose <code>N</code> directly.</li>
 <li><strong>Predicate width</strong> must match the vector length <code>N</code> for predicate-gated operations.</li>
@@ -1240,7 +1239,10 @@ Vector Registers (!pto.vreg&lt;NxT&gt;) ──► Vector Compute (pto.v*) ──
 <li><strong>Type combinations</strong> for conversion and arithmetic operations are defined per-op.</li>
 <li>No implicit type promotion: all operands must have compatible types.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Using a predicate mask whose width does not match the target vector length.</li>
 <li>Accessing memory with an illegal alignment for the target profile.</li>
@@ -1249,6 +1251,7 @@ Vector Registers (!pto.vreg&lt;NxT&gt;) ──► Vector Compute (pto.v*) ──
 <li>Mixing vector types within a single operation unless the operation explicitly supports it.</li>
 <li>Issuing a vector store before the corresponding DMA copy is complete without an intervening <code>wait_flag</code>.</li>
 </ul>
+</div>
 <h2 id="a5-only-operations">A5-Only Operations<a class="headerlink" href="#a5-only-operations" title="Permanent link">&para;</a></h2>
 <p>The following ops require A5 profile:</p>
 <ul>
@@ -1258,21 +1261,18 @@ Vector Registers (!pto.vreg&lt;NxT&gt;) ──► Vector Compute (pto.v*) ──
 </ul>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="assembly-form-pto-as">Assembly Form (PTO-AS)<a class="headerlink" href="#assembly-form-pto-as" title="Permanent link">&para;</a></h3>
-<pre><code class="language-asm">vadd %vdst, %vsrc0, %vsrc1 : !pto.vreg&lt;f32, 64&gt;
-vlds %vreg, %ub_ptr[%offset] {dist = &quot;NORM&quot;} : !pto.ptr&lt;f32, ub&gt;
-</code></pre>
+<pre class="highlight"><code class="language-asm">vadd %vdst, %vsrc0, %vsrc1 : !pto.vreg&lt;f32, 64&gt;
+vlds %vreg, %ub_ptr[%offset] {dist = "NORM"} : !pto.ptr&lt;f32, ub&gt;</code></pre>
 <h3 id="ssa-form-as-level-1">SSA Form (AS Level 1)<a class="headerlink" href="#ssa-form-as-level-1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%vdst = pto.vadd %vsrc0, %vsrc1, %mask
-    : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%vdst = pto.vadd %vsrc0, %vsrc1, %mask
+    : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h3 id="dps-form-as-level-2">DPS Form (AS Level 2)<a class="headerlink" href="#dps-form-as-level-2" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vadd ins(%vsrc0, %vsrc1, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask)
-          outs(%vdst : !pto.vreg&lt;64xf32&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vadd ins(%vsrc0, %vsrc1, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask)
+          outs(%vdst : !pto.vreg&lt;64xf32&gt;)</code></pre>
 <p>See <a href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a> for the full syntax specification.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Vector instructions are available as C++ intrinsics declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Binary vector addition
@@ -1282,8 +1282,7 @@ PTO_INST void VADD(VecDst&amp; dst, VecSrc0&amp; src0, VecSrc1&amp; src1);
 PTO_INST void VLDS(VecData&amp; dst, PtrType addr);
 
 // Masked vector load
-PTO_INST void VLDS(VecData&amp; dst, PtrType addr, MaskType pred);
-</code></pre>
+PTO_INST void VLDS(VecData&amp; dst, PtrType addr, MaskType pred);</code></pre>
 <h2 id="navigation">Navigation<a class="headerlink" href="#navigation" title="Permanent link">&para;</a></h2>
 <p>See the [Vector ISA reference../vector/README.md) for the full per-op reference under <code>vector/ops/</code>.</p>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>

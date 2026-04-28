@@ -962,21 +962,17 @@ $$ \mathrm{mask} = \mathrm{READ\_UB}_{64}(\mathrm{addr}) \]</div>
 <p>The immediate offset is encoded directly in the instruction word, in units of 8 bytes (64 bits).</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.pldi %ub_ptr, %imm, &quot;DIST&quot; : !pto.ptr&lt;i64, ub&gt;, i32 -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.pldi %ub_ptr, %imm, "DIST" : !pto.ptr&lt;i64, ub&gt;, i32 -&gt; !pto.mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.pldi %ub_ptr, %imm, &quot;DIST&quot; : !pto.ptr&lt;i64, ub&gt;, i32 -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.pldi %ub_ptr, %imm, "DIST" : !pto.ptr&lt;i64, ub&gt;, i32 -&gt; !pto.mask</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.pldi ins(%ub_ptr, %imm, &quot;DIST&quot; : !pto.ptr&lt;i64, ub&gt;, i32) outs(%mask : !pto.mask)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.pldi ins(%ub_ptr, %imm, "DIST" : !pto.ptr&lt;i64, ub&gt;, i32) outs(%mask : !pto.mask)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool dst;
+<pre class="highlight"><code class="language-cpp">vector_bool dst;
 __ubuf__ uint32_t *base;
 int32_t offset = 0;
 pldi(dst, base, offset, __cce_simd::NORM);
-pldi(dst, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
-</code></pre>
+pldi(dst, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1024,6 +1020,8 @@ pldi(dst, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>UB address space</strong>: <code>%ub_ptr</code> MUST have address space <code>ub</code>.</li>
 <li><strong>Offset alignment</strong>: The effective address MUST be 64-bit aligned. That is, <code>imm * 8</code> MUST be a multiple of 8. Misaligned effective addresses are <strong>illegal</strong>.</li>
@@ -1031,14 +1029,20 @@ pldi(dst, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
 <li><strong>Distribution mode</strong>: The <code>dist</code> attribute MUST be one of <code>"NORM"</code>, <code>"US"</code>, or <code>"DS"</code>.</li>
 <li><strong>Predicate width</strong>: The load transfers exactly 64 bits, which MUST match the active element type context.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if <code>%ub_ptr</code> is not a UB-space pointer.</li>
 <li>Illegal if the effective address is not 64-bit aligned.</li>
 <li>Illegal if the immediate offset is out of range for the target profile.</li>
 <li>Illegal if <code>dist</code> attribute is not a supported distribution mode.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1075,24 +1079,23 @@ pldi(dst, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="load-predicate-with-immediate-offset">Load predicate with immediate offset<a class="headerlink" href="#load-predicate-with-immediate-offset" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void load_immediate(RegBuf&lt;predicate_t&gt;&amp; dst,
                     Ptr&lt;ub_space_t, ub_t&gt; base) {
     // Load predicate from base + 3 * 8 = base + 24 bytes
-    PLDI(dst, base, 3, &quot;NORM&quot;);
-}
-</code></pre>
+    PLDI(dst, base, 3, "NORM");
+}</code></pre>
 <h3 id="ssa-form">SSA form<a class="headerlink" href="#ssa-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Load predicate from slot 2 (2 * 8 = 16 bytes offset)
-%mask = pto.pldi %ub_base, 2, &quot;NORM&quot; : !pto.ptr&lt;i64, ub&gt;, i32 -&gt; !pto.mask
+<pre class="highlight"><code class="language-mlir">// Load predicate from slot 2 (2 * 8 = 16 bytes offset)
+%mask = pto.pldi %ub_base, 2, "NORM" : !pto.ptr&lt;i64, ub&gt;, i32 -&gt; !pto.mask
 
 // Use in predicated vector select
-%result = pto.vsel %v_true, %v_false, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+%result = pto.vsel %v_true, %v_false, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-load-store/">Predicate Load Store</a></li>

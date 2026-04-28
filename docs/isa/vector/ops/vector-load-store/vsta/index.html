@@ -956,11 +956,9 @@
 <p><code>pto.vsta</code> is part of the PTO vector memory/data-movement instruction set. It keeps UB addressing, distribution, mask behavior, and any alignment-state threading explicit in SSA form rather than hiding those details in backend-specific lowering.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vsta %value, %dest[%offset]
-</code></pre>
+<pre class="highlight"><code class="language-text">vsta %value, %dest[%offset]</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vsta %value, %dest[%offset] : !pto.align, !pto.ptr&lt;T, ub&gt;, index
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vsta %value, %dest[%offset] : !pto.align, !pto.ptr&lt;T, ub&gt;, index</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <p><code>%value</code> is the pending store-alignment state, <code>%dest</code> is the UB base pointer,
   and <code>%offset</code> is the flush displacement.</p>
@@ -969,20 +967,29 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation writes UB-visible memory and/or updates streamed alignment state. Stateful unaligned forms expose their evolving state in SSA form, but a trailing flush form may still be required to complete the stream.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <p>The flush address MUST match the post-updated address expected by the
   preceding unaligned-store stream. After the flush, the corresponding store
   alignment state is consumed.</p>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>It is illegal to use addresses outside the required UB-visible space or to violate the alignment/distribution contract of the selected form.</li>
 <li>Masked-off lanes or inactive blocks do not make an otherwise-illegal address valid unless the operation text explicitly says so.</li>
 <li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
 <li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
 </ul>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
 <p>The current public VPTO timing material for PTO micro instructions remains limited.
@@ -1010,8 +1017,7 @@ For <code>pto.vsta</code>, those public sources describe the instruction semanti
 </table>
 <p>If software scheduling or performance modeling depends on the exact cost of <code>pto.vsta</code>, treat that cost as target-profile-specific and measure it on the concrete backend rather than inferring a manual constant.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.vsta %value, %dest[%offset] : !pto.align, !pto.ptr&lt;T, ub&gt;, index
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vsta %value, %dest[%offset] : !pto.align, !pto.ptr&lt;T, ub&gt;, index</code></pre>
 <h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
 <p>The instruction set overview carries the remaining shared rules for this operation.</p>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>

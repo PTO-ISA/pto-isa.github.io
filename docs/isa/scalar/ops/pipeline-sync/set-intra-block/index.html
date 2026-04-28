@@ -965,16 +965,13 @@
 <p>This contrasts with A2A3's <code>set_cross_core</code> which broadcasts to both subblocks with one call.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.set_intra_block %pipe, %sem_id : i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.set_intra_block %pipe, %sem_id : i64, i64</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.set_intra_block %pipe, %sem_id : i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.set_intra_block %pipe, %sem_id : i64, i64</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">pipe_t pipe = PIPE_MTE2;
+<pre class="highlight"><code class="language-cpp">pipe_t pipe = PIPE_MTE2;
 uint64_t syncId = 0;
-set_intra_block(pipe, syncId);
-</code></pre>
+set_intra_block(pipe, syncId);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1005,19 +1002,27 @@ set_intra_block(pipe, syncId);
 <li>The target subblock's <code>wait_intra_core</code> unblocks when the count reaches zero.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>A5 only</strong>: <code>set_intra_block</code> is only available on the A5 profile.</li>
 <li><strong>Semaphore ID mapping</strong>: IDs 0–15 target AIV0; IDs 16–31 target AIV1. Programs MUST use the correct ID for the target subblock.</li>
 <li><strong>No broadcast</strong>: Unlike A2A3's <code>set_cross_core</code>, one <code>set_intra_block</code> does NOT reach both subblocks. Separate calls are required for each subblock.</li>
 <li><strong>Semaphore pool</strong>: 16 physical IDs with a 32-ID address space. IDs outside 0–31 are <strong>illegal</strong>.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal on non-A5 profiles.</li>
 <li>Illegal if <code>%sem_id</code> is outside the range 0–31.</li>
 <li>Illegal if the target subblock is not reachable (invalid core ID encoding in sem_id).</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1054,37 +1059,35 @@ set_intra_block(pipe, syncId);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="a5-cv-separate-signals-per-subblock">A5: C→V — separate signals per subblock<a class="headerlink" href="#a5-cv-separate-signals-per-subblock" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // AIC signals AIV0 on semaphore 0
 SET_INTRA_BLOCK(PIPE_MTE2, /* sem_id */ 0);
 
 // AIC signals AIV1 on semaphore 16 (0 + 15 offset)
-SET_INTRA_BLOCK(PIPE_MTE2, /* sem_id */ 16);
-</code></pre>
+SET_INTRA_BLOCK(PIPE_MTE2, /* sem_id */ 16);</code></pre>
 <h3 id="ssa-form-cv-with-11-semantics">SSA form — C→V with 1:1 semantics<a class="headerlink" href="#ssa-form-cv-with-11-semantics" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// AIC: signal AIV0 that data is ready
-pto.set_intra_block &quot;PIPE_MTE2&quot;, %c0_i64 : i64, i64
+<pre class="highlight"><code class="language-mlir">// AIC: signal AIV0 that data is ready
+pto.set_intra_block "PIPE_MTE2", %c0_i64 : i64, i64
 
 // AIC: signal AIV1 that data is ready
-pto.set_intra_block &quot;PIPE_MTE2&quot;, %c16_i64 : i64, i64
-</code></pre>
+pto.set_intra_block "PIPE_MTE2", %c16_i64 : i64, i64</code></pre>
 <h3 id="ssa-form-vc-with-11-semantics">SSA form — V→C with 1:1 semantics<a class="headerlink" href="#ssa-form-vc-with-11-semantics" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// AIV0: signal AIC that segment 0 is done
-pto.set_intra_block &quot;PIPE_V&quot;, %c0_i64 : i64, i64
+<pre class="highlight"><code class="language-mlir">// AIV0: signal AIC that segment 0 is done
+pto.set_intra_block "PIPE_V", %c0_i64 : i64, i64
 
 // AIV1: signal AIC that segment 1 is done
-pto.set_intra_block &quot;PIPE_V&quot;, %c0_i64 : i64, i64
+pto.set_intra_block "PIPE_V", %c0_i64 : i64, i64
 
 // AIC: wait for AIV0 on sem 0
-pto.wait_intra_core &quot;PIPE_MTE2&quot;, %c0_i64 : i64, i64
+pto.wait_intra_core "PIPE_MTE2", %c0_i64 : i64, i64
 
 // AIC: wait for AIV1 on sem 16
-pto.wait_intra_core &quot;PIPE_MTE2&quot;, %c16_i64 : i64, i64
-</code></pre>
+pto.wait_intra_core "PIPE_MTE2", %c16_i64 : i64, i64</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../pipeline-sync/">Pipeline Sync</a></li>

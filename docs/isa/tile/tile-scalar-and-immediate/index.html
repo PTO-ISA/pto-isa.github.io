@@ -1143,20 +1143,26 @@
 </tbody>
 </table>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>The scalar type MUST be compatible with the tile element type.</li>
 <li>Shift operations (<code>TSHLS</code>, <code>TSHRS</code>) interpret the scalar as an unsigned integer shift count.</li>
 <li>Saturating variants (<code>TADDSC</code>, <code>TSUBSC</code>) clamp results to type min/max on overflow/underflow.</li>
 <li>Comparison variants produce a predicate tile, not a numeric tile.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li><strong>MUST NOT</strong> use a scalar type that is not compatible with the tile element type.</li>
 <li><strong>MUST NOT</strong> use a shift count <code>&gt;=</code> element bit-width.</li>
 <li><strong>MUST NOT</strong> rely on implicit type promotion between scalar and tile types.</li>
 </ul>
+</div>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Arithmetic with scalar
@@ -1183,8 +1189,7 @@ PTO_INST RecordEvent TLRELU(TileDst&amp; dst, TileSrc&amp; src, ScalarT slope);
 
 // Comparison with scalar (produces predicate tile)
 template &lt;typename TileDst, typename TileSrc, typename ScalarT&gt;
-PTO_INST RecordEvent TCMPS(TileDst&amp; dst, TileSrc&amp; src, ScalarT scalar, CompareMode cmp);
-</code></pre>
+PTO_INST RecordEvent TCMPS(TileDst&amp; dst, TileSrc&amp; src, ScalarT scalar, CompareMode cmp);</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/tile-families/">Tile instruction set</a> — Instruction set overview</li>

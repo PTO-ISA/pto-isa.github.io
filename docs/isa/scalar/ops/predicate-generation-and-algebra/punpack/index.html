@@ -960,19 +960,15 @@
 <div class="arithmatex">\[ \mathrm{dst}_N = \begin{cases} \mathrm{LOWER}(\mathrm{src}_{2N}) &amp; \text{if } P = \text{LOWER} \\ \mathrm{UPPER}(\mathrm{src}_{2N}) &amp; \text{if } P = \text{HIGHER} \end{cases} \]</div>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.punpack %src, &quot;PART&quot; : !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.punpack %src, "PART" : !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.punpack %src, &quot;PART&quot; : !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.punpack %src, "PART" : !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.punpack ins(%src, &quot;PART&quot; : !pto.mask) outs(%dst : !pto.mask)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.punpack ins(%src, "PART" : !pto.mask) outs(%dst : !pto.mask)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool dst;
+<pre class="highlight"><code class="language-cpp">vector_bool dst;
 vector_bool src;
-punpack(dst, src, __cce_simd::LOWER);
-</code></pre>
+punpack(dst, src, __cce_simd::LOWER);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1015,18 +1011,26 @@ punpack(dst, src, __cce_simd::LOWER);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Partition token</strong>: MUST be <code>"LOWER"</code> or <code>"HIGHER"</code>. Other tokens are <strong>illegal</strong>.</li>
 <li><strong>Source width</strong>: The source predicate MUST be 2N bits. Programs MUST ensure the source context provides a 2N-bit predicate.</li>
 <li><strong>Destination width</strong>: The destination predicate is always N bits. Programs that need a 2N-bit result after extraction MUST use <code>ppack</code> to reconstruct it.</li>
 <li><strong>Zero-fill behavior</strong>: The non-selected half of the source is ignored (zero-filled); the destination does NOT contain a concatenation or merge of both halves.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if the partition token is not <code>"LOWER"</code> or <code>"HIGHER"</code>.</li>
 <li>Illegal if source and destination predicate widths are not in a 2:1 ratio.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1051,33 +1055,32 @@ punpack(dst, src, __cce_simd::LOWER);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="extract-upper-half-of-a-64-bit-predicate">Extract upper half of a 64-bit predicate<a class="headerlink" href="#extract-upper-half-of-a-64-bit-predicate" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void extract_upper(RegBuf&lt;predicate_t&gt;&amp; dst,
                    const RegBuf&lt;predicate_t&gt;&amp; src_64) {
-    PUNPACK(dst, src_64, &quot;HIGHER&quot;);
-}
-</code></pre>
+    PUNPACK(dst, src_64, "HIGHER");
+}</code></pre>
 <h3 id="extract-and-re-pack-with-modification">Extract and re-pack with modification<a class="headerlink" href="#extract-and-re-pack-with-modification" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// %full_64: 64-bit predicate from a comparison
+<pre class="highlight"><code class="language-mlir">// %full_64: 64-bit predicate from a comparison
 
 // Extract lower half
-%lo = pto.punpack %full_64, &quot;LOWER&quot; : !pto.mask -&gt; !pto.mask
+%lo = pto.punpack %full_64, "LOWER" : !pto.mask -&gt; !pto.mask
 
 // Extract upper half
-%hi = pto.punpack %full_64, &quot;HIGHER&quot; : !pto.mask -&gt; !pto.mask
+%hi = pto.punpack %full_64, "HIGHER" : !pto.mask -&gt; !pto.mask
 
 // Modify lower half (e.g., invert)
 %lo_inv = pto.pnot %lo, %lo : !pto.mask, !pto.mask -&gt; !pto.mask
 
 // Re-pack into 64-bit predicate
-%new_lo = pto.ppack %lo_inv, &quot;LOWER&quot; : !pto.mask -&gt; !pto.mask
-%new_hi = pto.ppack %hi, &quot;HIGHER&quot; : !pto.mask -&gt; !pto.mask
-%new_full = pto.por %new_lo, %new_hi, %new_lo : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+%new_lo = pto.ppack %lo_inv, "LOWER" : !pto.mask -&gt; !pto.mask
+%new_hi = pto.ppack %hi, "HIGHER" : !pto.mask -&gt; !pto.mask
+%new_full = pto.por %new_lo, %new_hi, %new_lo : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

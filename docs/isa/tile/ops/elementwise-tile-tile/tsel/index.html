@@ -973,20 +973,16 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Synchronous form:</p>
-<pre><code class="language-text">%dst = tsel %mask, %src0, %src1 : !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tsel %mask, %src0, %src1 : !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tsel %mask, %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tsel %mask, %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tsel ins(%mask, %src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tsel ins(%mask, %src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileData, typename MaskTile, typename TmpTile, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename MaskTile, typename TmpTile, typename... WaitEvents&gt;
 PTO_INST RecordEvent TSEL(TileData &amp;dst, MaskTile &amp;selMask, TileData &amp;src0,
-                          TileData &amp;src1, TmpTile &amp;tmp, WaitEvents &amp;... events);
-</code></pre>
+                          TileData &amp;src1, TmpTile &amp;tmp, WaitEvents &amp;... events);</code></pre>
 <p><strong>Parameters:</strong>
 - <code>dst</code>: destination tile receiving the selected values.
 - <code>selMask</code>: predicate mask tile. Lane <code>(i,j)</code> is true if non-zero; selects <code>src0[i,j]</code>.
@@ -1055,6 +1051,8 @@ PTO_INST RecordEvent TSEL(TileData &amp;dst, MaskTile &amp;selMask, TileData &am
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>sizeof(TileData::DType)</code> MUST be <code>2</code> or <code>4</code> bytes.</li>
 <li><code>dst</code>, <code>src0</code>, and <code>src1</code> MUST use the <strong>same element type</strong>.</li>
@@ -1064,12 +1062,18 @@ PTO_INST RecordEvent TSEL(TileData &amp;dst, MaskTile &amp;selMask, TileData &am
 <li>The iteration domain is <code>dst.GetValidRow()</code> × <code>dst.GetValidCol()</code>.</li>
 <li><code>tmp</code> MUST have sufficient capacity to hold intermediate predicate bits; its exact requirements are target-defined.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li><strong>MUST NOT</strong> use non-row-major <code>dst</code>/<code>src0</code>/<code>src1</code> tiles.</li>
 <li><strong>MUST NOT</strong> use <code>dst</code>/<code>src0</code>/<code>src1</code> with different declared shapes.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1106,6 +1110,7 @@ PTO_INST RecordEvent TSEL(TileData &amp;dst, MaskTile &amp;selMask, TileData &am
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a2a3-throughput">A2/A3 Throughput<a class="headerlink" href="#a2a3-throughput" title="Permanent link">&para;</a></h3>
 <p><code>TSEL</code> compiles to CCE vector instructions via the <code>TBinOp.hpp</code> performance model. The throughput is identical to <code>TADD</code> (binary arithmetic):</p>
@@ -1143,7 +1148,7 @@ PTO_INST RecordEvent TSEL(TileData &amp;dst, MaskTile &amp;selMask, TileData &am
 <hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1155,10 +1160,9 @@ void example_auto() {
   MaskT mask(16, 2);
   TmpT tmp;
   TSEL(dst, mask, src0, src1, tmp);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1175,12 +1179,10 @@ void example_manual() {
   TASSIGN(mask, 0x4000);
   TASSIGN(tmp,  0x5000);
   TSEL(dst, mask, src0, src1, tmp);
-}
-</code></pre>
+}</code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tsel %mask, %src0, %src1 : !pto.tile&lt;...&gt;
-pto.tsel ins(%mask, %src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tsel %mask, %src0, %src1 : !pto.tile&lt;...&gt;
+pto.tsel ins(%mask, %src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../elementwise-tile-tile/">Elementwise Tile Tile</a></li>

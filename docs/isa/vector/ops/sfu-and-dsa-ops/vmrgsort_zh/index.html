@@ -922,12 +922,10 @@
 </ul>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-asm">vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-asm">vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config
+    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -967,23 +965,32 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会直接读写 UB 内存。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>四路输入都必须已经按 <code>%config</code> 指定的顺序排好。</li>
 <li>四路输入必须使用相同的排序方向和比较模式。</li>
 <li>所有输入与输出必须使用相同的元素类型 <code>T</code>。</li>
 <li>所有指针都必须位于 UB 地址空间。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>任一输入不是 UB 指针都属于非法。</li>
 <li>有效地址若不满足对齐要求则非法。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vmrgsort</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 <li><code>%config</code> 的位域布局与支持的元素类型属于 profile 相关语义。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <p>当前手册未给出 <code>vmrgsort4</code> 的独立周期级条目。</p>
@@ -1027,12 +1034,11 @@
 </ul>
 <p>这说明 <code>vmrgsort4</code> 在代价模型里是明显的“归并专用路径”，不应按普通逐元素向量算术估算。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.vmrgsort4 %dest,
+<pre class="highlight"><code class="language-mlir">pto.vmrgsort4 %dest,
                %sorted_a, %sorted_b, %sorted_c, %sorted_d,
                %count, %config
     : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;,
-      !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64
-</code></pre>
+      !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64</code></pre>
 <h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。

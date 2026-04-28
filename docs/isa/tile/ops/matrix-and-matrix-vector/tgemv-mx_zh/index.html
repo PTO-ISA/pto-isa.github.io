@@ -921,17 +921,14 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>示意形式：</p>
-<pre><code class="language-text">%acc = tgemv.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%acc = tgemv.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%acc = pto.tgemv.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%acc = pto.tgemv.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tgemv.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%acc : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tgemv.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%acc : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix,
                               TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
@@ -944,9 +941,10 @@ PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cOutMatrix, TileRes &amp;cInMatrix, T
 template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename TileBias, typename... WaitEvents&gt;
 PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix,
-                              TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
-</code></pre>
+                              TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="a5-mx">A5 真正支持的 MX 语义<a class="headerlink" href="#a5-mx" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>TGEMV_MX</code> 复用与 <code>TMATMUL_MX</code> 相同的 <code>CheckMadMxValid(...)</code> 约束，因此：</li>
@@ -967,8 +965,9 @@ PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileL
 <li>Kirin9030 当前没有 MX 实现路径。</li>
 </ul>
 <p>因此，这条指令的真实 MX 数值语义目前仍以 A5 backend 为准。</p>
+</div>
 <h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -985,8 +984,7 @@ void example() {
   ScaleB scaleB;
   C c;
   TGEMV_MX(c, a, scaleA, b, scaleB);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../tmatmul-mx_zh/">TMATMUL_MX</a></li>

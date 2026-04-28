@@ -965,8 +965,7 @@
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
 <h3 id="tile-template-signature">Tile Template Signature<a class="headerlink" href="#tile-template-signature" title="Permanent link">&para;</a></h3>
 <p>A PTO tile is declared with the following template parameters:</p>
-<pre><code>Tile&lt;TileType, DType, Rows, Cols, BLayout, SLayout, Fractal, Pad&gt;
-</code></pre>
+<pre class="highlight"><code>Tile&lt;TileType, DType, Rows, Cols, BLayout, SLayout, Fractal, Pad&gt;</code></pre>
 <table>
 <thead>
 <tr>
@@ -1064,15 +1063,13 @@
 <h3 id="valid-region">Valid Region<a class="headerlink" href="#valid-region" title="Permanent link">&para;</a></h3>
 <p>The valid region is the architecture-visible statement of which elements are meaningful. It is expressed as a pair <code>(Rv, Cv)</code> — valid rows and valid columns — accessible at runtime via <code>tile.GetValidRow()</code> and <code>tile.GetValidCol()</code>.</p>
 <p><strong>Semantics</strong>: For any tile operation, <code>dst[i, j]</code> is defined if and only if <code>0 ≤ i &lt; dst.Rv</code> and <code>0 ≤ j &lt; dst.Cv</code>. Elements outside this domain have <strong>no architectural meaning</strong> unless a specific instruction page explicitly defines their behavior.</p>
-<p><strong>Formula</strong>:</p>
-<pre><code>Domain(dst) = { (i, j) | 0 ≤ i &lt; dst.Rv  and  0 ≤ j &lt; dst.Cv }
-</code></pre>
-<p><strong>Per-instruction iteration domain</strong>: Unless a specific instruction states otherwise, the iteration domain is the <strong>destination tile's valid region</strong>:</p>
-<pre><code>for i in [0, dst.Rv):
+<p><strong>Formula</strong>:
+<pre class="highlight"><code>Domain(dst) = { (i, j) | 0 ≤ i &lt; dst.Rv  and  0 ≤ j &lt; dst.Cv }</code></pre></p>
+<p><strong>Per-instruction iteration domain</strong>: Unless a specific instruction states otherwise, the iteration domain is the <strong>destination tile's valid region</strong>:
+<pre class="highlight"><code>for i in [0, dst.Rv):
     for j in [0, dst.Cv):
-        dst[i, j] = f(src0[i, j], src1[i, j], ...)
-</code></pre>
-<p>For source tiles, <code>src[i, j]</code> is read regardless of whether <code>(i, j)</code> falls within the source's own valid region; the value read for out-of-region lanes is <strong>target-specific and undefined</strong>:
+        dst[i, j] = f(src0[i, j], src1[i, j], ...)</code></pre>
+For source tiles, <code>src[i, j]</code> is read regardless of whether <code>(i, j)</code> falls within the source's own valid region; the value read for out-of-region lanes is <strong>target-specific and undefined</strong>:
   - On A2/A3 and A5: The hardware may read whatever values happen to be in the underlying tile buffer SRAM; the content is not guaranteed to be stable across invocations or consistent with initialization
   - On CPU simulator: The underlying memory location is read directly, producing whatever bits are stored there</p>
 <h3 id="block-layout-blayout">Block Layout (BLayout)<a class="headerlink" href="#block-layout-blayout" title="Permanent link">&para;</a></h3>
@@ -1287,43 +1284,46 @@
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
 <p>Tile-producing operations yield a destination tile whose payload, valid region, and legality are defined by the selected instruction set and the interaction of the input tiles. The destination <code>TileType</code> and layout must be compatible with the instruction.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>Semantics are defined only inside the declared valid region unless an instruction page says otherwise</li>
 <li>Multi-input tile instructions iterate over the <strong>destination</strong> valid region, reading source tiles lane-by-lane at the corresponding indices regardless of the source's own valid region (hardware-specific, undefined values for out-of-region source lanes on A2/A3 and A5; raw memory reads on CPU simulator)</li>
 <li>A legal tile type is not enough by itself; shape, layout, location intent, and target profile also matter</li>
 <li>The combination of <code>TileType</code>, <code>BLayout</code>, <code>SLayout</code>, and <code>Fractal</code> MUST match one of the supported combinations in the layout table above</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Treating out-of-valid-region elements as architecturally meaningful data</li>
 <li>Assuming every backend will silently repair mismatched valid-region use</li>
 <li>Using tile roles or layouts that an instruction set or target profile does not permit</li>
 <li>Relying on any specific value from a source tile lane outside its valid region (undefined on A2/A3 and A5; raw memory on CPU simulator)</li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="example-1-edge-tile-with-partial-valid-region">Example 1: Edge Tile with Partial Valid Region<a class="headerlink" href="#example-1-edge-tile-with-partial-valid-region" title="Permanent link">&para;</a></h3>
 <p>An edge tile may have a physical shape of <code>16 x 16</code> while only <code>5 x 9</code> values are valid:</p>
-<pre><code class="language-cpp">using EdgeTile = Tile&lt;TileType::Vec, half, 16, 16, RowMajor, NoneBox, None, Zero&gt;;
+<pre class="highlight"><code class="language-cpp">using EdgeTile = Tile&lt;TileType::Vec, half, 16, 16, RowMajor, NoneBox, None, Zero&gt;;
 EdgeTile tile;
 tile.SetValidRegion(5, 9);
-// Only tile[0..4][0..8] is architecturally meaningful
-</code></pre>
+// Only tile[0..4][0..8] is architecturally meaningful</code></pre>
 <h3 id="example-2-matmul-tile-roles">Example 2: Matmul Tile Roles<a class="headerlink" href="#example-2-matmul-tile-roles" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">using A = Tile&lt;TileType::Left, int8_t, 16, 16, RowMajor, RowMajor, NZ, Null&gt;;
+<pre class="highlight"><code class="language-cpp">using A = Tile&lt;TileType::Left, int8_t, 16, 16, RowMajor, RowMajor, NZ, Null&gt;;
 using B = Tile&lt;TileType::Right, int8_t, 16, 16, RowMajor, NoneBox, NN, Null&gt;;
 using C = Tile&lt;TileType::Acc, int32_t, 16, 16, RowMajor, NoneBox, None, Zero&gt;;
 A a; B b; C c;
-TMATMUL(c, a, b);  // c[i,j] = sum_k a[i,k] * b[k,j]
-</code></pre>
+TMATMUL(c, a, b);  // c[i,j] = sum_k a[i,k] * b[k,j]</code></pre>
 <h3 id="example-3-elementwise-operation-over-valid-region">Example 3: Elementwise Operation Over Valid Region<a class="headerlink" href="#example-3-elementwise-operation-over-valid-region" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// TADD iterates over dst's valid region:
+<pre class="highlight"><code class="language-cpp">// TADD iterates over dst's valid region:
 // for i in [0, dst.Rv), for j in [0, dst.Cv):
 //     dst[i,j] = src0[i,j] + src1[i,j]
 Tile&lt;TileType::Vec, float, 16, 16&gt; dst, src0, src1;
 dst.SetValidRegion(8, 8);
 // Only dst[0..7][0..7], src0[0..7][0..7], src1[0..7][0..7] participate
-TADD(dst, src0, src1);
-</code></pre>
+TADD(dst, src0, src1);</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../introduction/what-is-pto-visa/">Introduction: what PTO is</a></li>

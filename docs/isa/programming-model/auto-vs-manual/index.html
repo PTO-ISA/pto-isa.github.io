@@ -940,7 +940,7 @@
 <h1 id="auto-vs-manual">Auto Vs Manual<a class="headerlink" href="#auto-vs-manual" title="Permanent link">&para;</a></h1>
 <p>PTO supports both Auto and Manual programming styles because they solve different problems. The ISA manual describes the shared architecture contract; this page explains how each mode delegates responsibilities between author and tooling, and which audience benefits most from each.</p>
 <h2 id="audience-decision-tree">Audience Decision Tree<a class="headerlink" href="#audience-decision-tree" title="Permanent link">&para;</a></h2>
-<pre><code>Who are you?
+<pre class="highlight"><code>Who are you?
 │
 ├─ Compiler / toolchain developer ──► Auto mode is a contract your tool must implement
 │                                      Manual mode is what your tool emits for users
@@ -951,12 +951,11 @@
                        │          (explicit TASSIGN, TSYNC, set_flag/wait_flag)
                        │
                        └─ NO  ──► Auto mode
-                                   (compiler/runtime manages placement and scheduling)
-</code></pre>
+                                   (compiler/runtime manages placement and scheduling)</code></pre>
 <h2 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h2>
 <p>In Auto mode, the compiler or runtime infrastructure inserts <code>TASSIGN</code>, <code>TSYNC</code>, and data-movement operations automatically. The author writes only the compute payload.</p>
 <h3 id="what-the-author-writes">What the Author Writes<a class="headerlink" href="#what-the-author-writes" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void vec_add(Tile&lt;float, 16, 16&gt;&amp; c,
@@ -968,10 +967,9 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c,
     TLOAD(b, gb);   // compiler inserts TASSIGN before TLOAD
     TADD(c, a, b);  // compiler inserts TSYNC between TLOAD and TADD
     TSTORE(gc, c);  // compiler inserts TSYNC between TADD and TSTORE
-}
-</code></pre>
+}</code></pre>
 <h3 id="what-the-compilerruntime-inserts">What the Compiler/Runtime Inserts<a class="headerlink" href="#what-the-compilerruntime-inserts" title="Permanent link">&para;</a></h3>
-<pre><code>TASSIGN(a, @tile(slot))   // auto-assign tile buffer address
+<pre class="highlight"><code>TASSIGN(a, @tile(slot))   // auto-assign tile buffer address
 TSYNC()                    // sync before next producer
 TLOAD(a, ga)
 TSYNC()
@@ -981,8 +979,7 @@ TLOAD(b, gb)
 TSYNC()
 TADD(c, a, b)
 TSYNC()
-TSTORE(gc, c)
-</code></pre>
+TSTORE(gc, c)</code></pre>
 <p>Auto mode does NOT change PTO ISA semantics. The inserted operations are standard PTO operations, not backend-specific magic.</p>
 <h3 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h3>
 <ul>
@@ -993,7 +990,7 @@ TSTORE(gc, c)
 <h2 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h2>
 <p>In Manual mode, the author explicitly binds tile resources and manages synchronization. This gives full control over tile placement, double-buffering, and pipeline overlap.</p>
 <h3 id="what-the-author-writes_1">What the Author Writes<a class="headerlink" href="#what-the-author-writes_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void vec_add_manual(Tile&lt;float, 16, 16&gt;&amp; c,
@@ -1009,11 +1006,10 @@ void vec_add_manual(Tile&lt;float, 16, 16&gt;&amp; c,
     TADD(c, a, b);
     TSYNC();
     TSTORE(gc, c);
-}
-</code></pre>
+}</code></pre>
 <h3 id="double-buffering-example">Double-Buffering Example<a class="headerlink" href="#double-buffering-example" title="Permanent link">&para;</a></h3>
 <p>Manual mode enables double-buffering — overlapping DMA and compute on alternating tile slots:</p>
-<pre><code class="language-cpp">// Tile slot 0 and slot 1 alternate between compute and DMA
+<pre class="highlight"><code class="language-cpp">// Tile slot 0 and slot 1 alternate between compute and DMA
 TASSIGN(tile[0], 0x1000);
 TASSIGN(tile[1], 0x2000);
 
@@ -1023,8 +1019,7 @@ set_flag(PIPE_MTE2, PIPE_V, ID0);
 wait_flag(PIPE_MTE2, PIPE_V, ID0);
 TADD(c, tile[0], src[0]);      // compute on current tile
 TSTORE(gm_out, c);
-TSYNC();
-</code></pre>
+TSYNC();</code></pre>
 <h2 id="shared-contract">Shared Contract<a class="headerlink" href="#shared-contract" title="Permanent link">&para;</a></h2>
 <p>Both modes still share the same ISA contract:</p>
 <table>
@@ -1074,12 +1069,15 @@ TSYNC();
 </tbody>
 </table>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Documenting Auto mode as if it made illegal programs legal</li>
 <li>Treating Manual mode details as global guarantees for every PTO program</li>
 <li>Collapsing Auto and Manual into separate ISAs instead of two ways to author PTO programs</li>
 <li>Relying on auto-inserted synchronization in code that requires precise pipeline ordering (use Manual instead)</li>
 </ul>
+</div>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../machine-model/execution-agents/">Execution Agents And Target Profiles</a></li>

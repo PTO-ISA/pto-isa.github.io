@@ -1185,12 +1185,11 @@
 </table>
 <h2 id="vector-register-format-vlane-architecture">Vector Register Format (VLane Architecture)<a class="headerlink" href="#vector-register-format-vlane-architecture" title="Permanent link">&para;</a></h2>
 <p>On A5 (Ascend 950 PR / DT), the vector register is organized as <strong>8 VLanes</strong> of 32 bytes each. A VLane is the atomic unit for group reduction operations. This architecture is architecturally visible in PTO.</p>
-<pre><code>vreg (256 bytes total):
+<pre class="highlight"><code>vreg (256 bytes total):
 ┌─────────┬─────────┬─────────┬─────┬─────────┬─────────┐
 │ VLane 0 │ VLane 1 │ VLane 2 │ ... │ VLane 6 │ VLane 7 │
 │   32B   │   32B   │   32B   │     │   32B   │   32B   │
-└─────────┴─────────┴─────────┴─────┴─────────┴─────────┘
-</code></pre>
+└─────────┴─────────┴─────────┴─────┴─────────┴─────────┘</code></pre>
 <p>Vector registers hold <code>N</code> elements of type <code>DType</code> packed contiguously with no padding. The register width is always 256 bytes (2048 bits):</p>
 <table>
 <thead>
@@ -1230,7 +1229,7 @@
 </table>
 <h3 id="group-reduction-and-vlanes">Group Reduction and VLanes<a class="headerlink" href="#group-reduction-and-vlanes" title="Permanent link">&para;</a></h3>
 <p>Group reduction operations (<code>vcgadd</code>, <code>vcgmax</code>, <code>vcgmin</code>) reduce within each VLane independently. The reduction produces one result per VLane (one value per 32-byte lane), which is then broadcast or stored:</p>
-<pre><code class="language-c">// Per-VLane group reduction: each VLane independently reduces its K elements
+<pre class="highlight"><code class="language-c">// Per-VLane group reduction: each VLane independently reduces its K elements
 int K = N / 8;  // elements per VLane (e.g., 8 for f32, 16 for f16)
 for (int g = 0; g &lt; 8; g++) {
     T sum = 0;
@@ -1239,8 +1238,7 @@ for (int g = 0; g &lt; 8; g++) {
     dst[g*K] = sum;           // write result to first position of each VLane
     for (int i = 1; i &lt; K; i++)
         dst[g*K + i] = 0;    // zero-fill remaining positions
-}
-</code></pre>
+}</code></pre>
 <p>This is architecturally visible: the result is not a single scalar but one value per VLane.</p>
 <h2 id="pad-value-encoding">Pad Value Encoding<a class="headerlink" href="#pad-value-encoding" title="Permanent link">&para;</a></h2>
 <p>The <code>Pad</code> parameter in <code>Tile&lt;DType, ..., Pad&gt;</code> specifies the value of out-of-valid-region elements. Declared in <code>include/pto/common/constants.hpp</code>.</p>
@@ -1288,9 +1286,8 @@ for (int g = 0; g &lt; 8; g++) {
 </table>
 <h3 id="custom-pad-values-a5">Custom Pad Values (A5)<a class="headerlink" href="#custom-pad-values-a5" title="Permanent link">&para;</a></h3>
 <p>The <code>PadValueCustom(value)</code> helper allows compile-time-specified float patterns as pad values. This is useful for operations that need a specific fill value (e.g., <code>-1.0f</code> for softmax):</p>
-<pre><code class="language-cpp">// Custom pad value: all out-of-valid-region elements become -1.0f
-using TilePadNeg1 = Tile&lt;TileType::Vec, float, 16, 16, RowMajor, NoneBox, None, PadValueCustom(-1.0f)&gt;;
-</code></pre>
+<pre class="highlight"><code class="language-cpp">// Custom pad value: all out-of-valid-region elements become -1.0f
+using TilePadNeg1 = Tile&lt;TileType::Vec, float, 16, 16, RowMajor, NoneBox, None, PadValueCustom(-1.0f)&gt;;</code></pre>
 <p>Custom pad values encode the float bit pattern in the upper bits of the 64-bit <code>PadValue</code> enum. They are processed by <code>PadValueMap</code> and applied via <code>GetPadValue()</code> at load time.</p>
 <h2 id="mx-block-scale-formats">MX Block-Scale Formats<a class="headerlink" href="#mx-block-scale-formats" title="Permanent link">&para;</a></h2>
 <p>MX block-scale matmul forms use extra scale tiles in addition to the left and right payload tiles. In the current codebase:</p>

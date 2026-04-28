@@ -956,11 +956,9 @@
 <p><code>pto.vstus</code> is part of the PTO vector memory/data-movement instruction set. It keeps UB addressing, distribution, mask behavior, and any alignment-state threading explicit in SSA form rather than hiding those details in backend-specific lowering.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vstus %align_out, %base_out, %align_in, %offset, %value, %base, &quot;MODE&quot;
-</code></pre>
+<pre class="highlight"><code class="language-text">vstus %align_out, %base_out, %align_in, %offset, %value, %base, "MODE"</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%align_out, %base_out = pto.vstus %align_in, %offset, %value, %base, &quot;MODE&quot; : !pto.align, i32, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align_out, %base_out = pto.vstus %align_in, %offset, %value, %base, "MODE" : !pto.align, i32, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <p><code>%align_in</code> is the incoming store-alignment state, <code>%offset</code> is the scalar
   displacement, <code>%value</code> is the vector being stored, and <code>%base</code> is the UB base
@@ -971,20 +969,29 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation writes UB-visible memory and/or updates streamed alignment state. Stateful unaligned forms expose their evolving state in SSA form, but a trailing flush form may still be required to complete the stream.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <p>This is the scalar-offset stateful form of the unaligned store instruction set. The
   scalar offset width and update mode MUST match the selected form, and a later
   flush op is still required.</p>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>It is illegal to use addresses outside the required UB-visible space or to violate the alignment/distribution contract of the selected form.</li>
 <li>Masked-off lanes or inactive blocks do not make an otherwise-illegal address valid unless the operation text explicitly says so.</li>
 <li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
 <li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
 </ul>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="timing-disclosure">Timing Disclosure<a class="headerlink" href="#timing-disclosure" title="Permanent link">&para;</a></h3>
 <p>The current public VPTO timing sources for <code>pto.vstus</code> are <code>~/visa.txt</code> and <code>PTOAS/docs/vpto-spec.md</code> on the latest fetched <code>feature_vpto_backend</code> branch.
@@ -1012,8 +1019,7 @@ Those sources define the buffered unaligned-store mechanism in detail, but they 
 </table>
 <p>Because <code>pto.vstus</code> participates in a stateful buffered-store stream, exact timing is backend-specific unless and until the public ISA source publishes a numeric contract.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%align_out, %base_out = pto.vstus %align_in, %offset, %value, %base, &quot;MODE&quot; : !pto.align, i32, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align_out, %base_out = pto.vstus %align_in, %offset, %value, %base, "MODE" : !pto.align, i32, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;</code></pre>
 <h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
 <p>The instruction set overview carries the remaining shared rules for this operation.</p>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>

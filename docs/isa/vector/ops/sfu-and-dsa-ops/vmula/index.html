@@ -966,11 +966,9 @@
 <p>Fused multiply-add: <code>dst[i] = lhs[i] * rhs[i] + add[i]</code>. Computes per-lane multiplication of two vectors, then adds a third vector, in a single fused operation. This combines multiplication and addition into one hardware instruction, eliminating an intermediate register write and improving throughput and numerical precision.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vmula %dst, %add, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">vmula %dst, %add, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vmula %add, %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vmula %add, %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1031,6 +1029,8 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation has no architectural side effect beyond producing its destination vector register. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type match</strong>: All four registers MUST have identical element types.</li>
 <li><strong>Width match</strong>: All four registers MUST have the same vector width <code>N</code>.</li>
@@ -1038,16 +1038,23 @@
 <li><strong>Active lanes</strong>: Only lanes where the mask bit is 1 (true) participate in the computation.</li>
 <li><strong>Fused semantics</strong>: <code>pto.vmula</code> is a fused multiply-accumulate operation and is not always interchangeable with separate <code>vmul</code> plus <code>vadd</code>. The fused form provides better numerical precision and performance.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
 <li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
 <li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
 </ul>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
 <p>SFU operations have higher latency than standard arithmetic ops. Consult the target profile's performance model for cycle-accurate estimates.</p>
@@ -1091,22 +1098,19 @@
 <hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="fused-multiply-accumulate">Fused multiply-accumulate<a class="headerlink" href="#fused-multiply-accumulate" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
     if (mask[i])
-        dst[i] = acc[i] + lhs[i] * rhs[i];
-</code></pre>
+        dst[i] = acc[i] + lhs[i] * rhs[i];</code></pre>
 <h3 id="mlir-form">MLIR form<a class="headerlink" href="#mlir-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vmula %acc, %lhs, %rhs, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vmula %acc, %lhs, %rhs, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h3 id="c-intrinsic">C++ intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 Mask&lt;64&gt; mask;
 mask.set_all(true);
 
-VMULA(vdst, vacc, vlhs, vrhs, mask);
-</code></pre>
+VMULA(vdst, vacc, vlhs, vrhs, mask);</code></pre>
 <h2 id="index-generation">Index Generation<a class="headerlink" href="#index-generation" title="Permanent link">&para;</a></h2>
 <p>This operation does not generate indices.</p>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>

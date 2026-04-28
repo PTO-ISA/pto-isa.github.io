@@ -963,17 +963,14 @@
 <p>The consumer pipeline holds the buffer until a matching <code>rls_buf</code> is issued. Buffer IDs use program order and the double-buffering protocol to implicitly resolve RAW and WAR dependencies — no explicit event IDs are required.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.get_buf %buf_id, &quot;PIPE_*&quot;, %mode : i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.get_buf %buf_id, "PIPE_*", %mode : i64, i64</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.get_buf %buf_id, &quot;PIPE_*&quot;, %mode : i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.get_buf %buf_id, "PIPE_*", %mode : i64, i64</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">pipe_t pipe = PIPE_S;
+<pre class="highlight"><code class="language-cpp">pipe_t pipe = PIPE_S;
 uint64_t bufId = 0;
 bool mode = true;
-get_buf(pipe, bufId, mode);
-</code></pre>
+get_buf(pipe, bufId, mode);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1010,20 +1007,28 @@ get_buf(pipe, bufId, mode);
 <li>May block if the buffer is not currently available.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Buffer ID uniqueness per pipeline</strong>: Each pipeline may hold at most one slot per buffer ID at a time. Acquiring the same buffer ID twice on the same pipeline without an intervening <code>rls_buf</code> is <strong>illegal</strong>.</li>
 <li><strong>Producer must release</strong>: The producer pipeline must have issued <code>rls_buf</code> on the same buffer ID before this acquire can succeed. Acquiring a buffer that was never released (first iteration) succeeds immediately since all slots start free.</li>
 <li><strong>No explicit event IDs</strong>: Unlike <code>set_flag</code>/<code>wait_flag</code>, buffer ID management requires no explicit event naming. The hardware maps buffer IDs to internal event IDs.</li>
 <li><strong>Buffer ID range</strong>: Buffer IDs MUST be in the range <code>[0, B)</code> where <code>B</code> is the profile-defined maximum. Out-of-range IDs are <strong>illegal</strong>.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if <code>%buf_id</code> is not in the valid range for the target profile.</li>
 <li>Illegal if the same pipeline acquires the same buffer ID twice without an intervening <code>rls_buf</code>.</li>
 <li>Illegal if the buffer ID was never released and the producer has not yet issued <code>rls_buf</code> (the acquire will block indefinitely, which is treated as a protocol error).</li>
 <li>Illegal on CPU simulator if buffer state is inconsistent.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1060,9 +1065,10 @@ get_buf(pipe, bufId, mode);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="acquire-buffer-for-computation">Acquire buffer for computation<a class="headerlink" href="#acquire-buffer-for-computation" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void compute_loop(int64_t buf_id,
@@ -1073,28 +1079,26 @@ void compute_loop(int64_t buf_id,
 
     // Vector load, compute, store ...
     RegBuf&lt;predicate_t&gt; mask;
-    PSET_B32(mask, &quot;PAT_ALL&quot;);
+    PSET_B32(mask, "PAT_ALL");
 
     // Release input buffer so MTE2 can reuse it
     RLS_BUF(buf_id, PIPE_V, 0);
-}
-</code></pre>
+}</code></pre>
 <h3 id="ssa-form-acquire-in-loop">SSA form — acquire in loop<a class="headerlink" href="#ssa-form-acquire-in-loop" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">scf.for %i = %c0 to %N step %c1 {
+<pre class="highlight"><code class="language-mlir">scf.for %i = %c0 to %N step %c1 {
     // Acquire input buffer slot i%2
-    pto.get_buf %bufid_in[%pp], &quot;PIPE_V&quot;, %c0 : i64, i64
+    pto.get_buf %bufid_in[%pp], "PIPE_V", %c0 : i64, i64
 
     // Acquire output buffer slot i%2
-    pto.get_buf %bufid_out[%pp], &quot;PIPE_V&quot;, %c0 : i64, i64
+    pto.get_buf %bufid_out[%pp], "PIPE_V", %c0 : i64, i64
 
     // Compute (loads from ub_in[%pp], stores to ub_out[%pp])
     // ...
 
     // Release both slots
-    pto.rls_buf %bufid_in[%pp], &quot;PIPE_V&quot;, %c0 : i64, i64
-    pto.rls_buf %bufid_out[%pp], &quot;PIPE_V&quot;, %c0 : i64, i64
-}
-</code></pre>
+    pto.rls_buf %bufid_in[%pp], "PIPE_V", %c0 : i64, i64
+    pto.rls_buf %bufid_out[%pp], "PIPE_V", %c0 : i64, i64
+}</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../pipeline-sync/">Pipeline Sync</a></li>

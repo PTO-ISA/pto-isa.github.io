@@ -1071,11 +1071,9 @@
 <p>On <strong>A5</strong>, the distinction is sharper: <code>VEC_FIFO</code> / <code>MAT_FIFO</code> / <code>GM_FIFO</code> / <code>CTRL_FIFO</code> are explicitly typed.</p>
 <h2 id="three-phase-protocol">Three-Phase Protocol<a class="headerlink" href="#three-phase-protocol" title="Permanent link">&para;</a></h2>
 <p>Every <code>TPUSH</code> call executes three phases in order:</p>
-<pre><code>1. ALLOCATE  ──►  2. PUSH  ──►  3. RECORD
-</code></pre>
+<pre class="highlight"><code>1. ALLOCATE  ──►  2. PUSH  ──►  3. RECORD</code></pre>
 <h3 id="phase-1-allocate-wait-for-free-slot">Phase 1: Allocate (wait for free slot)<a class="headerlink" href="#phase-1-allocate-wait-for-free-slot" title="Permanent link">&para;</a></h3>
-<pre><code>Producer ──wait_flag_dev(FlagID+1)──► Consumer
-</code></pre>
+<pre class="highlight"><code>Producer ──wait_flag_dev(FlagID+1)──► Consumer</code></pre>
 <p>The producer waits until the consumer has freed a slot. This prevents overwriting data the consumer has not yet consumed.</p>
 <ul>
 <li>On A2/A3 C2V: <code>wait_flag_dev(FlagID + 1)</code> via <code>PIPE_MTE2</code></li>
@@ -1095,8 +1093,7 @@
 - A5: Either TINSERT into consumer's local MAT buffer <strong>or</strong> via GM</p>
 <p><strong>V2C_CTRL:</strong> Writes a single scalar control signal (32-bit) from the vector tile's first element to the control slot buffer.</p>
 <h3 id="phase-3-record-signal-data-ready-to-consumer">Phase 3: Record (signal data-ready to consumer)<a class="headerlink" href="#phase-3-record-signal-data-ready-to-consumer" title="Permanent link">&para;</a></h3>
-<pre><code>Producer ──set_flag/ffts_cross_core_sync(FlagID)──► Consumer
-</code></pre>
+<pre class="highlight"><code>Producer ──set_flag/ffts_cross_core_sync(FlagID)──► Consumer</code></pre>
 <p>The producer signals that data is ready. The consumer can now safely wait for and consume it.</p>
 <ul>
 <li>On A2/A3 C2V: <code>ffts_cross_core_sync(PIPE_FIX, ...)</code></li>
@@ -1145,13 +1142,11 @@
 </ul>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%event = pto.tpush %tile, %pipe : (!pto.tile&lt;f32, 64, 64&gt;, !pto.tpipe&lt;...&gt;) -&gt; !pto.record_event
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%event = pto.tpush %tile, %pipe : (!pto.tile&lt;f32, 64, 64&gt;, !pto.tpipe&lt;...&gt;) -&gt; !pto.record_event</code></pre>
 <h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.tpush ins(%tile : !pto.tile_buf&lt;f32, 64, 64&gt;) pipe(%pipe : !pto.tpipe&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.tpush ins(%tile : !pto.tile_buf&lt;f32, 64, 64&gt;) pipe(%pipe : !pto.tpipe&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/common/fifo.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/common/fifo.hpp&gt;
 
 using namespace pto;
 
@@ -1169,10 +1164,9 @@ void producer_side(AccTile&amp; accTile) {
 }
 
 // Or with split mode:
-TPUSH_IMPL&lt;MyPipe, AccTile, TileSplitAxis::TILE_UP_DOWN&gt;(pipe, accTile);
-</code></pre>
+TPUSH_IMPL&lt;MyPipe, AccTile, TileSplitAxis::TILE_UP_DOWN&gt;(pipe, accTile);</code></pre>
 <h2 id="tmpipe-usage">TMPipe Usage<a class="headerlink" href="#tmpipe-usage" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">// Define a V2C multi-pipe: Vec producer → Mat consumer via GM FIFO
+<pre class="highlight"><code class="language-cpp">// Define a V2C multi-pipe: Vec producer → Mat consumer via GM FIFO
 using MyMultiPipe = TMPipe&lt;
     4,                    // FlagID
     FIFOType::GM_FIFO,    // GM FIFO
@@ -1190,9 +1184,10 @@ MyMultiPipe multiPipe(/* GM FIFO base */ reinterpret_cast&lt;__gm__ float*&gt;(0
 
 void producer_vec(VecTile&amp; vTile) {
     TPUSH_IMPL(vTile, multiPipe);
-}
-</code></pre>
+}</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>TileProd::Loc</code> must be <code>TileType::Acc</code> or <code>TileType::Vec</code>.</li>
 <li><code>DirType</code> must be compatible with <code>TileProd::Loc</code> and <code>TileDataCons::Loc</code>.</li>
@@ -1202,15 +1197,19 @@ void producer_vec(VecTile&amp; vTile) {
 <li>When <code>isRecord = false</code>, the producer skips the ready signal; the caller must ensure the consumer waits externally.</li>
 <li>Pairing: each <code>TPUSH</code> should have a corresponding <code>TPOP</code> on the consumer side; skipping allocation or record breaks the protocol.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li><strong>CPU simulator</strong>: Not available. <code>TPUSH</code> and <code>TPOP</code> require the NPU inter-core synchronization infrastructure.</li>
 <li><strong>A2/A3</strong>: Supports <code>DIR_C2V</code>, <code>DIR_V2C</code>, <code>DIR_BOTH</code>, <code>DIR_V2C_CTRL</code>. FIFO paths: GM and local UB/MAT. Does not support <code>DIR_*_GM</code> variants.</li>
 <li><strong>A5</strong>: Supports all direction types including <code>DIR_C2V_GM</code>, <code>DIR_V2C_GM</code>, <code>DIR_BOTH_GM</code>. FIFO paths: GM, VEC_FIFO, MAT_FIFO, CTRL_FIFO. Intra-block synchronization uses <code>set_intra_block</code>/<code>wait_intra_block</code> instead of cross-core <code>ffts_*</code>.</li>
 </ul>
+</details>
 <h2 id="common-patterns">Common Patterns<a class="headerlink" href="#common-patterns" title="Permanent link">&para;</a></h2>
 <h3 id="pattern-1-acc-vec-tile-passing-gemm-post-processing">Pattern 1: Acc → Vec Tile Passing (GEMM Post-Processing)<a class="headerlink" href="#pattern-1-acc-vec-tile-passing-gemm-post-processing" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// Producer (Cube): accumulator result → Vector consumer
+<pre class="highlight"><code class="language-cpp">// Producer (Cube): accumulator result → Vector consumer
 using AccTile = Tile&lt;TileType::Acc, float, 64, 64&gt;;
 using VecTile = Tile&lt;TileType::Vec, float, 64, 64&gt;;
 using Acc2VecPipe = TPipe&lt;0, Direction::DIR_C2V, 16384, 4, 2&gt;;
@@ -1226,10 +1225,9 @@ void cube_kernel(AccTile&amp; acc) {
 void vec_kernel(VecTile&amp; vec) {
     TPOP_IMPL(pipe, vec);   // Wait for and receive accumulator
     // Apply activation, quantization, etc.
-}
-</code></pre>
+}</code></pre>
 <h3 id="pattern-2-vec-mat-tile-passing-with-row-split">Pattern 2: Vec → Mat Tile Passing with Row Split<a class="headerlink" href="#pattern-2-vec-mat-tile-passing-with-row-split" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// Producer: 128×256 vector tile; Consumer: 256×256 matrix tile
+<pre class="highlight"><code class="language-cpp">// Producer: 128×256 vector tile; Consumer: 256×256 matrix tile
 using ProdTile = Tile&lt;TileType::Vec, half, 128, 256&gt;;
 using ConsTile = Tile&lt;TileType::Mat, half, 256, 256&gt;;
 using Vec2MatPipe = TMPipe&lt;
@@ -1242,14 +1240,12 @@ Vec2MatPipe pipe(/* MAT FIFO base */ 0x300000);
 
 void vec_producer(ProdTile&amp; vec) {
     TPUSH_IMPL(vec, pipe);  // Splits vec into two 128×256 blocks, inserts into mat
-}
-</code></pre>
+}</code></pre>
 <h3 id="pattern-3-sparse-sync-skipping-allocation-wait">Pattern 3: Sparse Sync (Skipping Allocation Wait)<a class="headerlink" href="#pattern-3-sparse-sync-skipping-allocation-wait" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// After the initial startup phase, slots are guaranteed free at every period boundary.
+<pre class="highlight"><code class="language-cpp">// After the initial startup phase, slots are guaranteed free at every period boundary.
 // Only allocate every N iterations:
 pipe.prod.setAllocateStatus(/* iteration % period == 0 */);
-TPUSH_IMPL(pipe, tile);
-</code></pre>
+TPUSH_IMPL(pipe, tile);</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../TPOP/">TPOP</a> — Consumer half of the FIFO protocol</li>

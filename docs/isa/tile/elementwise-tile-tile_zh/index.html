@@ -1072,6 +1072,8 @@
 </table>
 <p>具体到单条指令，支持子集仍以 per-op 页面为准。</p>
 <h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>layout、shape 和 valid-region 状态都会影响合法性。</li>
 <li>源与目标 tile 的物理 shape 必须兼容。</li>
@@ -1079,18 +1081,21 @@
 <li><code>TCVT</code> 允许源和目标 dtype 不同，但必须落在文档化转换组内。</li>
 <li>位移类要求第二操作数小于元素位宽。</li>
 </ul>
+</div>
 <h2 id="_4">不允许的情形<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>假设存在隐式广播、隐式 reshape 或 valid-region 自动修复。</li>
 <li>依赖源 tile 域外 lane 的确定值。</li>
 <li>把 <code>_c</code> 后缀机械理解成“饱和变体”。</li>
 <li>使用超出元素位宽的 shift count。</li>
 </ul>
+</div>
 <h2 id="a2a3">A2/A3 吞吐与时延<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h2>
 <p>逐元素 tile-tile 操作在 A2/A3 上会落到 CCE 向量指令，由 <code>include/pto/costmodel/a2a3/</code> 下的模型负责估算。</p>
 <h3 id="_5">周期模型<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">total_cycles = startup + completion + repeats × per_repeat + (repeats - 1) × interval
-</code></pre>
+<pre class="highlight"><code class="language-text">total_cycles = startup + completion + repeats × per_repeat + (repeats - 1) × interval</code></pre>
 <p>其中 <code>repeats</code> 由 tile 布局、stride 和 valid region 共同决定。</p>
 <h3 id="_6">常见常量<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <table>

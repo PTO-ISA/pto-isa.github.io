@@ -1042,22 +1042,19 @@
 </tbody>
 </table>
 <h3 id="_6">事件生命周期<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">Producer -&gt; set_flag -&gt; event available -&gt; wait_flag -&gt; Consumer
-</code></pre>
+<pre class="highlight"><code class="language-text">Producer -&gt; set_flag -&gt; event available -&gt; wait_flag -&gt; Consumer</code></pre>
 <p>事件一旦被设置，就对后续在同一三元组上等待的消费者可见。</p>
 <h3 id="recordevent">RecordEvent<a class="headerlink" href="#recordevent" title="Permanent link">&para;</a></h3>
 <p>Tile 操作的 C++ intrinsic 通常返回 <code>RecordEvent</code>，可作为后续操作的 <code>WaitEvents...</code>：</p>
-<pre><code class="language-cpp">RecordEvent e0 = TLOAD(a, ga);
+<pre class="highlight"><code class="language-cpp">RecordEvent e0 = TLOAD(a, ga);
 RecordEvent e1 = TLOAD(b, gb);
-TMATMUL(c, a, b, e0, e1);
-</code></pre>
+TMATMUL(c, a, b, e0, e1);</code></pre>
 <p>这相当于在较高层表达显式事件链。</p>
 <h2 id="_7">流水依赖图<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <p>AI Core 内的多个执行单元可以并行工作，但共享数据的地方必须显式建立顺序边：</p>
-<pre><code class="language-text">MTE2 (GM-&gt;UB) -&gt; set_flag -&gt; wait_flag -&gt; Vector pipeline
+<pre class="highlight"><code class="language-text">MTE2 (GM-&gt;UB) -&gt; set_flag -&gt; wait_flag -&gt; Vector pipeline
 Vector pipeline -&gt; set_flag -&gt; wait_flag -&gt; MTE3 (UB-&gt;GM)
-TLOAD -&gt; RecordEvent / TSYNC -&gt; Tile compute -&gt; RecordEvent / TSYNC -&gt; TSTORE
-</code></pre>
+TLOAD -&gt; RecordEvent / TSYNC -&gt; Tile compute -&gt; RecordEvent / TSYNC -&gt; TSTORE</code></pre>
 <h2 id="_8">顺序规则<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <h3 id="tile_1">Tile 指令顺序<a class="headerlink" href="#tile_1" title="Permanent link">&para;</a></h3>
 <ol>
@@ -1079,19 +1076,25 @@ TLOAD -&gt; RecordEvent / TSYNC -&gt; Tile compute -&gt; RecordEvent / TSYNC -&g
 <li>运行时已确认完成</li>
 </ol>
 <h2 id="_10">约束<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>只要架构未自动保证顺序，就必须显式同步</li>
 <li>某目标可以更强，但文档不能依赖未声明的更强顺序</li>
 <li>向量流水同步规则与 tile 同步规则应分开陈述</li>
 <li><code>TSYNC</code> 作用于 tile-buffer 范围，不跨 tile buffer</li>
 </ul>
+</div>
 <h2 id="_11">不允许的情形<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>把必须同步的路径写成“可省略”</li>
 <li>默认向量流水 hazard 会被 tile 规则自动覆盖</li>
 <li>把目标专属 barrier 写成架构普遍保证</li>
 <li>在 <code>copy_gm_to_ubuf</code> 完成前直接 <code>vlds</code></li>
 </ul>
+</div>
 <h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../memory-model/consistency-baseline_zh/">一致性基线</a></li>

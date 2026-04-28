@@ -948,11 +948,9 @@
 <p>For each active lane <code>i</code>, <code>dst[i] = src[i] + scalar</code>. The scalar operand is broadcast logically to every active lane. Inactive lanes do not participate in the computation.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vadds %dst, %src, %scalar, %mask : !pto.vreg&lt;NxT&gt;, T
-</code></pre>
+<pre class="highlight"><code class="language-text">vadds %dst, %src, %scalar, %mask : !pto.vreg&lt;NxT&gt;, T</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vadds %input, %scalar, %mask : !pto.vreg&lt;NxT&gt;, T, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vadds %input, %scalar, %mask : !pto.vreg&lt;NxT&gt;, T, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1000,28 +998,35 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation has no architectural side effect beyond producing its destination values. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>%input</code> and <code>%result</code> MUST have the same vector width <code>N</code> and element type <code>T</code>.</li>
 <li>The mask width MUST match <code>N</code>.</li>
 <li>Only active lanes participate in the addition.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
 <li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>Common numeric element types are expected; exact target coverage is profile-specific.</li>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
 </ul>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
     if (mask[i])
-        dst[i] = src[i] + scalar;
-</code></pre>
-<pre><code class="language-mlir">%result = pto.vadds %values, %bias, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+        dst[i] = src[i] + scalar;</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vadds %values, %bias, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../vec-scalar-ops/">Vector-Scalar Instructions</a></li>

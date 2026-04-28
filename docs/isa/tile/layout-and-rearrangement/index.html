@@ -1051,9 +1051,8 @@
 </ul>
 <h3 id="extractinsert-textract-tinsert-textract_fp-tinsert_fp">Extract/Insert (TEXTRACT, TINSERT, TEXTRACT_FP, TINSERT_FP)<a class="headerlink" href="#extractinsert-textract-tinsert-textract_fp-tinsert_fp" title="Permanent link">&para;</a></h3>
 <p>Extract a sub-tile from a tile, or insert a sub-tile into a tile at a specified position <code>(row_offset, col_offset)</code>. FP variants fill padding regions with a fill value.</p>
-<pre><code>TEXTRACT: dst = src[row_offset : row_offset + dst.Rv, col_offset : col_offset + dst.Cv]
-TINSERT:  dst[row_offset : row_offset + src.Rv, col_offset : col_offset + src.Cv] = src
-</code></pre>
+<pre class="highlight"><code>TEXTRACT: dst = src[row_offset : row_offset + dst.Rv, col_offset : col_offset + dst.Cv]
+TINSERT:  dst[row_offset : row_offset + src.Rv, col_offset : col_offset + src.Cv] = src</code></pre>
 <h3 id="fill-tfillpad-tfillpad_inplace-tfillpad_expand">Fill (TFILLPAD, TFILLPAD_INPLACE, TFILLPAD_EXPAND)<a class="headerlink" href="#fill-tfillpad-tfillpad_inplace-tfillpad_expand" title="Permanent link">&para;</a></h3>
 <p>Fill the padding region (declared tile area outside the valid region) with a specified fill value. The INPLACE variant modifies the source tile directly. The EXPAND variant additionally expands the valid region.</p>
 <h2 id="type-support-by-target-profile">Type Support by Target Profile<a class="headerlink" href="#type-support-by-target-profile" title="Permanent link">&para;</a></h2>
@@ -1118,6 +1117,8 @@ TINSERT:  dst[row_offset : row_offset + src.Rv, col_offset : col_offset + src.Cv
 </tbody>
 </table>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>TRESHAPE</code> requires the total element count to remain unchanged: <code>src.Rv × src.Cv == dst.Rv × dst.Cv</code>.</li>
 <li><code>TTRANS</code> requires square shape (<code>Rv == Cv</code>) or produces a transposed declared shape.</li>
@@ -1126,15 +1127,19 @@ TINSERT:  dst[row_offset : row_offset + src.Rv, col_offset : col_offset + src.Cv
 <li>FP variants (<code>*_fp</code>) require a valid fill value (<code>fp</code>) compatible with the tile element type.</li>
 <li><code>TIMG2COL</code> requires specific kernel/padding/stride configuration; profile-dependent behavior.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li><strong>MUST NOT</strong> <code>TRESHAPE</code> to a shape with a different total element count.</li>
 <li><strong>MUST NOT</strong> <code>TEXTRACT</code> with offsets outside the source tile's declared shape.</li>
 <li><strong>MUST NOT</strong> <code>TINSERT</code> such that the inserted tile extends beyond the destination's declared shape.</li>
 <li><strong>MUST NOT</strong> use FP8 types with <code>TIMG2COL</code> on CPU simulator or A2/A3.</li>
 </ul>
+</div>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Basic move/copy
@@ -1166,8 +1171,7 @@ PTO_INST RecordEvent TFILLPAD(TileT&amp; dst, FillT fp);
 
 // Image to column (convolution lowering)
 template &lt;typename TileDst, typename TileSrc, typename Cfg&gt;
-PTO_INST RecordEvent TIMG2COL(TileDst&amp; dst, TileSrc&amp; src, Cfg cfg);
-</code></pre>
+PTO_INST RecordEvent TIMG2COL(TileDst&amp; dst, TileSrc&amp; src, Cfg cfg);</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/tile-families/">Tile instruction set</a> — Instruction set overview</li>

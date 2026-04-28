@@ -923,54 +923,45 @@
 <li><strong>语法：</strong> <code>pto.set_flag["SRC_PIPE", "DST_PIPE", "EVENT_ID"]</code></li>
 <li><strong>语义：</strong> 源流水线向目标流水线发送一个事件信号。</li>
 </ul>
-<pre><code class="language-c">set_flag(src_pipe, dst_pipe, event_id);
-</code></pre>
+<pre class="highlight"><code class="language-c">set_flag(src_pipe, dst_pipe, event_id);</code></pre>
 <p>典型用法是 MTE2 完成 GM→向量 tile buffer 搬运后，通知 <code>PIPE_V</code> 可以开始消费数据：</p>
-<pre><code class="language-mlir">pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.set_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]</code></pre>
 <h3 id="ptowait_flag"><code>pto.wait_flag</code><a class="headerlink" href="#ptowait_flag" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>语法：</strong> <code>pto.wait_flag["SRC_PIPE", "DST_PIPE", "EVENT_ID"]</code></li>
 <li><strong>语义：</strong> 目标流水线阻塞，直到接收到匹配的事件。</li>
 </ul>
-<pre><code class="language-c">wait_flag(src_pipe, dst_pipe, event_id);
-</code></pre>
-<pre><code class="language-mlir">pto.wait_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
-</code></pre>
+<pre class="highlight"><code class="language-c">wait_flag(src_pipe, dst_pipe, event_id);</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.wait_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]</code></pre>
 <h3 id="ptopipe_barrier"><code>pto.pipe_barrier</code><a class="headerlink" href="#ptopipe_barrier" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>语法：</strong> <code>pto.pipe_barrier "PIPE_*"</code></li>
 <li><strong>语义：</strong> 排空指定流水线中所有已发射但尚未完成的操作。屏障前的操作必须全部完成，屏障后的操作才能开始。</li>
 </ul>
-<pre><code class="language-c">pipe_barrier(pipe);
-</code></pre>
+<pre class="highlight"><code class="language-c">pipe_barrier(pipe);</code></pre>
 <p>支持的流水线标识包括 <code>PIPE_MTE2</code>、<code>PIPE_V</code>、<code>PIPE_MTE3</code>。</p>
 <p>下面这个例子里，两次 <code>copy_ubuf_to_gm</code> 都写向同一个 GM 地址。如果不插入 <code>pipe_barrier</code>，MTE3 有可能重排它们，导致最终结果不确定：</p>
-<pre><code class="language-mlir">pto.copy_ubuf_to_gm %ub_partial_0, %gm_result, ...
-pto.pipe_barrier &quot;PIPE_MTE3&quot;
-pto.copy_ubuf_to_gm %ub_partial_1, %gm_result, ...
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.copy_ubuf_to_gm %ub_partial_0, %gm_result, ...
+pto.pipe_barrier "PIPE_MTE3"
+pto.copy_ubuf_to_gm %ub_partial_1, %gm_result, ...</code></pre>
 <h3 id="ptoget_buf"><code>pto.get_buf</code><a class="headerlink" href="#ptoget_buf" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>语法：</strong> <code>pto.get_buf "PIPE_*", %buf_id, %mode : i64, i64</code></li>
 <li><strong>语义：</strong> 获取一个 buffer 槽位，用于跨流水线双缓冲或多缓冲协调。</li>
 </ul>
-<pre><code class="language-c">get_buf(pipe, buf_id, mode);
-</code></pre>
+<pre class="highlight"><code class="language-c">get_buf(pipe, buf_id, mode);</code></pre>
 <h3 id="ptorls_buf"><code>pto.rls_buf</code><a class="headerlink" href="#ptorls_buf" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>语法：</strong> <code>pto.rls_buf "PIPE_*", %buf_id, %mode : i64, i64</code></li>
 <li><strong>语义：</strong> 释放先前获取的 buffer 槽位，让其他流水线可以继续使用这个槽位。</li>
 </ul>
-<pre><code class="language-c">rls_buf(pipe, buf_id, mode);
-</code></pre>
+<pre class="highlight"><code class="language-c">rls_buf(pipe, buf_id, mode);</code></pre>
 <h3 id="ptomem_bar"><code>pto.mem_bar</code><a class="headerlink" href="#ptomem_bar" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>语法：</strong> <code>pto.mem_bar "BARRIER_TYPE"</code></li>
 <li><strong>语义：</strong> 在 <code>__VEC_SCOPE__</code> 范围内建立向量内存栅栏。这个操作只约束向量侧内存可见性，不替代跨流水线的生产者/消费者顺序。</li>
 </ul>
-<pre><code class="language-c">mem_bar(barrier_type);
-</code></pre>
+<pre class="highlight"><code class="language-c">mem_bar(barrier_type);</code></pre>
 <table>
 <thead>
 <tr>
@@ -994,51 +985,48 @@ pto.copy_ubuf_to_gm %ub_partial_1, %gm_result, ...
 </tbody>
 </table>
 <p>如果同一块向量 tile buffer 地址既被 <code>vsts</code> 写入、又被后续 <code>vlds</code> 读取，就需要合适的 <code>mem_bar</code>：</p>
-<pre><code class="language-mlir">pto.vsts %v0, %ub[%c0] : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;
-pto.mem_bar &quot;VST_VLD&quot;
-%v1 = pto.vlds %ub[%c0] : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vsts %v0, %ub[%c0] : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;
+pto.mem_bar "VST_VLD"
+%v1 = pto.vlds %ub[%c0] : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <hr />
 <h2 id="_3">核内同步模式与示例<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="1set_flag-wait_flag">示例 1：<code>set_flag</code> / <code>wait_flag</code><a class="headerlink" href="#1set_flag-wait_flag" title="Permanent link">&para;</a></h3>
 <p>最直接的做法是：每一条跨流水线依赖边都用一组显式事件来表示，生产者发信号，消费者等待。</p>
-<pre><code class="language-mlir">pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr, ...
-pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+<pre class="highlight"><code class="language-mlir">pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr, ...
+pto.set_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]
 
-pto.wait_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+pto.wait_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]
 scf.for %dummy = %c0 to %c1 step %c1 {
   %v = pto.vlds %ub_ptr[%lane] : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
-  %mask = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
+  %mask = pto.pset_b32 "PAT_ALL" : !pto.mask
   %abs = pto.vabs %v, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
   pto.vsts %abs, %ub_out[%lane], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask
 } {llvm.loop.aivector_scope}
 
-pto.set_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
-pto.wait_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
-pto.copy_ubuf_to_gm %ub_out, %gm_out, ...
-</code></pre>
+pto.set_flag["PIPE_V", "PIPE_MTE3", "EVENT_ID0"]
+pto.wait_flag["PIPE_V", "PIPE_MTE3", "EVENT_ID0"]
+pto.copy_ubuf_to_gm %ub_out, %gm_out, ...</code></pre>
 <p>这种写法的优点是因果关系非常清楚；缺点是只要跨流水线边一多，事件数量也会线性膨胀。</p>
 <h3 id="2get_buf-rls_buf">示例 2：<code>get_buf</code> / <code>rls_buf</code><a class="headerlink" href="#2get_buf-rls_buf" title="Permanent link">&para;</a></h3>
 <p>另一条路是不用显式事件，而是让流水线围绕同一个 buffer ID 做获取与释放。只要多个阶段按程序顺序围绕同一 buffer 进行 acquire / release，RAW 和 WAR 依赖就会自动体现出来。</p>
-<pre><code class="language-mlir">pto.get_buf &quot;PIPE_MTE2&quot;, %bufid_ub_ptr, %mode : i64, i64
+<pre class="highlight"><code class="language-mlir">pto.get_buf "PIPE_MTE2", %bufid_ub_ptr, %mode : i64, i64
 pto.copy_gm_to_ubuf %gm_ptr, %ub_ptr, ...
-pto.rls_buf &quot;PIPE_MTE2&quot;, %bufid_ub_ptr, %mode : i64, i64
+pto.rls_buf "PIPE_MTE2", %bufid_ub_ptr, %mode : i64, i64
 
-pto.get_buf &quot;PIPE_V&quot;, %bufid_ub_ptr, %mode : i64, i64
-pto.get_buf &quot;PIPE_V&quot;, %bufid_ub_out, %mode : i64, i64
+pto.get_buf "PIPE_V", %bufid_ub_ptr, %mode : i64, i64
+pto.get_buf "PIPE_V", %bufid_ub_out, %mode : i64, i64
 scf.for %dummy = %c0 to %c1 step %c1 {
-  %mask = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
+  %mask = pto.pset_b32 "PAT_ALL" : !pto.mask
   %v = pto.vlds %ub_ptr[%lane] : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
   %abs = pto.vabs %v, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
   pto.vsts %abs, %ub_out[%lane], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask
 } {llvm.loop.aivector_scope}
-pto.rls_buf &quot;PIPE_V&quot;, %bufid_ub_ptr, %mode : i64, i64
-pto.rls_buf &quot;PIPE_V&quot;, %bufid_ub_out, %mode : i64, i64
+pto.rls_buf "PIPE_V", %bufid_ub_ptr, %mode : i64, i64
+pto.rls_buf "PIPE_V", %bufid_ub_out, %mode : i64, i64
 
-pto.get_buf &quot;PIPE_MTE3&quot;, %bufid_ub_out, %mode : i64, i64
+pto.get_buf "PIPE_MTE3", %bufid_ub_out, %mode : i64, i64
 pto.copy_ubuf_to_gm %ub_out, %gm_out, ...
-pto.rls_buf &quot;PIPE_MTE3&quot;, %bufid_ub_out, %mode : i64, i64
-</code></pre>
+pto.rls_buf "PIPE_MTE3", %bufid_ub_out, %mode : i64, i64</code></pre>
 <p>这套协议不需要给每条依赖边单独分配事件 ID，更适合循环中的多缓冲流水。</p>
 <h3 id="3pingpong">示例 3：ping/pong 双缓冲循环<a class="headerlink" href="#3pingpong" title="Permanent link">&para;</a></h3>
 <p>双缓冲的核心思想是让连续迭代交替使用两个 buffer。这样 MTE2、<code>PIPE_V</code>、MTE3 虽然都出现在同一个循环体里，但不同迭代实际上在不同 buffer 上并行推进。</p>
@@ -1108,27 +1096,26 @@ pto.rls_buf &quot;PIPE_MTE3&quot;, %bufid_ub_out, %mode : i64, i64
 <p>这就是显式事件模型在复杂循环里容易变重的原因。</p>
 <h4 id="3b-get_buf-rls_buf">3b. 用 <code>get_buf</code> / <code>rls_buf</code><a class="headerlink" href="#3b-get_buf-rls_buf" title="Permanent link">&para;</a></h4>
 <p>同一个 ping/pong 双缓冲，如果改用 acquire / release，就不再需要入环 priming 和出环 draining：</p>
-<pre><code class="language-mlir">scf.for %i = %c0 to %N step %c1 {
-  pto.get_buf %bufid_buf[%pp], &quot;PIPE_MTE2&quot;
+<pre class="highlight"><code class="language-mlir">scf.for %i = %c0 to %N step %c1 {
+  pto.get_buf %bufid_buf[%pp], "PIPE_MTE2"
   pto.copy_gm_to_ubuf %gm_ptr[%i], %ub_buf[%pp], ...
-  pto.rls_buf %bufid_buf[%pp], &quot;PIPE_MTE2&quot;
+  pto.rls_buf %bufid_buf[%pp], "PIPE_MTE2"
 
-  pto.get_buf %bufid_buf[%pp], &quot;PIPE_V&quot;
-  pto.get_buf %bufid_out[%pp], &quot;PIPE_V&quot;
+  pto.get_buf %bufid_buf[%pp], "PIPE_V"
+  pto.get_buf %bufid_out[%pp], "PIPE_V"
   scf.for %dummy = %c0 to %c1 step %c1 {
     %v = pto.vlds %ub_buf[%pp][%lane] : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
-    %mask = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
+    %mask = pto.pset_b32 "PAT_ALL" : !pto.mask
     %abs = pto.vabs %v, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
     pto.vsts %abs, %ub_out[%pp][%lane], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask
   } {llvm.loop.aivector_scope}
-  pto.rls_buf %bufid_buf[%pp], &quot;PIPE_V&quot;
-  pto.rls_buf %bufid_out[%pp], &quot;PIPE_V&quot;
+  pto.rls_buf %bufid_buf[%pp], "PIPE_V"
+  pto.rls_buf %bufid_out[%pp], "PIPE_V"
 
-  pto.get_buf %bufid_out[%pp], &quot;PIPE_MTE3&quot;
+  pto.get_buf %bufid_out[%pp], "PIPE_MTE3"
   pto.copy_ubuf_to_gm %ub_out[%pp], %gm_out[%i], ...
-  pto.rls_buf %bufid_out[%pp], &quot;PIPE_MTE3&quot;
-}
-</code></pre>
+  pto.rls_buf %bufid_out[%pp], "PIPE_MTE3"
+}</code></pre>
 <p>自动建立的依赖关系是：</p>
 <ul>
 <li><strong>RAW（MTE2→V）：</strong> 向量侧的 <code>get_buf</code> 会阻塞到 MTE2 完成 <code>rls_buf</code></li>
@@ -1186,9 +1173,10 @@ pto.rls_buf &quot;PIPE_MTE3&quot;, %bufid_ub_out, %mode : i64, i64
 <p>如果只是少量阶段串接，<code>set_flag</code> / <code>wait_flag</code> 很直接；如果在写双缓冲、多缓冲、流水重叠循环，<code>get_buf</code> / <code>rls_buf</code> 通常更稳。</p>
 <hr />
 <h2 id="_5">核间同步<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<blockquote>
-<p><strong>说明：</strong> 核间同步只在混合 Cube + Vector 的任务里才重要。如果任务纯粹是 <code>pto.v*</code> 向量路径，可以跳过这一节。</p>
-</blockquote>
+<div class="admonition note">
+<p class="admonition-title">说明：</p>
+<p>核间同步只在混合 Cube + Vector 的任务里才重要。如果任务纯粹是 <code>pto.v*</code> 向量路径，可以跳过这一节。</p>
+</div>
 <p>一个 core cluster 通常由 1 个 Cube block 和 2 个 Vector subblock 组成，三者都有各自的 SU（Sequencer Unit），也都有相对独立的流水线。因此 Cube 与 Vector 之间的数据交接，不能靠核内事件直接覆盖。</p>
 <h3 id="a2a3-a5">平台差异：A2A3 与 A5<a class="headerlink" href="#a2a3-a5" title="Permanent link">&para;</a></h3>
 <table>
@@ -1233,9 +1221,8 @@ pto.rls_buf &quot;PIPE_MTE3&quot;, %bufid_ub_out, %mode : i64, i64
 </tbody>
 </table>
 <h3 id="a2a3set_cross_core-wait_flag_dev">A2A3：<code>set_cross_core</code> / <code>wait_flag_dev</code><a class="headerlink" href="#a2a3set_cross_core-wait_flag_dev" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">set_cross_core(pipe, semaphore_id);
-wait_flag_dev(semaphore_id);
-</code></pre>
+<pre class="highlight"><code class="language-c">set_cross_core(pipe, semaphore_id);
+wait_flag_dev(semaphore_id);</code></pre>
 <p>A2A3 的 <code>mode2</code> 语义允许在 1:2 的 cluster 里做广播 / 归并：</p>
 <ul>
 <li>Cube→Vector：一次 <code>set_cross_core</code> 可以同时把信号送到 AIV0 与 AIV1</li>
@@ -1252,9 +1239,8 @@ wait_flag_dev(semaphore_id);
 <li><strong>语义：</strong> 等待来自其他核心的事件。阻塞粒度是 SU 级，也就是整个核心上的执行序列都会停住。</li>
 </ul>
 <h3 id="a5set_intra_block-wait_intra_core">A5：<code>set_intra_block</code> / <code>wait_intra_core</code><a class="headerlink" href="#a5set_intra_block-wait_intra_core" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">set_intra_block(trigger_pipe, semaphore_id);
-wait_intra_core(wait_pipe, semaphore_id);
-</code></pre>
+<pre class="highlight"><code class="language-c">set_intra_block(trigger_pipe, semaphore_id);
+wait_intra_core(wait_pipe, semaphore_id);</code></pre>
 <p>A5 没有 A2A3 那种对双 subblock 的硬件广播 / 归并语义。它提供的是 1:1 信号：</p>
 <ul>
 <li>ID <code>0–15</code> 对应 AIV0</li>
@@ -1276,13 +1262,12 @@ wait_intra_core(wait_pipe, semaphore_id);
 <li><strong>语义：</strong> 等待 block 内部事件。它只阻塞指定的 pipeline，不会让整个 SU 停住。</li>
 </ul>
 <h3 id="_6">等待粒度的差别<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">A2A3 的 wait_flag_dev：
+<pre class="highlight"><code class="language-text">A2A3 的 wait_flag_dev：
     SU 级阻塞，PIPE_MTE2 / PIPE_V / PIPE_MTE3 都会一起停住
 
-A5 的 wait_intra_core &quot;PIPE_MTE2&quot;：
+A5 的 wait_intra_core "PIPE_MTE2"：
     只阻塞 PIPE_MTE2
-    SU、PIPE_V、PIPE_MTE3 仍然可以继续运行
-</code></pre>
+    SU、PIPE_V、PIPE_MTE3 仍然可以继续运行</code></pre>
 <p>这也是 A5 在混合流水重叠时更灵活的原因之一：等待某个外部生产者时，不必把整条执行序列一并冻结。</p>
 <hr />
 <h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>

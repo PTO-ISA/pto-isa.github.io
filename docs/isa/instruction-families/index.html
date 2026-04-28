@@ -997,34 +997,29 @@
 <p>PTO has five instruction sets because different parts of the architecture expose fundamentally different kinds of state. Tile state carries shape, layout, and valid-region metadata. Vector state exposes a flat register file. Scalar state controls pipeline ordering and DMA. Communication state spans multiple NPUs. System scheduling state covers ISA-visible runtime protocols that are not payload computation, vector-lane execution, scalar setup, or inter-NPU transfer.</p>
 <h3 id="tile-isa-ptot">Tile ISA (<code>pto.t*</code>)<a class="headerlink" href="#tile-isa-ptot" title="Permanent link">&para;</a></h3>
 <p>Tile instructions reason about tiles: bounded multi-dimensional arrays with architecturally visible shape, layout, role, and valid-region metadata. The primary operands are tile registers. Tile instructions produce destination tiles, change valid-region interpretations, or establish synchronization edges.</p>
-<pre><code>Input:   Tile operands, scalar modifiers, GlobalTensor views
+<pre class="highlight"><code>Input:   Tile operands, scalar modifiers, GlobalTensor views
 Output:  Tile payload, synchronization edges
-Domain:  Valid regions, tile layouts, tile shapes, location intents
-</code></pre>
+Domain:  Valid regions, tile layouts, tile shapes, location intents</code></pre>
 <h3 id="vector-isa-ptov">Vector ISA (<code>pto.v*</code>)<a class="headerlink" href="#vector-isa-ptov" title="Permanent link">&para;</a></h3>
 <p>Vector instructions expose the vector pipeline directly. Operands are vector registers, scalar values, and predicate masks. Vector instructions are the fine-grained compute layer beneath tile instructions. The full register width is always meaningful — there is no valid-region abstraction at the vector level.</p>
-<pre><code>Input:   Vector registers, scalar registers, predicates, memory addresses
+<pre class="highlight"><code>Input:   Vector registers, scalar registers, predicates, memory addresses
 Output:  Vector registers, scalar registers, memory writes
-Domain:  Vector length N, lane masks, alignment state, distribution modes
-</code></pre>
+Domain:  Vector length N, lane masks, alignment state, distribution modes</code></pre>
 <h3 id="scalarcontrol-isa-pto">Scalar/Control ISA (<code>pto.*</code>)<a class="headerlink" href="#scalarcontrol-isa-pto" title="Permanent link">&para;</a></h3>
 <p>Scalar and control instructions handle configuration, synchronization, DMA setup, and predicate state. They set up the execution shell around tile and vector payload regions. Most do not produce tile or vector payloads; they produce control effects, event tokens, or predicate masks.</p>
-<pre><code>Input:   Scalar registers, pipe IDs, event IDs, buffer IDs, predicate masks
+<pre class="highlight"><code>Input:   Scalar registers, pipe IDs, event IDs, buffer IDs, predicate masks
 Output:  Control state, event tokens, predicate masks, configured DMA state
-Domain:  Pipe/event spaces, DMA loop parameters, predicate register state
-</code></pre>
+Domain:  Pipe/event spaces, DMA loop parameters, predicate register state</code></pre>
 <h3 id="communication-isa">Communication ISA<a class="headerlink" href="#communication-isa" title="Permanent link">&para;</a></h3>
 <p>Communication instructions span multiple NPUs in a parallel group. They require a <code>ParallelGroup</code> handle and involve interconnect traffic. These operations express collective broadcasts, point-to-point exchanges, and runtime notification primitives.</p>
-<pre><code>Input:   Collective groups, tile operands, scalar parameters
+<pre class="highlight"><code>Input:   Collective groups, tile operands, scalar parameters
 Output:  Collective results, modified tiles, runtime events
-Domain:  Parallel groups, inter-NPU network, rank ordering
-</code></pre>
+Domain:  Parallel groups, inter-NPU network, rank ordering</code></pre>
 <h3 id="system-scheduling-isa">System Scheduling ISA<a class="headerlink" href="#system-scheduling-isa" title="Permanent link">&para;</a></h3>
 <p>System scheduling instructions expose runtime-visible TPipe/TMPipe producer-consumer flow and resource lifetime. These operations are PTO ISA instructions because programs can observe their effects through stream ordering and resource state.</p>
-<pre><code>Input:   Tile handles, stream handles, resource handles
+<pre class="highlight"><code>Input:   Tile handles, stream handles, resource handles
 Output:  Released resources, push/pop ordering effects
-Domain:  Resource lifetime, producer-consumer stream state
-</code></pre>
+Domain:  Resource lifetime, producer-consumer stream state</code></pre>
 <h2 id="what-an-instruction-set-contract-must-state">What An Instruction Set Contract Must State<a class="headerlink" href="#what-an-instruction-set-contract-must-state" title="Permanent link">&para;</a></h2>
 <p>Each instruction set page provides the following:</p>
 <ol>
@@ -1038,7 +1033,7 @@ Domain:  Resource lifetime, producer-consumer stream state
 </ol>
 <p>Instruction set pages do not repeat per-op details; they set the contract for the group.</p>
 <h2 id="navigation-map">Navigation Map<a class="headerlink" href="#navigation-map" title="Permanent link">&para;</a></h2>
-<pre><code>Instruction Sets
+<pre class="highlight"><code>Instruction Sets
 ├── Tile Instruction Set
 │   ├── Sync and Config            → pto.tsync, pto.tassign, pto.talias, pto.sethf32mode, pto.settf32mode,
 │   │                                pto.setfmatrix, pto.set_img2col_rpt,
@@ -1095,8 +1090,7 @@ Domain:  Resource lifetime, producer-consumer stream state
     │                               pto.ttest, pto.twait
 │
 └── System Scheduling Instruction Set
-    └── System Scheduling           → pto.tpush, pto.tpop, pto.tfree
-</code></pre>
+    └── System Scheduling           → pto.tpush, pto.tpop, pto.tfree</code></pre>
 <h2 id="normative-language">Normative Language<a class="headerlink" href="#normative-language" title="Permanent link">&para;</a></h2>
 <p>Instruction set pages use <strong>MUST</strong>, <strong>SHOULD</strong>, and <strong>MAY</strong> only for rules that a test, verifier, or review can check. Prefer plain language for explanation.</p>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>

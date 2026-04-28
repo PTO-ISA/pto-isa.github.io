@@ -1183,31 +1183,35 @@
 <li>Async operations require subsequent <code>pto.twait</code> before the transferred data is safe to use.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>All participating NPUs <strong>must</strong> call collective operations with matching <code>ParallelGroup</code> handles simultaneously.</li>
 <li>Non-root ranks for broadcast/scatter must have destination tiles allocated and writable.</li>
 <li>Async operations require subsequent <code>pto.twait</code> before the transferred data is safe to use.</li>
 <li><strong>CPU simulator</strong>: These instructions are not available. Programs using them on CPU produce a runtime error.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Calling collective operations with mismatched <code>ParallelGroup</code> handles across ranks.</li>
 <li>Using uninitialized or improperly sized destination tiles for receive-side operations.</li>
 <li>Accessing data from an async operation before <code>pto.twait</code> returns.</li>
 <li>Using these instructions on the CPU simulator profile.</li>
 </ul>
+</div>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="assembly-form-pto-as">Assembly Form (PTO-AS)<a class="headerlink" href="#assembly-form-pto-as" title="Permanent link">&para;</a></h3>
-<pre><code class="language-asm">pto.tbroadcast %group, %src : (!pto.group&lt;8&gt;, !pto.tile&lt;f32, 16, 16&gt;)
-pto.treduce %group, %src, %dst : (!pto.group&lt;8&gt;, !pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) {op = &quot;sum&quot;}
-</code></pre>
+<pre class="highlight"><code class="language-asm">pto.tbroadcast %group, %src : (!pto.group&lt;8&gt;, !pto.tile&lt;f32, 16, 16&gt;)
+pto.treduce %group, %src, %dst : (!pto.group&lt;8&gt;, !pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) {op = "sum"}</code></pre>
 <h3 id="ssa-form-as-level-1">SSA Form (AS Level 1)<a class="headerlink" href="#ssa-form-as-level-1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.tbroadcast %group, %src
-    : (!pto.group&lt;8&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.tbroadcast %group, %src
+    : (!pto.group&lt;8&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code>:</p>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 using namespace pto::comm;
 
 // Broadcast across a parallel group
@@ -1216,8 +1220,7 @@ PTO_INST RecordEvent BROADCAST(GroupType&amp; group, GlobalData&amp; src, TileDa
 
 // Collective reduction
 template &lt;typename GroupType, typename GlobalData, typename TileData, ReduceOp Op&gt;
-PTO_INST RecordEvent REDUCE(GroupType&amp; group, GlobalData&amp; src, TileData&amp; stagingTile);
-</code></pre>
+PTO_INST RecordEvent REDUCE(GroupType&amp; group, GlobalData&amp; src, TileData&amp; stagingTile);</code></pre>
 <h2 id="navigation">Navigation<a class="headerlink" href="#navigation" title="Permanent link">&para;</a></h2>
 <p>See the <a href="../../comm/">Communication ISA reference</a> for the full per-op reference.</p>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>

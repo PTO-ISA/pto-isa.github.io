@@ -979,22 +979,18 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Synchronous form:</p>
-<pre><code class="language-text">%dst = tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData&gt;
 PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx);
 
 template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData, typename TmpTileData&gt;
-PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx, TmpTileData &amp;tmp);
-</code></pre>
+PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx, TmpTileData &amp;tmp);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code> is the source tile containing values to sort.</li>
@@ -1007,6 +1003,8 @@ PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTile
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>
 <p><code>TSORT32</code> does not take <code>WaitEvents&amp;...</code> and does not call <code>TSYNC(...)</code> internally; synchronize explicitly if needed.</p>
@@ -1023,12 +1021,18 @@ PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTile
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
 <li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li><strong>Implementation checks (A2A3/A5)</strong>:<ul>
 <li><code>DstTileData::DType</code> must be <code>half</code> or <code>float</code>.</li>
@@ -1038,9 +1042,10 @@ PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTile
 </ul>
 </li>
 </ul>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1052,10 +1057,9 @@ void example_auto() {
   IdxT idx;
   DstT dst;
   TSORT32(dst, src, idx);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1070,25 +1074,21 @@ void example_manual() {
   TASSIGN(idx, 0x2000);
   TASSIGN(dst, 0x3000);
   TSORT32(dst, src, idx);
-}
-</code></pre>
+}</code></pre>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
+%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
 # Optional for tile operands:
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
 # pto.tassign %arg2, @tile(0x3000)
-%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+<pre class="highlight"><code class="language-text">%dst = tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
-pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../irregular-and-complex/">Irregular And Complex</a></li>

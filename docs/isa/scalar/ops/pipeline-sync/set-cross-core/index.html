@@ -965,15 +965,12 @@
 <p>The semaphore is a counter: incremented by <code>set_cross_core</code>, decremented by <code>wait_flag_dev</code>. A <code>wait_flag_dev</code> unblocks when the counter reaches zero.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.set_cross_core %core_id, %event_id : i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.set_cross_core %core_id, %event_id : i64, i64</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.set_cross_core %core_id, %event_id : i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.set_cross_core %core_id, %event_id : i64, i64</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>The installed 3510 public CCE headers do not expose a same-name <code>set_cross_core(...)</code> intrinsic. The shipped sync implementation uses the internal cross-core helper shown below.</p>
-<pre><code class="language-cpp">ffts_cross_core_sync(PIPE_MTE3, AscendC::GetffstMsg(0x02, AscendC::SYNC_AIC_AIV_FLAG));
-</code></pre>
+<pre class="highlight"><code class="language-cpp">ffts_cross_core_sync(PIPE_MTE3, AscendC::GetffstMsg(0x02, AscendC::SYNC_AIC_AIV_FLAG));</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1004,19 +1001,27 @@
 <li>On mode2: increments semaphore for both subblocks simultaneously.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>A2A3 only</strong>: <code>set_cross_core</code> is only available on the A2A3 profile. Programs that use this operation MUST provide a fallback path for other profiles.</li>
 <li><strong>Semaphore pool</strong>: The pool has 16 physical semaphore IDs per cluster. The hardware implements a 4-bit counter (0–15). <code>set_cross_core</code> increments the counter; <code>wait_flag_dev</code> decrements it. On A2/A3: if the counter would overflow past 15, the hardware wraps the counter and signals an overflow error. On CPU simulator: not applicable.</li>
 <li><strong>Broadcast vs. per-subblock</strong>: The broadcast behavior is specific to mode2. Other modes (if supported) may have different semantics.</li>
 <li><strong>core_id meaning</strong>: <code>core_id = 0</code> targets AIV0 subblock; <code>core_id = 1</code> targets AIV1 subblock. Other values are <strong>illegal</strong>.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal on non-A2A3 profiles.</li>
 <li>Illegal if <code>%event_id</code> is outside the valid range (0–15).</li>
 <li>Illegal if the hardware counter would overflow.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1054,16 +1059,16 @@
 </tbody>
 </table>
 <p>CPU simulator does not implement <code>set_cross_core</code>. Portable programs MUST guard this operation with profile checks or provide CPU-sim fallback.</p>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="a2a3-cube-broadcasts-to-both-vector-subblocks">A2A3: Cube broadcasts to both vector subblocks<a class="headerlink" href="#a2a3-cube-broadcasts-to-both-vector-subblocks" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Cube signals both AIV subblocks simultaneously
-SET_CROSS_CORE(/* core_id */ 0, /* event_id */ 0);  // broadcast to both AIV0 and AIV1
-</code></pre>
+SET_CROSS_CORE(/* core_id */ 0, /* event_id */ 0);  // broadcast to both AIV0 and AIV1</code></pre>
 <h3 id="ssa-form-cubevector-broadcast">SSA form — Cube→Vector broadcast<a class="headerlink" href="#ssa-form-cubevector-broadcast" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Cube: broadcast completion signal to both AIV0 and AIV1
+<pre class="highlight"><code class="language-mlir">// Cube: broadcast completion signal to both AIV0 and AIV1
 pto.set_cross_core %c0_i64, %c0_i64 : i64, i64
 
 // Both AIV subblocks receive the signal (atomic broadcast)
@@ -1076,18 +1081,16 @@ pto.set_cross_core %c1_i64, %c1_i64 : i64, i64  // signals event 1
 
 // Cube: waits for BOTH AIV0 and AIV1 (reduce)
 pto.wait_flag_dev %c0_i64, %c1_i64 : i64, i64
-// Unblocks only when both subblocks have signaled
-</code></pre>
+// Unblocks only when both subblocks have signaled</code></pre>
 <h3 id="ssa-form-vectorcube-reduce">SSA form — Vector→Cube reduce<a class="headerlink" href="#ssa-form-vectorcube-reduce" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// AIV0: signal Cube that vector work segment is done
+<pre class="highlight"><code class="language-mlir">// AIV0: signal Cube that vector work segment is done
 pto.set_cross_core %c0_i64, %c2_i64 : i64, i64
 
 // AIV1: signal Cube that vector work segment is done
 pto.set_cross_core %c1_i64, %c2_i64 : i64, i64
 
 // Cube: waits for both subblocks on one semaphore (reduce)
-pto.wait_flag_dev %c2_i64 : i64
-</code></pre>
+pto.wait_flag_dev %c2_i64 : i64</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../pipeline-sync/">Pipeline Sync</a></li>

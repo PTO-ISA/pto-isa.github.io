@@ -962,19 +962,15 @@
 <div class="arithmatex">\[ \mathrm{dst}_{2N} = \begin{cases} \mathrm{ZERO}(N) \Vert \mathrm{src}_N &amp; \text{if } P = \text{LOWER} \\ \mathrm{src}_N \Vert \mathrm{ZERO}(N) &amp; \text{if } P = \text{HIGHER} \end{cases} \]</div>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.ppack %src, &quot;PART&quot; : !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.ppack %src, "PART" : !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.ppack %src, &quot;PART&quot; : !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.ppack %src, "PART" : !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.ppack ins(%src, &quot;PART&quot; : !pto.mask) outs(%dst : !pto.mask)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.ppack ins(%src, "PART" : !pto.mask) outs(%dst : !pto.mask)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool dst;
+<pre class="highlight"><code class="language-cpp">vector_bool dst;
 vector_bool src;
-ppack(dst, src, __cce_simd::LOWER);
-</code></pre>
+ppack(dst, src, __cce_simd::LOWER);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1017,19 +1013,27 @@ ppack(dst, src, __cce_simd::LOWER);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Partition token</strong>: MUST be <code>"LOWER"</code> or <code>"HIGHER"</code>. Other tokens are <strong>illegal</strong>.</li>
 <li><strong>Destination width</strong>: The destination predicate is always 2N bits. Programs MUST ensure the destination context expects a 2N-bit predicate. Attempting to use a 2N-bit result in an N-bit context without explicit extraction via <code>punpack</code> is <strong>illegal</strong>.</li>
 <li><strong>Source width</strong>: The source predicate MUST be N bits (half the destination width). Mismatched widths are <strong>illegal</strong>.</li>
 <li><strong>Zero-fill behavior</strong>: The non-selected half of the destination is always zero-filled, not sign-extended or replicated.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if the partition token is not <code>"LOWER"</code> or <code>"HIGHER"</code>.</li>
 <li>Illegal if source and destination predicate widths are not in a 1:2 ratio.</li>
 <li>Illegal if the operation is used in a context that does not expect a 2N-bit result.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1054,42 +1058,40 @@ ppack(dst, src, __cce_simd::LOWER);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="combine-two-b32-predicates-for-f32-64-lanes">Combine two b32 predicates for f32 (64 lanes)<a class="headerlink" href="#combine-two-b32-predicates-for-f32-64-lanes" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void pack_for_f32(RegBuf&lt;predicate_t&gt;&amp; dst,
                   const RegBuf&lt;predicate_t&gt;&amp; lo,
                   const RegBuf&lt;predicate_t&gt;&amp; hi) {
     // dst = [ZERO(32) | lo] = hi concatenated with zero
-    PPACK(dst, lo, &quot;LOWER&quot;);
-}
-</code></pre>
+    PPACK(dst, lo, "LOWER");
+}</code></pre>
 <h3 id="ssa-form">SSA form<a class="headerlink" href="#ssa-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// %rem = 47
+<pre class="highlight"><code class="language-mlir">// %rem = 47
 // %lo: lanes 0-31 active (from plt_b32 iteration 1)
 // %hi: lanes 0-14 active (from plt_b32 iteration 2, rem = 15)
 
 // Pack %lo into lower half of 64-bit predicate
-%full_lo = pto.ppack %lo, &quot;LOWER&quot; : !pto.mask -&gt; !pto.mask
+%full_lo = pto.ppack %lo, "LOWER" : !pto.mask -&gt; !pto.mask
 
 // Pack %hi into upper half of 64-bit predicate
-%full_hi = pto.ppack %hi, &quot;HIGHER&quot; : !pto.mask -&gt; !pto.mask
+%full_hi = pto.ppack %hi, "HIGHER" : !pto.mask -&gt; !pto.mask
 
 // OR them together to get full 64-lane tail mask
-%tail = pto.por %full_lo, %full_hi, %full_lo : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+%tail = pto.por %full_lo, %full_hi, %full_lo : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="construct-a-full-width-mask-from-two-half-width-masks">Construct a full-width mask from two half-width masks<a class="headerlink" href="#construct-a-full-width-mask-from-two-half-width-masks" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Pack lower half
-%dst_lower = pto.ppack %src_lower, &quot;LOWER&quot; : !pto.mask -&gt; !pto.mask
+<pre class="highlight"><code class="language-mlir">// Pack lower half
+%dst_lower = pto.ppack %src_lower, "LOWER" : !pto.mask -&gt; !pto.mask
 
 // Pack upper half
-%dst_upper = pto.ppack %src_upper, &quot;HIGHER&quot; : !pto.mask -&gt; !pto.mask
+%dst_upper = pto.ppack %src_upper, "HIGHER" : !pto.mask -&gt; !pto.mask
 
 // Combine with OR to get full-width predicate
-%combined = pto.por %dst_lower, %dst_upper, %dst_lower : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+%combined = pto.por %dst_lower, %dst_upper, %dst_lower : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

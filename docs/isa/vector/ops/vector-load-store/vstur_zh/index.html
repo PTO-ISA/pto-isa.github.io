@@ -916,11 +916,9 @@
 <p><code>pto.vstur</code> 属于 PTO 的向量内存 / 数据搬运指令。它会写入当前向量，同时只返回更新后的残余对齐状态，不再显式返回 offset 或 base。它适合那些外围控制流已经固定、只需要继续推进尾部状态的场景。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vstur %align_out, %align_in, %value, %base, &quot;MODE&quot;
-</code></pre>
+<pre class="highlight"><code class="language-text">vstur %align_out, %align_in, %value, %base, "MODE"</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%align_out = pto.vstur %align_in, %value, %base, &quot;MODE&quot; : !pto.align, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align_out = pto.vstur %align_in, %value, %base, "MODE" : !pto.align, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%align_in</code>：输入存储对齐状态</li>
@@ -934,23 +932,31 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会写 UB 可见内存，并推进一段有状态的非对齐存储流。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>它只暴露推进后的状态，并不保证所有缓冲尾部字节已经提交。</li>
 <li>除非外围序列明确已经闭合，否则仍然需要兼容的最终 flush 形式。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>使用超出 UB 可见空间的地址，或违反所选形式的地址 / 对齐契约，都是非法的。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vstur</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%align_out = pto.vstur %align_in, %value, %base, &quot;MODE&quot;
-    : !pto.align, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align_out = pto.vstur %align_in, %value, %base, "MODE"
+    : !pto.align, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></pre>
 <h2 id="_10">性能<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="_11">时延与吞吐披露<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。

@@ -918,18 +918,14 @@
 <p>如果多个元素映射到同一目标地址，最终值由实现决定。CPU 模拟器当前采用“按行主序遍历时最后写入者获胜”的行为。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
-<pre><code class="language-text">mscatter %src, %mem, %idx : !pto.memref&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">mscatter %src, %mem, %idx : !pto.memref&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.mscatter %src, %idx, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.mscatter %src, %idx, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.mscatter ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.mscatter ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;typename GlobalData, typename TileSrc, typename TileInd, typename... WaitEvents&gt;
-PTO_INST RecordEvent MSCATTER(GlobalData &amp;dst, TileSrc &amp;src, TileInd &amp;indexes, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalData, typename TileSrc, typename TileInd, typename... WaitEvents&gt;
+PTO_INST RecordEvent MSCATTER(GlobalData &amp;dst, TileSrc &amp;src, TileInd &amp;indexes, WaitEvents &amp;... events);</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code>：源 tile</li>
@@ -943,6 +939,8 @@ PTO_INST RecordEvent MSCATTER(GlobalData &amp;dst, TileSrc &amp;src, TileInd &am
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会写 GM。若多个源元素散写到同一地址，结果由实现和执行顺序决定。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>src/dst</code> 元素类型必须属于：
   <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code></li>
@@ -959,11 +957,15 @@ PTO_INST RecordEvent MSCATTER(GlobalData &amp;dst, TileSrc &amp;src, TileInd &am
 <li><code>Add</code> 原子要求 <code>int32_t</code>、<code>uint32_t</code>、<code>float</code> 或 <code>half</code></li>
 <li><code>Max/Min</code> 原子要求 <code>int32_t</code> 或 <code>float</code></li>
 </ul>
+</div>
 <h2 id="_9">异常与非法情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 <li>CPU 模拟器不会对 <code>indexes</code> 做强制越界检查。</li>
 </ul>
+</div>
 <h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>pto.mscatter</code> 在 CPU 仿真、A2/A3 和 A5 上都保留相同的 PTO 可见语义，但具体支持子集和原子路径仍取决于 profile。</li>
@@ -971,8 +973,7 @@ PTO_INST RecordEvent MSCATTER(GlobalData &amp;dst, TileSrc &amp;src, TileInd &am
 <h2 id="_10">性能<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <p>当前手册未单列 <code>mscatter</code> 的公开周期表。它的成本通常主要受索引分布、原子模式和目标散写路径影响。</p>
 <h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
-<pre><code class="language-text">pto.mscatter %src, %idx, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.mscatter %src, %idx, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()</code></pre>
 <h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../memory-and-data-movement_zh/">内存与数据搬运</a></li>

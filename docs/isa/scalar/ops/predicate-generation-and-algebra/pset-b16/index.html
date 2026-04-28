@@ -967,17 +967,13 @@
 <p>The pattern token fully determines which bits are set.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.pset_b16 &quot;PATTERN&quot; : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.pset_b16 "PATTERN" : !pto.mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.pset_b16 &quot;PATTERN&quot; : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.pset_b16 "PATTERN" : !pto.mask</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.pset_b16 &quot;PATTERN&quot; outs(%mask : !pto.mask)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.pset_b16 "PATTERN" outs(%mask : !pto.mask)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool mask = pset_b16(__cce_simd::PAT_VL8);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">vector_bool mask = pset_b16(__cce_simd::PAT_VL8);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1062,16 +1058,24 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Pattern token validity</strong>: The pattern token MUST be valid for a 16-bit predicate width. Using a <code>PAT_VL*</code> token with N &gt; 16 is <strong>illegal</strong>.</li>
 <li><strong>Predicate context</strong>: This operation produces a fixed-width predicate. Programs that use it in a wider context MUST use pack/unpack to adapt.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if the pattern token is not valid for the <code>_b16</code> (16-bit) variant.</li>
 <li>Illegal if the pattern token is not supported by the target profile.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1096,23 +1100,21 @@
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="construct-all-active-mask">Construct all-active mask<a class="headerlink" href="#construct-all-active-mask" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void set_all_active(RegBuf&lt;predicate_t&gt;&amp; dst) {
-    PSET_B16(dst, &quot;PAT_ALL&quot;);
-}
-</code></pre>
+    PSET_B16(dst, "PAT_ALL");
+}</code></pre>
 <h3 id="construct-modular-pattern">Construct modular pattern<a class="headerlink" href="#construct-modular-pattern" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Modular 3 pattern: lanes 3, 7, 11, 15 active
-%mod3 = pto.pset_b16 &quot;PAT_M3&quot; : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">// Modular 3 pattern: lanes 3, 7, 11, 15 active
+%mod3 = pto.pset_b16 "PAT_M3" : !pto.mask</code></pre>
 <h3 id="construct-first-half-active-mask">Construct first-half-active mask<a class="headerlink" href="#construct-first-half-active-mask" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// High half: bits 8–15 active, bits 0–7 inactive
-%high = pto.pset_b16 &quot;PAT_H&quot; : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">// High half: bits 8–15 active, bits 0–7 inactive
+%high = pto.pset_b16 "PAT_H" : !pto.mask</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

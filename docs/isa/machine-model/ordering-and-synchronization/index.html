@@ -985,9 +985,10 @@
 </tbody>
 </table>
 <p><code>TSYNC</code> is the primary tile-instruction set synchronization. The event-wait form <code>TSYNC(events...)</code> establishes a <strong>happens-before</strong> edge on each <code>RecordEvent</code> token, ensuring all prior tile operations that produced those events are complete. The barrier form <code>TSYNC&lt;Op&gt;()</code> inserts a pipeline barrier for all operations of class <code>Op</code>.</p>
-<blockquote>
-<p><strong>Note:</strong> <code>pipe_barrier</code> (<code>pto.pipe_barrier</code>) is a scalar and control instructions primitive, not a tile instructions primitive. It appears in the <a href="../../scalar/pipeline-sync/">Scalar Pipeline Sync</a> instruction set.</p>
-</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note:</p>
+<p><code>pipe_barrier</code> (<code>pto.pipe_barrier</code>) is a scalar and control instructions primitive, not a tile instructions primitive. It appears in the <a href="../../scalar/pipeline-sync/">Scalar Pipeline Sync</a> instruction set.</p>
+</div>
 <h3 id="vector-instructions-primitives">Vector Instructions Primitives<a class="headerlink" href="#vector-instructions-primitives" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1069,7 +1070,7 @@
 <h2 id="event-model">Event Model<a class="headerlink" href="#event-model" title="Permanent link">&para;</a></h2>
 <p>PTO uses an <strong>event-based</strong> synchronization model. Events carry ordering information between pipelines.</p>
 <h3 id="event-lifecycle">Event Lifecycle<a class="headerlink" href="#event-lifecycle" title="Permanent link">&para;</a></h3>
-<pre><code>Producer                                  Consumer
+<pre class="highlight"><code>Producer                                  Consumer
   │                                         │
   │  issue DMA / compute                    │
   │  ▼                                      │
@@ -1080,8 +1081,7 @@
   │                              (consumes the event)
   │                                         │
   │  data/result available                  │
-  ▼                                         ▼
-</code></pre>
+  ▼                                         ▼</code></pre>
 <p>An <strong>event</strong> is identified by a triple <code>(src_pipe, dst_pipe, event_id)</code>:</p>
 <table>
 <thead>
@@ -1112,14 +1112,13 @@
 <p>Events are <strong>fire-and-forget</strong> in the ISA contract: producing a flag makes it available to all subsequent waiters on the same <code>(src_pipe, dst_pipe, event_id)</code> triple.</p>
 <h3 id="events-and-recordevent">Events and RecordEvent<a class="headerlink" href="#events-and-recordevent" title="Permanent link">&para;</a></h3>
 <p>The C++ intrinsics for tile operations (e.g., <code>TLOAD</code>, <code>TSTORE</code>, <code>TMATMUL</code>) return a <code>RecordEvent</code> value. This event can be passed as a <code>WaitEvents...</code> argument to subsequent operations, establishing a <strong>happens-before</strong> edge:</p>
-<pre><code class="language-cpp">RecordEvent e0 = TLOAD(a, ga);     // produces event
+<pre class="highlight"><code class="language-cpp">RecordEvent e0 = TLOAD(a, ga);     // produces event
 RecordEvent e1 = TLOAD(b, gb);     // produces event
-TMATMUL(c, a, b, e0, e1);          // waits for both e0 and e1 before executing
-</code></pre>
+TMATMUL(c, a, b, e0, e1);          // waits for both e0 and e1 before executing</code></pre>
 <p>The <code>RecordEvent</code> return value is the <strong>ISA-visible mechanism</strong> for chaining tile-instruction set dependencies. This is equivalent to inserting explicit <code>set_flag</code>/<code>wait_flag</code> pairs but expressed at a higher level.</p>
 <h2 id="pipeline-dependency-graph">Pipeline Dependency Graph<a class="headerlink" href="#pipeline-dependency-graph" title="Permanent link">&para;</a></h2>
 <p>The AI Core contains multiple execution units that operate concurrently. The following diagram shows the dependency relationships:</p>
-<pre><code>               ┌──────────────────────────────────────────────┐
+<pre class="highlight"><code>               ┌──────────────────────────────────────────────┐
 GM ──► MTE2 ──►│ Unified Buffer / Tile Buffer                 │──► MTE3 ──► GM
                │                                              │
                │  ┌───────────────┐     ┌──────────────────┐  │
@@ -1135,8 +1134,7 @@ GM ──► MTE1 ──►│  │ Tile Register │────►│ Vector P
                │                        └────────┬─────────┘  │
                └─────────────────────────────────┼────────────┘
                                                  │
-              Scalar Unit: control flow, address generation, system queries
-</code></pre>
+              Scalar Unit: control flow, address generation, system queries</code></pre>
 <h3 id="dependency-types">Dependency Types<a class="headerlink" href="#dependency-types" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1202,6 +1200,8 @@ GM ──► MTE1 ──►│  │ Tile Register │────►│ Vector P
 <li>The operation has been synchronized with the host runtime (event completion).</li>
 </ol>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>Synchronization is required wherever the architecture does not already guarantee ordering.</li>
 <li>A target may add stronger internal ordering, but the manual must not rely on undocumented strength.</li>
@@ -1209,7 +1209,10 @@ GM ──► MTE1 ──►│  │ Tile Register │────►│ Vector P
 <li>Events are fire-and-forget; the ISA does not provide a "test-and-clear" event flag.</li>
 <li><code>TSYNC</code> is tile-buffer-scoped; it does not synchronize across tile buffers.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Writing the manual as if synchronization were optional when the architecture requires it.</li>
 <li>Assuming vector-pipe hazards are covered by tile-instruction set rules without saying so.</li>
@@ -1217,6 +1220,7 @@ GM ──► MTE1 ──►│  │ Tile Register │────►│ Vector P
 <li>Issuing <code>vlds</code> before <code>copy_gm_to_ubuf</code> completes without an intervening <code>wait_flag</code>.</li>
 <li>Issuing <code>copy_ubuf_to_gm</code> before <code>vsts</code> completes without an intervening <code>wait_flag</code>.</li>
 </ul>
+</div>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../memory-model/consistency-baseline/">Consistency Baseline</a></li>

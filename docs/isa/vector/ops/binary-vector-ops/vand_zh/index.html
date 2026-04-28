@@ -912,23 +912,19 @@
 <p><code>pto.vand</code> 属于<a href="../../../binary-vector-ops_zh/">二元向量操作</a>指令集。</p>
 <h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><code>pto.vand</code> 在每个活跃 lane 上做按位与：</p>
-<pre><code class="language-text">dst[i] = lhs[i] &amp; rhs[i]
-</code></pre>
+<pre class="highlight"><code class="language-text">dst[i] = lhs[i] &amp; rhs[i]</code></pre>
 <h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>这条指令对两个源向量寄存器做逐 lane 按位与。对每个满足谓词的 lane <code>i</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{lhs}_i \,\&amp;\, \mathrm{rhs}_i \]</div>
 <p>非活跃 lane 不参与计算，目标寄存器这些位置保持原值。它是纯整数指令，不适用于浮点元素类型。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vand %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">vand %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vand %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vand %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vand ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
-          outs(%result : !pto.vreg&lt;NxT&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vand ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
+          outs(%result : !pto.vreg&lt;NxT&gt;)</code></pre>
 <p>支持的元素类型是全部整数类型：<code>i8</code>–<code>i64</code>、<code>u8</code>–<code>u64</code>。</p>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
@@ -978,6 +974,8 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生目标向量寄存器外，没有其他架构副作用。它不会隐式占用 buffer、发送事件，也不会建立内存栅栏。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>只支持整数元素类型，不支持浮点。</li>
 <li><code>%lhs</code>、<code>%rhs</code> 和 <code>%result</code> 的元素类型必须一致。</li>
@@ -986,12 +984,18 @@
 <li>只有掩码位为 1 的 lane 参与按位与。</li>
 <li>非活跃 lane 保持目标原值。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非整数元素类型、类型不匹配、宽度不匹配或掩码宽度不匹配。</li>
 <li><a href="../../../binary-vector-ops_zh/">二元向量操作</a>页面列出的额外非法情形，同样适用于 <code>pto.vand</code>。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <table>
 <thead>
 <tr>
@@ -1011,6 +1015,7 @@
 </tbody>
 </table>
 <p>A5 是当前文档里最具体的向量 profile。</p>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <table>
@@ -1063,16 +1068,14 @@
 </table>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="c">C 语义<a class="headerlink" href="#c" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] &amp; src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] &amp; src1[i];</code></pre>
 <h3 id="mlir">MLIR 用法<a class="headerlink" href="#mlir" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vand %a, %b, %active
+<pre class="highlight"><code class="language-mlir">%result = pto.vand %a, %b, %active
     : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xi32&gt;
 
 %masked = pto.vand %data, %mask_bits, %active
-    : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xi32&gt;
-</code></pre>
+    : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xi32&gt;</code></pre>
 <h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../binary-vector-ops_zh/">二元向量操作</a></li>

@@ -927,20 +927,18 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">Assembly Spelling And Operands</a>.</p>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = tci %S {descending = false} : !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tci %S {descending = false} : !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tci %scalar {descending = false} : dtype -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tci %scalar {descending = false} : dtype -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tci ins(%scalar {descending = false} : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tci ins(%scalar {descending = false} : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileData, typename T, int descending, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename T, int descending, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><strong>实现检查 (A2A3/A5)</strong>:<ul>
 <li><code>TileData::DType</code> must be exactly the same type as the scalar template parameter <code>T</code>.</li>
@@ -953,9 +951,10 @@ PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events)
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -963,10 +962,9 @@ void example_auto() {
   using TileT = Tile&lt;TileType::Vec, int32_t, 1, 16&gt;;
   TileT dst;
   TCI&lt;TileT, int32_t, /*descending=*/0&gt;(dst, /*S=*/0);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -975,8 +973,7 @@ void example_manual() {
   TileT dst;
   TASSIGN(dst, 0x1000);
   TCI&lt;TileT, int32_t, /*descending=*/1&gt;(dst, /*S=*/100);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

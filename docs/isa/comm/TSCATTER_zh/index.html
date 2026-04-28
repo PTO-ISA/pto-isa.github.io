@@ -919,12 +919,11 @@
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../syntax-and-operands/assembly-model_zh/">PTO ISA 语法与操作数</a>。</p>
 <p>同步形式：</p>
-<pre><code class="language-text">tscatter %group, %src : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">tscatter %group, %src : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>降级时会为 GM→UB→GM 数据路径引入 UB 暂存 Tile；C++ 内建接口需要显式传入 <code>stagingTileData</code>（或 <code>pingTile</code> / <code>pongTile</code>）操作数。</p>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
-<pre><code class="language-cpp">// 基础 scatter（单暂存 Tile）
+<pre class="highlight"><code class="language-cpp">// 基础 scatter（单暂存 Tile）
 template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TSCATTER(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
                               TileData &amp;stagingTileData, WaitEvents&amp;... events);
@@ -932,9 +931,10 @@ PTO_INST RecordEvent TSCATTER(ParallelGroupType &amp;parallelGroup, GlobalSrcDat
 // 乒乓 scatter（使用两个暂存 Tile 实现双缓冲）
 template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TSCATTER(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
-                              TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
-</code></pre>
+                              TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);</code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><strong>类型约束</strong>：<ul>
 <li><code>ParallelGroup::value_type::RawDType</code> 必须等于 <code>GlobalSrcData::RawDType</code>。</li>
@@ -959,11 +959,12 @@ PTO_INST RecordEvent TSCATTER(ParallelGroupType &amp;parallelGroup, GlobalSrcDat
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <h3 id="scatter-tile">基础 Scatter（单暂存 Tile）<a class="headerlink" href="#scatter-tile" title="Permanent link">&para;</a></h3>
 <p>根节点拥有 <code>NRANKS * ROWS</code> 行、宽度为 <code>COLS</code> 的数据，每个 rank 接收 <code>ROWS × COLS</code>，沿 DIM_3 拆分。
 Tile 大小可小于每 rank 的数据——此时实现会自动通过二维滑动进行分块传输。</p>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -982,11 +983,10 @@ void scatter(__gm__ T* local_data, __gm__ T* group_addrs[NRANKS], int my_rank) {
     GSource srcG(local_data);
     TileT stagingTile(TILE_ROWS, TILE_COLS);
     comm::TSCATTER(group, srcG, stagingTile);
-}
-</code></pre>
+}</code></pre>
 <h3 id="scatter">乒乓 Scatter（双缓冲）<a class="headerlink" href="#scatter" title="Permanent link">&para;</a></h3>
 <p>使用两个 UB Tile，将下一块的 TLOAD（MTE2）与当前块的 TSTORE（MTE3）重叠执行。</p>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -1007,8 +1007,7 @@ void scatter_pingpong(__gm__ T* local_data, __gm__ T* group_addrs[NRANKS], int m
     TileT pongTile(TILE_ROWS, TILE_COLS);
     // 乒乓模式：将 TLOAD 与 TSTORE 重叠执行以提升吞吐量
     comm::TSCATTER(group, srcG, pingTile, pongTile);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

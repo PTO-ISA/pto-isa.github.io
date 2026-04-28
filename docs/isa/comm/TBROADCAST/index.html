@@ -951,12 +951,11 @@
 <p>The data path uses UB as a staging area: GM → local UB (root) → interconnect → remote UB (all ranks) → GM. A staging tile (or ping/pong tile pair for double buffering) provides the local buffer for this transfer.</p>
 <p><strong>Large tile support</strong>: When the GlobalTensor exceeds the UB tile capacity, the transfer is automatically chunked via 2D sliding.</p>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
-<pre><code class="language-text">pto.tbroadcast %group, %src : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tbroadcast %group, %src : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>Lowering introduces UB staging tile(s) for the GM → UB → interconnect → GM data path. The C++ intrinsic requires explicit <code>stagingTileData</code> (or <code>pingTile</code> / <code>pongTile</code>) operand(s).</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code>:</p>
-<pre><code class="language-cpp">// Basic broadcast (single staging tile)
+<pre class="highlight"><code class="language-cpp">// Basic broadcast (single staging tile)
 template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent BROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
                               TileData &amp;stagingTileData, WaitEvents&amp;... events);
@@ -964,8 +963,7 @@ PTO_INST RecordEvent BROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcDa
 // Ping-pong broadcast (double buffering with two staging tiles)
 template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent BROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
-                              TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
-</code></pre>
+                              TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1014,6 +1012,8 @@ PTO_INST RecordEvent BROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcDa
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>Participates in collective communication over the interconnect. Only the root rank needs to execute the operation; non-root ranks must ensure their destination buffers are allocated and writable.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type constraints</strong>:</li>
 <li><code>ParallelGroup::value_type::RawDType</code> must equal <code>GlobalSrcData::RawDType</code>.</li>
@@ -1029,15 +1029,19 @@ PTO_INST RecordEvent BROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcDa
 <li>If <code>TileData</code> has static <code>ValidRow</code>, <code>GetShape(DIM_3)</code> must be divisible by <code>ValidRow</code>. Use a tile with <code>DYNAMIC</code> ValidRow for partial row support.</li>
 <li>If <code>TileData</code> has static <code>ValidCol</code>, <code>GetShape(DIM_4)</code> must be divisible by <code>ValidCol</code>. Use a tile with <code>DYNAMIC</code> ValidCol for partial column support.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Non-root ranks calling <code>pto.tbroadcast</code> produces undefined behavior.</li>
 <li>Using incompatible tensor types or ranks is rejected by the verifier.</li>
 <li>Accessing a rank's destination buffer outside its declared shape is undefined.</li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-broadcast">Basic Broadcast<a class="headerlink" href="#basic-broadcast" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 using namespace pto;
 
 template &lt;typename T, int ROWS, int COLS, int TILE_ROWS, int TILE_COLS, int NRANKS&gt;
@@ -1055,10 +1059,9 @@ void broadcast(__gm__ T* group_addrs[NRANKS], __gm__ T* my_data, int my_rank) {
   TileT stagingTile(TILE_ROWS, TILE_COLS);
 
   comm::BROADCAST(group, srcG, stagingTile);
-}
-</code></pre>
+}</code></pre>
 <h3 id="ping-pong-broadcast-double-buffering">Ping-Pong Broadcast (Double Buffering)<a class="headerlink" href="#ping-pong-broadcast-double-buffering" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;typename T, int ROWS, int COLS, int TILE_ROWS, int TILE_COLS, int NRANKS&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename T, int ROWS, int COLS, int TILE_ROWS, int TILE_COLS, int NRANKS&gt;
 void broadcast_pingpong(__gm__ T* group_addrs[NRANKS], __gm__ T* my_data, int my_rank) {
   using TileT = Tile&lt;TileType::Vec, T, TILE_ROWS, TILE_COLS, BLayout::RowMajor, -1, -1&gt;;
   using GPerRank = GlobalTensor&lt;T, Shape&lt;1,1,1,ROWS,COLS&gt;,
@@ -1074,8 +1077,7 @@ void broadcast_pingpong(__gm__ T* group_addrs[NRANKS], __gm__ T* my_data, int my
   TileT pongTile(TILE_ROWS, TILE_COLS);
 
   comm::BROADCAST(group, srcG, pingTile, pongTile);
-}
-</code></pre>
+}</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../communication-runtime/">Collective Communication</a></li>

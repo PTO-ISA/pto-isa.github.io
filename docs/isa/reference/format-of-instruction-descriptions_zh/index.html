@@ -935,14 +935,34 @@
 </ol>
 <h2 id="_4">规范语言<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>只有在 verifier、测试、backend 或评审能够检查时，才使用 <strong>MUST</strong>、<strong>SHOULD</strong>、<strong>MAY</strong>。解释性段落尽量使用自然语言，不要把写作建议伪装成规范条款。</p>
-<h2 id="_5">写作上的重点<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_5">可视化结构<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>使用 MkDocs callout 让合法性、诊断和可移植性边界更容易扫读，但不要改变原有规范含义。</p>
+<ul>
+<li>保留 <code>## 约束</code> 标题，然后把规则放进 <code>!!! warning "约束"</code>。</li>
+<li>保留 <code>## 目标 Profile 限制</code> 标题，然后把 profile 缩窄放进 <code>??? info "目标 Profile 限制"</code>，方便读者按需展开。</li>
+<li>对非法情形和 verifier 拒绝的组合使用 <code>!!! danger</code>。</li>
+<li>对诊断、<code>static_assert</code>、<code>PTO_STATIC_ASSERT</code> 和断言式信息使用 <code>!!! failure</code>。</li>
+<li>对不缩窄合法性的解释性说明使用 <code>!!! note</code>。</li>
+</ul>
+<p>当目标相关内容已经能清楚分开时，使用 PyMdown tabs，并且 profile 名称必须精确写成下面三种：</p>
+<pre class="highlight"><code class="language-markdown">??? info "目标 Profile 限制"
+    === "CPU_SIM"
+        在这里说明模拟器专用行为或模拟边界。
+
+    === "A2/A3"
+        在这里说明 A2/A3 的支持范围、形状限制和实现检查。
+
+    === "A5"
+        在这里说明 A5 专有的数据类型、模式或放宽后的限制。</code></pre>
+<p>不要用可视化 callout 弱化规则。如果一句话描述的是架构可见行为，它在 callout 里仍然必须保持同样的规范措辞。</p>
+<h2 id="_6">写作上的重点<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
 <li>先解释“为什么有这条指令或这类指令”，再给出约束。</li>
 <li>如果某个行为只在 valid region 内定义，必须明确说出来。</li>
 <li>如果 backend profile 会缩窄支持的 dtype、layout、tile role 或同步行为，应单独点名，避免把 profile 限制误写成架构默认值。</li>
 <li>如果某条指令只是某个更大协议的一步，例如 <code>TSYNC</code>、<code>TLOAD</code> 或 <code>wait_flag</code>，页面应把它放回到那个协议里解释，而不是只给一条孤立公式。</li>
 </ul>
-<h2 id="_6">相关页面<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/README_zh/">指令族总览</a></li>
 <li><a href="../diagnostics-and-illegal-cases_zh/">诊断与非法情形</a></li>

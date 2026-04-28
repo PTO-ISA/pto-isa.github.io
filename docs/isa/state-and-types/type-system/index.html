@@ -1154,16 +1154,14 @@
 <p>Vector width is <strong>portable</strong> across all profiles: CPU simulation, A2/A3, and A5 all present the same <code>N</code> value for each element type. The difference is that A5 executes vector operations natively on hardware, while CPU/A2/A3 emulate them.</p>
 <h2 id="vector-register-types">Vector Register Types<a class="headerlink" href="#vector-register-types" title="Permanent link">&para;</a></h2>
 <p>Vector register SSA type: <code>!pto.vreg&lt;NxDTYPE&gt;</code></p>
-<pre><code>!pto.vreg&lt;64xf32&gt;   -- 64 lanes of f32
+<pre class="highlight"><code>!pto.vreg&lt;64xf32&gt;   -- 64 lanes of f32
 !pto.vreg&lt;128xf16&gt;  -- 128 lanes of f16
-!pto.vreg&lt;256xi8&gt;   -- 256 lanes of i8
-</code></pre>
+!pto.vreg&lt;256xi8&gt;   -- 256 lanes of i8</code></pre>
 <h2 id="tile-buffer-types">Tile Buffer Types<a class="headerlink" href="#tile-buffer-types" title="Permanent link">&para;</a></h2>
 <p>Tile buffer SSA type (see <a href="../../programming-model/tiles-and-valid-regions/">Tiles And Valid Regions</a> for full parameter list):</p>
-<pre><code>!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+<pre class="highlight"><code>!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
 !pto.tile_buf&lt;loc=mat, bf16, 16, 16, RowMajor, NoneBox, None, Null&gt;
-!pto.tile_buf&lt;loc=left, int8, 16, 16, RowMajor, RowMajor, NZ, Null&gt;
-</code></pre>
+!pto.tile_buf&lt;loc=left, int8, 16, 16, RowMajor, RowMajor, NZ, Null&gt;</code></pre>
 <h2 id="nan-and-inf-behavior">NaN and Inf Behavior<a class="headerlink" href="#nan-and-inf-behavior" title="Permanent link">&para;</a></h2>
 <p>For floating-point types, PTO follows IEEE 754 semantics with the following hardware-specific variation points:</p>
 <table>
@@ -1337,6 +1335,8 @@
 </tbody>
 </table>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>Instruction set pages must define accepted operand/result classes.</li>
 <li>Type errors must stay distinguishable from deeper legality failures (shape, layout, location intent, target profile).</li>
@@ -1344,13 +1344,17 @@
 <li>Tile instruction docs must make tile role, shape, and valid-region interactions explicit.</li>
 <li>No implicit type promotion: <code>tadd(t, i8_tile, f32_immediate)</code> is illegal unless an explicit <code>tcvt</code> converts one operand first.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Treating type class checks as though they cover every backend legality fact.</li>
 <li>Conflating scalar state with tile or vector payload state.</li>
 <li>Documenting vector and tile payload classes as if they were interchangeable.</li>
 <li>Relying on implicit type conversion without an explicit <code>tcvt</code>/<code>vcvt</code>.</li>
 </ul>
+</div>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../location-intent-and-legality/">Location Intent And Legality</a></li>

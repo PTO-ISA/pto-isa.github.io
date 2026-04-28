@@ -998,8 +998,7 @@
 <h2 id="ptocastptr"><code>pto.castptr</code><a class="headerlink" href="#ptocastptr" title="Permanent link">&para;</a></h2>
 <p><strong>Syntax:</strong> <code>%result = pto.castptr %addr : i64 -&gt; !pto.ptr&lt;T, space&gt;</code></p>
 <p><strong>Semantics:</strong> Reinterpret a scalar address value as a typed PTO pointer in the target memory space.</p>
-<pre><code class="language-c">result = (ptr&lt;T, space&gt;)addr;
-</code></pre>
+<pre class="highlight"><code class="language-c">result = (ptr&lt;T, space&gt;)addr;</code></pre>
 <h3 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1042,18 +1041,16 @@
 <li><code>space</code> is the memory domain, typically <code>gm</code> or <code>ub</code>.</li>
 </ul>
 <h3 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Cast integer 0 to a f32 UB pointer
+<pre class="highlight"><code class="language-mlir">// Cast integer 0 to a f32 UB pointer
 %0 = pto.castptr %c0 : i64 -&gt; !pto.ptr&lt;f32, ub&gt;
 
 // Cast GM base address to a bf16 GM pointer
-%gm_ptr = pto.castptr %gm_base : i64 -&gt; !pto.ptr&lt;bf16, gm&gt;
-</code></pre>
+%gm_ptr = pto.castptr %gm_base : i64 -&gt; !pto.ptr&lt;bf16, gm&gt;</code></pre>
 <hr />
 <h2 id="ptoaddptr"><code>pto.addptr</code><a class="headerlink" href="#ptoaddptr" title="Permanent link">&para;</a></h2>
 <p><strong>Syntax:</strong> <code>%result = pto.addptr %ptr, %offset : !pto.ptr&lt;T, space&gt; -&gt; !pto.ptr&lt;T, space&gt;</code></p>
 <p><strong>Semantics:</strong> Compute a new pointer by advancing the base pointer by an element offset.</p>
-<pre><code class="language-c">result = ptr + offset;  // offset counted in elements, not bytes
-</code></pre>
+<pre class="highlight"><code class="language-c">result = ptr + offset;  // offset counted in elements, not bytes</code></pre>
 <h3 id="inputs_1">Inputs<a class="headerlink" href="#inputs_1" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1100,19 +1097,17 @@
 <li>Pointer arithmetic that results in an out-of-bounds address is target-defined.</li>
 </ul>
 <h3 id="examples_1">Examples<a class="headerlink" href="#examples_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Advance UB pointer by 1024 f32 elements (4096 bytes)
+<pre class="highlight"><code class="language-mlir">// Advance UB pointer by 1024 f32 elements (4096 bytes)
 %0 = pto.castptr %c0 : i64 -&gt; !pto.ptr&lt;f32, ub&gt;
 %1 = pto.addptr %0, %c1024 : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.ptr&lt;f32, ub&gt;
 
 // Compute row offset in a 2D tile
-%row_ptr = pto.addptr %base_ptr, %row_offset : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.ptr&lt;f32, ub&gt;
-</code></pre>
+%row_ptr = pto.addptr %base_ptr, %row_offset : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.ptr&lt;f32, ub&gt;</code></pre>
 <hr />
 <h2 id="ptoload_scalar"><code>pto.load_scalar</code><a class="headerlink" href="#ptoload_scalar" title="Permanent link">&para;</a></h2>
 <p><strong>Syntax:</strong> <code>%value = pto.load_scalar %ptr[%offset] : !pto.ptr&lt;T, space&gt; -&gt; T</code></p>
 <p><strong>Semantics:</strong> Load one scalar element from a pointer-like operand.</p>
-<pre><code class="language-c">value = ptr[offset];
-</code></pre>
+<pre class="highlight"><code class="language-c">value = ptr[offset];</code></pre>
 <h3 id="inputs_2">Inputs<a class="headerlink" href="#inputs_2" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1159,15 +1154,13 @@
 <li>UB address space is the primary valid space; GM scalar loads are target-defined.</li>
 </ul>
 <h3 id="examples_2">Examples<a class="headerlink" href="#examples_2" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Load one f32 scalar from UB
-%val = pto.load_scalar %ub_ptr[%c4] : !pto.ptr&lt;f32, ub&gt; -&gt; f32
-</code></pre>
+<pre class="highlight"><code class="language-mlir">// Load one f32 scalar from UB
+%val = pto.load_scalar %ub_ptr[%c4] : !pto.ptr&lt;f32, ub&gt; -&gt; f32</code></pre>
 <hr />
 <h2 id="ptostore_scalar"><code>pto.store_scalar</code><a class="headerlink" href="#ptostore_scalar" title="Permanent link">&para;</a></h2>
 <p><strong>Syntax:</strong> <code>pto.store_scalar %value, %ptr[%offset] : !pto.ptr&lt;T, space&gt;, T</code></p>
 <p><strong>Semantics:</strong> Store one scalar element to a pointer-like operand.</p>
-<pre><code class="language-c">ptr[offset] = value;
-</code></pre>
+<pre class="highlight"><code class="language-c">ptr[offset] = value;</code></pre>
 <h3 id="inputs_3">Inputs<a class="headerlink" href="#inputs_3" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1202,13 +1195,12 @@
 <li>UB address space is the primary valid space; GM scalar stores are target-defined.</li>
 </ul>
 <h3 id="examples_3">Examples<a class="headerlink" href="#examples_3" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Store one f32 scalar to UB
-pto.store_scalar %val, %ub_ptr[%c8] : !pto.ptr&lt;f32, ub&gt;, f32
-</code></pre>
+<pre class="highlight"><code class="language-mlir">// Store one f32 scalar to UB
+pto.store_scalar %val, %ub_ptr[%c8] : !pto.ptr&lt;f32, ub&gt;, f32</code></pre>
 <hr />
 <h2 id="pointer-based-vector-access-pattern">Pointer-Based Vector Access Pattern<a class="headerlink" href="#pointer-based-vector-access-pattern" title="Permanent link">&para;</a></h2>
 <p>The following example shows how typed PTO pointers flow through pointer construction, pointer arithmetic, structured control flow, and PTO memory ops:</p>
-<pre><code class="language-mlir">// Materialize typed UB pointers
+<pre class="highlight"><code class="language-mlir">// Materialize typed UB pointers
 %0 = pto.castptr %c0 : i64 -&gt; !pto.ptr&lt;f32, ub&gt;
 %1 = pto.addptr %0, %c1024 : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.ptr&lt;f32, ub&gt;
 
@@ -1234,8 +1226,7 @@ pto.vecscope {
 
     scf.yield %scalar_out : i32
   }
-}
-</code></pre>
+}</code></pre>
 <h2 id="related-operations">Related Operations<a class="headerlink" href="#related-operations" title="Permanent link">&para;</a></h2>
 <ul>
 <li>BlockDim queries: <a href="../block-dim-query/">BlockDim Query Operations</a> — <code>pto.get_block_idx</code>, <code>pto.get_block_num</code></li>

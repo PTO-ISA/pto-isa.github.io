@@ -1017,17 +1017,14 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Synchronous form:</p>
-<pre><code class="language-text">%dst = tcvt %src {rmode = #pto.round_mode&lt;CAST_RINT&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tcvt %src {rmode = #pto.round_mode&lt;CAST_RINT&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcvt %src {rmode = #pto.round_mode&lt;CAST_RINT&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tcvt %src {rmode = #pto.round_mode&lt;CAST_RINT&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcvt ins(%src {rmode = #pto.round_mode&lt;CAST_RINT&gt;}: !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tcvt ins(%src {rmode = #pto.round_mode&lt;CAST_RINT&gt;}: !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename TmpTileData, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename TmpTileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, TmpTileData &amp;tmp, RoundMode mode,
                           SaturationMode satMode, WaitEvents &amp;... events);
 
@@ -1039,8 +1036,7 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode
                           SaturationMode satMode, WaitEvents &amp;... events);
 
 template &lt;typename TileDataD, typename TileDataS, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode, WaitEvents &amp;... events);
-</code></pre>
+PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode, WaitEvents &amp;... events);</code></pre>
 <p>The <code>tmp</code>-tile overloads exist for conversion paths that need explicit scratch storage.</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -1104,6 +1100,8 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>src</code> and <code>dst</code> MUST have compatible shapes (declared shape and valid region).</li>
 <li>The source/destination type pair MUST be supported by the selected target profile.</li>
@@ -1111,18 +1109,25 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode
 <li>When a conversion path requires explicit scratch storage, callers MUST use one of the <code>tmp</code>-tile overloads.</li>
 <li>Disabling saturation may change overflow behavior for some backend/type paths, especially low-precision integer conversions.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li><strong>MUST NOT</strong> use a type pair not supported by the target profile.</li>
 <li><strong>MUST NOT</strong> use a rounding mode not supported for the given type pair.</li>
 <li><strong>MUST NOT</strong> assume that disabling saturation still clamps overflow to the destination range.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <p><code>pto.tcvt</code> preserves PTO-visible semantics across CPU simulation, A2/A3-class targets, and A5-class targets, but the exact set of supported type pairs, scratch requirements, and saturation behavior is backend-specific.</p>
 <p>In this checkout, the fp16 → int8 non-saturating path is explicitly implemented through helper logic that may require temporary storage and row-aware sub-chunking.</p>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1132,17 +1137,14 @@ void example_auto() {
   SrcT src;
   DstT dst;
   TCVT(dst, src, RoundMode::CAST_RINT);
-}
-</code></pre>
+}</code></pre>
 <h3 id="explicit-saturation-scratch">Explicit Saturation / Scratch<a class="headerlink" href="#explicit-saturation-scratch" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">using TmpT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
+<pre class="highlight"><code class="language-cpp">using TmpT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
 TmpT tmp;
-TCVT(dst, src, tmp, RoundMode::CAST_TRUNC, SaturationMode::OFF);
-</code></pre>
+TCVT(dst, src, tmp, RoundMode::CAST_TRUNC, SaturationMode::OFF);</code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tcvt %src {rmode = #pto.round_mode&lt;CAST_RINT&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-pto.tcvt ins(%src {rmode = #pto.round_mode&lt;CAST_RINT&gt;}: !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tcvt %src {rmode = #pto.round_mode&lt;CAST_RINT&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+pto.tcvt ins(%src {rmode = #pto.round_mode&lt;CAST_RINT&gt;}: !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../elementwise-tile-tile/">Elementwise Tile Tile</a></li>

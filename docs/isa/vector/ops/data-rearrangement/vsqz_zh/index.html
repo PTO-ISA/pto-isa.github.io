@@ -914,19 +914,16 @@
 <p>把 mask 选中的 lane 压缩到结果前部。</p>
 <h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p><code>pto.vsqz</code> 会按照 <code>%mask</code> 选择活跃 lane，并把这些 lane 按原有先后顺序压缩到结果向量前部，尾部位置全部补零：</p>
-<pre><code class="language-c">int j = 0;
+<pre class="highlight"><code class="language-c">int j = 0;
 for (int i = 0; i &lt; N; i++)
     if (mask[i]) dst[j++] = src[i];
-while (j &lt; N) dst[j++] = 0;
-</code></pre>
+while (j &lt; N) dst[j++] = 0;</code></pre>
 <p>这条指令的重点是“保序压缩”，不是简单过滤。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vsqz %dst, %src, %mask
-</code></pre>
+<pre class="highlight"><code class="language-text">vsqz %dst, %src, %mask</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vsqz %src, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vsqz %src, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -969,28 +966,36 @@ while (j &lt; N) dst[j++] = 0;
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生目标值，没有其他架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>掩码宽度必须与 <code>N</code> 一致。</li>
 <li>幸存 lane 的相对次序必须与源向量保持一致。</li>
 <li>未选中的目标位置全部补零。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vsqz</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>当前仓内没有为 <code>vsqz</code> 单列周期表。若代码对具体延迟敏感，应把它视为目标 profile 相关的寄存器重排路径。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">int j = 0;
+<pre class="highlight"><code class="language-c">int j = 0;
 for (int i = 0; i &lt; N; i++)
     if (mask[i]) dst[j++] = src[i];
-while (j &lt; N) dst[j++] = 0;
-</code></pre>
+while (j &lt; N) dst[j++] = 0;</code></pre>
 <h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。

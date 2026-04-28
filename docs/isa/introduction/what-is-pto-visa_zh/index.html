@@ -923,22 +923,20 @@
 <p>PTO 程序可以通过两条受支持路径进入硬件，两条路径共享同一套 PTO 指令语义。</p>
 <h3 id="flow-a-ptoas-c-bisheng-binary">Flow A: <code>ptoas -&gt; C++ -&gt; bisheng -&gt; binary</code><a class="headerlink" href="#flow-a-ptoas-c-bisheng-binary" title="Permanent link">&para;</a></h3>
 <p>高层前端生成 <code>.pto</code> 文本，<code>ptoas</code> 解析、验证并把它 lowering 成调用 <code>pto-isa</code> C++ intrinsic 的代码，再由 <code>bisheng</code> 或其他 C++ backend 编译成目标二进制。</p>
-<pre><code class="language-text">High-level Frontend
+<pre class="highlight"><code class="language-text">High-level Frontend
     -&gt; .pto
     -&gt; ptoas
     -&gt; C++ kernel code
     -&gt; bisheng / backend compiler
-    -&gt; binary
-</code></pre>
+    -&gt; binary</code></pre>
 <h3 id="flow-b-ptoas-binary">Flow B: <code>ptoas -&gt; binary</code><a class="headerlink" href="#flow-b-ptoas-binary" title="Permanent link">&para;</a></h3>
 <p><code>.pto</code> 文本也可以直接经由 <code>ptoas --target=...</code> 组装为目标二进制，绕过 C++ 中间层。</p>
-<pre><code class="language-text">High-level Frontend
+<pre class="highlight"><code class="language-text">High-level Frontend
     -&gt; .pto
     -&gt; ptoas --target=a3|a5|cpu
-    -&gt; binary
-</code></pre>
+    -&gt; binary</code></pre>
 <h2 id="_2">一个最小例子<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void vec_add(Tile&lt;float, 16, 16&gt;&amp; c,
@@ -949,8 +947,7 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c,
     TLOAD(b, gb);
     TADD(c, a, b);
     TSTORE(gc, c);
-}
-</code></pre>
+}</code></pre>
 <p>即便这个例子很小，它也已经依赖了 valid region、dtype、layout、显式数据移动和同步等 PTO 的核心概念。</p>
 <h2 id="_3">关键术语<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <table>
@@ -1008,15 +1005,14 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c,
 </tbody>
 </table>
 <h2 id="_4">软件栈位置<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<pre><code class="language-text">Source Languages / DSLs
+<pre class="highlight"><code class="language-text">Source Languages / DSLs
         |
         v
    PTO program (.pto)
         |
         +--&gt; ptoas --&gt; C++ --&gt; bisheng --&gt; binary
         |
-        +--&gt; ptoas ---------------------&gt; binary
-</code></pre>
+        +--&gt; ptoas ---------------------&gt; binary</code></pre>
 <p>这个结构让软件栈在硬件代际变化时仍然共享同一套版本化指令语言。</p>
 <h2 id="_5">分层指令集结构<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>PTO ISA 按五类指令集组织：</p>

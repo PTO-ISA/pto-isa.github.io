@@ -1013,10 +1013,9 @@
 <p><code>TINSERT_FP(dst, src, fp, indexRow, indexCol)</code> — insert through the fix-pipe quantization path. The <code>_fp</code> suffix means <strong>fix pipe</strong>, not floating point.</p>
 <h3 id="variant-5-a5-mode-specific-insert">Variant 5: A5 Mode-Specific Insert<a class="headerlink" href="#variant-5-a5-mode-specific-insert" title="Permanent link">&para;</a></h3>
 <p>On A5 only, an additional template parameter selects specialized insertion modes:</p>
-<pre><code class="language-cpp">template &lt;TInsertMode mode, typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;TInsertMode mode, typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
-                             uint32_t indexRow = 0, uint32_t indexCol = 0, WaitEvents &amp;... events);
-</code></pre>
+                             uint32_t indexRow = 0, uint32_t indexCol = 0, WaitEvents &amp;... events);</code></pre>
 <p><code>TInsertMode</code> values:</p>
 <table>
 <thead>
@@ -1116,27 +1115,23 @@ PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <p>Standard insert:</p>
-<pre><code class="language-text">%dst = tinsert %src[%r0, %r1] : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tinsert %src[%r0, %r1] : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <p>Fix-pipe insert:</p>
-<pre><code class="language-text">%dst = tinsert.fp %src, %fp[%r0, %r1] : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tinsert.fp %src, %fp[%r0, %r1] : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Standard
+<pre class="highlight"><code class="language-mlir">// Standard
 %dst = pto.tinsert %src, %idxrow, %idxcol : (!pto.tile&lt;...&gt;, dtype, dtype) -&gt; !pto.tile&lt;...&gt;
 
 // Fix-pipe
-%dst = pto.tinsert_fp %src, %fp, %idxrow, %idxcol : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, dtype, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+%dst = pto.tinsert_fp %src, %fp, %idxrow, %idxcol : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, dtype, dtype) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Standard
+<pre class="highlight"><code class="language-mlir">// Standard
 pto.tinsert ins(%src, %idxrow, %idxcol : !pto.tile_buf&lt;...&gt;, dtype, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
 
 // Fix-pipe
-pto.tinsert_fp ins(%src, %fp, %idxrow, %idxcol : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, dtype, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+pto.tinsert_fp ins(%src, %fp, %idxrow, %idxcol : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, dtype, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Variant 1: Plain insert
@@ -1167,8 +1162,7 @@ PTO_INST RecordEvent TINSERT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTi
 template &lt;TInsertMode mode, typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
                              uint32_t indexRow = 0, uint32_t indexCol = 0, WaitEvents &amp;... events);
-#endif
-</code></pre>
+#endif</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code> — the source tile to insert.</li>
@@ -1180,6 +1174,8 @@ PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
 <li><code>preQuantScalar</code> (scalar-quant variant only) — scalar quantization factor.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Runtime bounds</strong>: <code>indexRow + SrcTileData::Rows &lt;= DstTileData::Rows</code> and <code>indexCol + SrcTileData::Cols &lt;= DstTileData::Cols</code></li>
 <li><strong>Fp tile location</strong>: <code>FpTileData::Loc</code> must be <code>TileType::Scaling</code> (enforced on both A2/A3 and A5)</li>
@@ -1187,9 +1183,10 @@ PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
 <li><strong>A5 fix-pipe</strong>: Destination must be <code>TileType::Mat</code> with <code>BLayout::ColMajor + SLayout::RowMajor</code>; source must be <code>float</code> or <code>int32_t</code> <code>Acc</code></li>
 <li><strong>Cpu simulator</strong>: <code>TINSERT_FP</code> accepts the interface but ignores the <code>fp</code> parameter, falling back to standard <code>TINSERT</code></li>
 </ul>
+</div>
 <h2 id="common-patterns">Common Patterns<a class="headerlink" href="#common-patterns" title="Permanent link">&para;</a></h2>
 <h3 id="pattern-1-accumulator-insert-into-matrix">Pattern 1: Accumulator Insert into Matrix<a class="headerlink" href="#pattern-1-accumulator-insert-into-matrix" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// Insert a small accumulator tile into a larger matrix at a specific position
+<pre class="highlight"><code class="language-cpp">// Insert a small accumulator tile into a larger matrix at a specific position
 using AccT = TileAcc&lt;float, 16, 16&gt;;
 using MatT = Tile&lt;TileType::Mat, int8_t, 32, 32, BLayout::ColMajor, -1, -1, SLayout::RowMajor, 512&gt;;
 
@@ -1199,10 +1196,9 @@ TASSIGN(acc, 0x1000);
 TASSIGN(mat, 0x2000);
 
 // Insert the 16x16 accumulator tile into the matrix at row=8, col=16
-TINSERT(mat, acc, /*indexRow=*/8, /*indexCol=*/16);
-</code></pre>
+TINSERT(mat, acc, /*indexRow=*/8, /*indexCol=*/16);</code></pre>
 <h3 id="pattern-2-fix-pipe-quantized-insert">Pattern 2: Fix-Pipe Quantized Insert<a class="headerlink" href="#pattern-2-fix-pipe-quantized-insert" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// Accumulator tile quantized via fix-pipe and inserted into matrix at offset
+<pre class="highlight"><code class="language-cpp">// Accumulator tile quantized via fix-pipe and inserted into matrix at offset
 using AccT = TileAcc&lt;float, 16, 16&gt;;
 using MatT = Tile&lt;TileType::Mat, int8_t, 32, 32, BLayout::ColMajor, -1, -1, SLayout::RowMajor, 512&gt;;
 using FpT = Tile&lt;TileType::Scaling, uint64_t, 1, 16&gt;;
@@ -1215,10 +1211,9 @@ TASSIGN(mat, 0x2000);
 TASSIGN(fp, 0x3000);
 
 // Insert with fix-pipe quantization applied
-TINSERT_FP(mat, acc, fp, /*indexRow=*/0, /*indexCol=*/0);
-</code></pre>
+TINSERT_FP(mat, acc, fp, /*indexRow=*/0, /*indexCol=*/0);</code></pre>
 <h3 id="pattern-3-accumulator-scatter-via-staged-inserts">Pattern 3: Accumulator Scatter via Staged Inserts<a class="headerlink" href="#pattern-3-accumulator-scatter-via-staged-inserts" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// Scatter multiple small accumulator results into a large output matrix
+<pre class="highlight"><code class="language-cpp">// Scatter multiple small accumulator results into a large output matrix
 using AccT = TileAcc&lt;float, 16, 16&gt;;
 using MatT = Tile&lt;TileType::Mat, float, 64, 64&gt;;
 
@@ -1236,8 +1231,7 @@ TASSIGN(accQ4, 0x1040);
 TINSERT(outMat, accQ1, 0,  0);   // Top-left
 TINSERT(outMat, accQ2, 0,  32);  // Top-right
 TINSERT(outMat, accQ3, 32, 0);   // Bottom-left
-TINSERT(outMat, accQ4, 32, 32);  // Bottom-right
-</code></pre>
+TINSERT(outMat, accQ4, 32, 32);  // Bottom-right</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../../layout-and-rearrangement/">Layout And Rearrangement</a></li>

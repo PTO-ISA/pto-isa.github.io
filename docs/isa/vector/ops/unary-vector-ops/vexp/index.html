@@ -974,27 +974,22 @@
 <p>Inactive lanes (<code>mask[i] == 0</code>): <code>dst[i]</code> is <strong>unmodified</strong> (preserves the prior value in the destination register).</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vexp %input, %mask : (!pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vexp %input, %mask : (!pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vexp %input, %mask : (!pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vexp %input, %mask : (!pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vexp ins(%input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask)
-          outs(%result : !pto.vreg&lt;NxT&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vexp ins(%input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask)
+          outs(%result : !pto.vreg&lt;NxT&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_f32 dst;
+<pre class="highlight"><code class="language-cpp">vector_f32 dst;
 vector_f32 src;
 vector_bool mask;
-vexp(dst, src, mask);
-</code></pre>
+vexp(dst, src, mask);</code></pre>
 <h2 id="c-semantics">C Semantics<a class="headerlink" href="#c-semantics" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
     if (mask[i])
         dst[i] = expf(src[i]);
-    // else: dst[i] unchanged
-</code></pre>
+    // else: dst[i] unchanged</code></pre>
 <p>Where <code>N</code> is the vector lane count determined by the element type:</p>
 <table>
 <thead>
@@ -1064,6 +1059,8 @@ vexp(dst, src, mask);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None. This operation has no architectural side effects beyond producing its destination vector register. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type match</strong>: Source and destination registers MUST have identical element types.</li>
 <li><strong>Width match</strong>: Source and destination registers MUST have the same vector width <code>N</code>.</li>
@@ -1072,13 +1069,19 @@ vexp(dst, src, mask);
 <li><strong>Inactive lanes</strong>: Destination elements at inactive lanes are <strong>unmodified</strong> — do not assume they are zeroed.</li>
 <li><strong>Domain</strong>: Input values follow the floating-point exception rules of the target profile for overflow, underflow, and NaN.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>The verifier rejects illegal operand type mismatches, width mismatches, or mask width mismatches.</li>
 <li>Overflow and NaN behavior is target-defined; code MUST NOT rely on specific exceptional values unless explicitly documented.</li>
 <li>Any additional illegality stated in the <a href="../../../unary-vector-ops/">Unary Vector Instructions</a> instruction set overview page is part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1104,6 +1107,7 @@ vexp(dst, src, mask);
 </tbody>
 </table>
 <p>A5 is the primary concrete profile for vector transcendental operations. CPU simulation and A2/A3-class targets emulate <code>pto.v*</code> transcendental operations using scalar loops while preserving the visible PTO contract.</p>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
 <table>
@@ -1160,26 +1164,23 @@ vexp(dst, src, mask);
 </tbody>
 </table>
 <p><strong>Example</strong>: 1024 f32 elements with 16 iterations:</p>
-<pre><code>A5 (pipelined): 16 + 15×2 = 46 cycles
-A2/A3: 13 + 26 + 32 + 270 = 341 cycles
-</code></pre>
+<pre class="highlight"><code>A5 (pipelined): 16 + 15×2 = 46 cycles
+A2/A3: 13 + 26 + 32 + 270 = 341 cycles</code></pre>
 <p><strong>Performance note</strong>: For numerically stable softmax, prefer <code>vexpdiff</code> (fused exp-diff) over <code>vexp</code> + <code>vsub</code> since it avoids a separate max-subtraction kernel and has better combined throughput.</p>
 <hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="softmax-numerator-numerically-stable">Softmax numerator (numerically stable)<a class="headerlink" href="#softmax-numerator-numerically-stable" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Softmax: exp(x - max) for numerical stability
-%max_bc = pto.vlds %ub_max[%c0] {dist = &quot;BRC&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+<pre class="highlight"><code class="language-mlir">// Softmax: exp(x - max) for numerical stability
+%max_bc = pto.vlds %ub_max[%c0] {dist = "BRC"} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 %sub = pto.vsub %x, %max_bc, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-%exp = pto.vexp %sub, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+%exp = pto.vexp %sub, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h3 id="c-usage">C++ usage<a class="headerlink" href="#c-usage" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void exp_vector(VReg&lt;64, float&gt;&amp; dst, const VReg&lt;64, float&gt;&amp; src, Mask&lt;64&gt;&amp; mask) {
     VEXP(dst, src, mask);
-}
-</code></pre>
+}</code></pre>
 <h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
 <p>The exponential function <code>exp(x)</code> computes <code>e^x</code> where <code>e ≈ 2.71828</code>. On floating-point targets:</p>
 <ul>

@@ -910,9 +910,10 @@
 
 <h1 id="pto">PTO 微指令参考<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h1>
 <p>本节记录 PTO 微指令表面，主要对应 A5（Ascend 950）profile。这里的指令直接暴露向量流水线层面的状态：DMA 配置、向量寄存器、mask、同步，以及 <code>__VEC_SCOPE__</code> 边界。</p>
-<blockquote>
-<p><strong>说明</strong>：这一层与 Tile ISA 不同。Tile 指令（<code>pto.t*</code>）围绕 tile、layout 和 valid region 建模；微指令则围绕向量寄存器（<code>vreg</code>）、mask 和标量状态建模。</p>
-</blockquote>
+<div class="admonition note">
+<p class="admonition-title">说明</p>
+<p>：这一层与 Tile ISA 不同。Tile 指令（<code>pto.t*</code>）围绕 tile、layout 和 valid region 建模；微指令则围绕向量寄存器（<code>vreg</code>）、mask 和标量状态建模。</p>
+</div>
 <h2 id="_1">指令分组<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -959,11 +960,14 @@
 <h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>本页定义的是微指令文档地图，以及理解微指令表面所需的架构概念。本页本身不会产生新的 SSA 值，也不会改变执行状态。</p>
 <h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>PTO 微指令表面是 profile 相关的；当前文档记录的是面向 A5 的可见表面。</li>
 <li>微指令代码仍然会和标量 <code>arith</code> / <code>scf</code> 共同出现。</li>
 <li>不应把微指令表面与 Tile ISA 混为一谈：两者的操作数模型、调度模型和状态载体不同。</li>
 </ul>
+</div>
 <h2 id="pto-tile-isa">与 PTO Tile ISA 的关系<a class="headerlink" href="#pto-tile-isa" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -999,12 +1003,11 @@
 <h2 id="_7">关键架构概念<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="vlane">VLane<a class="headerlink" href="#vlane" title="Permanent link">&para;</a></h3>
 <p>在 A5 上，一个向量寄存器由 <strong>8 个 VLane</strong> 组成，每个 VLane 为 32 字节。VLane 是 group reduction 一类操作的原子归约单元。</p>
-<pre><code class="language-text">vreg（总宽度 256B）:
+<pre class="highlight"><code class="language-text">vreg（总宽度 256B）:
 ┌─────────┬─────────┬─────────┬─────┬─────────┬─────────┐
 │ VLane 0 │ VLane 1 │ VLane 2 │ ... │ VLane 6 │ VLane 7 │
 │   32B   │   32B   │   32B   │     │   32B   │   32B   │
-└─────────┴─────────┴─────────┴─────┴─────────┴─────────┘
-</code></pre>
+└─────────┴─────────┴─────────┴─────┴─────────┴─────────┘</code></pre>
 <p>不同数据类型下，每个 VLane 对应的元素个数如下：</p>
 <table>
 <thead>
@@ -1070,7 +1073,7 @@
 </tbody>
 </table>
 <h3 id="_8">内存层级<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">┌─────────────────────────────────────────────┐
+<pre class="highlight"><code class="language-text">┌─────────────────────────────────────────────┐
 │               全局内存（GM）                │
 │             片外 HBM / DDR                  │
 └─────────────────────┬───────────────────────┘
@@ -1082,12 +1085,10 @@
 ┌─────────────────────▼───────────────────────┐
 │           向量寄存器文件（VRF）              │
 │      vreg（每个 256B）+ mask（256-bit）      │
-└─────────────────────────────────────────────┘
-</code></pre>
+└─────────────────────────────────────────────┘</code></pre>
 <h3 id="zero-merge">谓词行为（Zero-Merge）<a class="headerlink" href="#zero-merge" title="Permanent link">&para;</a></h3>
 <p>硬件原生 predication 采用 <strong>ZEROING</strong> 语义：inactive lane 产出 0。</p>
-<pre><code class="language-c">dst[i] = mask[i] ? op(src0[i], src1[i]) : 0
-</code></pre>
+<pre class="highlight"><code class="language-c">dst[i] = mask[i] ? op(src0[i], src1[i]) : 0</code></pre>
 <h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../../../vector/README_zh/">Vector ISA 参考</a></li>

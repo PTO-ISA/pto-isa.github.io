@@ -962,11 +962,9 @@
 <p><code>pto.vln</code> computes the lane-wise natural logarithm: <code>dst[i] = ln(src[i])</code>. For real-number semantics, active inputs SHOULD be strictly positive; non-positive inputs follow the target's exception/NaN rules. Inactive lanes leave the destination unchanged.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vln %result, %input, %mask
-</code></pre>
+<pre class="highlight"><code class="language-text">vln %result, %input, %mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vln %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vln %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <p>Documented A5 types or forms: <code>f16, f32</code>.</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -1010,19 +1008,28 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences unless the form says so.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <p>Only floating-point element types are legal.</p>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
 <li>Target-defined numeric exceptional behavior, such as divide-by-zero or out-of-domain inputs, remains subject to the selected backend profile unless this page narrows it further.</li>
 <li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>Documented A5 coverage: <code>f16, f32</code>.</li>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
 <li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
 </ul>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
 <table>
@@ -1081,9 +1088,8 @@
 <hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="c-semantics">C Semantics<a class="headerlink" href="#c-semantics" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = logf(src[i]);
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = logf(src[i]);</code></pre>
 <p><strong>Input domain:</strong> <code>logf(x)</code> is only defined for <code>x &gt; 0</code>. Non-positive active inputs produce NaN; inactive lanes leave the destination unchanged.</p>
 <h3 id="numerical-stability-note">Numerical stability note<a class="headerlink" href="#numerical-stability-note" title="Permanent link">&para;</a></h3>
 <p>For softmax denominator (<code>log(sum(exp(x - max)))</code>), use <code>vexpdiff</code> fused operation rather than separate <code>vsub</code> + <code>vln</code> for better combined throughput.</p>

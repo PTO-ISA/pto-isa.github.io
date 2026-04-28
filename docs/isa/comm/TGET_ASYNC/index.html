@@ -963,11 +963,10 @@ Non-1D or non-contiguous layouts are not supported by the current SDMA async imp
 </blockquote>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code>.</p>
-<pre><code class="language-cpp">template &lt;DmaEngine engine = DmaEngine::SDMA,
+<pre class="highlight"><code class="language-cpp">template &lt;DmaEngine engine = DmaEngine::SDMA,
           typename GlobalDstData, typename GlobalSrcData, typename... WaitEvents&gt;
 PTO_INST AsyncEvent GET_ASYNC(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
-                              const AsyncSession &amp;session, WaitEvents &amp;... events);
-</code></pre>
+                              const AsyncSession &amp;session, WaitEvents &amp;... events);</code></pre>
 <p><code>AsyncSession</code> is an engine-agnostic session object. Build once with
 <code>BuildAsyncSession&lt;engine&gt;()</code>, then pass to all async calls and event waits.
 The template <code>engine</code> parameter selects the DMA backend at compile time, making the
@@ -976,14 +975,13 @@ code forward-compatible with future engines (CCU, etc.).</p>
 <p>Use <code>BuildAsyncSession</code> from <code>include/pto/comm/async_common/async_event_impl.hpp</code>.
 There are two overloads — one for SDMA and one for URMA — with different parameter lists.</p>
 <h3 id="sdma-construction-default">SDMA Construction (default)<a class="headerlink" href="#sdma-construction-default" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;DmaEngine engine = DmaEngine::SDMA, typename ScratchTile&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;DmaEngine engine = DmaEngine::SDMA, typename ScratchTile&gt;
 PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
                                    __gm__ uint8_t *workspace,
                                    AsyncSession &amp;session,
                                    uint32_t syncId = 0,
                                    const sdma::SdmaBaseConfig &amp;baseConfig = {sdma::kDefaultSdmaBlockBytes, 0, 1},
-                                   uint32_t channelGroupIdx = sdma::kAutoChannelGroupIdx);
-</code></pre>
+                                   uint32_t channelGroupIdx = sdma::kAutoChannelGroupIdx);</code></pre>
 <table>
 <thead>
 <tr>
@@ -1029,13 +1027,12 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 <blockquote>
 <p>URMA (User-level RDMA Memory Access) is a hardware-accelerated RDMA transport available on Ascend950 (NPU_ARCH 3510).</p>
 </blockquote>
-<pre><code class="language-cpp">#ifdef PTO_URMA_SUPPORTED
+<pre class="highlight"><code class="language-cpp">#ifdef PTO_URMA_SUPPORTED
 template &lt;DmaEngine engine&gt;
 PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
                                   uint32_t destRankId,
                                   AsyncSession &amp;session);
-#endif
-</code></pre>
+#endif</code></pre>
 <table>
 <thead>
 <tr>
@@ -1060,6 +1057,8 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 </table>
 <p>URMA does not require <code>scratchTile</code> — polling uses <code>ld_dev</code>/<code>st_dev</code> hardware intrinsics directly.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>GlobalSrcData::RawDType == GlobalDstData::RawDType</code></li>
 <li><code>GlobalSrcData::layout == GlobalDstData::layout</code></li>
@@ -1070,6 +1069,7 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 <li>The symmetric data buffer passed to <code>UrmaWorkspaceManager::Init()</code> must be backed by huge-page memory (allocate with <code>ACL_MEM_MALLOC_HUGE_ONLY</code>). The underlying MR registration requires huge-page backing; <code>ACL_MEM_MALLOC_HUGE_FIRST</code> may silently fall back to 4KB pages for small allocations, causing registration to fail</li>
 </ul>
 <p>If the 1D contiguous requirement is not met, current implementation returns an invalid async event (<code>handle == 0</code>).</p>
+</div>
 <h2 id="scratchtile-role">scratchTile Role<a class="headerlink" href="#scratchtile-role" title="Permanent link">&para;</a></h2>
 <p><code>scratchTile</code> is <strong>not</strong> used to hold transferred payload data.
 It is converted to <code>TmpBuffer</code> and used as temporary UB workspace for:</p>
@@ -1101,7 +1101,7 @@ It is converted to <code>TmpBuffer</code> and used as temporary UB workspace for
 <p>After wait succeeds, all issued reads into <code>dstGlobalData</code> are complete.</p>
 <h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <h3 id="single-transfer">Single Transfer<a class="headerlink" href="#single-transfer" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/common/pto_tile.hpp&gt;
 
 using namespace pto;
@@ -1130,10 +1130,9 @@ __global__ AICORE void SimpleGet(__gm__ T *localDst, __gm__ T *remoteSrc,
 
     auto event = comm::GET_ASYNC&lt;comm::DmaEngine::SDMA&gt;(dstG, srcG, session);
     (void)event.Wait(session);
-}
-</code></pre>
+}</code></pre>
 <h3 id="batch-transfer-quiet-semantics">Batch Transfer (Quiet Semantics)<a class="headerlink" href="#batch-transfer-quiet-semantics" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;typename T&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename T&gt;
 __global__ AICORE void BatchGet(__gm__ T *localDstBase, __gm__ T *remoteSrcBase,
                                 __gm__ uint8_t *sdmaWorkspace, int nranks)
 {
@@ -1160,10 +1159,9 @@ __global__ AICORE void BatchGet(__gm__ T *localDstBase, __gm__ T *remoteSrcBase,
         lastEvent = comm::GET_ASYNC(dstG, srcG, session);
     }
     (void)lastEvent.Wait(session);  // single Wait drains all pending ops
-}
-</code></pre>
+}</code></pre>
 <h3 id="urma-example-npu_arch-3510">URMA Example (NPU_ARCH 3510)<a class="headerlink" href="#urma-example-npu_arch-3510" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/common/pto_tile.hpp&gt;
 
 using namespace pto;
@@ -1188,8 +1186,7 @@ __global__ AICORE void SimpleGetUrma(__gm__ T *localDst, __gm__ T *remoteSrc,
 
     auto event = comm::GET_ASYNC&lt;comm::DmaEngine::URMA&gt;(dstG, srcG, session);
     (void)event.Wait(session);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

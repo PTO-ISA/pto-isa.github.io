@@ -916,11 +916,9 @@
 <p><code>pto.vsqrt</code> 逐 lane 计算平方根。对每个谓词位为真的 lane <code>i</code>，执行 <code>dst[i] = sqrt(src[i])</code>。负输入的定义域行为由目标平台决定。非活跃 lane 保持目标原值。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vsqrt %result, %input, %mask
-</code></pre>
+<pre class="highlight"><code class="language-text">vsqrt %result, %input, %mask</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vsqrt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vsqrt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <p>A5 当前文档化支持的类型：<code>f16</code>、<code>f32</code>。</p>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
@@ -964,21 +962,30 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生 SSA 结果，没有其他架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>只支持浮点元素类型。</li>
 <li>负的活跃输入会触发目标定义的异常或 NaN 规则。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
 <li>域外输入、NaN 等数值异常由目标 profile 决定。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vsqrt</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 当前文档化支持：<code>f16</code>、<code>f32</code>。</li>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <table>
@@ -1036,14 +1043,12 @@
 </table>
 <h3 id="_10">执行说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
 <p><code>vsqrt</code> 走 SFU（Special Function Unit）路径。对于 1024 元素、16 次迭代的向量循环，可以近似理解为：</p>
-<pre><code class="language-text">A5 f32：首发 17 周期，之后约每次迭代 2 周期推进
-A5 f16：首发 22 周期，之后约每次迭代 4 周期推进
-</code></pre>
+<pre class="highlight"><code class="language-text">A5 f32：首发 17 周期，之后约每次迭代 2 周期推进
+A5 f16：首发 22 周期，之后约每次迭代 4 周期推进</code></pre>
 <p><code>vrsqrt</code> 与它共享同一类 SFU 路径，因此成本也接近。</p>
 <h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = sqrtf(src[i]);
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = sqrtf(src[i]);</code></pre>
 <p><code>sqrtf</code> 遵循 IEEE 754 的平方根语义。对浮点类型，负的活跃输入会产生 NaN 或目标定义的异常结果。</p>
 <h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>

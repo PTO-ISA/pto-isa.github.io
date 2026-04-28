@@ -914,20 +914,17 @@
 <p>扩宽乘法，返回乘积的低半部分和高半部分。</p>
 <h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p><code>pto.vmull</code> 对两个源向量逐 lane 做扩宽乘法，并把结果拆成低半部分和高半部分：</p>
-<pre><code class="language-c">for (int i = 0; i &lt; 64; i++) {
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; 64; i++) {
     int64_t r = (int64_t)src0_i32[i] * (int64_t)src1_i32[i];
     dst_lo[i] = (int32_t)(r &amp; 0xFFFFFFFF);
     dst_hi[i] = (int32_t)(r &gt;&gt; 32);
-}
-</code></pre>
+}</code></pre>
 <p>它的重点不是普通乘法，而是把扩宽结果拆成两个独立向量返回。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vmull %dst, %sub, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">vmull %dst, %sub, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%low, %high = pto.vmull %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%low, %high = pto.vmull %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></pre>
 <p>A5 当前文档化支持的形式：<code>i32/u32</code> 的原生 <code>32×32→64</code> 扩宽乘法。</p>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
@@ -981,20 +978,29 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生两个目标向量寄存器，没有其他架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>当前文档化的 A5 形式是原生 32×32→64 整数扩宽乘法。</li>
 <li>两个输出向量构成有顺序的结果对，不能交换。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vmull</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 当前文档化支持：原生 <code>i32/u32</code> 扩宽乘法。</li>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <p>当前手册没有给出 <code>vmull</code> 的独立周期条目。</p>

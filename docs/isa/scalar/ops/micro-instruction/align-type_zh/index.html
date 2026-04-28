@@ -931,28 +931,24 @@
 <h3 id="ptoinit_align"><code>pto.init_align</code><a class="headerlink" href="#ptoinit_align" title="Permanent link">&para;</a></h3>
 <p><strong>语法</strong>：<code>%align = pto.init_align : -&gt; !pto.align</code></p>
 <p><strong>语义</strong>：初始化一个新的对齐状态。</p>
-<pre><code class="language-c">align = init_align();
-</code></pre>
+<pre class="highlight"><code class="language-c">align = init_align();</code></pre>
 <h3 id="ptovldas-load"><code>pto.vldas</code>：为非对齐 load 预热对齐状态<a class="headerlink" href="#ptovldas-load" title="Permanent link">&para;</a></h3>
 <p><strong>语法</strong>：<code>%align = pto.vldas %ub : !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></p>
 <p><strong>语义</strong>：为后续的非对齐 load 预热对齐状态。源地址周围的对齐块会作为后续 load 流的种子状态。</p>
-<pre><code class="language-mlir">%align = pto.vldas %ub : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align = pto.vldas %ub : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align</code></pre>
 <h3 id="ptovldus-load"><code>pto.vldus</code>：带对齐状态更新的非对齐 load<a class="headerlink" href="#ptovldus-load" title="Permanent link">&para;</a></h3>
 <p><strong>语法</strong>：<code>%vec, %align_out = pto.vldus %ub, %align : !pto.ptr&lt;T, ub&gt;, !pto.align -&gt; !pto.vreg&lt;NxT&gt;, !pto.align</code></p>
 <p><strong>语义</strong>：使用给定的对齐状态执行一次非对齐 load，并同时返回加载得到的向量与更新后的对齐状态。</p>
-<pre><code class="language-mlir">%vec, %align_out = pto.vldus %ub, %align : !pto.ptr&lt;f32, ub&gt;, !pto.align -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%vec, %align_out = pto.vldus %ub, %align : !pto.ptr&lt;f32, ub&gt;, !pto.align -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align</code></pre>
 <h3 id="ptovstus-store"><code>pto.vstus</code>：带对齐状态更新的非对齐 store<a class="headerlink" href="#ptovstus-store" title="Permanent link">&para;</a></h3>
 <p><strong>语法</strong>：<code>%align_out = pto.vstus %align, %offset, %vec, %ub : !pto.align, i32, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></p>
 <p><strong>语义</strong>：使用给定的对齐状态执行一次非对齐 store，并返回更新后的对齐状态。</p>
-<pre><code class="language-mlir">%store_align = pto.init_align : -&gt; !pto.align
+<pre class="highlight"><code class="language-mlir">%store_align = pto.init_align : -&gt; !pto.align
 %next_align = pto.vstus %store_align, %offset, %vec, %ub
-    : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
-</code></pre>
+    : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align</code></pre>
 <h2 id="_7">完整的对齐状态流模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <p>下面的例子展示了一个完整的非对齐 load/store 流：</p>
-<pre><code class="language-mlir">// ─── Load 流 ───
+<pre class="highlight"><code class="language-mlir">// ─── Load 流 ───
 %align0 = pto.vldas %ub_in : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
 %v0, %align1 = pto.vldus %ub_in, %align0 : !pto.ptr&lt;f32, ub&gt;, !pto.align -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align
 %v1, %align2 = pto.vldus %ub_in, %align1 : !pto.ptr&lt;f32, ub&gt;, !pto.align -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align
@@ -964,9 +960,10 @@
 // ─── Store 流 ───
 %store_align0 = pto.init_align : -&gt; !pto.align
 %align_out1 = pto.vstus %store_align0, %c32, %result0, %ub_out : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
-%align_out2 = pto.vstus %align_out1, %c32, %result1, %ub_out : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
-</code></pre>
+%align_out2 = pto.vstus %align_out1, %c32, %result1, %ub_out : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align</code></pre>
 <h2 id="_8">约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>pto.vldas</code> 必须是非对齐 load 流的起始操作。</li>
 <li><code>pto.vldus</code> 必须接在同一条对齐状态链上的 <code>pto.vldas</code> 之后。</li>
@@ -974,6 +971,7 @@
 <li>对齐状态必须在线性流中传递，不能随意分叉。</li>
 <li>对于 <code>pto.vstus</code>，<code>%offset</code> 控制每次 store 在流中的步进。</li>
 </ul>
+</div>
 <h2 id="_9">为什么要显式化对齐状态<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>把 <code>!pto.align</code> 暴露为 SSA 值有三个直接收益：</p>
 <ol>

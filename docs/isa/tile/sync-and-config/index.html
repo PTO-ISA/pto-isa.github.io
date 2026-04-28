@@ -1034,6 +1034,8 @@
 </ol>
 <p>See <a href="../../memory-model/producer-consumer-ordering/">Producer-Consumer Ordering</a> for the complete synchronization model.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>TASSIGN</code> binds an address; using the same address for two non-alias tiles simultaneously results in undefined behavior.</li>
 <li><code>TSYNC</code> with no operands is a no-op.</li>
@@ -1041,14 +1043,18 @@
 <li><code>SUBVIEW</code> creates a view with reduced shape; accessing elements outside the view's shape but within the underlying tile's shape is undefined behavior.</li>
 <li><code>TALIAS</code> shares storage with its source; writes through either view are visible through the other view according to the alias contract.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li><strong>MUST NOT</strong> use the same physical tile register for two non-alias tiles without an intervening <code>TSYNC</code>.</li>
 <li><strong>MUST NOT</strong> wait on an event that has not been produced by a preceding operation.</li>
 <li><strong>MUST NOT</strong> configure mode registers while dependent operations are in-flight.</li>
 </ul>
+</div>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Assign tile to UB address
@@ -1074,8 +1080,7 @@ PTO_INST TileT SUBVIEW(TileT&amp; src, int rowOffset, int colOffset,
                         int newRows, int newCols);
 
 // Get scale address for quantized matmul
-PTO_INST void GET_SCALE_ADDR(TileDataDst&amp; dst, TileDataSrc&amp; src);
-</code></pre>
+PTO_INST void GET_SCALE_ADDR(TileDataDst&amp; dst, TileDataSrc&amp; src);</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/tile-families/">Tile instruction set</a> — Instruction set overview</li>

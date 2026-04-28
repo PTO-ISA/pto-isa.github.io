@@ -962,21 +962,17 @@
 <p>This is a predicate-level ternary select, analogous to vector <code>vsel</code> but operating on predicate values directly.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.psel %src0, %src1, %sel, %mask : !pto.mask, !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.psel %src0, %src1, %sel, %mask : !pto.mask, !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.psel %src0, %src1, %sel, %mask : !pto.mask, !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.psel %src0, %src1, %sel, %mask : !pto.mask, !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.psel ins(%src0, %src1, %sel, %mask : !pto.mask, !pto.mask, !pto.mask, !pto.mask) outs(%dst : !pto.mask)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.psel ins(%src0, %src1, %sel, %mask : !pto.mask, !pto.mask, !pto.mask, !pto.mask) outs(%dst : !pto.mask)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool dst;
+<pre class="highlight"><code class="language-cpp">vector_bool dst;
 vector_bool src0;
 vector_bool src1;
 vector_bool mask;
-psel(dst, src0, src1, mask);
-</code></pre>
+psel(dst, src0, src1, mask);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1029,15 +1025,23 @@ psel(dst, src0, src1, mask);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Operand widths</strong>: All four predicate operands MUST have the same width.</li>
 <li><strong>Select semantic</strong>: <code>sel_i = 1</code> → select <code>src0_i</code>; <code>sel_i = 0</code> → select <code>src1_i</code>.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if predicate operand widths are not consistent.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1056,9 +1060,10 @@ psel(dst, src0, src1, mask);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="predicate-mux">Predicate mux<a class="headerlink" href="#predicate-mux" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void select_predicate(RegBuf&lt;predicate_t&gt;&amp; dst,
@@ -1066,28 +1071,25 @@ void select_predicate(RegBuf&lt;predicate_t&gt;&amp; dst,
                      const RegBuf&lt;predicate_t&gt;&amp; src1,
                      const RegBuf&lt;predicate_t&gt;&amp; sel) {
     PSEL(dst, src0, src1, sel, sel);
-}
-</code></pre>
+}</code></pre>
 <h3 id="ssa-form-dynamic-predicate-routing">SSA form — dynamic predicate routing<a class="headerlink" href="#ssa-form-dynamic-predicate-routing" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// %active_a: predicate from comparison A
+<pre class="highlight"><code class="language-mlir">// %active_a: predicate from comparison A
 // %active_b: predicate from comparison B
 // %condition: runtime condition determining which set to use
 
 // If condition is true, use set A; otherwise use set B
 %active = pto.psel %active_a, %active_b, %condition, %condition
     : !pto.mask, !pto.mask, !pto.mask, !pto.mask
-    -&gt; !pto.mask
-</code></pre>
+    -&gt; !pto.mask</code></pre>
 <h3 id="equivalent-to-boolean-expression">Equivalent to boolean expression<a class="headerlink" href="#equivalent-to-boolean-expression" title="Permanent link">&para;</a></h3>
 <p>The <code>psel</code> operation is equivalent to the following boolean expression:</p>
-<pre><code class="language-mlir">// psel %dst, %src0, %src1, %sel
+<pre class="highlight"><code class="language-mlir">// psel %dst, %src0, %src1, %sel
 // = (src0 AND sel) OR (src1 AND NOT sel)
 
 %sel_inv = pto.pnot %sel, %sel : !pto.mask, !pto.mask -&gt; !pto.mask
 %and0 = pto.pand %src0, %sel, %sel : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
 %and1 = pto.pand %src1, %sel_inv, %sel : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-%dst = pto.por %and0, %and1, %and0 : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+%dst = pto.por %and0, %and1, %and0 : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

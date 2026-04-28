@@ -918,15 +918,15 @@
 <div class="arithmatex">\[ \mathrm{signal}^{\mathrm{remote}} \mathrel{+}= \mathrm{value} \]</div>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：</p>
-<pre><code class="language-text">tnotify %signal_remote, %value {op = #pto.notify_op&lt;Set&gt;} : (!pto.memref&lt;i32&gt;, i32)
-tnotify %signal_remote, %value {op = #pto.notify_op&lt;AtomicAdd&gt;} : (!pto.memref&lt;i32&gt;, i32)
-</code></pre>
+<pre class="highlight"><code class="language-text">tnotify %signal_remote, %value {op = #pto.notify_op&lt;Set&gt;} : (!pto.memref&lt;i32&gt;, i32)
+tnotify %signal_remote, %value {op = #pto.notify_op&lt;AtomicAdd&gt;} : (!pto.memref&lt;i32&gt;, i32)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
-PTO_INST void TNOTIFY(GlobalSignalData &amp;dstSignalData, int32_t value, NotifyOp op, WaitEvents&amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
+PTO_INST void TNOTIFY(GlobalSignalData &amp;dstSignalData, int32_t value, NotifyOp op, WaitEvents&amp;... events);</code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>GlobalSignalData::DType</code> 必须为 <code>int32_t</code></li>
 <li><code>dstSignalData</code> 必须指向远端地址</li>
@@ -934,19 +934,18 @@ PTO_INST void TNOTIFY(GlobalSignalData &amp;dstSignalData, int32_t value, Notify
 <li><code>NotifyOp::Set</code> 表示直接写入</li>
 <li><code>NotifyOp::AtomicAdd</code> 表示原子加</li>
 </ul>
+</div>
 <h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <h3 id="_6">基础通知<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void notify_set(__gm__ int32_t* remote_signal) {
+<pre class="highlight"><code class="language-cpp">void notify_set(__gm__ int32_t* remote_signal) {
     comm::Signal sig(remote_signal);
     comm::TNOTIFY(sig, 1, comm::NotifyOp::Set);
-}
-</code></pre>
+}</code></pre>
 <h3 id="_7">原子计数器自增<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void atomic_increment(__gm__ int32_t* remote_counter) {
+<pre class="highlight"><code class="language-cpp">void atomic_increment(__gm__ int32_t* remote_counter) {
     comm::Signal counter(remote_counter);
     comm::TNOTIFY(counter, 1, comm::NotifyOp::AtomicAdd);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

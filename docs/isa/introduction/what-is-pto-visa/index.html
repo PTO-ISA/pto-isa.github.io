@@ -991,7 +991,7 @@
 <p>PTO programs can be compiled to hardware through two supported paths. Both paths share the same PTO instruction semantics; they differ in how the final binary is produced.</p>
 <h3 id="flow-a-high-level-compile-ptoas-c-bisheng-binary">Flow A: High-Level Compile (ptoas → C++ → bisheng → binary)<a class="headerlink" href="#flow-a-high-level-compile-ptoas-c-bisheng-binary" title="Permanent link">&para;</a></h3>
 <p>High-level frontends (TileLang, PyPTO, custom DSLs) emit PTO programs as <code>.pto</code> text files. The <code>ptoas</code> tool parses, validates, and lowers these to C++ code that calls the <code>pto-isa</code> C++ library. A backend compiler (bisheng) then compiles this C++ to the target binary.</p>
-<pre><code>High-level Frontend
+<pre class="highlight"><code>High-level Frontend
 (TileLang, PyPTO, C/C++, ...)
         │
         ▼
@@ -1021,12 +1021,11 @@
    └─────────────────────────────────────┘
         │
         ▼
-   Binary
-</code></pre>
+   Binary</code></pre>
 <p><strong>Who uses this flow:</strong> Compiler developers, library authors, high-level framework integrators. The <code>.pto</code> text format is portable and can be cached/distributed as bytecode.</p>
 <h3 id="flow-b-direct-assemble-ptoas-binary">Flow B: Direct Assemble (ptoas → binary)<a class="headerlink" href="#flow-b-direct-assemble-ptoas-binary" title="Permanent link">&para;</a></h3>
 <p>PTO programs can also be assembled directly to binary via <code>ptoas</code> with an appropriate backend target. This bypasses the C++ intermediate step.</p>
-<pre><code>High-level Frontend
+<pre class="highlight"><code>High-level Frontend
 (TileLang, PyPTO, C/C++, ...)
         │
         ▼
@@ -1041,8 +1040,7 @@
    └─────────────────────────────────────┘
         │
         ▼
-   Binary
-</code></pre>
+   Binary</code></pre>
 <p><strong>Who uses this flow:</strong> Performance engineers who need direct control over the final instruction stream, or toolchains that embed <code>ptoas</code> as a pure assembler without a full C++ toolchain.</p>
 <h3 id="which-flow-to-use">Which Flow to Use<a class="headerlink" href="#which-flow-to-use" title="Permanent link">&para;</a></h3>
 <table>
@@ -1083,7 +1081,7 @@
 </table>
 <h2 id="a-minimal-example">A Minimal Example<a class="headerlink" href="#a-minimal-example" title="Permanent link">&para;</a></h2>
 <p>The smallest end-to-end PTO program loads two tiles from global memory, adds them element-wise, and stores the result:</p>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&amp; ga,
@@ -1093,8 +1091,7 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&a
     TLOAD(b, gb);           // Load from global memory
     TADD(c, a, b);          // Element-wise addition
     TSTORE(gc, c);          // Store to global memory
-}
-</code></pre>
+}</code></pre>
 <p>Even this fragment depends on valid regions, dtype and layout rules, and explicit data movement — ideas the manual unpacks in the programming model, machine model, and per-instruction reference.</p>
 <h2 id="key-terms">Key Terms<a class="headerlink" href="#key-terms" title="Permanent link">&para;</a></h2>
 <table>
@@ -1205,7 +1202,7 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&a
 </table>
 <h2 id="position-in-the-software-stack">Position In The Software Stack<a class="headerlink" href="#position-in-the-software-stack" title="Permanent link">&para;</a></h2>
 <p>PTO ISA sits between source-level frontends and target-specific lowering. Frontends and code generators target PTO ISA; target backends lower PTO ISA to CPU simulation or to supported Ascend NPU targets.</p>
-<pre><code>Source Languages
+<pre class="highlight"><code>Source Languages
 (C/C++, Python, TileLang, PyPTO, code generators)
         │
         ▼
@@ -1215,12 +1212,11 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&a
         │
         └──► ptoas ──────────────────► binary        (Flow B)
 
-Targets: CPU simulation / A2A3 (Ascend 910B / 910C) / A5 (Ascend 950 PR / 950 DT) / future Ascend NPUs
-</code></pre>
+Targets: CPU simulation / A2A3 (Ascend 910B / 910C) / A5 (Ascend 950 PR / 950 DT) / future Ascend NPUs</code></pre>
 <p>This structure gives the software stack one versioned instruction language even when native hardware instruction sets and low-level programming rules change across generations.</p>
 <h2 id="hierarchical-abstractions">Hierarchical Abstractions<a class="headerlink" href="#hierarchical-abstractions" title="Permanent link">&para;</a></h2>
 <p>PTO ISA uses <strong>hierarchical abstractions</strong> rather than one flat opcode space. The ISA is organized into four instruction sets:</p>
-<pre><code>PTO ISA
+<pre class="highlight"><code>PTO ISA
 ├── Tile Instructions (pto.t*)              Primary tile-oriented compute instruction set
 │   ├── Sync and Config                Resource binding, event setup, tile-local config
 │   ├── Elementwise Tile-Tile           Lane-wise binary and unary operations
@@ -1253,12 +1249,11 @@ Targets: CPU simulation / A2A3 (Ascend 910B / 910C) / A5 (Ascend 950 PR / 950 DT
 ├── Communication Instructions (pto.*)       Collective and runtime operations
     ├── Collective Communication        TBROADCAST, TGET, TPUT, TREDUCE, etc.
 └── System Scheduling Instructions (pto.t*)  TPipe/TMPipe and lifetime protocol
-    └── Scheduling Runtime Control       TPUSH, TPOP, TFREE
-</code></pre>
+    └── Scheduling Runtime Control       TPUSH, TPOP, TFREE</code></pre>
 <p>The <strong>tile instructions</strong> is the primary programming instruction set. The <strong>vector instructions</strong> exists for fine-grained vector-pipe control. The <strong>scalar and control instructions</strong> sets up the execution shell around tile payload regions. The <strong>communication instructions</strong> handles inter-rank communication, while <strong>system scheduling</strong> handles TPipe/TMPipe flow and resource lifetime.</p>
 <h2 id="machine-model">Machine Model<a class="headerlink" href="#machine-model" title="Permanent link">&para;</a></h2>
 <p>PTO programs run on a hierarchical execution structure:</p>
-<pre><code>Grid (whole kernel invocation)
+<pre class="highlight"><code>Grid (whole kernel invocation)
 └── Block  (AI Core / NPU)
     ├── Host Interface
     ├── Scalar Unit          (control flow, address calculation)
@@ -1272,8 +1267,7 @@ Targets: CPU simulation / A2A3 (Ascend 910B / 910C) / A5 (Ascend 950 PR / 950 DT
     │   ├── MTE1: GM ──► UB  (GM→UB, prefetch)
     │   ├── MTE2: GM ──► UB  (GM→UB, load staging)
     │   └── MTE3: UB ──► GM  (UB→GM, store)
-    └── Vector Pipeline (V)  (unary/binary/reduce on vector regs)
-</code></pre>
+    └── Vector Pipeline (V)  (unary/binary/reduce on vector regs)</code></pre>
 <h3 id="execution-hierarchy">Execution Hierarchy<a class="headerlink" href="#execution-hierarchy" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1394,29 +1388,27 @@ Targets: CPU simulation / A2A3 (Ascend 910B / 910C) / A5 (Ascend 950 PR / 950 DT
 <p>PTO instructions use a consistent textual syntax. Three forms are commonly shown:</p>
 <h3 id="assembly-form-pto-as">Assembly Form (PTO-AS)<a class="headerlink" href="#assembly-form-pto-as" title="Permanent link">&para;</a></h3>
 <p>The human-readable assembly spelling — the preferred form for documentation and portable pseudocode:</p>
-<pre><code class="language-asm"># Scalar operand suffix: immediate added to each tile element
+<pre class="highlight"><code class="language-asm"># Scalar operand suffix: immediate added to each tile element
 tadds %dst, %src, 0x3F800000  : !pto.tile&lt;f32, 16, 16&gt;
 
 # Saturating carry variant
 taddc %dst, %src0, %src1       : !pto.tile&lt;f32, 16, 16&gt;
 
 # Tile with explicit memory operand: load from GlobalTensor view
-tload %tile, %gtensor[%r, %c]  : (!pto.tile&lt;f32,16,16&gt;, !pto.memref&lt;f32,1x16x16x16&gt;) -&gt; !pto.tile&lt;f32,16,16&gt;
-</code></pre>
+tload %tile, %gtensor[%r, %c]  : (!pto.tile&lt;f32,16,16&gt;, !pto.memref&lt;f32,1x16x16x16&gt;) -&gt; !pto.tile&lt;f32,16,16&gt;</code></pre>
 <h3 id="ssa-form-as-level-1">SSA Form (AS Level 1)<a class="headerlink" href="#ssa-form-as-level-1" title="Permanent link">&para;</a></h3>
 <p>MLIR-style SSA form with explicit types and a named result:</p>
-<pre><code class="language-mlir">// Tile compute: element-wise addition
+<pre class="highlight"><code class="language-mlir">// Tile compute: element-wise addition
 %dst = pto.tadd %src0, %src1 : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;
 
 // Tile load: from GlobalTensor partition view
 %tile = pto.tload %mem : !pto.partition_tensor_view&lt;1x1x1x16x16xf32&gt; -&gt; !pto.tile_buf&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
 
 // Scalar tile comparison
-%cmp = pto.tcmps %src, 0 : !pto.tile&lt;f32, 16, 16&gt;, i32 -&gt; !pto.tile&lt;predicate, 16, 16&gt;
-</code></pre>
+%cmp = pto.tcmps %src, 0 : !pto.tile&lt;f32, 16, 16&gt;, i32 -&gt; !pto.tile&lt;predicate, 16, 16&gt;</code></pre>
 <h3 id="dps-form-as-level-2">DPS Form (AS Level 2)<a class="headerlink" href="#dps-form-as-level-2" title="Permanent link">&para;</a></h3>
 <p>Functional-style form with explicit <code>ins(...)</code> and <code>outs(...)</code> blocks — closest to the C++ intrinsic instruction set:</p>
-<pre><code class="language-mlir">// Tile compute (DPS)
+<pre class="highlight"><code class="language-mlir">// Tile compute (DPS)
 pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
           outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)
 
@@ -1426,17 +1418,15 @@ pto.tload ins(%mem : !pto.partition_tensor_view&lt;1x1x1x16x16xf32&gt;)
 
 // Tile store (DPS)
 pto.tstore ins(%tile : !pto.tile_buf&lt;f32, 16, 16&gt;)
-          outs(%mem : !pto.partition_tensor_view&lt;1x1x1x16x16xf32&gt;)
-</code></pre>
+          outs(%mem : !pto.partition_tensor_view&lt;1x1x1x16x16xf32&gt;)</code></pre>
 <p>See <a href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a> for the full syntax specification.</p>
 <h2 id="tile-instructions-and-vector-instructions">Tile Instructions And Vector Instructions<a class="headerlink" href="#tile-instructions-and-vector-instructions" title="Permanent link">&para;</a></h2>
 <p>PTO distinguishes two complementary data-flow paths from GM to computed result. Both are architecturally visible; neither is a backend-only detail.</p>
 <h3 id="tile-instructions-ptot">Tile Instructions (pto.t*)<a class="headerlink" href="#tile-instructions-ptot" title="Permanent link">&para;</a></h3>
 <p>The tile instructions operates on tile buffers directly. The complete data path is:</p>
-<pre><code>GM ──(MTE2)──► UB ──(implicit)──► Tile Buffer ──(Tile Compute)──► Tile Buffer ──(MTE3)──► GM
+<pre class="highlight"><code>GM ──(MTE2)──► UB ──(implicit)──► Tile Buffer ──(Tile Compute)──► Tile Buffer ──(MTE3)──► GM
                       │                                                              ▲
-                      └──(vlds/vsts on vector instructions before/after tile instructions)─────────┘
-</code></pre>
+                      └──(vlds/vsts on vector instructions before/after tile instructions)─────────┘</code></pre>
 <ul>
 <li><code>TLOAD</code> copies data from GM into a tile buffer (via MTE2 → UB → tile)</li>
 <li>Tile compute (<code>TADD</code>, <code>TMATMUL</code>, etc.) operates directly on tile buffers</li>
@@ -1445,8 +1435,7 @@ pto.tstore ins(%tile : !pto.tile_buf&lt;f32, 16, 16&gt;)
 </ul>
 <h3 id="vector-instructions-ptov">Vector Instructions (pto.v*)<a class="headerlink" href="#vector-instructions-ptov" title="Permanent link">&para;</a></h3>
 <p>The vector instructions operates on vector registers after an explicit UB staging step. The data path is:</p>
-<pre><code>GM ──(copy_gm_to_ubuf)──► UB ──(vlds)──► Vector Register ──(Vector Compute)──► Vector Register ──(vsts)──► UB ──(copy_ubuf_to_gm)──► GM
-</code></pre>
+<pre class="highlight"><code>GM ──(copy_gm_to_ubuf)──► UB ──(vlds)──► Vector Register ──(Vector Compute)──► Vector Register ──(vsts)──► UB ──(copy_ubuf_to_gm)──► GM</code></pre>
 <ul>
 <li><code>copy_gm_to_ubuf</code> / <code>copy_ubuf_to_gm</code>: DMA engine moves data between GM and UB</li>
 <li><code>vlds</code> / <code>vsld</code> / <code>vgather2</code>: Vector load brings data from UB into vector registers</li>

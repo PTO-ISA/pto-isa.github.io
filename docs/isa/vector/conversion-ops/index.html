@@ -969,9 +969,8 @@
 <li><strong>syntax:</strong> <code>%result = pto.vcvt %input {round_mode = "ROUND_MODE", sat = "SAT_MODE", part = "PART_MODE"} : !pto.vreg&lt;NxT0&gt; -&gt; !pto.vreg&lt;MxT1&gt;</code></li>
 <li><strong>semantics:</strong> Type conversion between float/int types with rounding control.</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; min(N, M); i++)
-    dst[i] = convert(src[i], T0, T1, round_mode);
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; min(N, M); i++)
+    dst[i] = convert(src[i], T0, T1, round_mode);</code></pre>
 <ul>
 <li><strong>inputs:</strong>
   <code>%input</code> is the source vector; attributes select rounding, saturation, and
@@ -1075,22 +1074,20 @@
 <hr />
 <h3 id="width-changing-conversion-pattern">Width-Changing Conversion Pattern<a class="headerlink" href="#width-changing-conversion-pattern" title="Permanent link">&para;</a></h3>
 <p>For conversions that change width (e.g., f32→f16), use even/odd parts and combine:</p>
-<pre><code class="language-mlir">// Convert two f32 vectors to one f16 vector
-%even = pto.vcvt %in0 {round_mode = &quot;ROUND_R&quot;, sat = &quot;RS_ENABLE&quot;, part = &quot;PART_EVEN&quot;}
+<pre class="highlight"><code class="language-mlir">// Convert two f32 vectors to one f16 vector
+%even = pto.vcvt %in0 {round_mode = "ROUND_R", sat = "RS_ENABLE", part = "PART_EVEN"}
     : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
-%odd  = pto.vcvt %in1 {round_mode = &quot;ROUND_R&quot;, sat = &quot;RS_ENABLE&quot;, part = &quot;PART_ODD&quot;}
+%odd  = pto.vcvt %in1 {round_mode = "ROUND_R", sat = "RS_ENABLE", part = "PART_ODD"}
     : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
-%result = pto.vor %even, %odd, %mask : !pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf16&gt;
-</code></pre>
+%result = pto.vor %even, %odd, %mask : !pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf16&gt;</code></pre>
 <hr />
 <h2 id="ptovtrc"><code>pto.vtrc</code><a class="headerlink" href="#ptovtrc" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>syntax:</strong> <code>%result = pto.vtrc %input, "ROUND_MODE" : !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Truncate/round float to integer-valued float (stays in float type).</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = round_to_int_valued_float(src[i], round_mode);
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = round_to_int_valued_float(src[i], round_mode);</code></pre>
 <ul>
 <li><strong>inputs:</strong>
   <code>%input</code> is the floating-point source vector and <code>ROUND_MODE</code> selects the
@@ -1102,29 +1099,27 @@
   This op does not change the element type. <code>ROUND_O</code> is supported for avoiding
   double-rounding errors during staged conversions.</li>
 </ul>
-<p><strong>Example:</strong></p>
-<pre><code class="language-mlir">// Round to nearest integer, keep as float
-%rounded = pto.vtrc %input, &quot;ROUND_R&quot; : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+<p><strong>Example:</strong>
+<pre class="highlight"><code class="language-mlir">// Round to nearest integer, keep as float
+%rounded = pto.vtrc %input, "ROUND_R" : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 // input:  [1.4, 2.6, -1.5, 3.0]
-// output: [1.0, 3.0, -2.0, 3.0]
-</code></pre>
+// output: [1.0, 3.0, -2.0, 3.0]</code></pre></p>
 <hr />
 <h2 id="typical-usage">Typical Usage<a class="headerlink" href="#typical-usage" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">// Quantization: f32 → i8 with saturation
+<pre class="highlight"><code class="language-mlir">// Quantization: f32 → i8 with saturation
 %scaled = pto.vmuls %input, %scale, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-%quantized = pto.vcvt %scaled {round_mode = &quot;ROUND_R&quot;, sat = &quot;RS_ENABLE&quot;}
+%quantized = pto.vcvt %scaled {round_mode = "ROUND_R", sat = "RS_ENABLE"}
     : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xi32&gt;
 // Then narrow i32 → i8 via pack ops
 
 // Mixed precision: bf16 → f32 for accumulation
-%f32_vec = pto.vcvt %bf16_input {round_mode = &quot;ROUND_R&quot;}
+%f32_vec = pto.vcvt %bf16_input {round_mode = "ROUND_R"}
     : !pto.vreg&lt;128xbf16&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Floor for integer division
-%floored = pto.vtrc %ratio, &quot;ROUND_F&quot; : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
-%int_div = pto.vcvt %floored {round_mode = &quot;ROUND_Z&quot;}
-    : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xi32&gt;
-</code></pre>
+%floored = pto.vtrc %ratio, "ROUND_F" : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+%int_div = pto.vcvt %floored {round_mode = "ROUND_Z"}
+    : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xi32&gt;</code></pre>
               
             </div>
           </div><footer>

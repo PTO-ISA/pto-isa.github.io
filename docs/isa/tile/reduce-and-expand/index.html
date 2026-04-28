@@ -1248,6 +1248,8 @@
 </tbody>
 </table>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>The source tile's valid region determines the reduction domain.</li>
 <li>Arg variants (<code>*_argmax</code>, <code>*_argmin</code>) produce an <strong>integer index tile</strong>, not a numeric value tile.</li>
@@ -1255,14 +1257,18 @@
 <li>Expand variants require a second source tile with shape <code>(R)</code> or <code>(C)</code> matching the expand axis.</li>
 <li>Exp-diff variants compute: <code>dst = exp(src0 - src1)</code> — used for softmax-style reductions.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li><strong>MUST NOT</strong> reduce along an axis with zero extent.</li>
 <li><strong>MUST NOT</strong> use arg variants with non-numeric element types.</li>
 <li><strong>MUST NOT</strong> use expand variants with mismatched expand-axis lengths.</li>
 </ul>
+</div>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Row reduce (requires temporary tile)
@@ -1351,15 +1357,13 @@ template &lt;typename TileDst, typename TileSrc0, typename TileSrc1, typename...
 PTO_INST RecordEvent TCOLEXPANDMIN(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; src1, WaitEvents&amp;... events);
 
 template &lt;typename TileDst, typename TileSrc0, typename TileSrc1, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCOLEXPDIF(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; src1, WaitEvents&amp;... events);
-</code></pre>
+PTO_INST RecordEvent TCOLEXPDIF(TileDst&amp; dst, TileSrc0&amp; src0, TileSrc1&amp; src1, WaitEvents&amp;... events);</code></pre>
 <h2 id="throughput-and-latency-a2a3">Throughput and Latency (A2/A3)<a class="headerlink" href="#throughput-and-latency-a2a3" title="Permanent link">&para;</a></h2>
 <p>Reduce and expand operations are compiled to CCE vector instructions. The performance model is defined in <code>include/pto/costmodel/a2a3/</code>.</p>
 <h3 id="row-reduction-throughput-and-latency-trowsum-trowmax-trowmin">Row Reduction Throughput and Latency (TROWSUM / TROWMAX / TROWMIN)<a class="headerlink" href="#row-reduction-throughput-and-latency-trowsum-trowmax-trowmin" title="Permanent link">&para;</a></h3>
 <p>Row reductions compile to sequences of <code>vcgadd</code>/<code>vcmax</code>/<code>vcmin</code> followed by <code>vadd</code>/<code>vmax</code>/<code>vmin</code> and a final <code>vcadd</code>/<code>vcmax</code>/<code>vcmin</code> with a <code>PIPE_V</code> barrier.</p>
-<p><strong>Cycle model</strong>:</p>
-<pre><code>total = startup + sum(completion_i) + sum(repeats_i × per_repeat_i) + sum((repeats_i - 1) × interval)
-</code></pre>
+<p><strong>Cycle model</strong>:
+<pre class="highlight"><code>total = startup + sum(completion_i) + sum(repeats_i × per_repeat_i) + sum((repeats_i - 1) × interval)</code></pre></p>
 <p><strong>Key parameters</strong>:</p>
 <table>
 <thead>

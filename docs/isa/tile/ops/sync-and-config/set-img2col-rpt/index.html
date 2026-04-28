@@ -952,22 +952,18 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Schematic form:</p>
-<pre><code class="language-text">pto.set_img2col_rpt %cfg
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.set_img2col_rpt %cfg</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.set_img2col_rpt %cfg : !pto.fmatrix_config -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.set_img2col_rpt %cfg : !pto.fmatrix_config -&gt; ()</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.set_img2col_rpt ins(%cfg : !pto.fmatrix_config) outs()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.set_img2col_rpt ins(%cfg : !pto.fmatrix_config) outs()</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename ConvTileData, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename ConvTileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent SET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);
 
 template &lt;typename ConvTileData, SetFmatrixMode FmatrixMode = SetFmatrixMode::FMATRIX_A_MANUAL, typename... WaitEvents&gt;
-PTO_INST RecordEvent SET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);
-</code></pre>
+PTO_INST RecordEvent SET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... events);</code></pre>
 <p>For <code>MEMORY_BASE</code> targets, an overload without <code>SetFmatrixMode</code> is also provided.</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -992,33 +988,36 @@ PTO_INST RecordEvent SET_IMG2COL_RPT(ConvTileData &amp;src, WaitEvents &amp;... 
 <li><strong>CPU simulator</strong>: No architectural state is affected.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>This instruction is backend-specific and available only for backends that expose IMG2COL configuration state.</li>
 <li><code>src</code> must be a valid IMG2COL configuration tile type accepted by the backend implementation.</li>
 <li>On A2/A3 and A5, this instruction writes to the FMATRIX RPT field; the exact bit-width of the repeat field (e.g., 4-bit vs 8-bit encoding) is target-specific.</li>
 <li>Use this instruction before dependent <code>pto.timg2col</code> operations in the same execution stream.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Calling <code>pto.set_img2col_rpt</code> on backends that do not expose FMATRIX configuration state.</li>
 <li>Using an invalid IMG2COL configuration tile type.</li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example_set_img2col_rpt(Img2colTileConfig&lt;uint64_t&gt;&amp; cfg) {
   SET_IMG2COL_RPT(cfg);
-}
-</code></pre>
+}</code></pre>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-pto.set_img2col_rpt %cfg : !pto.fmatrix_config -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
+pto.set_img2col_rpt %cfg : !pto.fmatrix_config -&gt; ()</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
-pto.set_img2col_rpt %cfg : !pto.fmatrix_config -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+pto.set_img2col_rpt %cfg : !pto.fmatrix_config -&gt; ()</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../sync-and-config/">Sync And Config</a></li>

@@ -920,13 +920,12 @@
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../syntax-and-operands/assembly-model_zh/">PTO ISA 语法与操作数</a>。</p>
 <p>同步形式：</p>
-<pre><code class="language-text">treduce %group, %dst {op = #pto.reduce_op&lt;Sum&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
-treduce %group, %dst {op = #pto.reduce_op&lt;Max&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">treduce %group, %dst {op = #pto.reduce_op&lt;Sum&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
+treduce %group, %dst {op = #pto.reduce_op&lt;Max&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>降级时会为 reduce 流水线引入内部累加 Tile 和接收 Tile；C++ 内建接口需要显式传入 <code>accTileData</code>、<code>recvTileData</code>（或 <code>accTileData</code>、<code>pingTileData</code>、<code>pongTileData</code>）操作数。</p>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
-<pre><code class="language-cpp">// 基础 reduce（累加 Tile + 接收 Tile）
+<pre class="highlight"><code class="language-cpp">// 基础 reduce（累加 Tile + 接收 Tile）
 template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TREDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
                               TileData &amp;accTileData, TileData &amp;recvTileData, ReduceOp op, WaitEvents&amp;... events);
@@ -935,9 +934,10 @@ PTO_INST RecordEvent TREDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData
 template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TREDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
                               TileData &amp;accTileData, TileData &amp;pingTileData, TileData &amp;pongTileData,
-                              ReduceOp op, WaitEvents&amp;... events);
-</code></pre>
+                              ReduceOp op, WaitEvents&amp;... events);</code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><strong>类型约束</strong>：<ul>
 <li><code>ParallelGroup::value_type::RawDType</code> 必须等于 <code>GlobalDstData::RawDType</code>。</li>
@@ -961,9 +961,10 @@ PTO_INST RecordEvent TREDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <h3 id="_6">基础求和归约<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -980,10 +981,9 @@ void reduce_sum(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_rank) {
     GTensor dstG(result);
     TileT accTile, recvTile;
     comm::TREDUCE(group, dstG, accTile, recvTile, comm::ReduceOp::Sum);
-}
-</code></pre>
+}</code></pre>
 <h3 id="_7">最大值归约<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -1000,8 +1000,7 @@ void reduce_max(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_rank) {
     GTensor dstG(result);
     TileT accTile, recvTile;
     comm::TREDUCE(group, dstG, accTile, recvTile, comm::ReduceOp::Max);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

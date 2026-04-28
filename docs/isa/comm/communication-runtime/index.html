@@ -1051,8 +1051,7 @@
 </ul>
 <h3 id="data-flow">Data Flow<a class="headerlink" href="#data-flow" title="Permanent link">&para;</a></h3>
 <p>All collective communication operations share a common data flow pattern:</p>
-<pre><code>Local GM ──► UB (staging tile) ──► Inter-NPU interconnect ──► UB ──► Local GM
-</code></pre>
+<pre class="highlight"><code>Local GM ──► UB (staging tile) ──► Inter-NPU interconnect ──► UB ──► Local GM</code></pre>
 <p>A <strong>staging tile</strong> in UB is always required as an intermediate buffer. For large tensors that exceed the UB tile capacity, the operation automatically performs <strong>2D sliding</strong> — chunking along rows and columns to fit each chunk into the tile, iterating over all outer dimensions.</p>
 <h3 id="broadcast">Broadcast<a class="headerlink" href="#broadcast" title="Permanent link">&para;</a></h3>
 <p>All non-root NPUs receive data from the root:</p>
@@ -1072,10 +1071,9 @@
 </ul>
 <p>Both use a staging tile in UB as the intermediate buffer. For <code>TGET</code>, the data path is: <code>remote GM → staging tile → local GM</code>. For <code>TPUT</code>, the data path is: <code>local GM → staging tile → remote GM</code>.</p>
 <h2 id="parallelgroup-handle">ParallelGroup Handle<a class="headerlink" href="#parallelgroup-handle" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">// Define a parallel group of 8 NPUs
-%tensors = &quot;pto.make_group&quot;(%addrs0, %addrs1, ..., %addrs7)
-    : (!pto.memref&lt;f32, 16x16&gt;, ..., !pto.memref&lt;f32, 16x16&gt;) -&gt; !pto.group&lt;8&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">// Define a parallel group of 8 NPUs
+%tensors = "pto.make_group"(%addrs0, %addrs1, ..., %addrs7)
+    : (!pto.memref&lt;f32, 16x16&gt;, ..., !pto.memref&lt;f32, 16x16&gt;) -&gt; !pto.group&lt;8&gt;</code></pre>
 <p>In C++, the <code>ParallelGroup&lt;GTensor&gt;</code> template manages the group handle. See the per-op pages for C++ usage examples.</p>
 <h2 id="large-tile-support">Large Tile Support<a class="headerlink" href="#large-tile-support" title="Permanent link">&para;</a></h2>
 <p>When the GlobalTensor exceeds the UB tile capacity in rows and/or columns, transfers are automatically chunked via 2D sliding:</p>
@@ -1085,6 +1083,8 @@
 <li>To handle non-divisible cases, use tiles with <code>DYNAMIC</code> valid row/column</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>All participating NPUs must call the collective operation with matching <code>ParallelGroup</code> handles</li>
 <li>Non-root ranks must not call broadcast/scatter operations</li>
@@ -1092,13 +1092,17 @@
 <li>Destination/source tensors are assumed to have the same shape and strides across ranks</li>
 <li>The staging tile must be pre-allocated in UB at non-overlapping offsets for ping-pong variants</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Calling collective operations with mismatched <code>ParallelGroup</code> handles across ranks</li>
 <li>Calling broadcast/scatter on non-root ranks (undefined behavior)</li>
 <li>Using uninitialized or improperly sized destination buffers</li>
 <li>Using overlapping UB offsets for ping/pong staging tiles</li>
 </ul>
+</div>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../instruction-families/communication-families/">Communication instruction set</a> — Instruction set overview</li>

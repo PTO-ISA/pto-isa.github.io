@@ -916,11 +916,9 @@
 <p>对每个活跃 lane <code>i</code>，执行 <code>dst[i] = max(src[i], scalar)</code>。标量会广播到所有活跃 lane。非活跃 lane 不参与比较。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vmaxs %dst, %src, %scalar, %mask : !pto.vreg&lt;NxT&gt;, T
-</code></pre>
+<pre class="highlight"><code class="language-text">vmaxs %dst, %src, %scalar, %mask : !pto.vreg&lt;NxT&gt;, T</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vmaxs %input, %scalar, %mask : !pto.vreg&lt;NxT&gt;, T, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vmaxs %input, %scalar, %mask : !pto.vreg&lt;NxT&gt;, T, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -968,28 +966,35 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生目标值，没有其他架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>%input</code> 与 <code>%result</code> 必须具有相同的向量宽度 <code>N</code> 和相同的元素类型 <code>T</code>。</li>
 <li>掩码宽度必须与 <code>N</code> 一致。</li>
 <li>比较语义遵循元素类型的有符号 / 浮点规则。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vmaxs</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>常见数值元素类型可能支持；精确覆盖范围由目标 profile 决定。</li>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
     if (mask[i])
-        dst[i] = (src[i] &gt; scalar) ? src[i] : scalar;
-</code></pre>
-<pre><code class="language-mlir">%result = pto.vmaxs %values, %threshold, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+        dst[i] = (src[i] &gt; scalar) ? src[i] : scalar;</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vmaxs %values, %threshold, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h2 id="_10">相关页面<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../vec-scalar-ops_zh/">向量-标量操作</a></li>

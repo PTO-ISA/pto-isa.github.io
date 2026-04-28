@@ -1002,18 +1002,16 @@
 </table>
 <h3 id="location-intent-in-tile-type">Location Intent in Tile Type<a class="headerlink" href="#location-intent-in-tile-type" title="Permanent link">&para;</a></h3>
 <p>In SSA/IR form, location intent is part of the tile type:</p>
-<pre><code>!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+<pre class="highlight"><code>!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
 !pto.tile_buf&lt;loc=left, int8, 16, 16, RowMajor, RowMajor, NZ, Null&gt;
-!pto.tile_buf&lt;loc=acc, int32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
-</code></pre>
+!pto.tile_buf&lt;loc=acc, int32, 16, 16, RowMajor, NoneBox, None, Zero&gt;</code></pre>
 <p>In C++ API, location intent is expressed via the <code>TileType</code> template parameter:</p>
-<pre><code class="language-cpp">using VecTile = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+<pre class="highlight"><code class="language-cpp">using VecTile = Tile&lt;TileType::Vec, float, 16, 16&gt;;
 using AccTile = Tile&lt;TileType::Acc, float, 16, 16&gt;;
-using LeftTile = Tile&lt;TileType::Left, int8_t, 16, 16, RowMajor, RowMajor, NZ, Null&gt;;
-</code></pre>
+using LeftTile = Tile&lt;TileType::Left, int8_t, 16, 16, RowMajor, RowMajor, NZ, Null&gt;;</code></pre>
 <h2 id="legality-checking-pipeline">Legality Checking Pipeline<a class="headerlink" href="#legality-checking-pipeline" title="Permanent link">&para;</a></h2>
 <p>PTO performs legality checking in four sequential stages. A program is legal only if it passes all four stages:</p>
-<pre><code>┌─────────────────────────────────────────┐
+<pre class="highlight"><code>┌─────────────────────────────────────────┐
 │  Stage 1: TYPE CHECK                    │
 │  Element types match? Sizes compatible?  │
 │  → If fail: type error (diagnostic)     │
@@ -1044,43 +1042,49 @@ using LeftTile = Tile&lt;TileType::Left, int8_t, 16, 16, RowMajor, RowMajor, NZ,
 └─────────────────┴───────────────────────┘
                   │ PASS
                   ▼
-              LEGAL PROGRAM
-</code></pre>
+              LEGAL PROGRAM</code></pre>
 <h3 id="stage-1-type-check">Stage 1: Type Check<a class="headerlink" href="#stage-1-type-check" title="Permanent link">&para;</a></h3>
 <p><strong>Rule</strong>: The element type of all operands MUST be compatible with the operation.</p>
-<p>For binary tile operations (<code>TADD</code>, <code>TMUL</code>, etc.):</p>
-<pre><code>dtype(src0) == dtype(src1) == dtype(dst)
-</code></pre>
-<p>For type-converting operations (<code>TCVT</code>):</p>
-<pre><code>dtype(src) and dtype(dst) must be in the same conversion group (see Type System page)
-sizeof(dtype(src)) may != sizeof(dtype(dst)) for converting ops
-</code></pre>
-<p><strong>Diagnostic</strong>: <code>type mismatch: expected f32 but found f16 in operand 1</code></p>
+<p>For binary tile operations (<code>TADD</code>, <code>TMUL</code>, etc.):
+<pre class="highlight"><code>dtype(src0) == dtype(src1) == dtype(dst)</code></pre></p>
+<p>For type-converting operations (<code>TCVT</code>):
+<pre class="highlight"><code>dtype(src) and dtype(dst) must be in the same conversion group (see Type System page)
+sizeof(dtype(src)) may != sizeof(dtype(dst)) for converting ops</code></pre></p>
+<div class="admonition failure">
+<p class="admonition-title">Diagnostic</p>
+<p><code>type mismatch: expected f32 but found f16 in operand 1</code></p>
+</div>
 <h3 id="stage-2-shape-check">Stage 2: Shape Check<a class="headerlink" href="#stage-2-shape-check" title="Permanent link">&para;</a></h3>
 <p><strong>Rule</strong>: The physical shape of all operands MUST be within the legal bounds for the instruction and target profile.</p>
-<pre><code>1 &lt;= Rows &lt;= MAX_ROWS(profile)    -- e.g., 65535 on A5, 8192 on A2/A3
+<pre class="highlight"><code>1 &lt;= Rows &lt;= MAX_ROWS(profile)    -- e.g., 65535 on A5, 8192 on A2/A3
 1 &lt;= Cols &lt;= MAX_COLS(profile)    -- e.g., 4095 on all profiles
 0 &lt;= Rv &lt;= Rows                   -- valid region within physical bounds
-0 &lt;= Cv &lt;= Cols
-</code></pre>
-<p><strong>Diagnostic</strong>: <code>shape out of range: Cols=8192 exceeds maximum of 4095 for TDIV on A2/A3</code></p>
+0 &lt;= Cv &lt;= Cols</code></pre>
+<div class="admonition failure">
+<p class="admonition-title">Diagnostic</p>
+<p><code>shape out of range: Cols=8192 exceeds maximum of 4095 for TDIV on A2/A3</code></p>
+</div>
 <h3 id="stage-3-layout-check">Stage 3: Layout Check<a class="headerlink" href="#stage-3-layout-check" title="Permanent link">&para;</a></h3>
 <p><strong>Rule</strong>: The combination of <code>BLayout</code>, <code>SLayout</code>, and <code>Fractal</code> MUST be a supported combination for the operand's <code>TileType</code> and the instruction.</p>
 <p>See the Layout Combinations table in the <a href="../../programming-model/tiles-and-valid-regions/">Tiles And Valid Regions</a> page for the complete list of supported combinations.</p>
-<p><strong>Examples</strong>:</p>
-<pre><code>Vec tile with NZ layout:          ILLEGAL (Vec tiles do not support fractal layouts)
+<p><strong>Examples</strong>:
+<pre class="highlight"><code>Vec tile with NZ layout:          ILLEGAL (Vec tiles do not support fractal layouts)
 Left tile with ColMajor layout:   ILLEGAL (Left tiles must be RowMajor)
-Mat tile with ColMajor NZ fractal: ILLEGAL (Mat tiles must use standard layouts)
-</code></pre>
-<p><strong>Diagnostic</strong>: <code>layout mismatch: Vec tile with fractal layout not supported by TADD</code></p>
+Mat tile with ColMajor NZ fractal: ILLEGAL (Mat tiles must use standard layouts)</code></pre></p>
+<div class="admonition failure">
+<p class="admonition-title">Diagnostic</p>
+<p><code>layout mismatch: Vec tile with fractal layout not supported by TADD</code></p>
+</div>
 <h3 id="stage-4-target-profile-check">Stage 4: Target Profile Check<a class="headerlink" href="#stage-4-target-profile-check" title="Permanent link">&para;</a></h3>
 <p><strong>Rule</strong>: The operand's <code>TileType</code>, element type, and layout MUST be supported on the selected target profile.</p>
-<p>Examples:</p>
-<pre><code>FP8 e4m3 type on A2/A3:          ILLEGAL (FP8 not supported on A2/A3)
+<p>Examples:
+<pre class="highlight"><code>FP8 e4m3 type on A2/A3:          ILLEGAL (FP8 not supported on A2/A3)
 vstu (unaligned vector store):    ILLEGAL on CPU and A2/A3 (A5 only)
-Left/Right MX format tiles:       ILLEGAL on CPU and A2/A3 (A5 only)
-</code></pre>
-<p><strong>Diagnostic</strong>: <code>profile restriction: FP8 types require A5 profile</code></p>
+Left/Right MX format tiles:       ILLEGAL on CPU and A2/A3 (A5 only)</code></pre></p>
+<div class="admonition failure">
+<p class="admonition-title">Diagnostic</p>
+<p><code>profile restriction: FP8 types require A5 profile</code></p>
+</div>
 <h2 id="legality-by-instruction-set">Legality by Instruction Set<a class="headerlink" href="#legality-by-instruction-set" title="Permanent link">&para;</a></h2>
 <p>Different instruction sets have different legality rules beyond the four-stage pipeline:</p>
 <h3 id="elementwise-tile-tile-tadd-tmul-etc">Elementwise Tile-Tile (TADD, TMUL, etc.)<a class="headerlink" href="#elementwise-tile-tile-tadd-tmul-etc" title="Permanent link">&para;</a></h3>
@@ -1131,12 +1135,15 @@ Left/Right MX format tiles:       ILLEGAL on CPU and A2/A3 (A5 only)
 </tbody>
 </table>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Using vector-buffer assumptions on a tile-instruction set operand without an explicit bridge.</li>
 <li>Documenting location-sensitive instruction sets as though any local storage role were equivalent.</li>
 <li>Hiding target-profile narrowing inside generic "hardware-specific" wording.</li>
 <li>Relying on the CPU simulator's permissive legality checking as evidence of A5 legality.</li>
 </ul>
+</div>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../type-system/">Type System</a></li>

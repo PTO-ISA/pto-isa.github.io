@@ -945,66 +945,57 @@
 <p>三种形式在语义上等价。backend 或 verifier 不能因为语法层不同而赋予不同语义。</p>
 <h2 id="bnf">BNF 语法<a class="headerlink" href="#bnf" title="Permanent link">&para;</a></h2>
 <h3 id="assembly-formpto-as">Assembly Form（PTO-AS）<a class="headerlink" href="#assembly-formpto-as" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">assembly-program  ::= assembly-stmt*
-assembly-stmt     ::= label? op-name operands? &quot;:&quot; type-ref (&quot;#&quot; attribute)*
-label             ::= identifier &quot;:&quot;
-op-name           ::= (&quot;pto.&quot;)? identifier (&quot;_&quot; identifier)*
-operands          ::= operand (&quot;,&quot; operand)*
+<pre class="highlight"><code class="language-text">assembly-program  ::= assembly-stmt*
+assembly-stmt     ::= label? op-name operands? ":" type-ref ("#" attribute)*
+label             ::= identifier ":"
+op-name           ::= ("pto.")? identifier ("_" identifier)*
+operands          ::= operand ("," operand)*
 operand           ::= register | immediate | memory-operand | mask-operand
-register          ::= &quot;%&quot; identifier
+register          ::= "%" identifier
 immediate         ::= integer | hex-integer | floating-point
-hex-integer       ::= &quot;0x&quot; [0-9a-fA-F]+
-floating-point    ::= [0-9]+ &quot;.&quot; [0-9]+ (&quot;e&quot; [+-]? [0-9]+)?
-memory-operand    ::= register &quot;[&quot; register (&quot;,&quot; register)* &quot;]&quot;
-mask-operand      ::= &quot;%&quot; identifier &quot;:&quot; &quot;!&quot; pto.mask
-type-ref          ::= &quot;!&quot; pto &quot;.&quot; type-key &quot;&lt;&quot; type-params &quot;&gt;&quot;
-type-key          ::= &quot;tile&quot; | &quot;tile_buf&quot; | &quot;vreg&quot; | &quot;ptr&quot; | &quot;partition_tensor_view&quot; | &quot;mask&quot; | &quot;event&quot;
-</code></pre>
+hex-integer       ::= "0x" [0-9a-fA-F]+
+floating-point    ::= [0-9]+ "." [0-9]+ ("e" [+-]? [0-9]+)?
+memory-operand    ::= register "[" register ("," register)* "]"
+mask-operand      ::= "%" identifier ":" "!" pto.mask
+type-ref          ::= "!" pto "." type-key "&lt;" type-params "&gt;"
+type-key          ::= "tile" | "tile_buf" | "vreg" | "ptr" | "partition_tensor_view" | "mask" | "event"</code></pre>
 <h3 id="ssa-formas-level-1">SSA Form（AS Level 1）<a class="headerlink" href="#ssa-formas-level-1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">ssa-program       ::= ssa-stmt*
-ssa-stmt          ::= ssa-result &quot;=&quot; op-name operands &quot;:&quot; ssa-type -&gt; ssa-type
-ssa-result        ::= &quot;%&quot; identifier
-op-name           ::= &quot;pto.&quot; identifier (&quot;_&quot; identifier)*
-operands          ::= ssa-operand (&quot;,&quot; ssa-operand)*
+<pre class="highlight"><code class="language-text">ssa-program       ::= ssa-stmt*
+ssa-stmt          ::= ssa-result "=" op-name operands ":" ssa-type -&gt; ssa-type
+ssa-result        ::= "%" identifier
+op-name           ::= "pto." identifier ("_" identifier)*
+operands          ::= ssa-operand ("," ssa-operand)*
 ssa-operand       ::= ssa-result | immediate | memory-operand
-ssa-type          ::= ssa-type-key &quot;&lt;&quot; type-params &quot;&gt;&quot;
-ssa-type-key      ::= &quot;tile&quot; | &quot;tile_buf&quot; | &quot;vreg&quot; | &quot;ptr&quot; | &quot;partition_tensor_view&quot; | &quot;mask&quot;
-</code></pre>
+ssa-type          ::= ssa-type-key "&lt;" type-params "&gt;"
+ssa-type-key      ::= "tile" | "tile_buf" | "vreg" | "ptr" | "partition_tensor_view" | "mask"</code></pre>
 <h3 id="dps-formas-level-2">DPS Form（AS Level 2）<a class="headerlink" href="#dps-formas-level-2" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">dps-program       ::= dps-stmt*
-dps-stmt          ::= op-name &quot;ins(&quot; dps-ins &quot;)&quot; &quot;outs(&quot; dps-outs &quot;)&quot;
-dps-ins           ::= dps-ins-item (&quot;,&quot; dps-ins-item)*
-dps-outs          ::= dps-out-item (&quot;,&quot; dps-out-item)*
-dps-ins-item      ::= ssa-result &quot;:&quot; ssa-type
-dps-out-item      ::= ssa-result &quot;:&quot; ssa-type
-</code></pre>
+<pre class="highlight"><code class="language-text">dps-program       ::= dps-stmt*
+dps-stmt          ::= op-name "ins(" dps-ins ")" "outs(" dps-outs ")"
+dps-ins           ::= dps-ins-item ("," dps-ins-item)*
+dps-outs          ::= dps-out-item ("," dps-out-item)*
+dps-ins-item      ::= ssa-result ":" ssa-type
+dps-out-item      ::= ssa-result ":" ssa-type</code></pre>
 <h2 id="_3">操作数修饰规则<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="tile">Tile 操作数<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
 <p>PTO-AS 中的 tile 操作数可以带修饰：</p>
-<pre><code class="language-text">%tile
+<pre class="highlight"><code class="language-text">%tile
 %tile[%r, %c]
-%tile!loc=vec
-</code></pre>
+%tile!loc=vec</code></pre>
 <p>在 SSA 形式中，location intent 和 valid-region 相关信息编码在 tile 类型里：</p>
-<pre><code class="language-text">!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
-!pto.tile_buf&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+!pto.tile_buf&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;</code></pre>
 <h3 id="globaltensor">GlobalTensor 操作数<a class="headerlink" href="#globaltensor" title="Permanent link">&para;</a></h3>
 <p>在 PTO-AS 中，<code>GlobalTensor</code> 一般表现为 <code>memref</code> 或 <code>partition_tensor_view</code>：</p>
-<pre><code class="language-text">%tensor
+<pre class="highlight"><code class="language-text">%tensor
 %tensor[%r, %c]
-%tensor[%b, %h, %w, %r, %c]
-</code></pre>
+%tensor[%b, %h, %w, %r, %c]</code></pre>
 <h3 id="_4">谓词操作数<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%mask : !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-text">%mask : !pto.mask</code></pre>
 <p>向量指令把 mask 作为显式操作数：</p>
-<pre><code class="language-text">%result = pto.vadd %src0, %src1, %mask : ... -&gt; ...
-</code></pre>
+<pre class="highlight"><code class="language-text">%result = pto.vadd %src0, %src1, %mask : ... -&gt; ...</code></pre>
 <h3 id="_5">立即数操作数<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">tadds %dst, %src, 0x3F800000
-tshrs %dst, %src, 16
-</code></pre>
+<pre class="highlight"><code class="language-text">tadds %dst, %src, 0x3F800000
+tshrs %dst, %src, 16</code></pre>
 <h2 id="_6">指令后缀<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1059,34 +1050,26 @@ tshrs %dst, %src, 16
 </table>
 <h2 id="_7">属性语法<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <p>在 PTO-AS 中，属性写在 <code>#</code> 后面：</p>
-<pre><code class="language-text">tstore %tile, %tensor #atomic=add
+<pre class="highlight"><code class="language-text">tstore %tile, %tensor #atomic=add
 tcmps %dst, %src, 0 #cmp=gt
-tmatmul %c, %a, %b #phase=relu
-</code></pre>
+tmatmul %c, %a, %b #phase=relu</code></pre>
 <p>在 SSA 中，属性写成 <code>{key = value}</code>：</p>
-<pre><code class="language-text">%result = pto.tcmp %src0, %src1 {cmp = &quot;lt&quot;} : ... -&gt; ...
-</code></pre>
+<pre class="highlight"><code class="language-text">%result = pto.tcmp %src0, %src1 {cmp = "lt"} : ... -&gt; ...</code></pre>
 <h2 id="_8">完整示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <h3 id="tile_1">Tile 逐元素加法<a class="headerlink" href="#tile_1" title="Permanent link">&para;</a></h3>
 <p><strong>Assembly Form</strong>:</p>
-<pre><code class="language-text">tadd %dst, %src0, %src1 : !pto.tile&lt;f32, 16, 16&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">tadd %dst, %src0, %src1 : !pto.tile&lt;f32, 16, 16&gt;</code></pre>
 <p><strong>SSA Form</strong>:</p>
-<pre><code class="language-text">%dst = pto.tadd %src0, %src1 : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tadd %src0, %src1 : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;</code></pre>
 <p><strong>DPS Form</strong>:</p>
-<pre><code class="language-text">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
-          outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
+          outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)</code></pre>
 <h3 id="tile_2">Tile 加载<a class="headerlink" href="#tile_2" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">tload %tile, %tensor[%r, %c] : (!pto.tile&lt;f32,16,16&gt;, !pto.memref&lt;f32,5&gt;) -&gt; !pto.tile&lt;f32,16,16&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">tload %tile, %tensor[%r, %c] : (!pto.tile&lt;f32,16,16&gt;, !pto.memref&lt;f32,5&gt;) -&gt; !pto.tile&lt;f32,16,16&gt;</code></pre>
 <h3 id="_9">向量加法<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%result = pto.vadd %src0, %src1, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%result = pto.vadd %src0, %src1, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h3 id="_10">谓词生成<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%pred = pto.pge_b32 %src0, %src1 : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;) -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-text">%pred = pto.pge_b32 %src0, %src1 : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;) -&gt; !pto.mask</code></pre>
 <h2 id="_11">文本拼写不能替代的内容<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <p>文本拼写不能替代：</p>
 <ul>

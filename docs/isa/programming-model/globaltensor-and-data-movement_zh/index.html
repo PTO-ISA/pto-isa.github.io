@@ -912,8 +912,7 @@
 <p>PTO 不隐藏全局内存与本地执行状态之间的数据移动。<code>GlobalTensor</code> 是面向 GM 的架构可见对象，数据移动操作定义了数据何时进入或离开局部有效载荷指令集。下文给出 GM 侧类型以及通向 tile buffer 与向量寄存器的完整路径。</p>
 <h2 id="globaltensor_1">GlobalTensor<a class="headerlink" href="#globaltensor_1" title="Permanent link">&para;</a></h2>
 <h3 id="_1">模板签名<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">GlobalTensor&lt;DType, Shape, Stride, Layout&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">GlobalTensor&lt;DType, Shape, Stride, Layout&gt;</code></pre>
 <table>
 <thead>
 <tr>
@@ -1003,16 +1002,13 @@
 </table>
 <h2 id="tile">Tile 指令的数据路径<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h2>
 <p>Tile 指令通过 MTE2/MTE3 在 GM 与 tile buffer 之间搬运数据：</p>
-<pre><code class="language-text">GM -&gt; UB -&gt; Tile Buffer -&gt; Tile Compute -&gt; Tile Buffer -&gt; UB -&gt; GM
-</code></pre>
+<pre class="highlight"><code class="language-text">GM -&gt; UB -&gt; Tile Buffer -&gt; Tile Compute -&gt; Tile Buffer -&gt; UB -&gt; GM</code></pre>
 <h3 id="tload">TLOAD<a class="headerlink" href="#tload" title="Permanent link">&para;</a></h3>
 <p><code>TLOAD</code> 把 <code>GlobalTensor</code> 中的数据搬进 tile buffer：</p>
-<pre><code class="language-text">dst[i, j] = src[r0 + i, c0 + j]
-</code></pre>
+<pre class="highlight"><code class="language-text">dst[i, j] = src[r0 + i, c0 + j]</code></pre>
 <p>其中 <code>r0</code>、<code>c0</code> 由 <code>GlobalTensor</code> 的 shape/stride 与 tile 的 valid region 推导。</p>
 <p><strong>传输大小</strong>：</p>
-<pre><code class="language-text">dst.GetValidRow() × dst.GetValidCol()
-</code></pre>
+<pre class="highlight"><code class="language-text">dst.GetValidRow() × dst.GetValidCol()</code></pre>
 <p><strong>约束</strong>：</p>
 <ul>
 <li>源 dtype 大小必须等于目标 dtype 大小</li>
@@ -1020,8 +1016,7 @@
 </ul>
 <h3 id="tstore">TSTORE<a class="headerlink" href="#tstore" title="Permanent link">&para;</a></h3>
 <p><code>TSTORE</code> 把 tile buffer 中的数据写回 <code>GlobalTensor</code>：</p>
-<pre><code class="language-text">dst[r0 + i, c0 + j] = src[i, j]
-</code></pre>
+<pre class="highlight"><code class="language-text">dst[r0 + i, c0 + j] = src[i, j]</code></pre>
 <p>其中 <code>i ∈ [0, src.GetValidRow())</code>，<code>j ∈ [0, src.GetValidCol())</code>。</p>
 <h3 id="store">原子 Store 变体<a class="headerlink" href="#store" title="Permanent link">&para;</a></h3>
 <table>
@@ -1052,9 +1047,8 @@
 </table>
 <h2 id="_2">向量指令的数据路径<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>向量指令先经过显式的 GM↔UB DMA，再做 UB↔向量寄存器的搬运：</p>
-<pre><code class="language-text">GM -&gt; copy_gm_to_ubuf -&gt; UB -&gt; vlds/vgather2 -&gt; vreg -&gt; vector compute
-vreg -&gt; vsts/vscatter -&gt; UB -&gt; copy_ubuf_to_gm -&gt; GM
-</code></pre>
+<pre class="highlight"><code class="language-text">GM -&gt; copy_gm_to_ubuf -&gt; UB -&gt; vlds/vgather2 -&gt; vreg -&gt; vector compute
+vreg -&gt; vsts/vscatter -&gt; UB -&gt; copy_ubuf_to_gm -&gt; GM</code></pre>
 <h3 id="dma">DMA 拷贝操作<a class="headerlink" href="#dma" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1190,22 +1184,28 @@ vreg -&gt; vsts/vscatter -&gt; UB -&gt; copy_ubuf_to_gm -&gt; GM
 </tbody>
 </table>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>数据移动的合法性依赖源/目标指令集、布局和 target profile</li>
 <li>数据移动不会抹掉 valid-region 语义</li>
 <li>向量路径的 buffer/register 规则与 tile 路径不同，不能混用</li>
 <li>DMA 完成前，不得假设向量计算已经看见数据</li>
 </ul>
+</div>
 <h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>把需要显式移动的数据路径写成“自动可见”</li>
 <li>把 vector 路径和 tile 路径写成同一套合法性契约</li>
 <li>把 target-specific 快捷路径写成架构保证</li>
 <li>在 <code>copy_gm_to_ubuf</code> 完成前直接 <code>vlds</code></li>
 </ul>
+</div>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="tile_1">Tile 指令：逐元素加法<a class="headerlink" href="#tile_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&amp; ga,
@@ -1215,17 +1215,15 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&a
     TLOAD(b, gb);
     TADD(c, a, b);
     TSTORE(gc, c);
-}
-</code></pre>
+}</code></pre>
 <h3 id="ub">向量指令：显式 UB 暂存<a class="headerlink" href="#ub" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">copy_gm_to_ubuf(%ub_ptr, %gm_ptr, ...);
+<pre class="highlight"><code class="language-c">copy_gm_to_ubuf(%ub_ptr, %gm_ptr, ...);
 set_flag(PIPE_MTE2, PIPE_V, EVENT_ID0);
 wait_flag(PIPE_MTE2, PIPE_V, EVENT_ID0);
-%vreg = pto.vlds %ub[%offset] {dist = &quot;NORM&quot;};
+%vreg = pto.vlds %ub[%offset] {dist = "NORM"};
 %result = pto.vadd %vreg, %vreg;
 pto.vsts %result, %ub_out[%offset];
-copy_ubuf_to_gm(%ub_out, %gm_out, ...);
-</code></pre>
+copy_ubuf_to_gm(%ub_out, %gm_out, ...);</code></pre>
 <h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../tiles-and-valid-regions_zh/">Tile 与有效区域</a></li>

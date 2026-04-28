@@ -919,20 +919,18 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = texpands %scalar : f32, !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = texpands %scalar : f32, !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.texpands %scalar : dtype -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.texpands %scalar : dtype -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.texpands ins(%scalar : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.texpands ins(%scalar : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TEXPANDS(TileData &amp;dst, typename TileData::DType scalar, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TEXPANDS(TileData &amp;dst, typename TileData::DType scalar, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:<ul>
 <li>对于Tile位置是向量（<code>TileData::Loc == TileType::Vec</code>）:</li>
@@ -964,9 +962,10 @@ PTO_INST RecordEvent TEXPANDS(TileData &amp;dst, typename TileData::DType scalar
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -974,10 +973,9 @@ void example_auto() {
   using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   TileT dst;
   TEXPANDS(dst, 0.0f);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -986,25 +984,21 @@ void example_manual() {
   TileT dst;
   TASSIGN(dst, 0x1000);
   TEXPANDS(dst, 0.0f);
-}
-</code></pre>
+}</code></pre>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
 <h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.texpands %scalar : dtype -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
+%dst = pto.texpands %scalar : dtype -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
+<pre class="highlight"><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
 # 可选（当该指令包含 tile 操作数时）：
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
-%dst = pto.texpands %scalar : dtype -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+%dst = pto.texpands %scalar : dtype -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = texpands %scalar : f32, !pto.tile&lt;...&gt;
+<pre class="highlight"><code class="language-text">%dst = texpands %scalar : f32, !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
-pto.texpands ins(%scalar : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+pto.texpands ins(%scalar : dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
               
             </div>
           </div><footer>

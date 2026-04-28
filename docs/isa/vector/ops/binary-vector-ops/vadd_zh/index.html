@@ -919,21 +919,17 @@
 <p>谓词为假的 lane 处于非活跃状态，目标寄存器在这些位置上不被修改。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vadd %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">vadd %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vadd %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vadd %lhs, %rhs, %mask : (!pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vadd ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
-          outs(%result : !pto.vreg&lt;NxT&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vadd ins(%lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask)
+          outs(%result : !pto.vreg&lt;NxT&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>声明位于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename VecDst, typename VecLhs, typename VecRhs, typename MaskT, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename VecDst, typename VecLhs, typename VecRhs, typename MaskT, typename... WaitEvents&gt;
 PTO_INST RecordEvent VADD(VecDst&amp; dst, const VecLhs&amp; lhs, const VecRhs&amp; rhs,
-                          const MaskT&amp; mask, WaitEvents&amp;... events);
-</code></pre>
+                          const MaskT&amp; mask, WaitEvents&amp;... events);</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -982,6 +978,8 @@ PTO_INST RecordEvent VADD(VecDst&amp; dst, const VecLhs&amp; lhs, const VecRhs&a
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生目标向量寄存器外，没有其他架构副作用。它不会隐式占用 buffer、发送事件，也不会建立内存栅栏。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>%lhs</code>、<code>%rhs</code> 和 <code>%dst</code> 的元素类型必须完全一致。</li>
 <li>三个寄存器必须具有相同的向量宽度 <code>N</code>。</li>
@@ -989,12 +987,18 @@ PTO_INST RecordEvent VADD(VecDst&amp; dst, const VecLhs&amp; lhs, const VecRhs&a
 <li>只有谓词位为 1 的 lane 参与加法。</li>
 <li>非活跃 lane 对应的目标元素保持不变。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的元素类型不匹配、向量宽度不匹配或掩码宽度不匹配。</li>
 <li><a href="../../../binary-vector-ops_zh/">二元向量操作</a>页面声明的额外非法情形，同样属于 <code>pto.vadd</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <table>
 <thead>
 <tr>
@@ -1026,6 +1030,7 @@ PTO_INST RecordEvent VADD(VecDst&amp; dst, const VecLhs&amp; lhs, const VecRhs&a
 </tbody>
 </table>
 <p>A5 是当前文档中最具体的向量实现 profile。CPU 模拟器和 A2/A3 类目标通过标量循环或等效路径模拟 <code>pto.v*</code>，但仍需保留可见的 PTO 语义。任何依赖具体时延或吞吐的代码，都应把这类依赖视为 profile 相关行为。</p>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <table>
@@ -1107,26 +1112,23 @@ PTO_INST RecordEvent VADD(VecDst&amp; dst, const VecLhs&amp; lhs, const VecRhs&a
 </tbody>
 </table>
 <p>示例：1024 个 f32 元素，16 次迭代（<code>R=16</code>）：</p>
-<pre><code class="language-text">A5 总周期（流水重叠后）：7 + 15×2 = 37
-A2/A3 总周期：14 + 19 + 32 + 270 = 335
-</code></pre>
+<pre class="highlight"><code class="language-text">A5 总周期（流水重叠后）：7 + 15×2 = 37
+A2/A3 总周期：14 + 19 + 32 + 270 = 335</code></pre>
 <p><code>vadd</code> 的每次 repeat 吞吐高于不少一元操作，因此在纯逐元素 kernel 里通常是最容易饱和流水线的一类运算。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="lane">全向量加法（全部 lane 活跃）<a class="headerlink" href="#lane" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 Mask&lt;64&gt; mask;
 mask.set_all(true);
 
-VADD(vdst, va, vb, mask);
-</code></pre>
+VADD(vdst, va, vb, mask);</code></pre>
 <h3 id="_11">部分谓词化<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vadd %va, %vb, %cond
-    : (!pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask) -&gt; !pto.vreg&lt;128xf16&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vadd %va, %vb, %cond
+    : (!pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask) -&gt; !pto.vreg&lt;128xf16&gt;</code></pre>
 <h3 id="load-compute-store">完整的 load / compute / store 链<a class="headerlink" href="#load-compute-store" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void vector_add(Ptr&lt;ub_space_t, ub_t&gt; ub_a, Ptr&lt;ub_space_t, ub_t&gt; ub_b,
@@ -1135,12 +1137,11 @@ void vector_add(Ptr&lt;ub_space_t, ub_t&gt; ub_a, Ptr&lt;ub_space_t, ub_t&gt; ub
     Mask&lt;64&gt; mask;
     mask.set_all(true);
 
-    VLDS(va, ub_a, &quot;NORM&quot;);
-    VLDS(vb, ub_b, &quot;NORM&quot;);
+    VLDS(va, ub_a, "NORM");
+    VLDS(vb, ub_b, "NORM");
     VADD(vdst, va, vb, mask);
     VSTS(vdst, ub_out);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../binary-vector-ops_zh/">二元向量操作</a></li>

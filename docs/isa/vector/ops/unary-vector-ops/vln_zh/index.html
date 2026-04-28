@@ -916,11 +916,9 @@
 <p><code>pto.vln</code> 逐 lane 计算自然对数：<code>dst[i] = ln(src[i])</code>。在实数语义下，活跃输入最好严格大于 0；非正输入的异常或 NaN 行为由目标平台决定。非活跃 lane 保持目标原值。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vln %result, %input, %mask
-</code></pre>
+<pre class="highlight"><code class="language-text">vln %result, %input, %mask</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vln %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vln %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <p>A5 当前文档化支持的类型：<code>f16</code>、<code>f32</code>。</p>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
@@ -964,20 +962,29 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生 SSA 结果，没有其他架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>只支持浮点元素类型。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
 <li>除零、域外输入等数值异常，仍由所选 backend profile 决定。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vln</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 当前文档化支持：<code>f16</code>、<code>f32</code>。</li>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <table>
@@ -1035,9 +1042,8 @@
 </table>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="c">C 语义<a class="headerlink" href="#c" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = logf(src[i]);
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = logf(src[i]);</code></pre>
 <p><strong>输入定义域：</strong> <code>logf(x)</code> 只在 <code>x &gt; 0</code> 时有实数意义。非正活跃输入会产生 NaN 或目标定义的异常结果。</p>
 <h3 id="_11">数值稳定性说明<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <p>对于 softmax 分母这类 <code>log(sum(exp(x - max)))</code> 模式，通常优先通过 <code>vexpdiff</code> 等融合路径避免不必要的数值风险。</p>

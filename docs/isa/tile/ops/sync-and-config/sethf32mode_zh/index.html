@@ -917,19 +917,15 @@
 <h2 id="_2">语法<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>文本拼写由 PTO ISA 的语法与操作数页面定义。</p>
 <p>示意形式：</p>
-<pre><code class="language-text">pto.sethf32mode {enable = true, mode = ...}
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.sethf32mode {enable = true, mode = ...}</code></pre>
 <h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.sethf32mode {enable = true, mode = ...}
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.sethf32mode {enable = true, mode = ...}</code></pre>
 <h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.sethf32mode ins({enable = true, mode = ...}) outs()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.sethf32mode ins({enable = true, mode = ...}) outs()</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;bool isEnable, RoundMode hf32TransMode = RoundMode::CAST_ROUND, typename... WaitEvents&gt;
-PTO_INST RecordEvent SETHF32MODE(WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;bool isEnable, RoundMode hf32TransMode = RoundMode::CAST_ROUND, typename... WaitEvents&gt;
+PTO_INST RecordEvent SETHF32MODE(WaitEvents &amp;... events);</code></pre>
 <h2 id="_3">输入<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -960,24 +956,29 @@ PTO_INST RecordEvent SETHF32MODE(WaitEvents &amp;... events);
 <li><strong>CPU 模拟器</strong>：在建模时更新软件模拟模式状态；否则为功能性 no-op。</li>
 </ul>
 <h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>精确的模式取值与后续硬件行为由目标定义。</li>
 <li>该指令具有控制状态副作用，应当相对于依赖它的计算指令正确排序。</li>
 <li>程序不得把该操作视为 tile payload 变换；它只修改模式状态。</li>
 </ul>
+</div>
 <h2 id="_7">不允许的情形<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>在不支持 HF32 变换模式的目标 profile 上依赖 HF32 行为。</li>
 <li>使用超出所选目标 profile 支持集合的模式值。</li>
 </ul>
+</div>
 <h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example_enable_hf32() {
   SETHF32MODE&lt;true, RoundMode::CAST_ROUND&gt;();
-}
-</code></pre>
+}</code></pre>
 <h2 id="_9">另请参阅<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../sync-and-config_zh/">同步与配置</a></li>

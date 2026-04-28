@@ -951,19 +951,15 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Synchronous form:</p>
-<pre><code class="language-text">%dst = pto.subview %src, %row_idx, %col_idx : !pto.tile&lt;...&gt;, i16, i16
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.subview %src, %row_idx, %col_idx : !pto.tile&lt;...&gt;, i16, i16</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.subview %src, %row_idx, %col_idx : (!pto.tile&lt;...&gt;, i16, i16) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.subview %src, %row_idx, %col_idx : (!pto.tile&lt;...&gt;, i16, i16) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.subview ins(%src, %row_idx, %col_idx : !pto.tile_buf&lt;...&gt;, i16, i16) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.subview ins(%src, %row_idx, %col_idx : !pto.tile_buf&lt;...&gt;, i16, i16) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent SUBVIEW(TileDataDst &amp;dst, TileDataSrc &amp;src, uint16_t rowIdx, uint16_t colIdx, WaitEvents&amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
+PTO_INST RecordEvent SUBVIEW(TileDataDst &amp;dst, TileDataSrc &amp;src, uint16_t rowIdx, uint16_t colIdx, WaitEvents&amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -994,6 +990,8 @@ PTO_INST RecordEvent SUBVIEW(TileDataDst &amp;dst, TileDataSrc &amp;src, uint16_
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
 <p><code>dst</code> carries the result tile or updated tile payload produced by the operation.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <p>Enforced by <code>SUBVIEW_IMPL</code>:</p>
 <ul>
 <li><strong>Tile type must match</strong>: <code>TileDataSrc::Loc == TileDataDst::Loc</code></li>
@@ -1001,13 +999,17 @@ PTO_INST RecordEvent SUBVIEW(TileDataDst &amp;dst, TileDataSrc &amp;src, uint16_
 <li><strong>Both tiles must have the same BLayout</strong>: <code>TileDataSrc::BFractal == TileDataDst::BFractal</code></li>
 <li><strong>Source valid region must contain destination</strong>: The source tile's <code>validRow</code> (<code>validCol</code>) must be at least as big as the destination tile's <code>validRow</code> (<code>validCol</code>)</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Creating a subview where <code>rowIdx + dst.validRow &gt; src.validRow</code> or <code>colIdx + dst.validCol &gt; src.validCol</code>.</li>
 <li>Mismatched tile types or layouts between <code>src</code> and <code>dst</code>.</li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example() {
@@ -1022,8 +1024,7 @@ void example() {
   SUBVIEW(dst1, src, 0, 32);
   SUBVIEW(dst2, src, 2, 0);
   SUBVIEW(dst3, src, 2, 32);
-}
-</code></pre>
+}</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../sync-and-config/">Sync And Config</a></li>

@@ -918,23 +918,19 @@
 <p>常见用途是按行阈值裁剪、数值稳定化前的按行上界展开等。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = trowexpandmax %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = trowexpandmax %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trowexpandmax %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.trowexpandmax %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trowexpandmax ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.trowexpandmax ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWEXPANDMAX(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, WaitEvents &amp;... events);
 
 template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename TileDataTmp,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWEXPANDMAX(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, TileDataTmp &amp;tmp,
-                                   WaitEvents &amp;... events);
-</code></pre>
+                                   WaitEvents &amp;... events);</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src0</code>：逐元素主输入 tile</li>
@@ -949,19 +945,25 @@ PTO_INST RecordEvent TROWEXPANDMAX(TileDataDst &amp;dst, TileDataSrc0 &amp;src0,
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>除产生目标 tile 外，没有额外架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>dst/src0/src1</code> 的元素类型必须一致，当前实现只支持 <code>half</code> 或 <code>float</code></li>
 <li><code>dst</code> 必须是 row-major</li>
 <li><code>src1</code> 需要表达“每行一个标量”这一角色</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
+</div>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>当前仓内没有把 <code>trowexpandmax</code> 单列成公开 cost table，应视为目标 profile 相关的广播组合路径。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example() {
@@ -970,8 +972,7 @@ void example() {
   MatT src0, dst;
   RowBiasT src1;
   TROWEXPANDMAX(dst, src0, src1);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../reduce-and-expand_zh/">归约与扩展</a></li>

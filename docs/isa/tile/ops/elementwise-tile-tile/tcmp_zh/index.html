@@ -918,19 +918,15 @@
 <p>随后把这些谓词位按目标定义的 packed layout 写入 <code>dst</code>。也就是说，<code>dst</code> 不是“每个 lane 一个布尔数”的朴素 tile，而是某种目标定义的压缩谓词表示。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto-as">PTO-AS<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcmp ins(%src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tcmp ins(%src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataSrc &amp;src1,
-                          CmpMode cmpMode, WaitEvents &amp;... events);
-</code></pre>
+                          CmpMode cmpMode, WaitEvents &amp;... events);</code></pre>
 <h3 id="_4">比较模式<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1018,17 +1014,23 @@ PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataS
 <h2 id="_7">副作用<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <p>除产生谓词 tile 外，没有额外架构副作用。</p>
 <h2 id="_8">约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>迭代域是 <code>dst.GetValidRow() × dst.GetValidCol()</code>。</li>
 <li><code>src0</code> 的 validRow / validCol 必须与 <code>dst</code> 一致。</li>
 <li><code>src1</code> 的 shape / valid 在某些实现里不会做完整运行时校验，因此域外读值属于 implementation-defined。</li>
 <li>程序不能假设谓词 tile 的具体编码。</li>
 </ul>
+</div>
 <h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>假设谓词 tile 是“一位一元素”的普通展开布尔 tile。</li>
 <li>对 <code>dst</code> 使用不符合目标定义的谓词输出 dtype。</li>
 </ul>
+</div>
 <h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1075,7 +1077,7 @@ PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataS
 <h2 id="_10">性能<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <p>当前仓内没有把 <code>tcmp</code> 单独落成公开 cost bucket。若代码依赖具体延迟，应把它视为目标 profile 相关的 tile 比较路径。</p>
 <h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example_auto() {
@@ -1084,8 +1086,7 @@ void example_auto() {
   SrcT src0, src1;
   MaskT mask(16, 2);
   TCMP(mask, src0, src1, CmpMode::GT);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></li>

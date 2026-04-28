@@ -926,15 +926,15 @@
 <p>其中 <code>cmp ∈ {EQ, NE, GT, GE, LT, LE}</code>。</p>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：</p>
-<pre><code class="language-text">%result = ttest %signal, %cmp_value {cmp = #pto.cmp&lt;EQ&gt;} : (!pto.memref&lt;i32&gt;, i32) -&gt; i1
-%result = ttest %signal_matrix, %cmp_value {cmp = #pto.cmp&lt;GE&gt;} : (!pto.memref&lt;i32, MxN&gt;, i32) -&gt; i1
-</code></pre>
+<pre class="highlight"><code class="language-text">%result = ttest %signal, %cmp_value {cmp = #pto.cmp&lt;EQ&gt;} : (!pto.memref&lt;i32&gt;, i32) -&gt; i1
+%result = ttest %signal_matrix, %cmp_value {cmp = #pto.cmp&lt;GE&gt;} : (!pto.memref&lt;i32, MxN&gt;, i32) -&gt; i1</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
-PTO_INST bool TTEST(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp cmp, WaitEvents&amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
+PTO_INST bool TTEST(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp cmp, WaitEvents&amp;... events);</code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>GlobalSignalData::DType</code> 必须为 <code>int32_t</code></li>
 <li><code>signalData</code> 必须指向本地地址（当前 NPU）</li>
@@ -976,19 +976,18 @@ PTO_INST bool TTEST(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp 
 </tr>
 </tbody>
 </table>
+</div>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="_7">基础检测<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">bool check_ready(__gm__ int32_t* local_signal) {
+<pre class="highlight"><code class="language-cpp">bool check_ready(__gm__ int32_t* local_signal) {
     comm::Signal sig(local_signal);
     return comm::TTEST(sig, 1, comm::WaitCmp::EQ);
-}
-</code></pre>
+}</code></pre>
 <h3 id="_8">检测信号矩阵<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">bool check_worker_grid(__gm__ int32_t* signal_matrix) {
+<pre class="highlight"><code class="language-cpp">bool check_worker_grid(__gm__ int32_t* signal_matrix) {
     comm::Signal2D&lt;4, 8&gt; grid(signal_matrix);
     return comm::TTEST(grid, 1, comm::WaitCmp::EQ);
-}
-</code></pre>
+}</code></pre>
 <h3 id="twait">与 TWAIT 的区别<a class="headerlink" href="#twait" title="Permanent link">&para;</a></h3>
 <p><code>TWAIT</code> 会阻塞直到条件满足；<code>TTEST</code> 只返回当前检测结果，不会阻塞调用方。</p>
               

@@ -971,16 +971,15 @@
 <h2 id="execution-model-vecscope">Execution Model: vecscope<a class="headerlink" href="#execution-model-vecscope" title="Permanent link">&para;</a></h2>
 <p>Reduction operations execute inside a <code>pto.vecscope { ... }</code> region. Cross-lane reductions (<code>vcadd</code>/<code>vcmax</code>/<code>vcmin</code>) are issued to <code>PIPE_V</code> and perform tree-structured reduction in a single instruction. VLane-group reductions (<code>vcgadd</code>/<code>vcgmax</code>/<code>vccgmin</code>) operate within each 32-byte VLane independently.</p>
 <p><strong>Typical pattern for row-wise sum (Softmax denominator):</strong></p>
-<pre><code class="language-mlir">pto.vecscope {
-  %active = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
+<pre class="highlight"><code class="language-mlir">pto.vecscope {
+  %active = pto.pset_b32 "PAT_ALL" : !pto.mask
   scf.for %row = %c0 to %row_count step %c1 {
     %vec = pto.vlds %ub_q[%row] : !pto.ptr -&gt; !pto.vreg&lt;64xf32&gt;
     %row_sum_raw = pto.vcadd %vec, %active : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
     // row_sum_raw[0] contains the sum
-    pto.vsts %row_sum_raw, %ub_sum[%row], %one_mask {dist = &quot;1PT&quot;} : ...
+    pto.vsts %row_sum_raw, %ub_sum[%row], %one_mask {dist = "1PT"} : ...
   }
-}
-</code></pre>
+}</code></pre>
 <p><strong>Cross-lane reduction mechanism:</strong>
 - <code>vcadd</code>: Tree reduction — pairs of lanes are added recursively until lane 0 holds the total
 - <code>vcmax</code>/<code>vcmin</code>: Tree reduction with value+index packing in lane 0
@@ -1115,13 +1114,12 @@
 <li><strong>A5 types:</strong> i16-i64, f16, f32</li>
 <li><strong>semantics:</strong> Sum all elements. Result in lane 0, others zeroed.</li>
 </ul>
-<pre><code class="language-c">T sum = 0;
+<pre class="highlight"><code class="language-c">T sum = 0;
 for (int i = 0; i &lt; N; i++)
     sum += src[i];
 dst[0] = sum;
 for (int i = 1; i &lt; N; i++)
-    dst[i] = 0;
-</code></pre>
+    dst[i] = 0;</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%input</code> is the source vector and <code>%mask</code> selects participating
   lanes.</li>
@@ -1137,12 +1135,11 @@ for (int i = 1; i &lt; N; i++)
 <li><strong>A5 types:</strong> i16-i32, f16, f32</li>
 <li><strong>semantics:</strong> Find max element with argmax. Result value + index in lane 0.</li>
 </ul>
-<pre><code class="language-c">T mx = -INF; int idx = 0;
+<pre class="highlight"><code class="language-c">T mx = -INF; int idx = 0;
 for (int i = 0; i &lt; N; i++)
     if (src[i] &gt; mx) { mx = src[i]; idx = i; }
 dst_val[0] = mx;
-dst_idx[0] = idx;
-</code></pre>
+dst_idx[0] = idx;</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%input</code> is the source vector and <code>%mask</code> selects participating
   lanes.</li>
@@ -1160,12 +1157,11 @@ dst_idx[0] = idx;
 <li><strong>A5 types:</strong> i16-i32, f16, f32</li>
 <li><strong>semantics:</strong> Find min element with argmin. Result value + index in lane 0.</li>
 </ul>
-<pre><code class="language-c">T mn = INF; int idx = 0;
+<pre class="highlight"><code class="language-c">T mn = INF; int idx = 0;
 for (int i = 0; i &lt; N; i++)
     if (src[i] &lt; mn) { mn = src[i]; idx = i; }
 dst_val[0] = mn;
-dst_idx[0] = idx;
-</code></pre>
+dst_idx[0] = idx;</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%input</code> is the source vector and <code>%mask</code> selects participating
   lanes.</li>
@@ -1177,17 +1173,16 @@ dst_idx[0] = idx;
 <hr />
 <h2 id="per-vlane-group-reductions">Per-VLane (Group) Reductions<a class="headerlink" href="#per-vlane-group-reductions" title="Permanent link">&para;</a></h2>
 <p>The vector register is organized as <strong>8 VLanes</strong> of 32 bytes each. Group reductions operate within each VLane independently.</p>
-<pre><code>vreg layout (f32 example, 64 elements total):
+<pre class="highlight"><code>vreg layout (f32 example, 64 elements total):
 VLane 0: [0..7]   VLane 1: [8..15]  VLane 2: [16..23] VLane 3: [24..31]
-VLane 4: [32..39] VLane 5: [40..47] VLane 6: [48..55] VLane 7: [56..63]
-</code></pre>
+VLane 4: [32..39] VLane 5: [40..47] VLane 6: [48..55] VLane 7: [56..63]</code></pre>
 <h3 id="ptovcgadd"><code>pto.vcgadd</code><a class="headerlink" href="#ptovcgadd" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>syntax:</strong> <code>%result = pto.vcgadd %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 types:</strong> i16-i32, f16, f32</li>
 <li><strong>semantics:</strong> Sum within each VLane. 8 results at indices 0, 8, 16, 24, 32, 40, 48, 56 (for f32).</li>
 </ul>
-<pre><code class="language-c">int K = N / 8;  // elements per VLane
+<pre class="highlight"><code class="language-c">int K = N / 8;  // elements per VLane
 for (int g = 0; g &lt; 8; g++) {
     T sum = 0;
     for (int i = 0; i &lt; K; i++)
@@ -1196,8 +1191,7 @@ for (int g = 0; g &lt; 8; g++) {
     for (int i = 1; i &lt; K; i++)
         dst[g*K + i] = 0;
 }
-// For f32: results at dst[0], dst[8], dst[16], dst[24], dst[32], dst[40], dst[48], dst[56]
-</code></pre>
+// For f32: results at dst[0], dst[8], dst[16], dst[24], dst[32], dst[40], dst[48], dst[56]</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%input</code> is the source vector and <code>%mask</code> selects participating
   lanes.</li>
@@ -1213,7 +1207,7 @@ for (int g = 0; g &lt; 8; g++) {
 <li><strong>A5 types:</strong> i16-i32, f16, f32</li>
 <li><strong>semantics:</strong> Max within each VLane.</li>
 </ul>
-<pre><code class="language-c">int K = N / 8;
+<pre class="highlight"><code class="language-c">int K = N / 8;
 for (int g = 0; g &lt; 8; g++) {
     T mx = -INF;
     for (int i = 0; i &lt; K; i++)
@@ -1221,8 +1215,7 @@ for (int g = 0; g &lt; 8; g++) {
     dst[g*K] = mx;
     for (int i = 1; i &lt; K; i++)
         dst[g*K + i] = 0;
-}
-</code></pre>
+}</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%input</code> is the source vector and <code>%mask</code> selects participating
   lanes.</li>
@@ -1237,7 +1230,7 @@ for (int g = 0; g &lt; 8; g++) {
 <li><strong>A5 types:</strong> i16-i32, f16, f32</li>
 <li><strong>semantics:</strong> Min within each VLane.</li>
 </ul>
-<pre><code class="language-c">int K = N / 8;
+<pre class="highlight"><code class="language-c">int K = N / 8;
 for (int g = 0; g &lt; 8; g++) {
     T mn = INF;
     for (int i = 0; i &lt; K; i++)
@@ -1245,8 +1238,7 @@ for (int g = 0; g &lt; 8; g++) {
     dst[g*K] = mn;
     for (int i = 1; i &lt; K; i++)
         dst[g*K + i] = 0;
-}
-</code></pre>
+}</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%input</code> is the source vector and <code>%mask</code> selects participating
   lanes.</li>
@@ -1262,14 +1254,12 @@ for (int g = 0; g &lt; 8; g++) {
 <li><strong>A5 types:</strong> f16, f32</li>
 <li><strong>semantics:</strong> Inclusive prefix sum (scan).</li>
 </ul>
-<pre><code class="language-c">dst[0] = src[0];
+<pre class="highlight"><code class="language-c">dst[0] = src[0];
 for (int i = 1; i &lt; N; i++)
-    dst[i] = dst[i-1] + src[i];
-</code></pre>
-<p><strong>Example:</strong></p>
-<pre><code class="language-c">// input:  [1, 2, 3, 4, 5, ...]
-// output: [1, 3, 6, 10, 15, ...]
-</code></pre>
+    dst[i] = dst[i-1] + src[i];</code></pre>
+<p><strong>Example:</strong>
+<pre class="highlight"><code class="language-c">// input:  [1, 2, 3, 4, 5, ...]
+// output: [1, 3, 6, 10, 15, ...]</code></pre></p>
 <ul>
 <li><strong>inputs:</strong> <code>%input</code> is the source vector and <code>%mask</code> selects participating
   lanes.</li>
@@ -1279,10 +1269,10 @@ for (int i = 1; i &lt; N; i++)
 </ul>
 <hr />
 <h2 id="typical-usage">Typical Usage<a class="headerlink" href="#typical-usage" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">// Softmax: find max for numerical stability
+<pre class="highlight"><code class="language-mlir">// Softmax: find max for numerical stability
 %max_vec = pto.vcmax %logits, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
 // max is in lane 0, broadcast it
-%max_broadcast = pto.vlds %ub_tmp[%c0] {dist = &quot;BRC_B32&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+%max_broadcast = pto.vlds %ub_tmp[%c0] {dist = "BRC_B32"} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Row-wise sum using vcgadd (for 8-row tile)
 %row_sums = pto.vcgadd %tile, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
@@ -1293,8 +1283,7 @@ for (int i = 1; i &lt; N; i++)
 // total[0] contains the sum
 
 // Prefix sum for cumulative distribution
-%cdf = pto.vcpadd %pdf, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+%cdf = pto.vcpadd %pdf, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
               
             </div>
           </div><footer>

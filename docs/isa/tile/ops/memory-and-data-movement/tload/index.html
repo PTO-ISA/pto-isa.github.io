@@ -958,21 +958,17 @@
 <p>The operation is asynchronous. A <code>RecordEvent</code> token is returned; use <code>TSYNC</code> or <code>set_flag</code>/<code>wait_flag</code> before reading the tile data.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
-!pto.tile&lt;loc, dtype, rows, cols, blayout, slayout, fractal, pad&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
+!pto.tile&lt;loc, dtype, rows, cols, blayout, slayout, fractal, pad&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-          outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)
+          outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1017,12 +1013,15 @@ PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &a
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>Reads from global memory and writes to the tile buffer. Does not implicitly fence unrelated tile traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Valid region</strong>: The transfer size is <code>dst.GetValidRow()</code> × <code>dst.GetValidCol()</code>.</li>
 <li><strong>Element size match</strong>: <code>sizeof(tile.dtype) == sizeof(gtensor.dtype)</code>.</li>
 <li><strong>Layout compatibility</strong>: Source (GlobalTensor) layout and destination (tile) layout must be a supported combination. See the layout compatibility table in <a href="../../../memory-and-data-movement/">Memory And Data Movement</a>.</li>
 <li><strong>Shape positivity</strong>: <code>src.GetShape(dim) &gt; 0</code> and <code>dst.GetValidRow() &gt; 0</code> and <code>dst.GetValidCol() &gt; 0</code> at runtime.</li>
 </ul>
+</div>
 <h2 id="layout-compatibility">Layout Compatibility<a class="headerlink" href="#layout-compatibility" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1066,11 +1065,16 @@ PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &a
 - <code>Vec</code> with <code>ND→NZ</code> or <code>DN→ZN</code>: requires <code>GlobalData::staticShape[0..2] == 1</code> and <code>TileData::SFractalSize == 512</code>.
 - <code>Vec</code> with <code>int64_t/uint64_t</code>: only <code>ND→ND</code> or <code>DN→DN</code> supported.</p>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
 <li>Programs must not rely on behavior outside the documented legal domain of this operation.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <p><strong>A2/A3</strong>:
 - <code>TileData::DType</code> must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>int64_t</code>, <code>uint64_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.
 - Destination tile location must be <code>TileType::Vec</code> or <code>TileType::Mat</code>.
@@ -1086,8 +1090,9 @@ PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &a
 - <code>Mat</code> loads also handle <code>mx</code> format loads including <code>MX_A_ZZ/MX_A_ND/MX_A_DN</code> to ZZ for scalarA and <code>MX_B_NN/MX_B_ND/MX_B_DN</code> to NN for scalarB.
 - For <code>MX_A_ZZ/MX_B_NN</code>: <code>GlobalData::staticShape[3] == 16</code> and <code>GlobalData::staticShape[4] == 2</code>.
 - For <code>MX_A_ND/MX_ADN/MX_B_ND/MX_B_DN</code>: <code>GlobalData::staticShape[0] == 1</code> and <code>GlobalData::staticShape[1] == 1</code> and <code>GlobalData::staticShape[4] == 2</code>.</p>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 template &lt;typename T&gt;
@@ -1101,8 +1106,7 @@ void example(__gm__ T* in) {
   TileT t;
   RecordEvent e = TLOAD(t, gin);
   TSYNC(e);
-}
-</code></pre>
+}</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../memory-and-data-movement/">Memory And Data Movement</a></li>

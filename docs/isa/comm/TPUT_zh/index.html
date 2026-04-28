@@ -917,29 +917,27 @@
 <div class="arithmatex">\[ \mathrm{dst}^{\mathrm{remote}}_{i,j} = \mathrm{src}^{\mathrm{local}}_{i,j} \]</div>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：</p>
-<pre><code class="language-text">tput %dst_remote, %src_local : (!pto.memref&lt;...&gt;, !pto.memref&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">tput %dst_remote, %src_local : (!pto.memref&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>lowering 会为 GM→UB→GM 路径引入 UB 暂存 Tile，因此 C++ 接口要求显式传入 <code>stagingTileData</code>，或在双缓冲场景下传入 <code>pingTile</code> / <code>pongTile</code>。</p>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
 <h3 id="tile">单暂存 Tile<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;AtomicType atomicType = AtomicType::AtomicNone,
+<pre class="highlight"><code class="language-cpp">template &lt;AtomicType atomicType = AtomicType::AtomicNone,
           typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TPUT(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
-                          TileData &amp;stagingTileData, WaitEvents&amp;... events);
-</code></pre>
+                          TileData &amp;stagingTileData, WaitEvents&amp;... events);</code></pre>
 <h3 id="_4">乒乓双缓冲<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;AtomicType atomicType = AtomicType::AtomicNone,
+<pre class="highlight"><code class="language-cpp">template &lt;AtomicType atomicType = AtomicType::AtomicNone,
           typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TPUT(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
-                          TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
-</code></pre>
+                          TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);</code></pre>
 <h3 id="_5">运行时原子模式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TPUT(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
-                          TileData &amp;stagingTileData, AtomicType atomicType, WaitEvents&amp;... events);
-</code></pre>
+                          TileData &amp;stagingTileData, AtomicType atomicType, WaitEvents&amp;... events);</code></pre>
 <h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="_7">类型约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>GlobalSrcData::RawDType</code> 必须等于 <code>GlobalDstData::RawDType</code></li>
@@ -958,9 +956,10 @@ PTO_INST RecordEvent TPUT(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;s
 <li><code>pingTile</code> 与 <code>pongTile</code> 的类型和维度必须一致</li>
 <li>两者必须位于不重叠的 UB 偏移处</li>
 </ul>
+</div>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="_11">基础形式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -979,20 +978,17 @@ void example_tput(__gm__ T* local_data, __gm__ T* remote_addr) {
 
     comm::TPUT(dstG, srcG, stagingTile);
     comm::TPUT&lt;AtomicType::AtomicAdd&gt;(dstG, srcG, stagingTile);
-}
-</code></pre>
+}</code></pre>
 <h3 id="_12">乒乓双缓冲<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">constexpr size_t tileUBBytes = ((64 * 64 * sizeof(float) + 1023) / 1024) * 1024;
+<pre class="highlight"><code class="language-cpp">constexpr size_t tileUBBytes = ((64 * 64 * sizeof(float) + 1023) / 1024) * 1024;
 TileT pingTile(64, 64);
 TileT pongTile(64, 64);
 TASSIGN(pingTile, 0);
 TASSIGN(pongTile, tileUBBytes);
 
-comm::TPUT(dstG, srcG, pingTile, pongTile);
-</code></pre>
+comm::TPUT(dstG, srcG, pingTile, pongTile);</code></pre>
 <h3 id="_13">运行时指定原子模式<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">comm::TPUT(dstG, srcG, stagingTile, AtomicType::AtomicAdd);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">comm::TPUT(dstG, srcG, stagingTile, AtomicType::AtomicAdd);</code></pre>
 <h2 id="_14">相关页面<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../communication-runtime_zh/">通信与运行时</a></li>

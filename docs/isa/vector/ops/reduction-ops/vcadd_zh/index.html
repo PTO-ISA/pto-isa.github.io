@@ -918,11 +918,9 @@
 <div class="arithmatex">\[ \mathrm{dst}_{0} = \sum_{i=0}^{N-1} \mathrm{src}_{i} \]</div>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vcadd %dst, %src, %mask : !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">vcadd %dst, %src, %mask : !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vcadd %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vcadd %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <p>A5 当前文档化支持的类型：<code>i16-i64</code>、<code>f16</code>、<code>f32</code>。</p>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
@@ -966,36 +964,43 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生 SSA 结果，没有其他架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>某些窄整数形式可能在内部使用更宽的累加器，但最终结果仍按声明结果类型返回。</li>
 <li>如果所有谓词位都为 0，lane 0 为 0，其余 lane 也为 0。</li>
 <li>mask 粒度是逐 lane 的，不支持更细粒度的子 lane 掩码。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vcadd</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 当前文档化支持：<code>i16-i64</code>、<code>f16</code>、<code>f32</code>。</li>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延与吞吐<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <p>归约操作的时延和吞吐强依赖目标 profile。与逐元素算术相比，完整向量归约通常更贵，因为硬件需要执行树形规约过程。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="c">C 语义<a class="headerlink" href="#c" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">T sum = 0;
+<pre class="highlight"><code class="language-c">T sum = 0;
 for (int i = 0; i &lt; N; i++)
     sum += src[i];
 dst[0] = sum;
 for (int i = 1; i &lt; N; i++)
-    dst[i] = 0;
-</code></pre>
+    dst[i] = 0;</code></pre>
 <h3 id="mlir">MLIR<a class="headerlink" href="#mlir" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vcadd %input, %mask : !pto.vreg&lt;128xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf32&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vcadd %input, %mask : !pto.vreg&lt;128xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf32&gt;</code></pre>
 <h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。

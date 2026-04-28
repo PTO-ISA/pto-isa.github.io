@@ -989,13 +989,13 @@
 <h2 id="execution-model-vecscope">Execution Model: vecscope<a class="headerlink" href="#execution-model-vecscope" title="Permanent link">&para;</a></h2>
 <p>Binary vector operations execute inside a <code>pto.vecscope { ... }</code> region, which establishes the Vector Core's execution context. All vector instructions inside the region are issued to <code>PIPE_V</code>.</p>
 <p><strong>Producer-consumer pipeline pattern (A2/A3 double-buffering):</strong></p>
-<pre><code class="language-mlir">// Stage 1: MTE2 loads tile from GM to UB
-pto.get_buf &quot;PIPE_MTE2&quot;, %bufid, %c0 : i64, i64
+<pre class="highlight"><code class="language-mlir">// Stage 1: MTE2 loads tile from GM to UB
+pto.get_buf "PIPE_MTE2", %bufid, %c0 : i64, i64
 pto.copy_gm_to_ubuf %gm_ptr, %ub_tile, ... : ...
-pto.rls_buf &quot;PIPE_MTE2&quot;, %bufid, %c0 : i64, i64
+pto.rls_buf "PIPE_MTE2", %bufid, %c0 : i64, i64
 
 // Stage 2: Vector compute
-pto.get_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
+pto.get_buf "PIPE_V", %bufid, %c0 : i64, i64
 pto.vecscope {
   scf.for %offset = %c0 to %N step %c64 iter_args(%remaining = %N_i32) -&gt; (i32) {
     %mask, %next = pto.plt_b32 %remaining : i32 -&gt; !pto.mask, i32
@@ -1006,8 +1006,7 @@ pto.vecscope {
     scf.yield %next : i32
   }
 }
-pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
-</code></pre>
+pto.rls_buf "PIPE_V", %bufid, %c0 : i64, i64</code></pre>
 <p><strong>Key mechanism:</strong> <code>pto.get_buf</code> / <code>pto.rls_buf</code> resolve cross-pipeline RAW/WAR dependencies automatically via buffer acquire/release — no explicit event IDs or loop peeling required.</p>
 <hr />
 <h2 id="a5-latency-and-throughput-ascend910_9599">A5 Latency and Throughput (Ascend910_9599)<a class="headerlink" href="#a5-latency-and-throughput-ascend910_9599" title="Permanent link">&para;</a></h2>
@@ -1207,8 +1206,7 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 </tbody>
 </table>
 <p><strong>Cycle model (A2/A3):</strong></p>
-<pre><code>total_cycles = startup + completion + repeats × per_repeat + (repeats - 1) × interval
-</code></pre>
+<pre class="highlight"><code>total_cycles = startup + completion + repeats × per_repeat + (repeats - 1) × interval</code></pre>
 <hr />
 <h2 id="arithmetic">Arithmetic<a class="headerlink" href="#arithmetic" title="Permanent link">&para;</a></h2>
 <h3 id="ptovadd"><code>pto.vadd</code><a class="headerlink" href="#ptovadd" title="Permanent link">&para;</a></h3>
@@ -1217,9 +1215,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VADD</code>; <strong>Latency:</strong> 7 (f32/f16), 7 (i32/i16/i8)</li>
 <li><strong>A2/A3 throughput:</strong> 2 cycles/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] + src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] + src1[i];</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code> and <code>%rhs</code> are added lane-wise; <code>%mask</code> selects active lanes.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the lane-wise sum.</li>
@@ -1232,9 +1229,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VSUB</code>; <strong>Latency:</strong> 7 (f32/f16), 7 (i32/i16/i8)</li>
 <li><strong>A2/A3 throughput:</strong> 2 cycles/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] - src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] - src1[i];</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code> is the minuend, <code>%rhs</code> is the subtrahend, and <code>%mask</code> selects active lanes.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the lane-wise difference.</li>
@@ -1247,9 +1243,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VMUL</code>; <strong>Latency:</strong> 8 (f32/f16), 8 (i32/i16)</li>
 <li><strong>A2/A3 throughput:</strong> 2 cycles/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] * src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] * src1[i];</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code> and <code>%rhs</code> are multiplied lane-wise; <code>%mask</code> selects active lanes.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the lane-wise product.</li>
@@ -1262,9 +1257,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VDIV</code>; <strong>Latency:</strong> 17 (f32), 22 (f16)</li>
 <li><strong>A2/A3 throughput:</strong> 2 cycles/repeat (f32), 4 cycles/repeat (f16); <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] / src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] / src1[i];</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code> is the numerator, <code>%rhs</code> is the denominator, and <code>%mask</code> selects active lanes.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the lane-wise quotient.</li>
@@ -1278,9 +1272,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VMAX</code>; <strong>Latency:</strong> 7 (f32/f16), 7 (i32/i16/i8)</li>
 <li><strong>A2/A3 throughput:</strong> 2 cycles/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = (src0[i] &gt; src1[i]) ? src0[i] : src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = (src0[i] &gt; src1[i]) ? src0[i] : src1[i];</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code>, <code>%rhs</code>, and <code>%mask</code> as above.</li>
 <li><strong>outputs:</strong> <code>%result</code> holds the lane-wise maximum.</li>
@@ -1293,9 +1286,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VMAX</code>; <strong>Latency:</strong> 7 (f32/f16), 7 (i32/i16/i8)</li>
 <li><strong>A2/A3 throughput:</strong> 2 cycles/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = (src0[i] &lt; src1[i]) ? src0[i] : src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = (src0[i] &lt; src1[i]) ? src0[i] : src1[i];</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code>, <code>%rhs</code>, and <code>%mask</code> as above.</li>
 <li><strong>outputs:</strong> <code>%result</code> holds the lane-wise minimum.</li>
@@ -1309,9 +1301,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VAND</code>; <strong>Latency:</strong> 7 (integer types)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] &amp; src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] &amp; src1[i];</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code>, <code>%rhs</code>, and <code>%mask</code> as above.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the lane-wise bitwise AND.</li>
@@ -1324,9 +1315,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VOR</code>; <strong>Latency:</strong> 7 (integer types)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] | src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] | src1[i];</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code>, <code>%rhs</code>, and <code>%mask</code> as above.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the lane-wise bitwise OR.</li>
@@ -1339,9 +1329,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VXOR</code>; <strong>Latency:</strong> 7 (integer types)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] ^ src1[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] ^ src1[i];</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code>, <code>%rhs</code>, and <code>%mask</code> as above.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the lane-wise bitwise XOR.</li>
@@ -1355,9 +1344,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VSHL</code>; <strong>Latency:</strong> 7 (integer types)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] &lt;&lt; src1[i];   // per-lane shift: each lane's shift amount varies
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] &lt;&lt; src1[i];   // per-lane shift: each lane's shift amount varies</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code> supplies the shifted value, <code>%rhs</code> supplies the <strong>per-lane</strong> shift amount (from a second vector register), and <code>%mask</code> selects active lanes.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the shifted vector.</li>
@@ -1370,9 +1358,8 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VSHR</code>; <strong>Latency:</strong> 7 (integer types)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src0[i] &gt;&gt; src1[i];  // arithmetic for signed, logical for unsigned
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src0[i] &gt;&gt; src1[i];  // arithmetic for signed, logical for unsigned</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code> supplies the shifted value, <code>%rhs</code> supplies the <strong>per-lane</strong> shift amount, and <code>%mask</code> selects active lanes.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the shifted vector.</li>
@@ -1386,12 +1373,11 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VADDC</code>; <strong>Latency:</strong> 7 (i32, unsigned carry semantics)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++) {
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++) {
     uint64_t r = (uint64_t)src0[i] + src1[i];
     dst[i] = (T)r;
     carry[i] = (r &gt;&gt; bitwidth);   // carry predicate: 1 if overflow occurred
-}
-</code></pre>
+}</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code> and <code>%rhs</code> are added lane-wise and <code>%mask</code> selects active lanes.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the truncated arithmetic result and <code>%carry</code> is the carry/overflow predicate per lane (1 = carry generated, 0 = no carry).</li>
@@ -1405,11 +1391,10 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 <li><strong>A5 RV:</strong> <code>RV_VSUBC</code>; <strong>Latency:</strong> 7 (i32, unsigned borrow semantics)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++) {
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++) {
     dst[i] = src0[i] - src1[i];
     borrow[i] = (src0[i] &lt; src1[i]);  // borrow predicate: 1 if borrow occurred
-}
-</code></pre>
+}</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code> and <code>%rhs</code> are subtracted lane-wise and <code>%mask</code> selects active lanes.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the arithmetic difference and <code>%borrow</code> marks lanes that borrowed (1 = borrow generated, 0 = no borrow).</li>
@@ -1418,7 +1403,7 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 </ul>
 <hr />
 <h2 id="typical-usage">Typical Usage<a class="headerlink" href="#typical-usage" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">// Vector addition
+<pre class="highlight"><code class="language-mlir">// Vector addition
 %sum = pto.vadd %a, %b, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Element-wise multiply
@@ -1429,8 +1414,7 @@ pto.rls_buf &quot;PIPE_V&quot;, %bufid, %c0 : i64, i64
 %clamped = pto.vmin %clamped_low, %max_vec, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Bit manipulation
-%masked = pto.vand %data, %bitmask, %mask : !pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xi32&gt;
-</code></pre>
+%masked = pto.vand %data, %bitmask, %mask : !pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xi32&gt;</code></pre>
               
             </div>
           </div><footer>

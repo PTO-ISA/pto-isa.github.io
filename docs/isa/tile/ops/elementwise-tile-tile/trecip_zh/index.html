@@ -918,19 +918,15 @@
 <p>它适合在后续仍要与其他 tile 做乘法组合时，替代显式除法。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto-as">PTO-AS<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = trecip %src : !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = trecip %src : !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trecip %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.trecip %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trecip ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.trecip ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;auto PrecisionType = RecipAlgorithm::DEFAULT, typename TileDataDst, typename TileDataSrc,
+<pre class="highlight"><code class="language-cpp">template &lt;auto PrecisionType = RecipAlgorithm::DEFAULT, typename TileDataDst, typename TileDataSrc,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TRECIP(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEvents &amp;... events);
-</code></pre>
+PTO_INST RecordEvent TRECIP(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEvents &amp;... events);</code></pre>
 <p>可选 <code>PrecisionType</code>：</p>
 <ul>
 <li><code>RecipAlgorithm::DEFAULT</code></li>
@@ -948,15 +944,21 @@ PTO_INST RecordEvent TRECIP(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEven
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>除产生目标 tile 外，没有额外架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>迭代域由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定。</li>
 <li>除零行为由目标定义；CPU 模拟器在调试构建下会断言。</li>
 <li>高精度算法只在 A5 有效。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
+</div>
 <h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
 <h3 id="npu">NPU<a class="headerlink" href="#npu" title="Permanent link">&para;</a></h3>
 <ul>
@@ -969,7 +971,7 @@ PTO_INST RecordEvent TRECIP(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEven
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>当前仓内没有为 <code>trecip</code> 单列公开 cost bucket。若代码依赖具体延迟，应把它视为目标 profile 相关的一元数学路径。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example() {
@@ -977,8 +979,7 @@ void example() {
   TileT x, out;
   TRECIP(out, x);
   TRECIP&lt;RecipAlgorithm::HIGH_PRECISION&gt;(out, x);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></li>

@@ -925,26 +925,23 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>同步形式：</p>
-<pre><code class="language-text">tassign %tile, %addr : !pto.tile&lt;...&gt;, index
-</code></pre>
+<pre class="highlight"><code class="language-text">tassign %tile, %addr : !pto.tile&lt;...&gt;, index</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tassign %tile, %addr : !pto.tile&lt;...&gt;, dtype
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tassign %tile, %addr : !pto.tile&lt;...&gt;, dtype</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tassign ins(%tile, %addr : !pto.tile_buf&lt;...&gt;, dtype)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tassign ins(%tile, %addr : !pto.tile_buf&lt;...&gt;, dtype)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>。</p>
 <h3 id="_5">运行时地址形式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;typename T, typename AddrType&gt;
-PTO_INST void TASSIGN(T&amp; obj, AddrType addr);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename T, typename AddrType&gt;
+PTO_INST void TASSIGN(T&amp; obj, AddrType addr);</code></pre>
 <h3 id="_6">编译期地址形式<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;std::size_t Addr, typename T&gt;
-PTO_INST std::enable_if_t&lt;is_tile_data_v&lt;T&gt; || is_conv_tile_v&lt;T&gt;&gt; TASSIGN(T&amp; obj);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;std::size_t Addr, typename T&gt;
+PTO_INST std::enable_if_t&lt;is_tile_data_v&lt;T&gt; || is_conv_tile_v&lt;T&gt;&gt; TASSIGN(T&amp; obj);</code></pre>
 <p>第二种写法会在编译期执行静态边界与对齐检查，因此更适合固定地址的手动布局。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="tile-convtile">Tile / ConvTile<a class="headerlink" href="#tile-convtile" title="Permanent link">&para;</a></h3>
 <ul>
 <li>运行时地址形式要求 <code>addr</code> 是整型地址。</li>
@@ -965,9 +962,10 @@ PTO_INST std::enable_if_t&lt;is_tile_data_v&lt;T&gt; || is_conv_tile_v&lt;T&gt;&
 <li><code>Addr + tile_size</code> 是否越界</li>
 <li>地址是否满足对齐要求</li>
 </ul>
+</div>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="_10">运行时地址<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -978,10 +976,9 @@ void example_runtime() {
   TASSIGN(b, 0x2000);
   TASSIGN(c, 0x3000);
   TADD(c, a, b);
-}
-</code></pre>
+}</code></pre>
 <h3 id="_11">编译期地址<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -993,8 +990,7 @@ void example_checked() {
   TASSIGN&lt;0x0400&gt;(b);
   TASSIGN&lt;0x0800&gt;(c);
   TADD(c, a, b);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../subview/">SUBVIEW</a></li>

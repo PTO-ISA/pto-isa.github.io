@@ -925,21 +925,17 @@
 <p>这条指令仍然作用在 tile payload 上；标量只是广播来源。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>tile / scalar 形式：</p>
-<pre><code class="language-text">%dst = tdivs %src, %scalar : !pto.tile&lt;...&gt;, f32
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tdivs %src, %scalar : !pto.tile&lt;...&gt;, f32</code></pre>
 <p>scalar / tile 形式：</p>
-<pre><code class="language-text">%dst = tdivs %scalar, %src : f32, !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tdivs %scalar, %src : f32, !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tdivs %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-%dst = pto.tdivs %scalar, %src : (dtype, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tdivs %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
+%dst = pto.tdivs %scalar, %src : (dtype, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tdivs ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-pto.tdivs ins(%scalar, %src : dtype, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tdivs ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
+pto.tdivs ins(%scalar, %src : dtype, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;auto PrecisionType = DivAlgorithm::DEFAULT, typename TileDataDst, typename TileDataSrc,
+<pre class="highlight"><code class="language-cpp">template &lt;auto PrecisionType = DivAlgorithm::DEFAULT, typename TileDataDst, typename TileDataSrc,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, TileDataSrc &amp;src0, typename TileDataSrc::DType scalar,
                            WaitEvents &amp;... events);
@@ -947,8 +943,7 @@ PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, TileDataSrc &amp;src0, typename
 template &lt;auto PrecisionType = DivAlgorithm::DEFAULT, typename TileDataDst, typename TileDataSrc,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, typename TileDataDst::DType scalar, TileDataSrc &amp;src0,
-                           WaitEvents &amp;... events);
-</code></pre>
+                           WaitEvents &amp;... events);</code></pre>
 <p><code>PrecisionType</code> 可取：</p>
 <ul>
 <li><code>DivAlgorithm::DEFAULT</code></li>
@@ -968,15 +963,21 @@ PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, typename TileDataDst::DType sca
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>除产生目标 tile 外，没有额外架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>操作迭代域由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定。</li>
 <li>除零行为由目标 profile 定义。</li>
 <li><code>HIGH_PRECISION</code> 只在 A5 可用，A3 上该选项会被忽略。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
+</div>
 <h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
 <h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1032,7 +1033,7 @@ PTO_INST RecordEvent TDIVS(TileDataDst &amp;dst, typename TileDataDst::DType sca
 <h3 id="a5_1">A5<a class="headerlink" href="#a5_1" title="Permanent link">&para;</a></h3>
 <p>当前手册未单列 <code>tdivs</code> 的独立周期条目，应视为目标 profile 相关。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example_auto() {
@@ -1040,8 +1041,7 @@ void example_auto() {
   TileT src, dst;
   TDIVS(dst, src, 2.0f);
   TDIVS&lt;DivAlgorithm::HIGH_PRECISION&gt;(dst, src, 2.0f);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../tile-scalar-and-immediate_zh/">Tile-标量与立即数</a></li>

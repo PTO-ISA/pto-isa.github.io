@@ -920,12 +920,11 @@
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../syntax-and-operands/assembly-model_zh/">PTO ISA 语法与操作数</a>。</p>
 <p>同步形式：</p>
-<pre><code class="language-text">tgather %group, %dst : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">tgather %group, %dst : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>降级时会为 GM→UB→GM 数据路径引入 UB 暂存 Tile；C++ 内建接口需要显式传入 <code>stagingTileData</code>（或 <code>pingTile</code> / <code>pongTile</code>）操作数。</p>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
-<pre><code class="language-cpp">// 基础 gather（单暂存 Tile）
+<pre class="highlight"><code class="language-cpp">// 基础 gather（单暂存 Tile）
 template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TGATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
                              TileData &amp;stagingTileData, WaitEvents&amp;... events);
@@ -933,9 +932,10 @@ PTO_INST RecordEvent TGATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData
 // 乒乓 gather（使用两个暂存 Tile 实现双缓冲）
 template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TGATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
-                             TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
-</code></pre>
+                             TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);</code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><strong>类型约束</strong>：<ul>
 <li><code>ParallelGroup::value_type::RawDType</code> 必须等于 <code>GlobalDstData::RawDType</code>。</li>
@@ -960,11 +960,12 @@ PTO_INST RecordEvent TGATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <h3 id="gather-tile">基础 Gather（单暂存 Tile）<a class="headerlink" href="#gather-tile" title="Permanent link">&para;</a></h3>
 <p>每个 rank 提供 <code>ROWS × COLS</code> 的数据，根节点将其收集到 <code>NRANKS * ROWS</code> 行中。
 Tile 大小（<code>TILE_ROWS × TILE_COLS</code>）可小于每 rank 的数据——此时实现会自动沿 DIM_3 和 DIM_4 通过二维滑动进行分块传输。</p>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -983,11 +984,10 @@ void gather(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_rank) {
     GResult dstG(result);
     TileT stagingTile(TILE_ROWS, TILE_COLS);
     comm::TGATHER(group, dstG, stagingTile);
-}
-</code></pre>
+}</code></pre>
 <h3 id="gather">乒乓 Gather（双缓冲）<a class="headerlink" href="#gather" title="Permanent link">&para;</a></h3>
 <p>使用两个 UB Tile，将下一块的 TLOAD（MTE2）与当前块的 TSTORE（MTE3）重叠执行。</p>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -1008,8 +1008,7 @@ void gather_pingpong(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_ran
     TileT pongTile(TILE_ROWS, TILE_COLS);
     // 乒乓模式：将 TLOAD 与 TSTORE 重叠执行以提升吞吐量
     comm::TGATHER(group, dstG, pingTile, pongTile);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

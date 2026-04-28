@@ -961,22 +961,18 @@
 <li>The wait unblocks when the semaphore counter reaches zero. In mode2 with 1:2 topology, this means both AIV0 and AIV1 must have called <code>set_cross_core</code> before the Cube unblocks.</li>
 </ul>
 <p>This is the Cube's counterpart to <code>set_cross_core</code>. The pattern is:</p>
-<pre><code>Cube:         set_cross_core → (broadcast to AIV0+AIV1)
+<pre class="highlight"><code>Cube:         set_cross_core → (broadcast to AIV0+AIV1)
 AIV0/AIV1:   [do work] → set_cross_core
-Cube:         wait_flag_dev → unblocks when BOTH subblocks signaled
-</code></pre>
+Cube:         wait_flag_dev → unblocks when BOTH subblocks signaled</code></pre>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.wait_flag_dev %event_id : i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.wait_flag_dev %event_id : i64</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.wait_flag_dev %event_id : i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.wait_flag_dev %event_id : i64</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">pipe_t pipe = PIPE_MTE2;
+<pre class="highlight"><code class="language-cpp">pipe_t pipe = PIPE_MTE2;
 int64_t flagId = 0;
-wait_flag_dev(pipe, flagId);
-</code></pre>
+wait_flag_dev(pipe, flagId);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1002,19 +998,27 @@ wait_flag_dev(pipe, flagId);
 <li>Decrements the semaphore counter when the event is signaled.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>A2A3 only</strong>: <code>wait_flag_dev</code> is only available on the A2A3 profile.</li>
 <li><strong>SU-level blocking</strong>: Unlike <code>wait_flag</code> (intra-core) which only stalls the named destination pipeline, <code>wait_flag_dev</code> stalls <strong>all</strong> pipelines on the core. This is more restrictive than A5's <code>wait_intra_core</code>.</li>
 <li><strong>Semaphore pool</strong>: The pool has 16 physical semaphore IDs per cluster with a 4-bit counter (0–15). The wait unblocks when the counter reaches zero. On A2/A3: if <code>wait_flag_dev</code> is called when the counter is already zero, the call returns immediately without error. On A5: this operation is not available; use <code>wait_intra_core</code> instead.</li>
 <li><strong>Event must be set</strong>: Waiting on an event that was never set by a matching remote <code>set_cross_core</code> is <strong>illegal</strong>.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal on non-A2A3 profiles.</li>
 <li>Illegal if <code>%event_id</code> is outside the valid range (0–15).</li>
 <li>Illegal if the event was never set by a remote core.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1051,9 +1055,10 @@ wait_flag_dev(pipe, flagId);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="a2a3-cube-waits-for-both-vector-subblocks">A2A3: Cube waits for both vector subblocks<a class="headerlink" href="#a2a3-cube-waits-for-both-vector-subblocks" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // Cube: broadcast to both AIV subblocks
@@ -1063,10 +1068,9 @@ SET_CROSS_CORE(/* core_id */ 0, /* event_id */ 0);
 // AIV1: do work, then signal
 
 // Cube: block until BOTH AIV0 and AIV1 have signaled (reduce)
-WAIT_FLAG_DEV(/* event_id */ 0);
-</code></pre>
+WAIT_FLAG_DEV(/* event_id */ 0);</code></pre>
 <h3 id="ssa-form-complete-cv-handshake">SSA form — complete C↔V handshake<a class="headerlink" href="#ssa-form-complete-cv-handshake" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// === Cube (Producer) ===
+<pre class="highlight"><code class="language-mlir">// === Cube (Producer) ===
 // Signal both AIV subblocks: data is ready
 pto.set_cross_core %c0_i64, %c0_i64 : i64, i64
 
@@ -1087,8 +1091,7 @@ pto.set_cross_core %c1_i64, %c1_i64 : i64, i64
 // === Cube (Producer) ===
 // Block until BOTH AIV0 and AIV1 have signaled (reduce)
 pto.wait_flag_dev %c1_i64 : i64
-// Both signaled — Cube can proceed
-</code></pre>
+// Both signaled — Cube can proceed</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../pipeline-sync/">Pipeline Sync</a></li>

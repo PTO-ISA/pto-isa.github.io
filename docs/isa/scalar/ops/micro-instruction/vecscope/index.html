@@ -982,10 +982,9 @@
 <hr />
 <h2 id="ptovecscope-default-vector-scope"><code>pto.vecscope</code> — Default Vector Scope<a class="headerlink" href="#ptovecscope-default-vector-scope" title="Permanent link">&para;</a></h2>
 <h3 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vecscope {
+<pre class="highlight"><code class="language-mlir">pto.vecscope {
   // region body
-}
-</code></pre>
+}</code></pre>
 <h3 id="semantics">Semantics<a class="headerlink" href="#semantics" title="Permanent link">&para;</a></h3>
 <p><code>pto.vecscope</code> allows the body to use surrounding SSA values directly (implicit capture). All operations that produce or consume <code>!pto.vreg</code>, <code>!pto.mask&lt;...&gt;</code>, or <code>!pto.align</code> must be enclosed by exactly one vector interval.</p>
 <h3 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h3>
@@ -994,42 +993,40 @@
 <li>Regardless of whether the source form uses <code>pto.vecscope</code>, <code>pto.strict_vecscope</code>, or a lowered carrier loop with <code>llvm.loop.aivector_scope</code>, every op that produces or consumes <code>!pto.vreg</code>, <code>!pto.mask&lt;...&gt;</code>, or <code>!pto.align</code> must be enclosed by exactly one vector interval.</li>
 </ul>
 <h3 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.set_loop2_stride_outtoub %c4096_i64, %c4096_i64 : i64, i64
+<pre class="highlight"><code class="language-mlir">pto.set_loop2_stride_outtoub %c4096_i64, %c4096_i64 : i64, i64
 pto.set_loop1_stride_outtoub %c4096_i64, %c4096_i64 : i64, i64
 pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
 pto.copy_gm_to_ubuf %7, %2, %3, %3, %c0_i64, %c32_i64, %4, %c0_i64, %c0_i64,
     %false, %c0_i64, %c128_i64, %c128_i64
     : !pto.ptr&lt;f32, gm&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64, i64, i64, i64, i64, i64, i1, i64, i64, i64
 
-pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
-pto.wait_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+pto.set_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]
+pto.wait_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]
 
 pto.vecscope {
   scf.for %lane = %c0 to %9 step %c64 {
-    %mask = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask&lt;b32&gt;
+    %mask = pto.pset_b32 "PAT_ALL" : !pto.mask&lt;b32&gt;
     %v = pto.vlds %2[%lane] : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
     %abs = pto.vabs %v, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
     pto.vsts %abs, %8[%lane], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask&lt;b32&gt;
   }
 }
 
-pto.set_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
-pto.wait_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
+pto.set_flag["PIPE_V", "PIPE_MTE3", "EVENT_ID0"]
+pto.wait_flag["PIPE_V", "PIPE_MTE3", "EVENT_ID0"]
 pto.set_loop_size_ubtoout %c1_i64, %c1_i64 : i64, i64
 pto.set_loop1_stride_ubtoout %c4096_i64, %c4096_i64 : i64, i64
 pto.set_loop2_stride_ubtoout %c4096_i64, %c4096_i64 : i64, i64
 pto.copy_ubuf_to_gm %8, %14, %3, %3, %c0_i64, %c32_i64, %4, %c0_i64, %c128_i64, %c128_i64
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, gm&gt;, i64, i64, i64, i64, i64, i64, i64, i64
-</code></pre>
+    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, gm&gt;, i64, i64, i64, i64, i64, i64, i64, i64</code></pre>
 <hr />
 <h2 id="ptostrict_vecscope-strict-vector-scope"><code>pto.strict_vecscope</code> — Strict Vector Scope<a class="headerlink" href="#ptostrict_vecscope-strict-vector-scope" title="Permanent link">&para;</a></h2>
 <h3 id="syntax_1">Syntax<a class="headerlink" href="#syntax_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.strict_vecscope(%arg1, %arg2, ...) {
+<pre class="highlight"><code class="language-mlir">pto.strict_vecscope(%arg1, %arg2, ...) {
 ^bb0(%in1: &lt;type&gt;, %in2: &lt;type&gt;, ...):
   // region body — all external values must come through operands
 }
-: (&lt;type1&gt;, &lt;type2&gt;, ...) -&gt; ()
-</code></pre>
+: (&lt;type1&gt;, &lt;type2&gt;, ...) -&gt; ()</code></pre>
 <h3 id="semantics_1">Semantics<a class="headerlink" href="#semantics_1" title="Permanent link">&para;</a></h3>
 <p><code>pto.strict_vecscope</code> requires every external value used by the body to be passed through the op operand list and received as a body block argument. It rejects implicit capture from the surrounding scope.</p>
 <h3 id="constraints_1">Constraints<a class="headerlink" href="#constraints_1" title="Permanent link">&para;</a></h3>
@@ -1039,14 +1036,13 @@ pto.copy_ubuf_to_gm %8, %14, %3, %3, %c0_i64, %c32_i64, %4, %c0_i64, %c128_i64, 
 <li>The scope op itself only defines the vector-interval boundary and region argument contract.</li>
 </ul>
 <h3 id="examples_1">Examples<a class="headerlink" href="#examples_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.strict_vecscope(%ub_in, %ub_out, %lane, %remaining) {
+<pre class="highlight"><code class="language-mlir">pto.strict_vecscope(%ub_in, %ub_out, %lane, %remaining) {
 ^bb0(%in: !pto.ptr&lt;f32, ub&gt;, %out: !pto.ptr&lt;f32, ub&gt;, %iv: index, %rem: i32):
   %mask, %next_remaining = pto.plt_b32 %rem : i32 -&gt; !pto.mask&lt;b32&gt;, i32
   %v = pto.vlds %in[%iv] : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
   %abs = pto.vabs %v, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
   pto.vsts %abs, %out[%iv], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask&lt;b32&gt;
-} : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, index, i32) -&gt; ()
-</code></pre>
+} : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, index, i32) -&gt; ()</code></pre>
 <p>Use <code>pto.strict_vecscope</code> when the source form should make all vector-scope inputs explicit in the region signature instead of relying on surrounding SSA visibility.</p>
 <hr />
 <h2 id="comparison-ptovecscope-vs-ptostrict_vecscope">Comparison: <code>pto.vecscope</code> vs <code>pto.strict_vecscope</code><a class="headerlink" href="#comparison-ptovecscope-vs-ptostrict_vecscope" title="Permanent link">&para;</a></h2>

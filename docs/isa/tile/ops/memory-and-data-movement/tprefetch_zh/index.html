@@ -918,18 +918,14 @@
 <p>和 <code>TLOAD</code> 不同，这条指令的重点不是复杂布局转换，而是把“稍后会用到的数据”尽早拉近。它在当前仓库实现里并不是“可以完全忽略的 hint bit”，而是真会填充 <code>dst</code>。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = tprefetch %src : !pto.global&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tprefetch %src : !pto.global&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tprefetch %src : !pto.global&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tprefetch %src : !pto.global&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprefetch ins(%src : !pto.global&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tprefetch ins(%src : !pto.global&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData&gt;
-PTO_INST RecordEvent TPREFETCH(TileData &amp;dst, GlobalData &amp;src);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename GlobalData&gt;
+PTO_INST RecordEvent TPREFETCH(TileData &amp;dst, GlobalData &amp;src);</code></pre>
 <p>与大多数 PTO C++ 接口不同，这条封装不会自动执行 <code>TSYNC(events...)</code>。</p>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
@@ -943,10 +939,13 @@ PTO_INST RecordEvent TPREFETCH(TileData &amp;dst, GlobalData &amp;src);
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令可能会从 GM 读取。某些 target 可能会把它当提示，也可能会直接完成缓冲填充。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>可移植代码应把它用于“提前搬运即将访问的数据”，而不要把它当 <code>TLOAD</code> 的语义等价替代品。</li>
 <li>在当前仓库实现里，预取范围仍然受 <code>dst</code> 大小和 <code>src</code> 切片大小影响。</li>
 </ul>
+</div>
 <h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
 <h3 id="cpu">CPU<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
 <ul>
@@ -958,20 +957,22 @@ PTO_INST RecordEvent TPREFETCH(TileData &amp;dst, GlobalData &amp;src);
 <li>若放不下，则按 <code>dst</code> 容量分块预取</li>
 </ul>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
+</div>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>当前手册未单列 <code>tprefetch</code> 的公开周期表。它的真正收益更依赖后续访存局部性，而不是单条指令本身的独立算术成本。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 template &lt;typename T, typename GT&gt;
 void example(Tile&lt;TileType::Vec, T, 16, 16&gt;&amp; tileBuf, GT&amp; globalView) {
   TPREFETCH(tileBuf, globalView);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../tload_zh/">TLOAD</a></li>

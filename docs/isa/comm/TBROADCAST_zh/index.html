@@ -919,20 +919,20 @@
 <p>其中 <code>N</code> 为 rank 总数。</p>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：</p>
-<pre><code class="language-text">tbroadcast %group, %src : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">tbroadcast %group, %src : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>lowering 会引入 UB 暂存 Tile，因此 C++ 接口要求显式传入 <code>stagingTileData</code>，或在双缓冲模式下传入 <code>pingTile</code> / <code>pongTile</code>。</p>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TBROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
                                 TileData &amp;stagingTileData, WaitEvents&amp;... events);
 
 template &lt;typename ParallelGroupType, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TBROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcData &amp;srcGlobalData,
-                                TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);
-</code></pre>
+                                TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);</code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="_5">类型约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>ParallelGroup::value_type::RawDType</code> 必须等于 <code>GlobalSrcData::RawDType</code></li>
@@ -950,9 +950,10 @@ PTO_INST RecordEvent TBROADCAST(ParallelGroupType &amp;parallelGroup, GlobalSrcD
 <li>静态 <code>ValidRow</code> / <code>ValidCol</code> 场景下，对应维度必须能整除</li>
 <li>若要支持不足整行或整列的边界情况，应使用动态 valid region 的 Tile</li>
 </ul>
+</div>
 <h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <h3 id="_9">基础广播<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -970,11 +971,9 @@ void broadcast(__gm__ T* group_addrs[NRANKS], __gm__ T* my_data, int my_rank) {
     TileT stagingTile(TILE_ROWS, TILE_COLS);
 
     comm::TBROADCAST(group, srcG, stagingTile);
-}
-</code></pre>
+}</code></pre>
 <h3 id="_10">乒乓双缓冲<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">comm::TBROADCAST(group, srcG, pingTile, pongTile);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">comm::TBROADCAST(group, srcG, pingTile, pongTile);</code></pre>
 <h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../communication-runtime_zh/">通信与运行时</a></li>

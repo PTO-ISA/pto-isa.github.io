@@ -930,22 +930,19 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>PTO-AS 设计上通常会把不同子路径拆成更明确的 spelling，例如：</p>
-<pre><code class="language-text">%left  = tmov.m2l %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+<pre class="highlight"><code class="language-text">%left  = tmov.m2l %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 %right = tmov.m2r %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 %bias  = tmov.m2b %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 %scale = tmov.m2s %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 %vec   = tmov.a2v %acc  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-%v1    = tmov.v2v %v0   : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+%v1    = tmov.v2v %v0   : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tmov.s2d %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tmov.s2d %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmov ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tmov ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);
 
 template &lt;typename DstTileData, typename SrcTileData, typename TmpTileData, typename... WaitEvents,
@@ -973,9 +970,10 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t p
 
 template &lt;typename DstTileData, typename SrcTileData, AccToVecMode mode, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);
-</code></pre>
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
 <li>这是一组重载，不同路径的合法性差异很大。阅读 <code>TMOV</code> 时，先看“源位置 -&gt; 目标位置”是哪一种。</li>
@@ -1041,9 +1039,10 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t p
 <li>不支持 <code>nz2dn</code> 输出路径</li>
 <li>A5 还提供一个带 <code>tmp</code> 的特化重载，用于 <code>uint8_t</code> 数据的 ND-&gt;ZZ 打包路径；它不是通用三操作数 <code>TMOV</code>，而是一个窄 backend 特化。</li>
 </ul>
+</div>
 <h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1051,10 +1050,9 @@ void example_auto() {
   using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   TileT src, dst;
   TMOV(dst, src);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1066,8 +1064,7 @@ void example_manual() {
   TASSIGN(mat, 0x1000);
   TASSIGN(left, 0x2000);
   TMOV(left, mat);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../../layout-and-rearrangement_zh/">布局与重排指令集</a></li>

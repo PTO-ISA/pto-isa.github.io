@@ -913,8 +913,7 @@
 <p>真实 kernel 很少把整个物理矩形都填满：边界 tile、partial block 和 padding 都很常见。如果 ISA 假装存储矩形中的每个元素都一样有意义，backend 与程序就会在沉默中分叉。PTO 因此显式携带 <strong>valid rows / valid columns</strong>（<code>Rv</code>, <code>Cv</code>），先在真正有意义的域上定义语义和合法性。</p>
 <h2 id="_1">机制<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <h3 id="tile_1">Tile 模板签名<a class="headerlink" href="#tile_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">Tile&lt;TileType, DType, Rows, Cols, BLayout, SLayout, Fractal, Pad&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">Tile&lt;TileType, DType, Rows, Cols, BLayout, SLayout, Fractal, Pad&gt;</code></pre>
 <table>
 <thead>
 <tr>
@@ -1013,10 +1012,9 @@
 <p>Valid region 是架构可见的“哪些元素真的有意义”的声明。它由 <code>(Rv, Cv)</code> 表示，可通过 <code>tile.GetValidRow()</code> 和 <code>tile.GetValidCol()</code> 读取。</p>
 <p>对任意 tile 操作，如果 <code>0 ≤ i &lt; dst.Rv</code> 且 <code>0 ≤ j &lt; dst.Cv</code>，则 <code>dst[i, j]</code> 才有架构定义。除非单独文档化，域外元素没有架构含义。</p>
 <p>默认迭代域是 <strong>目标 tile 的 valid region</strong>：</p>
-<pre><code class="language-text">for i in [0, dst.Rv):
+<pre class="highlight"><code class="language-text">for i in [0, dst.Rv):
     for j in [0, dst.Cv):
-        dst[i, j] = f(src0[i, j], src1[i, j], ...)
-</code></pre>
+        dst[i, j] = f(src0[i, j], src1[i, j], ...)</code></pre>
 <p>源 tile 在域外坐标上的读取是否发生，以及读到什么值，由具体操作定义；在没有明确说明时，这类值属于 implementation-defined。</p>
 <h3 id="block-layout">Block Layout<a class="headerlink" href="#block-layout" title="Permanent link">&para;</a></h3>
 <p><code>BLayout</code> 决定 tile 内部的存储顺序。</p>
@@ -1217,37 +1215,40 @@
 <h2 id="_3">输出<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>产生 tile 的操作会输出带有 payload、valid region 和合法性约束的目标 tile。目标 <code>TileType</code> 与布局必须与指令兼容。</p>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>语义只在 valid region 内成立，除非指令页另有定义</li>
 <li>多输入 tile 操作默认按目标 valid region 迭代</li>
 <li>单独一个合法的 <code>TileType</code> 还不够；shape、layout、location intent 和 target profile 都会参与判断</li>
 <li><code>TileType + BLayout + SLayout + Fractal</code> 组合必须落在文档化支持集合内</li>
 </ul>
+</div>
 <h2 id="_5">不允许的情形<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>把域外元素当作稳定语义数据使用</li>
 <li>假设 backend 会自动修补不兼容的 valid-region 用法</li>
 <li>使用当前指令集或 target profile 不允许的 tile role / layout</li>
 </ul>
+</div>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="tile_2">边界 tile<a class="headerlink" href="#tile_2" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">using EdgeTile = Tile&lt;TileType::Vec, half, 16, 16, RowMajor, NoneBox, None, Zero&gt;;
+<pre class="highlight"><code class="language-cpp">using EdgeTile = Tile&lt;TileType::Vec, half, 16, 16, RowMajor, NoneBox, None, Zero&gt;;
 EdgeTile tile;
 tile.SetValidRegion(5, 9);
-// 只有 tile[0..4][0..8] 在架构上有意义
-</code></pre>
+// 只有 tile[0..4][0..8] 在架构上有意义</code></pre>
 <h3 id="matmul">Matmul 角色<a class="headerlink" href="#matmul" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">using A = Tile&lt;TileType::Left, int8_t, 16, 16, RowMajor, RowMajor, NZ, Null&gt;;
+<pre class="highlight"><code class="language-cpp">using A = Tile&lt;TileType::Left, int8_t, 16, 16, RowMajor, RowMajor, NZ, Null&gt;;
 using B = Tile&lt;TileType::Right, int8_t, 16, 16, RowMajor, NoneBox, NN, Null&gt;;
 using C = Tile&lt;TileType::Acc, int32_t, 16, 16, RowMajor, NoneBox, None, Zero&gt;;
 A a; B b; C c;
-TMATMUL(c, a, b);
-</code></pre>
+TMATMUL(c, a, b);</code></pre>
 <h3 id="valid-region_1">按目标 valid region 迭代的逐元素加法<a class="headerlink" href="#valid-region_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">Tile&lt;TileType::Vec, float, 16, 16&gt; dst, src0, src1;
+<pre class="highlight"><code class="language-cpp">Tile&lt;TileType::Vec, float, 16, 16&gt; dst, src0, src1;
 dst.SetValidRegion(8, 8);
-TADD(dst, src0, src1);
-</code></pre>
+TADD(dst, src0, src1);</code></pre>
 <h2 id="_7">相关页面<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../globaltensor-and-data-movement_zh/">GlobalTensor 与数据搬运</a></li>

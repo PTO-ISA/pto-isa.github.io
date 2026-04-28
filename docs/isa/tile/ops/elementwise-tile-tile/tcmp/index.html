@@ -962,20 +962,16 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Synchronous form:</p>
-<pre><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcmp ins(%src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tcmp ins(%src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/type.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
 PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataSrc &amp;src1,
-                          CmpMode cmpMode, WaitEvents &amp;... events);
-</code></pre>
+                          CmpMode cmpMode, WaitEvents &amp;... events);</code></pre>
 <p><strong>Compare modes</strong> (<code>pto::CmpMode</code>):</p>
 <table>
 <thead>
@@ -1068,18 +1064,26 @@ PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataS
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the predicate tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>The iteration domain is <code>dst.GetValidRow()</code> × <code>dst.GetValidCol()</code>.</li>
 <li><code>src0.GetValidRow()</code> and <code>src0.GetValidCol()</code> MUST match <code>dst</code>'s valid region.</li>
 <li><code>src1</code>'s shape/validity is not verified by runtime assertions; out-of-region lanes read all-one-bits (0xFF) on A2/A3 and all-one-bits (0xFF) on A5 for source lanes outside their valid region.</li>
 <li>The output predicate tile uses a <strong>packed encoding</strong> (not one boolean per lane). Use <code>TSEL</code> with the predicate tile to apply it.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li><strong>MUST NOT</strong> assume any particular encoding of the predicate tile.</li>
 <li><strong>MUST NOT</strong> use <code>dst</code> with a dtype other than the target-defined predicate dtype.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1131,9 +1135,10 @@ PTO_INST RecordEvent TCMP(TileDataDst &amp;dst, TileDataSrc &amp;src0, TileDataS
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1143,10 +1148,9 @@ void example_auto() {
   SrcT src0, src1;
   MaskT mask(16, 2);
   TCMP(mask, src0, src1, CmpMode::GT);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1159,12 +1163,10 @@ void example_manual() {
   TASSIGN(src1, 0x2000);
   TASSIGN(mask, 0x3000);
   TCMP(mask, src0, src1, CmpMode::GT);
-}
-</code></pre>
+}</code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt;
-pto.tcmp ins(%src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tcmp %src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt;
+pto.tcmp ins(%src0, %src1 {cmpMode = #pto.cmp&lt;EQ&gt;}: !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../elementwise-tile-tile/">Elementwise Tile Tile</a></li>

@@ -960,21 +960,17 @@
 <p>The third operand (<code>%mask</code>) in the syntax is an optional masking predicate for the scalar and control instructions; the core boolean operation is <code>src0 AND src1</code>.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.pand %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.pand %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%dst = pto.pand %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.pand %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.pand ins(%src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask) outs(%dst : !pto.mask)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.pand ins(%src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask) outs(%dst : !pto.mask)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool dst;
+<pre class="highlight"><code class="language-cpp">vector_bool dst;
 vector_bool src0;
 vector_bool src1;
 vector_bool mask;
-pand(dst, src0, src1, mask);
-</code></pre>
+pand(dst, src0, src1, mask);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1022,15 +1018,23 @@ pand(dst, src0, src1, mask);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Operand widths</strong>: All predicate operands MUST have the same width. Mixing predicates of different widths without explicit pack/unpack is <strong>illegal</strong>.</li>
 <li><strong>No implicit masking</strong>: The <code>mask</code> operand is for scalar and control instructions use; it does not affect the boolean AND operation itself.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if predicate operand widths are not consistent.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1049,20 +1053,20 @@ pand(dst, src0, src1, mask);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="combine-comparison-mask-with-tail-mask">Combine comparison mask with tail mask<a class="headerlink" href="#combine-comparison-mask-with-tail-mask" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void combine_masks(RegBuf&lt;predicate_t&gt;&amp; dst,
                    const RegBuf&lt;predicate_t&gt;&amp; cmp_mask,
                    const RegBuf&lt;predicate_t&gt;&amp; tail_mask) {
     PAND(dst, cmp_mask, tail_mask, cmp_mask);
-}
-</code></pre>
+}</code></pre>
 <h3 id="ssa-form-intersection-of-two-predicates">SSA form — intersection of two predicates<a class="headerlink" href="#ssa-form-intersection-of-two-predicates" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// %cmp_mask: lanes where a[i] &lt; b[i]
-%cmp = pto.vcmp %va, %vb, %seed, &quot;lt&quot; : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
+<pre class="highlight"><code class="language-mlir">// %cmp_mask: lanes where a[i] &lt; b[i]
+%cmp = pto.vcmp %va, %vb, %seed, "lt" : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
 
 // %tail_mask: lanes in the remainder region
 %tail = pto.pge_b32 %rem : i32 -&gt; !pto.mask
@@ -1071,8 +1075,7 @@ void combine_masks(RegBuf&lt;predicate_t&gt;&amp; dst,
 %active = pto.pand %cmp, %tail, %cmp : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
 
 // Use in predicated operation
-%result = pto.vsel %v_true, %v_false, %active : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+%result = pto.vsel %v_true, %v_false, %active : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

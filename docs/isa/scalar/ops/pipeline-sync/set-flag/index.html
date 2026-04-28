@@ -959,11 +959,9 @@
 <p>The two pipelines operate asynchronously. The event protocol ensures that the consumer pipeline does not proceed until the producer pipeline has reached a point where the shared data is ready.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">set_flag[&quot;SRC_PIPE&quot;, &quot;DST_PIPE&quot;, &quot;EVENT_ID&quot;]
-</code></pre>
+<pre class="highlight"><code class="language-text">set_flag["SRC_PIPE", "DST_PIPE", "EVENT_ID"]</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.set_flag[&quot;SRC_PIPE&quot;, &quot;DST_PIPE&quot;, &quot;EVENT_ID&quot;]
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.set_flag["SRC_PIPE", "DST_PIPE", "EVENT_ID"]</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1019,46 +1017,52 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>Signals the named event. After this operation completes, any <code>wait_flag</code> with the matching <code>(SRC_PIPE, DST_PIPE, EVENT_ID)</code> tuple becomes eligible to unblock on the destination pipeline.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>The selected pipe identifiers must be valid for the target profile.</li>
 <li>The event identifier must be within the supported range for the target profile.</li>
 <li>The event protocol is directional; using the wrong pipe role is undefined behavior.</li>
 <li>Portable code must pair each <code>set_flag</code> with a corresponding <code>wait_flag</code> in the intended dependency chain.</li>
 </ul>
+</div>
 <h2 id="common-patterns">Common Patterns<a class="headerlink" href="#common-patterns" title="Permanent link">&para;</a></h2>
 <h3 id="pattern-1-gm-ub-compute-ub-gm">Pattern 1: GM → UB → Compute → UB → GM<a class="headerlink" href="#pattern-1-gm-ub-compute-ub-gm" title="Permanent link">&para;</a></h3>
 <p>This is the standard three-stage pipeline used by vector programs:</p>
-<pre><code class="language-mlir">// Stage 1: MTE2 loads data from GM into UB
+<pre class="highlight"><code class="language-mlir">// Stage 1: MTE2 loads data from GM into UB
 pto.copy_gm_to_ubuf %gm_src, %ub_dst, ...
 
-// MTE2 signals: &quot;UB data is ready&quot;
-pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+// MTE2 signals: "UB data is ready"
+pto.set_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]
 
 // Stage 2: Vector compute waits, then consumes UB data
-pto.wait_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+pto.wait_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]
 // ... vector compute on UB data ...
 
-// Vector signals: &quot;UB output is ready&quot;
-pto.set_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
+// Vector signals: "UB output is ready"
+pto.set_flag["PIPE_V", "PIPE_MTE3", "EVENT_ID0"]
 
 // Stage 3: MTE3 waits, then stores result to GM
-pto.wait_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
-pto.copy_ubuf_to_gm %ub_src, %gm_dst, ...
-</code></pre>
+pto.wait_flag["PIPE_V", "PIPE_MTE3", "EVENT_ID0"]
+pto.copy_ubuf_to_gm %ub_src, %gm_dst, ...</code></pre>
 <h3 id="pattern-2-ping-pong-double-buffering">Pattern 2: Ping-Pong Double Buffering<a class="headerlink" href="#pattern-2-ping-pong-double-buffering" title="Permanent link">&para;</a></h3>
 <p>When overlapping successive tiles, use separate event IDs for each buffer slot:</p>
-<pre><code class="language-mlir">// Buffer 0: set forward event
-pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVT_IN_FWD_0&quot;]
+<pre class="highlight"><code class="language-mlir">// Buffer 0: set forward event
+pto.set_flag["PIPE_MTE2", "PIPE_V", "EVT_IN_FWD_0"]
 // Buffer 1: set forward event
-pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVT_IN_FWD_1&quot;]
-</code></pre>
+pto.set_flag["PIPE_MTE2", "PIPE_V", "EVT_IN_FWD_1"]</code></pre>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Using invalid pipe identifiers or out-of-range event identifiers is rejected by the verifier.</li>
 <li>Signaling an event before the producing operation has started produces undefined results.</li>
 <li>Consuming an event that has not been signaled causes the consumer pipeline to wait indefinitely.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1086,6 +1090,7 @@ pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVT_IN_FWD_1&quot;
 </tbody>
 </table>
 <p>CPU simulation preserves the event protocol semantics but may not expose all low-level hazards that motivate it on hardware.</p>
+</details>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../pipeline-sync/">Pipeline Sync</a></li>

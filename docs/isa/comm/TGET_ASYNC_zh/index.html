@@ -921,31 +921,29 @@
 </ul>
 </li>
 </ul>
-<blockquote>
-<p><strong>注意（SDMA 路径）</strong>
-<code>TGET_ASYNC</code> 配合 <code>DmaEngine::SDMA</code> 目前<strong>仅支持扁平连续的逻辑一维 tensor</strong>。
+<div class="admonition note">
+<p class="admonition-title">注意（SDMA 路径）</p>
+<p><code>TGET_ASYNC</code> 配合 <code>DmaEngine::SDMA</code> 目前<strong>仅支持扁平连续的逻辑一维 tensor</strong>。
 当前 SDMA 异步实现不支持非一维或非连续布局。</p>
-</blockquote>
+</div>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;DmaEngine engine = DmaEngine::SDMA,
+<pre class="highlight"><code class="language-cpp">template &lt;DmaEngine engine = DmaEngine::SDMA,
           typename GlobalDstData, typename GlobalSrcData, typename... WaitEvents&gt;
 PTO_INST AsyncEvent TGET_ASYNC(GlobalDstData &amp;dstGlobalData, GlobalSrcData &amp;srcGlobalData,
-                               const AsyncSession &amp;session, WaitEvents &amp;... events);
-</code></pre>
+                               const AsyncSession &amp;session, WaitEvents &amp;... events);</code></pre>
 <p><code>AsyncSession</code> 是引擎无关的会话对象。使用 <code>BuildAsyncSession&lt;engine&gt;()</code> 构建一次后，传递给所有异步调用和事件等待。模板参数 <code>engine</code> 在编译期选择 DMA 后端，使代码对未来引擎（CCU 等）保持前向兼容。</p>
 <h2 id="asyncsession">AsyncSession 构建<a class="headerlink" href="#asyncsession" title="Permanent link">&para;</a></h2>
 <p>使用 <code>include/pto/comm/async_common/async_event_impl.hpp</code> 中的 <code>BuildAsyncSession</code>。
 该函数有两个重载——分别用于 SDMA 和 URMA，参数列表不同。</p>
 <h3 id="sdma">SDMA 构建（默认）<a class="headerlink" href="#sdma" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;DmaEngine engine = DmaEngine::SDMA, typename ScratchTile&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;DmaEngine engine = DmaEngine::SDMA, typename ScratchTile&gt;
 PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
                                     __gm__ uint8_t *workspace,
                                     AsyncSession &amp;session,
                                     uint32_t syncId = 0,
                                     const sdma::SdmaBaseConfig &amp;baseConfig = {sdma::kDefaultSdmaBlockBytes, 0, 1},
-                                    uint32_t channelGroupIdx = sdma::kAutoChannelGroupIdx);
-</code></pre>
+                                    uint32_t channelGroupIdx = sdma::kAutoChannelGroupIdx);</code></pre>
 <table>
 <thead>
 <tr>
@@ -991,13 +989,12 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 <blockquote>
 <p>URMA（User-level RDMA Memory Access）是 Ascend950（NPU_ARCH 3510）上的硬件加速 RDMA 传输引擎。</p>
 </blockquote>
-<pre><code class="language-cpp">#ifdef PTO_URMA_SUPPORTED
+<pre class="highlight"><code class="language-cpp">#ifdef PTO_URMA_SUPPORTED
 template &lt;DmaEngine engine&gt;
 PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
                                     uint32_t destRankId,
                                     AsyncSession &amp;session);
-#endif
-</code></pre>
+#endif</code></pre>
 <table>
 <thead>
 <tr>
@@ -1022,6 +1019,8 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 </table>
 <p>URMA 不需要 <code>scratchTile</code>——轮询通过 <code>ld_dev</code>/<code>st_dev</code> 硬件原语直接操作。</p>
 <h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>GlobalSrcData::RawDType == GlobalDstData::RawDType</code></li>
 <li><code>GlobalSrcData::layout == GlobalDstData::layout</code></li>
@@ -1032,6 +1031,7 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 <li>传给 <code>UrmaWorkspaceManager::Init()</code> 的对称数据缓冲区必须由大页内存支撑（使用 <code>ACL_MEM_MALLOC_HUGE_ONLY</code> 分配）。底层 MR 注册要求大页背景；<code>ACL_MEM_MALLOC_HUGE_FIRST</code> 在小尺寸分配时可能静默回退到 4KB 小页，导致注册失败</li>
 </ul>
 <p>若不满足一维连续要求，当前实现返回无效 async event（<code>handle == 0</code>）。</p>
+</div>
 <h2 id="scratchtile">scratchTile 的作用<a class="headerlink" href="#scratchtile" title="Permanent link">&para;</a></h2>
 <p><code>scratchTile</code> <strong>不是</strong>用于传输数据负载的暂存缓冲区。
 它被转换为 <code>TmpBuffer</code>，用作临时 UB 工作区，用于：</p>
@@ -1063,7 +1063,7 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 <p>wait 成功后，所有已发出的 <code>dstGlobalData</code> 读入数据均已全部就绪。</p>
 <h2 id="_4">示例<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <h3 id="_5">单次传输<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/common/pto_tile.hpp&gt;
 
 using namespace pto;
@@ -1092,10 +1092,9 @@ __global__ AICORE void SimpleGet(__gm__ T *localDst, __gm__ T *remoteSrc,
 
     auto event = comm::TGET_ASYNC&lt;comm::DmaEngine::SDMA&gt;(dstG, srcG, session);
     (void)event.Wait(session);
-}
-</code></pre>
+}</code></pre>
 <h3 id="quiet_1">批量传输（Quiet 语义）<a class="headerlink" href="#quiet_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;typename T&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename T&gt;
 __global__ AICORE void BatchGet(__gm__ T *localDstBase, __gm__ T *remoteSrcBase,
                                 __gm__ uint8_t *sdmaWorkspace, int nranks)
 {
@@ -1122,10 +1121,9 @@ __global__ AICORE void BatchGet(__gm__ T *localDstBase, __gm__ T *remoteSrcBase,
         lastEvent = comm::TGET_ASYNC(dstG, srcG, session);
     }
     (void)lastEvent.Wait(session);  // 一次 Wait 等待所有 pending 操作
-}
-</code></pre>
+}</code></pre>
 <h3 id="urma-npu_arch-3510_1">URMA 示例（NPU_ARCH 3510）<a class="headerlink" href="#urma-npu_arch-3510_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/common/pto_tile.hpp&gt;
 
 using namespace pto;
@@ -1150,8 +1148,7 @@ __global__ AICORE void SimpleGetUrma(__gm__ T *localDst, __gm__ T *remoteSrc,
 
     auto event = comm::TGET_ASYNC&lt;comm::DmaEngine::URMA&gt;(dstG, srcG, session);
     (void)event.Wait(session);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

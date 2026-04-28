@@ -916,11 +916,9 @@
 <p><code>pto.vldas</code> 会围绕 <code>%source</code> 所在的对齐块初始化加载对齐状态。它本身不是返回向量数据，而是返回一个 <code>!pto.align</code> 状态值，供后续 <code>pto.vldus</code> 串流使用。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vldas %result, %source
-</code></pre>
+<pre class="highlight"><code class="language-text">vldas %result, %source</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vldas %source : !pto.ptr&lt;T, ub&gt; -&gt; !pto.align
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vldas %source : !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%source</code>：用于初始化加载对齐状态的 UB 地址</li>
@@ -932,22 +930,30 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会读取 UB 可见存储并返回 SSA 结果。它不会单独分配 buffer、发送事件，也不会建立栅栏。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>pto.vldas</code> 是同一条 <code>pto.vldus</code> 流的必需前导指令。</li>
 <li><code>%source</code> 自身不要求 32B 对齐；硬件会先把它截到对齐块边界，再完成预热加载。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>使用超出 UB 可见空间的地址，或违反所选形式的地址契约，都是非法的。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vldas</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%align = pto.vldas %source : !pto.ptr&lt;T, ub&gt; -&gt; !pto.align
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align = pto.vldas %source : !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></pre>
 <h2 id="_10">性能<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="_11">时延与吞吐披露<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <p><code>pto.vldas</code> 当前可公开对齐的 VPTO 时序来源是 <code>~/visa.txt</code> 与 <code>PTOAS</code> <code>feature_vpto_backend</code> 分支上的 <code>docs/vpto-spec.md</code>。

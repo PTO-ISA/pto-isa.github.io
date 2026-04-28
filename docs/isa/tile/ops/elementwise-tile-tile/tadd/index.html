@@ -978,31 +978,26 @@
 <p>Only the destination tile's valid region defines the iteration domain. Source tiles are read lane-by-lane at the same <code>(i, j)</code> coordinates; source tiles whose valid region does not cover <code>(i, j)</code> read all-one-bits on A2/A3 and all-one-bits on A5 (both platforms fill out-of-region lanes with 0xFF pattern in the vector register file before the ALU reads them).</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="assembly-form-pto-as">Assembly Form (PTO-AS)<a class="headerlink" href="#assembly-form-pto-as" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = tadd %src0, %src1 : !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tadd %src0, %src1 : !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa-form">AS Level 1 — SSA Form<a class="headerlink" href="#as-level-1-ssa-form" title="Permanent link">&para;</a></h3>
 <p>PTO-AS at Level 1 uses SSA-style result binding:</p>
-<pre><code class="language-mlir">%dst = pto.tadd %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.tadd %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps-form">AS Level 2 — DPS Form<a class="headerlink" href="#as-level-2-dps-form" title="Permanent link">&para;</a></h3>
 <p>PTO-AS at Level 2 uses the Def-Use-Style (DPS) explicit operand binding:</p>
-<pre><code class="language-mlir">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
-          outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
+          outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <p>The <code>ins(...)</code> clause names operands in the input position; the <code>outs(...)</code> clause names the output. The tile buffer type <code>!pto.tile_buf&lt;...&gt;</code> is the in-memory storage form used at Level 2.</p>
 <h3 id="micro-operation-mapping">Micro-Operation Mapping<a class="headerlink" href="#micro-operation-mapping" title="Permanent link">&para;</a></h3>
 <p>The <code>pto.tadd</code> SSA operation maps to the following micro-operation sequence on the Tile Register File (TRF):</p>
-<pre><code>TRF_READ(src0, i, j)  →  A
+<pre class="highlight"><code>TRF_READ(src0, i, j)  →  A
 TRF_READ(src1, i, j)  →  B
 A + B                  →  C
-TRF_WRITE(dst, i, j, C)
-</code></pre>
+TRF_WRITE(dst, i, j, C)</code></pre>
 <p>The micro-operation level is not exposed to the ISA author; it is the responsibility of the backend to schedule these steps subject to pipeline constraints.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename... WaitEvents&gt;
-PTO_INST RecordEvent TADD(TileDataDst&amp; dst, TileDataSrc0&amp; src0, TileDataSrc1&amp; src1, WaitEvents&amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename... WaitEvents&gt;
+PTO_INST RecordEvent TADD(TileDataDst&amp; dst, TileDataSrc0&amp; src0, TileDataSrc1&amp; src1, WaitEvents&amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1051,19 +1046,27 @@ PTO_INST RecordEvent TADD(TileDataDst&amp; dst, TileDataSrc0&amp; src0, TileData
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None beyond producing the destination tile. Does not implicitly fence unrelated tile traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type match</strong>: All three tiles (<code>src0</code>, <code>src1</code>, <code>dst</code>) MUST have identical element types.</li>
 <li><strong>Layout</strong>: Both source tiles and the destination tile MUST have compatible layouts. See the TileType–Layout compatibility table in <a href="../../../../programming-model/tiles-and-valid-regions/">Tiles and Valid Regions</a>.</li>
 <li><strong>Valid region</strong>: The iteration domain is <code>dst.GetValidRow()</code> × <code>dst.GetValidCol()</code>. Source tiles with smaller valid regions read all-one-bits (0xFF) on A2/A3 and all-one-bits (0xFF) on A5 for lanes outside their valid region.</li>
 <li><strong>TileType</strong>: The destination tile's TileType determines which pipelines execute the operation. See <a href="../../../../programming-model/tiles-and-valid-regions/">Tiles and Valid Regions</a> for TileType constraints.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Verifier rejects type mismatches between source and destination tiles.</li>
 <li>Backend rejects unsupported element types, layouts, or shapes for the selected target profile.</li>
 <li>Programs that read values from destination lanes outside <code>dst</code>'s declared valid region observe undefined behavior.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1131,6 +1134,7 @@ PTO_INST RecordEvent TADD(TileDataDst&amp; dst, TileDataSrc0&amp; src0, TileData
 </tbody>
 </table>
 <p>A2/A3 requires <code>isRowMajor == true</code> for all operands. A5 additionally requires <code>isRowMajor == true</code> but supports more element types.</p>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a2a3-throughput">A2/A3 Throughput<a class="headerlink" href="#a2a3-throughput" title="Permanent link">&para;</a></h3>
 <p>Tile elementwise operations are compiled to CCE vector instructions. The <code>TBinOp.hpp</code> performance model computes cycles as follows:</p>
@@ -1228,14 +1232,13 @@ PTO_INST RecordEvent TADD(TileDataDst&amp; dst, TileDataSrc0&amp; src0, TileData
 </table>
 <h3 id="example-throughput-estimate">Example Throughput Estimate<a class="headerlink" href="#example-throughput-estimate" title="Permanent link">&para;</a></h3>
 <p>For <code>TADD</code> on a 16×64 FP32 tile with <code>RowMajor</code> layout:</p>
-<pre><code>validRow = 16, validCol = 64, layout = RowMajor
+<pre class="highlight"><code>validRow = 16, validCol = 64, layout = RowMajor
 repeats = 16 × 64 / 8 = 128
-total = 14 + 19 + 256 + (128-1) × 18 = 14 + 19 + 256 + 2286 = 2575 cycles
-</code></pre>
+total = 14 + 19 + 256 + (128-1) × 18 = 14 + 19 + 256 + 2286 = 2575 cycles</code></pre>
 <hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="c-auto-mode">C++ — Auto Mode<a class="headerlink" href="#c-auto-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void add_tiles(Tile&lt;Vec, float, 16, 16&gt;&amp; dst,
@@ -1243,10 +1246,9 @@ void add_tiles(Tile&lt;Vec, float, 16, 16&gt;&amp; dst,
                Tile&lt;Vec, float, 16, 16&gt;&amp; src1) {
     // Compiler inserts TASSIGN and TSYNC automatically in Auto mode.
     TADD(dst, src0, src1);
-}
-</code></pre>
+}</code></pre>
 <h3 id="c-manual-mode">C++ — Manual Mode<a class="headerlink" href="#c-manual-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void add_tiles_manual(Tile&lt;Vec, float, 16, 16&gt;&amp; dst,
@@ -1261,15 +1263,12 @@ void add_tiles_manual(Tile&lt;Vec, float, 16, 16&gt;&amp; dst,
     TADD(dst, src0, src1);
     TSYNC();
     TSTORE(gc, dst);
-}
-</code></pre>
+}</code></pre>
 <h3 id="mlir-ssa-form">MLIR — SSA Form<a class="headerlink" href="#mlir-ssa-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.tadd %src0, %src1 : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.tadd %src0, %src1 : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;</code></pre>
 <h3 id="mlir-dps-form">MLIR — DPS Form<a class="headerlink" href="#mlir-dps-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
-          outs(%result : !pto.tile_buf&lt;f32, 16, 16&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
+          outs(%result : !pto.tile_buf&lt;f32, 16, 16&gt;)</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../elementwise-tile-tile/">Elementwise Tile Tile</a></li>

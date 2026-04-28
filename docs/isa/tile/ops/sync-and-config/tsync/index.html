@@ -966,28 +966,24 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Event operand form:</p>
-<pre><code class="language-text">tsync %e0, %e1 : !pto.event&lt;...&gt;, !pto.event&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">tsync %e0, %e1 : !pto.event&lt;...&gt;, !pto.event&lt;...&gt;</code></pre>
 <p>Single-op barrier form:</p>
-<pre><code class="language-text">tsync.op #pto.op&lt;TADD&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">tsync.op #pto.op&lt;TADD&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <p>The AS Level 2 form exposes explicit event ordering primitives:</p>
-<pre><code class="language-text">pto.record_event[src_op, dst_op, eventID]
+<pre class="highlight"><code class="language-text">pto.record_event[src_op, dst_op, eventID]
 pto.wait_event[src_op, dst_op, eventID]
-pto.barrier(op)
-</code></pre>
+pto.barrier(op)</code></pre>
 <p><code>record_event</code> / <code>wait_event</code> are low-level TSYNC forms. Front-end kernels should normally stay free of explicit event wiring and rely on <code>ptoas --enable-insert-sync</code> instead.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">// Barrier for a single operation class
+<pre class="highlight"><code class="language-cpp">// Barrier for a single operation class
 template &lt;Op OpCode&gt;
 PTO_INST void TSYNC();
 
 // Wait on one or more RecordEvent tokens
 template &lt;typename... WaitEvents&gt;
-PTO_INST void TSYNC(WaitEvents &amp;... events);
-</code></pre>
+PTO_INST void TSYNC(WaitEvents &amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1020,25 +1016,34 @@ The barrier form produces no value; it blocks until the barrier completes.</p>
 </ul>
 <p>Does not affect unrelated tile traffic or other operation classes (barrier form only).</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>TSYNC(events...)</code>: If no events are supplied, the call is a no-op.</li>
 <li><code>TSYNC&lt;Op&gt;()</code>: Only valid for vector-pipeline operations. Attempting to use it for tile, matrix, or scalar operations is undefined.</li>
 <li>All events must be produced by operations that precede the <code>TSYNC</code> in program order.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Supplying events that are not produced by any preceding operation causes undefined behavior.</li>
 <li>Using <code>TSYNC&lt;Op&gt;()</code> with an unsupported operation class is rejected by the verifier.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>CPU simulation: <code>TSYNC</code> emulates the ordering semantics but may not reflect hardware pipeline latency.</li>
 <li>A2/A3: <code>TSYNC&lt;Op&gt;()</code> only supports vector-pipeline ops.</li>
 <li>A5: same as A2/A3.</li>
 </ul>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="event-wait">Event-wait<a class="headerlink" href="#event-wait" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example(__gm__ float* in) {
@@ -1051,10 +1056,9 @@ void example(__gm__ float* in) {
   TileT t;
   RecordEvent e = TLOAD(t, gin);  // TLOAD returns RecordEvent
   TSYNC(e);                        // wait for load to complete
-}
-</code></pre>
+}</code></pre>
 <h3 id="pipeline-barrier">Pipeline barrier<a class="headerlink" href="#pipeline-barrier" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example() {
@@ -1063,8 +1067,7 @@ void example() {
   RecordEvent e = TADD(c, a, b);     // returns RecordEvent
   TSYNC&lt;Op::TADD&gt;();                 // drain all TADD operations
   TSYNC(e);                           // wait for this specific TADD
-}
-</code></pre>
+}</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../sync-and-config/">Sync And Config</a></li>

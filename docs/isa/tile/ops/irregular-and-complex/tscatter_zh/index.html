@@ -932,20 +932,18 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = tscatter %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tscatter %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tscatter %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tscatter %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tscatter ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tscatter ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename TileDataI, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSCATTER(TileDataD &amp;dst, TileDataS &amp;src, TileDataI &amp;indexes, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename TileDataI, typename... WaitEvents&gt;
+PTO_INST RecordEvent TSCATTER(TileDataD &amp;dst, TileDataS &amp;src, TileDataI &amp;indexes, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>dst</code>、<code>src</code>、<code>indexes</code> 都必须是 <code>TileType::Vec</code>。</li>
@@ -977,9 +975,10 @@ PTO_INST RecordEvent TSCATTER(TileDataD &amp;dst, TileDataS &amp;src, TileDataI 
 <li><code>dst/src</code> 支持 <code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>uint8_t</code>、<code>half</code>、<code>float32_t</code>、<code>bfloat16_t</code></li>
 <li><code>indexes</code> 支持 <code>int16_t</code>、<code>int32_t</code>、<code>uint16_t</code>、<code>uint32_t</code></li>
 </ul>
+</div>
 <h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -989,10 +988,9 @@ void example_auto() {
   TileT src, dst;
   IdxT idx;
   TSCATTER(dst, src, idx);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1005,8 +1003,7 @@ void example_manual() {
   TASSIGN(dst, 0x2000);
   TASSIGN(idx, 0x3000);
   TSCATTER(dst, src, idx);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../../irregular-and-complex_zh/">不规则与复杂指令集</a></li>

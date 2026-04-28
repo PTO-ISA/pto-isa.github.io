@@ -977,45 +977,40 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Synchronous forms (conceptual):</p>
-<pre><code class="language-text">%c = tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+<pre class="highlight"><code class="language-text">%c = tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 %c_out = tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-%c = tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+%c = tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
+<pre class="highlight"><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
 -&gt; !pto.tile&lt;...&gt;
 %c_out = pto.tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;,
 !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)  -&gt; !pto.tile&lt;...&gt;
 %c = pto.tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;,
-!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)  -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)  -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
+<pre class="highlight"><code class="language-text">pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
 outs(%c :  !pto.tile_buf&lt;...&gt;)
 pto.tmatmul.mx.acc ins(%c_in, %a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;,
 !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
 pto.tmatmul.mx.bias ins(%a, %a_scale, %b, %b_scale, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;,
-!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
+<pre class="highlight"><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
 -&gt; !pto.tile&lt;...&gt;
 %c_out = pto.tmatmul.mx.acc %c_in, %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;,
 !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)  -&gt; !pto.tile&lt;...&gt;
 %c = pto.tmatmul.mx.bias %a, %a_scale, %b, %b_scale, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;,
-!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)  -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)  -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
+<pre class="highlight"><code class="language-text">pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
 outs(%c :  !pto.tile_buf&lt;...&gt;)
 pto.tmatmul.mx.acc ins(%c_in, %a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;,
 !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c_out : !pto.tile_buf&lt;...&gt;)
 pto.tmatmul.mx.bias ins(%a, %a_scale, %b, %b_scale, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;,
-!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+!pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight, typename TileRightScale,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, WaitEvents &amp;... events);
 
@@ -1037,8 +1032,7 @@ PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 
 template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileLeftScale, typename TileRight,
           typename TileRightScale, typename TileBias, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);
-</code></pre>
+PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileLeftScale &amp;aScaleMatrix, TileRight &amp;bMatrix, TileRightScale &amp;bScaleMatrix, TileBias &amp;biasData, WaitEvents &amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>a</code> is the left operand tile (must be TileLeft location).</li>
@@ -1054,6 +1048,8 @@ PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>
 <p>Source and destination shapes, layouts, and element types MUST satisfy the legality rules documented by the instruction set and target profile.</p>
@@ -1062,12 +1058,18 @@ PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <p>Programs must not assume implicit broadcasting, reshaping, or valid-region repair unless the operation documents it.</p>
 </li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
 <li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>
 <p><strong>Implementation checks (A5)</strong>:</p>
@@ -1083,9 +1085,10 @@ PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 </ul>
 </li>
 </ul>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1103,10 +1106,9 @@ void example_auto() {
   Bias bias;
   C c;
   TMATMUL_MX(c, a, scaleA, b, scaleB, bias);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1130,24 +1132,20 @@ void example_manual() {
   TASSIGN(bias, 0x3000);
   TASSIGN(c, 0x4000);
   TMATMUL_MX(c, a, scaleA, b, scaleB, bias);
-}
-</code></pre>
+}</code></pre>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
+%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
 # Optional for tile operands:
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
-%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
-</code></pre>
+%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
+<pre class="highlight"><code class="language-text">%c = pto.tmatmul.mx %a, %a_scale, %b, %b_scale : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
 # AS Level 2 (DPS)
-pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
-</code></pre>
+pto.tmatmul.mx ins(%a, %a_scale, %b, %b_scale : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../matrix-and-matrix-vector/">Matrix And Matrix Vector</a></li>

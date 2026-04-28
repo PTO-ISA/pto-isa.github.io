@@ -916,11 +916,9 @@
 <p><code>pto.vlds</code> 属于 PTO 的向量内存 / 数据搬运指令。它把向量 tile buffer 中的数据按选定分布模式装成一个向量寄存器，同时把 UB 地址、分布模式以及映射规则保持为架构可见语义，而不是完全隐藏到后端 lowering 里。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vlds %result, %source[%offset] {dist = &quot;DIST&quot;}
-</code></pre>
+<pre class="highlight"><code class="language-text">vlds %result, %source[%offset] {dist = "DIST"}</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vlds %source[%offset] {dist = &quot;DIST&quot;} : !pto.ptr&lt;T, ub&gt; -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vlds %source[%offset] {dist = "DIST"} : !pto.ptr&lt;T, ub&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%source</code>：UB 基址</li>
@@ -934,27 +932,34 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会读取 UB 可见存储并返回 SSA 结果。它不会单独分配 buffer、发送事件，也不会建立栅栏。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>有效地址必须满足所选分布模式的对齐规则。</li>
 <li><code>NORM</code> 读取一个完整向量 footprint。</li>
 <li>广播、上采样、下采样、拆包、拆通道和去交错等模式会改变“内存字节如何映射到目标 lane”，但不会改变“数据源来自 UB”这一点。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>使用超出 UB 可见空间的地址，或违反所选分布模式的对齐 / 分布契约，都是非法的。</li>
 <li>被屏蔽的 lane 或 inactive block，除非指令正文明确说明，否则不能把一个本来非法的地址变成合法。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vlds</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 <li>如果代码依赖某个分布模式、类型列表或特殊行为，应把这种依赖视为 profile 相关。</li>
 </ul>
+</details>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%v = pto.vlds %ub[%offset] {dist = &quot;NORM&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
-<pre><code class="language-mlir">%v = pto.vlds %ub[%c0] {dist = &quot;BRC_B32&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%v = pto.vlds %ub[%offset] {dist = "NORM"} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
+<pre class="highlight"><code class="language-mlir">%v = pto.vlds %ub[%c0] {dist = "BRC_B32"} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h2 id="_10">详细说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="_11">常见分布模式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <table>

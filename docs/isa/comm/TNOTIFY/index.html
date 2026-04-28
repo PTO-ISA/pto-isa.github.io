@@ -941,15 +941,15 @@
 <div class="arithmatex">\[ \mathrm{signal}^{\mathrm{remote}} \mathrel{+}= \mathrm{value} \quad (\text{atomic}) \]</div>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
-<pre><code class="language-text">pto.tnotify %signal_remote, %value {op = #pto.notify_op&lt;Set&gt;} : (!pto.memref&lt;i32&gt;, i32)
-pto.tnotify %signal_remote, %value {op = #pto.notify_op&lt;AtomicAdd&gt;} : (!pto.memref&lt;i32&gt;, i32)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tnotify %signal_remote, %value {op = #pto.notify_op&lt;Set&gt;} : (!pto.memref&lt;i32&gt;, i32)
+pto.tnotify %signal_remote, %value {op = #pto.notify_op&lt;AtomicAdd&gt;} : (!pto.memref&lt;i32&gt;, i32)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
-PTO_INST void NOTIFY(GlobalSignalData &amp;dstSignalData, int32_t value, NotifyOp op, WaitEvents&amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
+PTO_INST void NOTIFY(GlobalSignalData &amp;dstSignalData, int32_t value, NotifyOp op, WaitEvents&amp;... events);</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type constraints</strong>:<ul>
 <li><code>GlobalSignalData::DType</code> must be <code>int32_t</code> (32-bit signal).</li>
@@ -966,9 +966,10 @@ PTO_INST void NOTIFY(GlobalSignalData &amp;dstSignalData, int32_t value, NotifyO
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-set-notification">Basic Set Notification<a class="headerlink" href="#basic-set-notification" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -977,10 +978,9 @@ void notify_set(__gm__ int32_t* remote_signal) {
 
     // Set remote signal to 1
     comm::NOTIFY(sig, 1, comm::NotifyOp::Set);
-}
-</code></pre>
+}</code></pre>
 <h3 id="atomic-counter-increment">Atomic Counter Increment<a class="headerlink" href="#atomic-counter-increment" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -989,10 +989,9 @@ void atomic_increment(__gm__ int32_t* remote_counter) {
 
     // Atomically add 1 to remote counter
     comm::NOTIFY(counter, 1, comm::NotifyOp::AtomicAdd);
-}
-</code></pre>
+}</code></pre>
 <h3 id="producer-consumer-pattern">Producer-Consumer Pattern<a class="headerlink" href="#producer-consumer-pattern" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
 
@@ -1010,8 +1009,7 @@ void consumer(__gm__ int32_t* local_flag) {
     comm::WAIT(flag, 1, comm::WaitCmp::EQ);
 
     // ... consume data ...
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

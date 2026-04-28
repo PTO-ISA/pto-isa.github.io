@@ -963,17 +963,14 @@
 <p><strong>Key advantage over A2A3</strong>: A5's <code>wait_intra_core</code> enables finer-grained parallelism where multiple pipelines can be in different synchronization states simultaneously.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.wait_intra_core %pipe, %sem_id : i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.wait_intra_core %pipe, %sem_id : i64, i64</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.wait_intra_core %pipe, %sem_id : i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.wait_intra_core %pipe, %sem_id : i64, i64</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>The installed 3510 public CCE headers spell this operation as <code>wait_intra_block(...)</code>. The PTO page keeps the <code>wait_intra_core</code> ISA name, but the call surface below is the public Bisheng entry point that is actually shipped.</p>
-<pre><code class="language-cpp">pipe_t pipe = PIPE_V;
+<pre class="highlight"><code class="language-cpp">pipe_t pipe = PIPE_V;
 uint64_t syncId = 0;
-wait_intra_block(pipe, syncId);
-</code></pre>
+wait_intra_block(pipe, syncId);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1004,6 +1001,8 @@ wait_intra_block(pipe, syncId);
 <li>Decrements the semaphore counter when the event is signaled.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>A5 only</strong>: <code>wait_intra_core</code> is only available on the A5 profile.</li>
 <li><strong>Per-pipeline blocking</strong>: Only the named pipeline is blocked. All other pipelines continue. This differs fundamentally from A2A3's SU-level blocking.</li>
@@ -1011,13 +1010,19 @@ wait_intra_block(pipe, syncId);
 <li><strong>Event must be set</strong>: Waiting on an event that was never set is <strong>illegal</strong>.</li>
 <li><strong>Semaphore pool</strong>: 16 physical IDs, 32-ID address space. IDs outside 0–31 are <strong>illegal</strong>.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal on non-A5 profiles.</li>
 <li>Illegal if <code>%sem_id</code> is outside the range 0–31.</li>
 <li>Illegal if the event was never set by a remote subblock.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1054,9 +1059,10 @@ wait_intra_block(pipe, syncId);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="a5-per-pipeline-blocking-vs-a2a3-su-level-blocking">A5: per-pipeline blocking vs. A2A3 SU-level blocking<a class="headerlink" href="#a5-per-pipeline-blocking-vs-a2a3-su-level-blocking" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 // A2A3 (wait_flag_dev): entire core stalls
@@ -1064,30 +1070,28 @@ using namespace pto;
 
 // A5 (wait_intra_core): only PIPE_V stalls
 WAIT_INTRA_CORE(PIPE_V, /* sem_id */ 0);  // Only Vector pipe stalls
-// PIPE_MTE2 and PIPE_MTE3 continue executing
-</code></pre>
+// PIPE_MTE2 and PIPE_MTE3 continue executing</code></pre>
 <h3 id="ssa-form-a5-cv-signaling-with-per-pipeline-waits">SSA form — A5 C→V signaling with per-pipeline waits<a class="headerlink" href="#ssa-form-a5-cv-signaling-with-per-pipeline-waits" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// === AIC signals both AIV subblocks (no broadcast — separate calls) ===
-pto.set_intra_block &quot;PIPE_MTE2&quot;, %c0_i64 : i64, i64   // → AIV0
-pto.set_intra_block &quot;PIPE_MTE2&quot;, %c16_i64 : i64, i64  // → AIV1
+<pre class="highlight"><code class="language-mlir">// === AIC signals both AIV subblocks (no broadcast — separate calls) ===
+pto.set_intra_block "PIPE_MTE2", %c0_i64 : i64, i64   // → AIV0
+pto.set_intra_block "PIPE_MTE2", %c16_i64 : i64, i64  // → AIV1
 
 // === AIV0: Vector pipe waits (only Vector stalls; MTE2/MTE3 continue) ===
-pto.wait_intra_core &quot;PIPE_V&quot;, %c0_i64 : i64, i64
+pto.wait_intra_core "PIPE_V", %c0_i64 : i64, i64
 // [AIV0 Vector processes data while AIV0 MTE2/MTE3 continue]
 
 // === AIV1: Vector pipe waits ===
-pto.wait_intra_core &quot;PIPE_V&quot;, %c16_i64 : i64, i64
+pto.wait_intra_core "PIPE_V", %c16_i64 : i64, i64
 
 // === AIV0 signals back to AIC ===
-pto.set_intra_block &quot;PIPE_V&quot;, %c1_i64 : i64, i64
+pto.set_intra_block "PIPE_V", %c1_i64 : i64, i64
 
 // === AIV1 signals back to AIC ===
-pto.set_intra_block &quot;PIPE_V&quot;, %c1_i64 : i64, i64
+pto.set_intra_block "PIPE_V", %c1_i64 : i64, i64
 
 // === AIC: waits for both AIV subblocks (separate waits) ===
-pto.wait_intra_core &quot;PIPE_MTE2&quot;, %c1_i64 : i64, i64    // wait for AIV0
-pto.wait_intra_core &quot;PIPE_MTE2&quot;, %c17_i64 : i64, i64   // wait for AIV1
-</code></pre>
+pto.wait_intra_core "PIPE_MTE2", %c1_i64 : i64, i64    // wait for AIV0
+pto.wait_intra_core "PIPE_MTE2", %c17_i64 : i64, i64   // wait for AIV1</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../pipeline-sync/">Pipeline Sync</a></li>

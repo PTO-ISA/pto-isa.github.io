@@ -968,11 +968,9 @@
 <p>Inactive lanes are treated as zero.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vcgadd %dst, %src, %mask : !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">vcgadd %dst, %src, %mask : !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vcgadd %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vcgadd %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <p>Supported element types on A5: <code>i16-i32</code>, <code>f16</code>, <code>f32</code>.</p>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
@@ -1017,30 +1015,39 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>VLane granularity</strong>: Reduction operates within 32-byte VLane groups; results are written to lane 0 of each group.</li>
 <li><strong>Inactive lanes</strong>: Inactive lanes are treated as zero.</li>
 <li><strong>All lanes inactive in a group</strong>: If all predicate bits are zero within a group, that group's lane 0 result is zero.</li>
 <li><strong>Type support</strong>: Only <code>i16-i32</code>, <code>f16</code>, <code>f32</code> are supported on A5.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element types, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
 <li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>Documented A5 coverage: <code>i16-i32</code>, <code>f16</code>, <code>f32</code>.</li>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
 <li>Code that depends on an instruction-set-specific type list, distribution mode, or fused form should treat that dependency as target-profile-specific unless the PTO manual states cross-target portability explicitly.</li>
 </ul>
+</details>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a5-latency-and-throughput">A5 Latency and Throughput<a class="headerlink" href="#a5-latency-and-throughput" title="Permanent link">&para;</a></h3>
 <p>Vector lane-group reduction latency and throughput are target-specific. Lane-group reductions (<code>vcgadd</code>) typically have lower latency than full-vector reductions (<code>vcadd</code>) because each VLane group reduces independently and in parallel.</p>
 <hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="c-scalar-pseudocode">C — Scalar Pseudocode<a class="headerlink" href="#c-scalar-pseudocode" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">int K = N / 8;  // elements per VLane group (8 for f32)
+<pre class="highlight"><code class="language-c">int K = N / 8;  // elements per VLane group (8 for f32)
 for (int g = 0; g &lt; 8; g++) {
     T sum = 0;
     for (int i = 0; i &lt; K; i++)
@@ -1051,23 +1058,19 @@ for (int g = 0; g &lt; 8; g++) {
 }
 // For f32 128-element vector: results at dst[0], dst[8], dst[16], dst[24],
 // dst[32], dst[40], dst[48], dst[56], dst[64], dst[72], dst[80], dst[88],
-// dst[96], dst[104], dst[112], dst[120]
-</code></pre>
+// dst[96], dst[104], dst[112], dst[120]</code></pre>
 <h3 id="mlir-ssa-form">MLIR — SSA Form<a class="headerlink" href="#mlir-ssa-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Lane-group sum reduction: one result per 32-byte VLane
-%result = pto.vcgadd %input, %mask : !pto.vreg&lt;128xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf32&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">// Lane-group sum reduction: one result per 32-byte VLane
+%result = pto.vcgadd %input, %mask : !pto.vreg&lt;128xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf32&gt;</code></pre>
 <h3 id="mlir-dps-form">MLIR — DPS Form<a class="headerlink" href="#mlir-dps-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vcgadd ins(%input, %mask : !pto.vreg&lt;128xf32&gt;, !pto.mask)
-            outs(%result : !pto.vreg&lt;128xf32&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vcgadd ins(%input, %mask : !pto.vreg&lt;128xf32&gt;, !pto.mask)
+            outs(%result : !pto.vreg&lt;128xf32&gt;)</code></pre>
 <h3 id="typical-usage-softmax-row-sum">Typical Usage — Softmax Row Sum<a class="headerlink" href="#typical-usage-softmax-row-sum" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Compute row-wise softmax: step 1 — compute exp and lane-group sum
+<pre class="highlight"><code class="language-mlir">// Compute row-wise softmax: step 1 — compute exp and lane-group sum
 %exp = pto.vexpdiff %row, %c0 : !pto.vreg&lt;128xf32&gt;, f32 -&gt; !pto.vreg&lt;128xf32&gt;
 %mask = pto vidu %c128 : i1 -&gt; !pto.mask
 %sum = pto.vcgadd %exp, %mask : !pto.vreg&lt;128xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf32&gt;
-// %sum[0,8,16,...] holds per-VLane exp sums for normalization
-</code></pre>
+// %sum[0,8,16,...] holds per-VLane exp sums for normalization</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../reduction-ops/">Reduction Instructions</a></li>

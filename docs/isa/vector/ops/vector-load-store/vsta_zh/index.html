@@ -916,11 +916,9 @@
 <p><code>pto.vsta</code> 属于 PTO 的向量内存 / 数据搬运指令。它消费一个待提交的 store-alignment 状态，把其中缓冲的尾部字节写回 UB，并结束这一段对齐状态在当前位置上的提交。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vsta %value, %dest[%offset]
-</code></pre>
+<pre class="highlight"><code class="language-text">vsta %value, %dest[%offset]</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vsta %value, %dest[%offset] : !pto.align, !pto.ptr&lt;T, ub&gt;, index
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vsta %value, %dest[%offset] : !pto.align, !pto.ptr&lt;T, ub&gt;, index</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%value</code>：待提交的存储对齐状态</li>
@@ -934,22 +932,30 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会写 UB 可见内存，并消费对应的对齐状态。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>flush 地址必须与前面那条非对齐存储流所期望的后更新地址一致。</li>
 <li>flush 完成后，对应的存储对齐状态被消耗掉。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>使用超出 UB 可见空间的地址，或违反所选形式的地址 / 对齐契约，都是非法的。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vsta</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.vsta %value, %dest[%offset] : !pto.align, !pto.ptr&lt;T, ub&gt;, index
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vsta %value, %dest[%offset] : !pto.align, !pto.ptr&lt;T, ub&gt;, index</code></pre>
 <h2 id="_10">性能<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="_11">时延与吞吐披露<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。

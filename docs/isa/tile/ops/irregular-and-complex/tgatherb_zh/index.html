@@ -920,20 +920,18 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">Assembly Spelling And Operands</a>.</p>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = tgatherb %src, %offsets : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tgatherb %src, %offsets : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tgatherb %src, %offsets : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tgatherb %src, %offsets : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tgatherb ins(%src, %offsets : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tgatherb ins(%src, %offsets : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataOffset, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGATHERB(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDataOffset &amp;offset, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataOffset, typename... WaitEvents&gt;
+PTO_INST RecordEvent TGATHERB(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDataOffset &amp;offset, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:<ul>
 <li>Destination layout must be row-major (<code>TileDataDst::isRowMajor</code>).</li>
@@ -952,9 +950,10 @@ PTO_INST RecordEvent TGATHERB(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDa
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -966,10 +965,9 @@ void example_auto() {
   OffT off;
   DstT dst;
   TGATHERB(dst, src, off);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -984,8 +982,7 @@ void example_manual() {
   TASSIGN(off, 0x2000);
   TASSIGN(dst, 0x3000);
   TGATHERB(dst, src, off);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

@@ -911,18 +911,17 @@
 <h1 id="auto-manual">Auto 与 Manual<a class="headerlink" href="#auto-manual" title="Permanent link">&para;</a></h1>
 <p>PTO 同时支持 Auto 和 Manual 两种编程方式，因为它们解决的是不同问题。ISA manual 记录的是共享的架构契约；两种方式在作者与工具链之间分配职责的方式如下。</p>
 <h2 id="_1">选择路径<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<pre><code class="language-text">Compiler / toolchain developer
+<pre class="highlight"><code class="language-text">Compiler / toolchain developer
   -&gt; Auto 是工具需要实现的契约
   -&gt; Manual 是工具可能为用户生成的显式形式
 
 Kernel author
   -&gt; 需要精确流水线控制？是：Manual
-  -&gt; 否：Auto
-</code></pre>
+  -&gt; 否：Auto</code></pre>
 <h2 id="auto">Auto 模式<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h2>
 <p>在 Auto 模式下，编译器或运行时自动插入 <code>TASSIGN</code>、<code>TSYNC</code> 和必要的数据移动操作。源码主要描述计算有效载荷。</p>
 <h3 id="_2">源码中写什么<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void vec_add(Tile&lt;float, 16, 16&gt;&amp; c,
@@ -934,10 +933,9 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c,
     TLOAD(b, gb);
     TADD(c, a, b);
     TSTORE(gc, c);
-}
-</code></pre>
+}</code></pre>
 <h3 id="_3">工具链补什么<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">TASSIGN(a, @tile(slot))
+<pre class="highlight"><code class="language-text">TASSIGN(a, @tile(slot))
 TSYNC()
 TLOAD(a, ga)
 TSYNC()
@@ -947,8 +945,7 @@ TLOAD(b, gb)
 TSYNC()
 TADD(c, a, b)
 TSYNC()
-TSTORE(gc, c)
-</code></pre>
+TSTORE(gc, c)</code></pre>
 <p>Auto 模式不会改变 PTO ISA 语义。插入的仍然是标准 PTO 操作。</p>
 <h3 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <ul>
@@ -959,7 +956,7 @@ TSTORE(gc, c)
 <h2 id="manual">Manual 模式<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h2>
 <p>在 Manual 模式下，作者显式绑定 tile 资源并管理同步。这提供了 tile 放置、双缓冲和流水重叠的精确控制。</p>
 <h3 id="_5">源码中写什么<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void vec_add_manual(Tile&lt;float, 16, 16&gt;&amp; c,
@@ -975,10 +972,9 @@ void vec_add_manual(Tile&lt;float, 16, 16&gt;&amp; c,
     TADD(c, a, b);
     TSYNC();
     TSTORE(gc, c);
-}
-</code></pre>
+}</code></pre>
 <h3 id="_6">双缓冲示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">TASSIGN(tile[0], 0x1000);
+<pre class="highlight"><code class="language-cpp">TASSIGN(tile[0], 0x1000);
 TASSIGN(tile[1], 0x2000);
 
 TLOAD(tile[1], gm_next);
@@ -986,8 +982,7 @@ set_flag(PIPE_MTE2, PIPE_V, ID0);
 wait_flag(PIPE_MTE2, PIPE_V, ID0);
 TADD(c, tile[0], src[0]);
 TSTORE(gm_out, c);
-TSYNC();
-</code></pre>
+TSYNC();</code></pre>
 <h2 id="_7">共享契约<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <p>两种模式共享相同的 ISA 契约：</p>
 <table>
@@ -1037,12 +1032,15 @@ TSYNC();
 </tbody>
 </table>
 <h2 id="_8">不允许的情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>把 Auto 模式写成能让非法程序“自动合法化”</li>
 <li>把 Manual 细节误写成所有 PTO 程序的默认保证</li>
 <li>把 Auto 和 Manual 写成两套不同 ISA</li>
 <li>在需要精确流水控制的代码里默认依赖自动同步</li>
 </ul>
+</div>
 <h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../machine-model/execution-agents_zh/">执行代理与目标 Profile</a></li>

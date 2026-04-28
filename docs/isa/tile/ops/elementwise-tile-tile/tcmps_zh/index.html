@@ -920,20 +920,18 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">Assembly Spelling And Operands</a>.</p>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = tcmps %src, %scalar {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tcmps %src, %scalar {cmpMode = #pto.cmp&lt;EQ&gt;} : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tcmps %src, %scalar {cmpMode = #pto&lt;cmp xx&gt;} : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tcmps %src, %scalar {cmpMode = #pto&lt;cmp xx&gt;} : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tcmps ins(%src, %scalar{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tcmps ins(%src, %scalar{cmpMode = #pto&lt;cmp xx&gt;}: !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/type.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename T, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCMPS(TileDataDst&amp; dst, TileDataSrc0&amp; src0, T src1, CmpMode cmpMode, WaitEvents&amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename T, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCMPS(TileDataDst&amp; dst, TileDataSrc0&amp; src0, T src1, CmpMode cmpMode, WaitEvents&amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:<ul>
 <li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>float</code>, <code>half</code>, <code>uint16_t</code>, <code>int16_t</code>.</li>
@@ -960,9 +958,10 @@ PTO_INST RecordEvent TCMPS(TileDataDst&amp; dst, TileDataSrc0&amp; src0, T src1,
 </ul>
 </li>
 </ul>
+</div>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -972,10 +971,9 @@ void example_auto() {
   SrcT src;
   DstT dst(16, 2);
   TCMPS(dst, src, 0.0f, CmpMode::GT);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -987,8 +985,7 @@ void example_manual() {
   TASSIGN(src, 0x1000);
   TASSIGN(dst, 0x2000);
   TCMPS(dst, src, 0.0f, CmpMode::GT);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

@@ -1128,9 +1128,10 @@
 </tr>
 </tbody>
 </table>
-<blockquote>
-<p><strong>Note for A5/A2/A3:</strong> The exact fractal block dimensions are <code>FRACTAL_NZ_ROW = 16</code> (elements per fractal row) and <code>CUBE_BLOCK_SIZE = 512</code> (bytes per fractal block). These affect address generation in hardware but are not part of the ISA contract for authors.</p>
-</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note for A5/A2/A3:</p>
+<p>The exact fractal block dimensions are <code>FRACTAL_NZ_ROW = 16</code> (elements per fractal row) and <code>CUBE_BLOCK_SIZE = 512</code> (bytes per fractal block). These affect address generation in hardware but are not part of the ISA contract for authors.</p>
+</div>
 <h2 id="compact-mode">Compact Mode<a class="headerlink" href="#compact-mode" title="Permanent link">&para;</a></h2>
 <p>Compact mode (also called <strong>tail/part mode</strong>) handles edge tiles where the physical tile dimensions are larger than the valid region. When a matrix dimension is not evenly divisible by the tile size, padding is added to fill the physical tile, and compact mode determines how that padding is managed.</p>
 <h3 id="why-compact-mode-matters">Why Compact Mode Matters<a class="headerlink" href="#why-compact-mode-matters" title="Permanent link">&para;</a></h3>
@@ -1291,17 +1292,15 @@
 <p>Custom pad values on A5: <code>PadValueCustom(value)</code> allows compile-time-specified float patterns as pad values (e.g., <code>-1.0f</code> for softmax masking).</p>
 <h2 id="layout-conversion-patterns">Layout Conversion Patterns<a class="headerlink" href="#layout-conversion-patterns" title="Permanent link">&para;</a></h2>
 <h3 id="normal-fractal-textract-with-nd2nz">Normal → Fractal (TEXTRACT with ND2NZ)<a class="headerlink" href="#normal-fractal-textract-with-nd2nz" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// Extract from normal Vec tile to Left tile with NZ fractal layout
+<pre class="highlight"><code class="language-cpp">// Extract from normal Vec tile to Left tile with NZ fractal layout
 using SrcTile = Tile&lt;TileType::Vec, int8_t, 16, 16, RowMajor, NoneBox, None, Null&gt;;
 using DstTile = Tile&lt;TileType::Left, int8_t, 16, 16, RowMajor, RowMajor, NZ, Null&gt;;
-TEXTRACT(dstLeft, srcVec, ExtractMode::ND2NZ);
-</code></pre>
+TEXTRACT(dstLeft, srcVec, ExtractMode::ND2NZ);</code></pre>
 <h3 id="fractal-normal-tinsert-with-nz2nd">Fractal → Normal (TINSERT with NZ2ND)<a class="headerlink" href="#fractal-normal-tinsert-with-nz2nd" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// Insert from Left tile with NZ fractal back to normal Vec tile
+<pre class="highlight"><code class="language-cpp">// Insert from Left tile with NZ fractal back to normal Vec tile
 using SrcTile = Tile&lt;TileType::Left, int8_t, 16, 16, RowMajor, RowMajor, NZ, Null&gt;;
 using DstTile = Tile&lt;TileType::Vec, int8_t, 16, 16, RowMajor, NoneBox, None, Null&gt;;
-TINSERT(dstVec, srcLeft, InsertMode::NZ2ND);
-</code></pre>
+TINSERT(dstVec, srcLeft, InsertMode::NZ2ND);</code></pre>
 <h2 id="constants-reference">Constants Reference<a class="headerlink" href="#constants-reference" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

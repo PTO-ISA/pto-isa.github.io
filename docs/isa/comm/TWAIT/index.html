@@ -955,14 +955,12 @@
 <p>Signal tensor: the NPU waits until <strong>all</strong> elements in the tensor satisfy the condition simultaneously.</p>
 <p>The signal address must point to local (on-chip) memory on the current NPU.</p>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
-<pre><code class="language-text">pto.twait %signal, %cmp_value {cmp = #pto.cmp&lt;EQ&gt;} : (!pto.memref&lt;i32&gt;, i32)
-pto.twait %signal_matrix, %cmp_value {cmp = #pto.cmp&lt;GE&gt;} : (!pto.memref&lt;i32, MxN&gt;, i32)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.twait %signal, %cmp_value {cmp = #pto.cmp&lt;EQ&gt;} : (!pto.memref&lt;i32&gt;, i32)
+pto.twait %signal_matrix, %cmp_value {cmp = #pto.cmp&lt;GE&gt;} : (!pto.memref&lt;i32, MxN&gt;, i32)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
-PTO_INST void WAIT(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp cmp, WaitEvents&amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
+PTO_INST void WAIT(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp cmp, WaitEvents&amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1026,35 +1024,39 @@ PTO_INST void WAIT(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp c
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>Halts the scalar unit. Does not affect other NPUs.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>GlobalSignalData::DType</code> must be <code>int32_t</code>.</li>
 <li><code>signalData</code> must point to local address on the current NPU.</li>
 <li>For signal tensors: all elements must satisfy the condition simultaneously.</li>
 <li>Up to 5-D tensor shapes are supported.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Using a non-local signal address is undefined behavior.</li>
 <li>The signal address must be accessible throughout the wait duration.</li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="wait-for-single-signal">Wait for Single Signal<a class="headerlink" href="#wait-for-single-signal" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 using namespace pto;
 
 void wait_ready(__gm__ int32_t* local_signal) {
   comm::Signal sig(local_signal);
   comm::WAIT(sig, 1, comm::WaitCmp::EQ);
-}
-</code></pre>
+}</code></pre>
 <h3 id="wait-for-signal-matrix">Wait for Signal Matrix<a class="headerlink" href="#wait-for-signal-matrix" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void wait_worker_grid(__gm__ int32_t* signal_matrix) {
+<pre class="highlight"><code class="language-cpp">void wait_worker_grid(__gm__ int32_t* signal_matrix) {
   comm::Signal2D&lt;4, 8&gt; grid(signal_matrix);
   comm::WAIT(grid, 1, comm::WaitCmp::EQ);  // waits until all 32 signals == 1
-}
-</code></pre>
+}</code></pre>
 <h3 id="producer-consumer-pattern">Producer-Consumer Pattern<a class="headerlink" href="#producer-consumer-pattern" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">// Producer
+<pre class="highlight"><code class="language-cpp">// Producer
 void producer(__gm__ int32_t* remote_flag) {
   comm::Signal flag(remote_flag);
   comm::NOTIFY(flag, 1, comm::NotifyOp::Set);
@@ -1064,8 +1066,7 @@ void producer(__gm__ int32_t* remote_flag) {
 void consumer(__gm__ int32_t* local_flag) {
   comm::Signal flag(local_flag);
   comm::WAIT(flag, 1, comm::WaitCmp::EQ);
-}
-</code></pre>
+}</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../communication-runtime/">Collective Communication</a> for related operations</li>

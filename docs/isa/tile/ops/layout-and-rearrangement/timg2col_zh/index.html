@@ -939,19 +939,18 @@
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.timg2col %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.timg2col %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.timg2col ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.timg2col ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileData, typename ConvTileData, SetFmatrixMode FmatrixMode = SetFmatrixMode::FMATRIX_A_MANUAL,
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename ConvTileData, SetFmatrixMode FmatrixMode = SetFmatrixMode::FMATRIX_A_MANUAL,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TIMG2COL(TileData &amp;dst, ConvTileData &amp;src, uint16_t posM = 0, uint16_t posK = 0,
-                              WaitEvents&amp;... events);
-</code></pre>
+                              WaitEvents&amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>src</code> 必须是卷积配置/特征图 Tile，位置类型为 <code>TileType::Mat</code>。</li>
@@ -994,16 +993,16 @@ PTO_INST RecordEvent TIMG2COL(TileData &amp;dst, ConvTileData &amp;src, uint16_t
 <li><code>dst.isRowMajor == false</code></li>
 </ul>
 <p>这意味着 <code>TIMG2COL</code> 的 Left Tile 细节并不是所有目标完全一致，文档里必须按目标区分。</p>
+</div>
 <h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
 template &lt;typename LeftTile, typename ConvTile&gt;
 void example(LeftTile&amp; dst, ConvTile&amp; src) {
   TIMG2COL(dst, src, /*posM=*/0, /*posK=*/0);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../sync-and-config/setfmatrix/">pto.setfmatrix</a></li>

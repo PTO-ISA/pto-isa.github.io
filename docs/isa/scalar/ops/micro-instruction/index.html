@@ -942,9 +942,10 @@
 
 <h1 id="pto-micro-instruction-reference">PTO Micro-Instruction Reference<a class="headerlink" href="#pto-micro-instruction-reference" title="Permanent link">&para;</a></h1>
 <p>This section documents the PTO micro-instruction surface for the A5 (Ascend 950) profile. These instructions operate at the vector-pipeline level, making DMA setup, vector registers, masks, synchronization, and <code>__VEC_SCOPE__</code> boundaries explicit.</p>
-<blockquote>
-<p><strong>Note:</strong> This section is distinct from the Tile-level ISA. Tile instructions (<code>pto.t*</code>) operate on tiles with layout and valid-region metadata, while micro-instructions operate on vector registers (<code>vreg</code>), masks, and scalar state.</p>
-</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note:</p>
+<p>This section is distinct from the Tile-level ISA. Tile instructions (<code>pto.t*</code>) operate on tiles with layout and valid-region metadata, while micro-instructions operate on vector registers (<code>vreg</code>), masks, and scalar state.</p>
+</div>
 <h2 id="instruction-groups">Instruction Groups<a class="headerlink" href="#instruction-groups" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -991,11 +992,14 @@
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
 <p>This page defines the micro-instruction documentation map and the architectural concepts needed to read the per-group pages. It does not produce an SSA value or change execution state by itself.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>The PTO micro-instruction surface is profile-specific; this reference documents the A5-oriented surface used by the current manual.</li>
 <li>Micro-instruction code still shares scalar <code>arith</code> and <code>scf</code> constructs with the broader PTO source surface.</li>
 <li>Readers should not treat the micro-instruction surface as interchangeable with the tile instruction surface: the operand model, scheduling model, and state carriers are different.</li>
 </ul>
+</div>
 <h2 id="relationship-to-pto-tile-isa">Relationship to PTO Tile ISA<a class="headerlink" href="#relationship-to-pto-tile-isa" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1031,12 +1035,11 @@
 <h2 id="key-architectural-concepts">Key Architectural Concepts<a class="headerlink" href="#key-architectural-concepts" title="Permanent link">&para;</a></h2>
 <h3 id="vector-lane-vlane">Vector Lane (VLane)<a class="headerlink" href="#vector-lane-vlane" title="Permanent link">&para;</a></h3>
 <p>The vector register is organized as <strong>8 VLanes</strong> of 32 bytes each. A VLane is the atomic unit for group reduction operations.</p>
-<pre><code>vreg (256 bytes total):
+<pre class="highlight"><code>vreg (256 bytes total):
 ┌─────────┬─────────┬─────────┬─────┬─────────┬─────────┐
 │ VLane 0 │ VLane 1 │ VLane 2 │ ... │ VLane 6 │ VLane 7 │
 │   32B   │   32B   │   32B   │     │   32B   │   32B   │
-└─────────┴─────────┴─────────┴─────┴─────────┴─────────┘
-</code></pre>
+└─────────┴─────────┴─────────┴─────┴─────────┴─────────┘</code></pre>
 <p>Elements per VLane by data type:</p>
 <table>
 <thead>
@@ -1102,7 +1105,7 @@
 </tbody>
 </table>
 <h3 id="memory-hierarchy">Memory Hierarchy<a class="headerlink" href="#memory-hierarchy" title="Permanent link">&para;</a></h3>
-<pre><code>┌─────────────────────────────────────────────┐
+<pre class="highlight"><code>┌─────────────────────────────────────────────┐
 │                 Global Memory (GM)           │
 │              (Off-chip HBM/DDR)             │
 └─────────────────────┬───────────────────────┘
@@ -1114,12 +1117,10 @@
 ┌─────────────────────▼───────────────────────┐
 │           Vector Register File (VRF)          │
 │     vreg (256B each) + mask (256-bit each)  │
-└─────────────────────────────────────────────┘
-</code></pre>
+└─────────────────────────────────────────────┘</code></pre>
 <h3 id="predication-behavior-zero-merge">Predication Behavior (Zero-Merge)<a class="headerlink" href="#predication-behavior-zero-merge" title="Permanent link">&para;</a></h3>
 <p>The native hardware predication mode is <strong>ZEROING</strong> — inactive lanes produce zero:</p>
-<pre><code class="language-c">dst[i] = mask[i] ? op(src0[i], src1[i]) : 0    // ZEROING mode
-</code></pre>
+<pre class="highlight"><code class="language-c">dst[i] = mask[i] ? op(src0[i], src1[i]) : 0    // ZEROING mode</code></pre>
 <h2 id="related-sections">Related Sections<a class="headerlink" href="#related-sections" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../../vector/">Vector ISA Reference</a> — Vector instruction reference at the PTO Tile ISA level</li>

@@ -946,7 +946,7 @@
 <h1 id="execution-agents-and-target-profiles">Execution Agents And Target Profiles<a class="headerlink" href="#execution-agents-and-target-profiles" title="Permanent link">&para;</a></h1>
 <p>PTO uses an architecture-visible three-level execution hierarchy: host, device, and core. This structure is not a direct hardware block diagram — it is an abstraction that makes explicit where work is prepared, dispatched, and executed, and where target profiles may differ in capability.</p>
 <h2 id="execution-hierarchy">Execution Hierarchy<a class="headerlink" href="#execution-hierarchy" title="Permanent link">&para;</a></h2>
-<pre><code>┌─────────────────────────────────────────────────────────┐
+<pre class="highlight"><code>┌─────────────────────────────────────────────────────────┐
 │                        HOST                              │
 │  CPU: prepares kernel arguments, submits graphs,         │
 │  manages runtime orchestration and memory allocation       │
@@ -985,8 +985,7 @@
 └──────────┼──────────┼────────────────────────────────────┘
            │          │
            ▼          ▼
-        GM (off-chip device memory, shared by all blocks)
-</code></pre>
+        GM (off-chip device memory, shared by all blocks)</code></pre>
 <h2 id="host">Host<a class="headerlink" href="#host" title="Permanent link">&para;</a></h2>
 <p>The <strong>host</strong> (typically a CPU or the host portion of a heterogeneous SoC):</p>
 <ul>
@@ -1049,12 +1048,11 @@
 </table>
 <h2 id="vector-register-architecture-vlane">Vector Register Architecture (VLane)<a class="headerlink" href="#vector-register-architecture-vlane" title="Permanent link">&para;</a></h2>
 <p>On A5 (Ascend 950 PR / DT), the vector register is organized as <strong>8 VLanes</strong> of 32 bytes each. A VLane is the atomic unit for group reduction operations.</p>
-<pre><code>vreg (256 bytes total):
+<pre class="highlight"><code>vreg (256 bytes total):
 ┌─────────┬─────────┬─────────┬─────┬─────────┬─────────┐
 │ VLane 0 │ VLane 1 │ VLane 2 │ ... │ VLane 6 │ VLane 7 │
 │   32B   │   32B   │   32B   │     │   32B   │   32B   │
-└─────────┴─────────┴─────────┴─────┴─────────┴─────────┘
-</code></pre>
+└─────────┴─────────┴─────────┴─────┴─────────┴─────────┘</code></pre>
 <p>Elements per VLane by data type:</p>
 <table>
 <thead>
@@ -1303,18 +1301,24 @@
 </tbody>
 </table>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>Architecture-visible dependence order MUST survive target scheduling</li>
 <li>Target profiles may narrow support, but MUST NOT redefine legal PTO semantics</li>
 <li>Machine-model documentation MUST state clearly which facts are portable and which are profile-specific</li>
 <li>Programs that depend on profile-specific features (e.g., MX format, FP8, unaligned vector store) are NOT portable across profiles</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Documenting A5-only features as general PTO guarantees</li>
 <li>Assuming the CPU simulator's emulation behavior matches hardware performance or cycle-accurate timing</li>
 <li>Treating a profile restriction as a contradiction of the ISA (profiles only narrow, never contradict)</li>
 </ul>
+</div>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../ordering-and-synchronization/">Ordering And Synchronization</a></li>

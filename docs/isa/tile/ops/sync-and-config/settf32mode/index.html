@@ -948,19 +948,15 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Schematic form:</p>
-<pre><code class="language-text">pto.settf32mode {enable = true, mode = ...}
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.settf32mode {enable = true, mode = ...}</code></pre>
 <h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.settf32mode {enable = true, mode = ...}
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.settf32mode {enable = true, mode = ...}</code></pre>
 <h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.settf32mode ins({enable = true, mode = ...}) outs()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.settf32mode ins({enable = true, mode = ...}) outs()</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;bool isEnable, RoundMode tf32TransMode = RoundMode::CAST_ROUND, typename... WaitEvents&gt;
-PTO_INST RecordEvent SETTF32MODE(WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;bool isEnable, RoundMode tf32TransMode = RoundMode::CAST_ROUND, typename... WaitEvents&gt;
+PTO_INST RecordEvent SETTF32MODE(WaitEvents &amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -992,25 +988,30 @@ PTO_INST RecordEvent SETTF32MODE(WaitEvents &amp;... events);
 <li><strong>CPU simulator</strong>: Updates software-simulation mode state; does not affect IEEE 754 rounding.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>On A2/A3, calling <code>pto.settf32mode</code> is legal but has no effect.</li>
 <li>On A5, <code>enable</code> must be <code>true</code> or <code>false</code> and <code>mode</code> must be a supported <code>RoundMode</code> (only <code>CAST_ROUND</code> is currently defined).</li>
 <li>On CPU simulator, any combination of enable and mode is accepted without error.</li>
 <li>This instruction has control-state side effects and should be ordered appropriately relative to dependent compute instructions.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Relying on TF32 precision behavior on A2/A3 (not supported).</li>
 <li>Using modes other than <code>CAST_ROUND</code> (reserved/undefined).</li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example_enable_tf32() {
   SETTF32MODE&lt;true, RoundMode::CAST_ROUND&gt;();
-}
-</code></pre>
+}</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../sync-and-config/">Sync And Config</a></li>

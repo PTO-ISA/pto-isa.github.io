@@ -948,9 +948,8 @@
 <h2 id="_3">机制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="tload-tstore">连续搬运：TLOAD / TSTORE<a class="headerlink" href="#tload-tstore" title="Permanent link">&para;</a></h3>
 <p>二维视角下可以理解为：</p>
-<pre><code class="language-text">TLOAD:  dst[i, j] = src[r0 + i, c0 + j]
-TSTORE: dst[r0 + i, c0 + j] = src[i, j]
-</code></pre>
+<pre class="highlight"><code class="language-text">TLOAD:  dst[i, j] = src[r0 + i, c0 + j]
+TSTORE: dst[r0 + i, c0 + j] = src[i, j]</code></pre>
 <p>其中真正的搬运尺寸不是物理 tile 尺寸，而是 valid region：</p>
 <ul>
 <li><code>TLOAD</code> 由目标 tile 的 valid region 决定搬运范围</li>
@@ -960,9 +959,8 @@ TSTORE: dst[r0 + i, c0 + j] = src[i, j]
 <p><code>TPREFETCH</code> 会提前把后续可能要用到的 GM 数据搬进 tile 可见的本地路径。它的意义不在于改变数据布局，而在于把“稍后会访问的数据”尽早拉近。</p>
 <h3 id="mgather-mscatter">索引搬运：MGATHER / MSCATTER<a class="headerlink" href="#mgather-mscatter" title="Permanent link">&para;</a></h3>
 <p>索引类搬运允许非连续地址访问：</p>
-<pre><code class="language-text">gather:  dst[i] = src[index[i]]
-scatter: dst[index[i]] = src[i]
-</code></pre>
+<pre class="highlight"><code class="language-text">gather:  dst[i] = src[index[i]]
+scatter: dst[index[i]] = src[i]</code></pre>
 <h3 id="_fp"><code>_fp</code> 变体<a class="headerlink" href="#_fp" title="Permanent link">&para;</a></h3>
 <p><code>TSTORE_FP</code> 里的 <code>_fp</code> 指的是 <strong>fix-pipe</strong> 路径，不是 floating-point store 的缩写。它通过 fix-pipe sideband state 配合写回。</p>
 <h2 id="_4">布局兼容性<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
@@ -1076,6 +1074,8 @@ scatter: dst[index[i]] = src[i]
 </ul>
 <p>来保证后续计算看到的是已经到位的数据。</p>
 <h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>源与目标 dtype 的字节大小必须兼容：<code>sizeof(tile.dtype) == sizeof(gtensor.dtype)</code></li>
 <li>布局兼容性依赖 target profile</li>
@@ -1083,7 +1083,10 @@ scatter: dst[index[i]] = src[i]
 <li><code>TSTORE</code> 的 <code>AtomicType</code> 是否可用由 profile 决定</li>
 <li><code>TSTORE_FP</code> 当前只对 <code>TileType::Acc</code> 的 fix-pipe 路径合法</li>
 </ul>
+</div>
 <h2 id="_7">不允许的情形<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>使用未初始化的 tile 参与搬运</li>
 <li>GlobalTensor 的 stride 与搬运模式不兼容</li>
@@ -1091,6 +1094,7 @@ scatter: dst[index[i]] = src[i]
 <li>对非 <code>TileType::Acc</code> 使用 <code>TSTORE_FP</code></li>
 <li>在 CPU 模拟器上假设原子写回具备 NPU 上的所有语义</li>
 </ul>
+</div>
 <h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../memory-model/consistency-baseline_zh/">一致性基线</a></li>

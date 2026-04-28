@@ -1117,18 +1117,15 @@
 <p>向量宽度本身在各 profile 间可移植。差别在于 A5 原生执行向量指令，而 CPU / A2 / A3 通过模拟或桥接实现。</p>
 <h2 id="_6">向量寄存器类型<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>向量寄存器的 SSA 类型：</p>
-<pre><code class="language-text">!pto.vreg&lt;NxDTYPE&gt;
-</code></pre>
-<pre><code class="language-text">!pto.vreg&lt;64xf32&gt;   -- 64 lanes of f32
+<pre class="highlight"><code class="language-text">!pto.vreg&lt;NxDTYPE&gt;</code></pre>
+<pre class="highlight"><code class="language-text">!pto.vreg&lt;64xf32&gt;   -- 64 lanes of f32
 !pto.vreg&lt;128xf16&gt;  -- 128 lanes of f16
-!pto.vreg&lt;256xi8&gt;   -- 256 lanes of i8
-</code></pre>
+!pto.vreg&lt;256xi8&gt;   -- 256 lanes of i8</code></pre>
 <h2 id="tile-buffer">Tile Buffer 类型<a class="headerlink" href="#tile-buffer" title="Permanent link">&para;</a></h2>
 <p>Tile buffer 的 SSA 类型如下，完整参数见 <a href="../../programming-model/tiles-and-valid-regions_zh/">Tile 与有效区域</a>：</p>
-<pre><code class="language-text">!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+<pre class="highlight"><code class="language-text">!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
 !pto.tile_buf&lt;loc=mat, bf16, 16, 16, RowMajor, NoneBox, None, Null&gt;
-!pto.tile_buf&lt;loc=left, int8, 16, 16, RowMajor, RowMajor, NZ, Null&gt;
-</code></pre>
+!pto.tile_buf&lt;loc=left, int8, 16, 16, RowMajor, RowMajor, NZ, Null&gt;</code></pre>
 <h2 id="nan-inf">NaN 与 Inf 行为<a class="headerlink" href="#nan-inf" title="Permanent link">&para;</a></h2>
 <p>对浮点类型，PTO 以 IEEE 754 语义为基础，并保留以下 implementation-defined 变化点：</p>
 <table>
@@ -1297,6 +1294,8 @@
 </tbody>
 </table>
 <h2 id="_12">约束<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>指令集页面必须明确列出允许的操作数/结果类别。</li>
 <li>类型错误必须与更深层的合法性错误区分开来，例如 shape、layout、location intent 或 target profile。</li>
@@ -1304,13 +1303,17 @@
 <li>Tile 指令文档必须显式说明 tile role、shape 和 valid region 的交互。</li>
 <li>不存在隐式类型提升。<code>tadd(t, i8_tile, f32_immediate)</code> 之类形式在没有显式 <code>tcvt</code> 的情况下是非法的。</li>
 </ul>
+</div>
 <h2 id="_13">不允许的情形<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>把类型类别检查误当成完整的 backend 合法性检查</li>
 <li>混淆标量状态与 tile / vector 有效载荷状态</li>
 <li>把 vector 和 tile 有效载荷类别写成可互换</li>
 <li>依赖隐式类型转换而非显式 <code>tcvt</code> / <code>vcvt</code></li>
 </ul>
+</div>
 <h2 id="_14">相关页面<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../location-intent-and-legality_zh/">位置意图与合法性</a></li>

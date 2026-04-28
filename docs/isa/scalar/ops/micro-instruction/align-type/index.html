@@ -969,28 +969,24 @@
 <h3 id="ptoinit_align"><code>pto.init_align</code><a class="headerlink" href="#ptoinit_align" title="Permanent link">&para;</a></h3>
 <p><strong>Syntax:</strong> <code>%align = pto.init_align : -&gt; !pto.align</code></p>
 <p><strong>Semantics:</strong> Initialize a new alignment state carrier.</p>
-<pre><code class="language-c">align = init_align();
-</code></pre>
+<pre class="highlight"><code class="language-c">align = init_align();</code></pre>
 <h3 id="ptovldas-prime-alignment-for-unaligned-load"><code>pto.vldas</code> — Prime Alignment for Unaligned Load<a class="headerlink" href="#ptovldas-prime-alignment-for-unaligned-load" title="Permanent link">&para;</a></h3>
 <p><strong>Syntax:</strong> <code>%align = pto.vldas %ub : !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></p>
 <p><strong>Semantics:</strong> Prime the alignment buffer for a subsequent unaligned load. The source address's surrounding aligned block seeds the load alignment state.</p>
-<pre><code class="language-mlir">%align = pto.vldas %ub : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align = pto.vldas %ub : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align</code></pre>
 <h3 id="ptovldus-unaligned-load-with-alignment-state-update"><code>pto.vldus</code> — Unaligned Load with Alignment State Update<a class="headerlink" href="#ptovldus-unaligned-load-with-alignment-state-update" title="Permanent link">&para;</a></h3>
 <p><strong>Syntax:</strong> <code>%vec, %align_out = pto.vldus %ub, %align : !pto.ptr&lt;T, ub&gt;, !pto.align -&gt; !pto.vreg&lt;NxT&gt;, !pto.align</code></p>
 <p><strong>Semantics:</strong> Perform an unaligned load using the provided alignment state, and produce both the loaded vector and the updated alignment state.</p>
-<pre><code class="language-mlir">%vec, %align_out = pto.vldus %ub, %align : !pto.ptr&lt;f32, ub&gt;, !pto.align -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%vec, %align_out = pto.vldus %ub, %align : !pto.ptr&lt;f32, ub&gt;, !pto.align -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align</code></pre>
 <h3 id="ptovstus-unaligned-store-with-alignment-state-update"><code>pto.vstus</code> — Unaligned Store with Alignment State Update<a class="headerlink" href="#ptovstus-unaligned-store-with-alignment-state-update" title="Permanent link">&para;</a></h3>
 <p><strong>Syntax:</strong> <code>%align_out = pto.vstus %align, %offset, %vec, %ub : !pto.align, i32, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></p>
 <p><strong>Semantics:</strong> Perform an unaligned store using the provided alignment state, and produce the updated alignment state.</p>
-<pre><code class="language-mlir">%store_align = pto.init_align : -&gt; !pto.align
+<pre class="highlight"><code class="language-mlir">%store_align = pto.init_align : -&gt; !pto.align
 %next_align = pto.vstus %store_align, %offset, %vec, %ub
-    : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
-</code></pre>
+    : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align</code></pre>
 <h2 id="complete-alignment-state-stream-pattern">Complete Alignment State Stream Pattern<a class="headerlink" href="#complete-alignment-state-stream-pattern" title="Permanent link">&para;</a></h2>
 <p>The following example shows the complete unaligned load/store stream lifecycle:</p>
-<pre><code class="language-mlir">// ─── Load stream ───
+<pre class="highlight"><code class="language-mlir">// ─── Load stream ───
 // Prime alignment buffer
 %align0 = pto.vldas %ub_in : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
 
@@ -1005,9 +1001,10 @@
 // ─── Store stream ───
 %store_align0 = pto.init_align : -&gt; !pto.align
 %align_out1 = pto.vstus %store_align0, %c32, %result0, %ub_out : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
-%align_out2 = pto.vstus %align_out1, %c32, %result1, %ub_out : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
-</code></pre>
+%align_out2 = pto.vstus %align_out1, %c32, %result1, %ub_out : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><code>pto.vldas</code> must be the leading operation of an unaligned load stream.</li>
 <li><code>pto.vldus</code> must follow <code>pto.vldas</code> using the same alignment state.</li>
@@ -1015,6 +1012,7 @@
 <li>The alignment state must be threaded through all operations in the stream without branching.</li>
 <li>For <code>pto.vstus</code>, the <code>%offset</code> parameter controls the per-operation stride within the stream.</li>
 </ul>
+</div>
 <h2 id="why-explicit-alignment-state">Why Explicit Alignment State?<a class="headerlink" href="#why-explicit-alignment-state" title="Permanent link">&para;</a></h2>
 <p>On hardware that supports unaligned memory operations through internal alignment buffers, the state of those buffers must be managed explicitly. <code>!pto.align</code> makes this state visible in the SSA form, enabling:</p>
 <ol>

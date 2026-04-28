@@ -916,11 +916,9 @@
 <p><code>pto.vsts</code> 属于 PTO 的向量内存 / 数据搬运指令。它把一个向量寄存器按指定分布模式写回 UB，同时把 UB 地址、分布模式以及 lane 到内存字节的映射关系保持为架构可见语义。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vsts %value, %dest[%offset], %mask {dist = &quot;DIST&quot;}
-</code></pre>
+<pre class="highlight"><code class="language-text">vsts %value, %dest[%offset], %mask {dist = "DIST"}</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vsts %value, %dest[%offset], %mask {dist = &quot;DIST&quot;} : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vsts %value, %dest[%offset], %mask {dist = "DIST"} : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, !pto.mask</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%value</code>：源向量寄存器</li>
@@ -936,23 +934,31 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会写 UB 可见内存，某些有状态的非对齐流式形式还会推进对齐状态；尾部数据是否真正完成写出，可能还需要后续 flush 指令。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>有效目标地址必须满足所选存储模式的对齐规则。</li>
 <li>打包 / 收窄模式可能只保留源向量中的部分比特。</li>
 <li>merge-channel 模式会把源向量解释成若干通道平面，再交织写回。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>使用超出 UB 可见空间的地址，或违反所选分布模式的地址 / 对齐契约，都是非法的。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vsts</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.vsts %v, %ub[%offset], %mask {dist = &quot;NORM_B32&quot;} : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vsts %v, %ub[%offset], %mask {dist = "NORM_B32"} : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask</code></pre>
 <h2 id="_10">详细说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="_11">常见分布模式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <table>

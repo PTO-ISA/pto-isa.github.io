@@ -919,27 +919,22 @@
 <p>活跃 lane 会把指数值写入 <code>dst[i]</code>；非活跃 lane 则保持目标原值，不会被自动清零。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%result = vexp %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-text">%result = vexp %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vexp %input, %mask : (!pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vexp %input, %mask : (!pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vexp ins(%input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask)
-          outs(%result : !pto.vreg&lt;NxT&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vexp ins(%input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask)
+          outs(%result : !pto.vreg&lt;NxT&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>声明位于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename VecDst, typename VecSrc, typename MaskT, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename VecDst, typename VecSrc, typename MaskT, typename... WaitEvents&gt;
 PTO_INST RecordEvent VEXP(VecDst&amp; dst, const VecSrc&amp; src,
-                          const MaskT&amp; mask, WaitEvents&amp;... events);
-</code></pre>
+                          const MaskT&amp; mask, WaitEvents&amp;... events);</code></pre>
 <h2 id="c">C 语义<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
     if (mask[i])
         dst[i] = expf(src[i]);
-    // else: dst[i] unchanged
-</code></pre>
+    // else: dst[i] unchanged</code></pre>
 <p>其中 <code>N</code> 由元素类型决定：</p>
 <table>
 <thead>
@@ -1009,6 +1004,8 @@ PTO_INST RecordEvent VEXP(VecDst&amp; dst, const VecSrc&amp; src,
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>无额外架构副作用。它不会隐式占用 buffer、发送事件，也不会建立内存栅栏。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>源和目标寄存器的元素类型必须一致。</li>
 <li>源和目标寄存器的向量宽度必须一致。</li>
@@ -1016,13 +1013,19 @@ PTO_INST RecordEvent VEXP(VecDst&amp; dst, const VecSrc&amp; src,
 <li>非活跃 lane 的目标值保持不变，不能假定它们被清零。</li>
 <li>溢出、下溢和 NaN 处理遵循目标 profile 的浮点异常规则。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的类型不匹配、宽度不匹配或掩码宽度不匹配。</li>
 <li>数值溢出、NaN 等异常由目标平台定义；除非文档明确收窄，否则代码不应依赖某个特定异常值。</li>
 <li><a href="../../../unary-vector-ops_zh/">一元向量操作</a>页声明的额外非法情形，同样适用于 <code>pto.vexp</code>。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <table>
 <thead>
 <tr>
@@ -1048,6 +1051,7 @@ PTO_INST RecordEvent VEXP(VecDst&amp; dst, const VecSrc&amp; src,
 </tbody>
 </table>
 <p>A5 是当前向量特殊函数最具体的实现 profile。CPU 模拟器和 A2/A3 类目标会以标量循环或等效路径模拟这些超越函数，但必须保留可见的 PTO 契约。</p>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <table>
@@ -1104,25 +1108,22 @@ PTO_INST RecordEvent VEXP(VecDst&amp; dst, const VecSrc&amp; src,
 </tbody>
 </table>
 <p>示例：1024 个 f32 元素，16 次迭代：</p>
-<pre><code class="language-text">A5（流水重叠）：16 + 15×2 = 46 周期
-A2/A3：13 + 26 + 32 + 270 = 341 周期
-</code></pre>
+<pre class="highlight"><code class="language-text">A5（流水重叠）：16 + 15×2 = 46 周期
+A2/A3：13 + 26 + 32 + 270 = 341 周期</code></pre>
 <p><strong>性能说明：</strong> 对数值稳定的 softmax，更推荐使用 <code>vexpdiff</code> 融合形式，而不是先 <code>vsub</code> 再 <code>vexp</code>。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="softmax">Softmax 分子（数值稳定形式）<a class="headerlink" href="#softmax" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%max_bc = pto.vlds %ub_max[%c0] {dist = &quot;BRC&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+<pre class="highlight"><code class="language-mlir">%max_bc = pto.vlds %ub_max[%c0] {dist = "BRC"} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 %sub = pto.vsub %x, %max_bc, %mask
     : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-%exp = pto.vexp %sub, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+%exp = pto.vexp %sub, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h3 id="c_1">C++ 用法<a class="headerlink" href="#c_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void exp_vector(VReg&lt;64, float&gt;&amp; dst, const VReg&lt;64, float&gt;&amp; src, Mask&lt;64&gt;&amp; mask) {
     VEXP(dst, src, mask);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_11">详细说明<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <p>指数函数 <code>exp(x)</code> 计算的是 <code>e^x</code>，其中 <code>e ≈ 2.71828</code>。对浮点目标而言：</p>
 <ul>

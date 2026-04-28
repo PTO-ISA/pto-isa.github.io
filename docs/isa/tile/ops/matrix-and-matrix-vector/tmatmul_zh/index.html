@@ -936,22 +936,18 @@
 <h2 id="_5">汇编语法<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>同步形式：</p>
-<pre><code class="language-text">%acc = tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%acc = tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%c = pto.tmatmul %a, %b : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tmatmul ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tmatmul ins(%a, %b : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
 
 template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);
-</code></pre>
+PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, WaitEvents &amp;... events);</code></pre>
 <p>带 <code>AccPhase</code> 的模板重载不改变矩阵乘法的算术语义；它只是让具体后端在 unit-flag 或实现细节上做选择。</p>
 <h2 id="_6">输入与输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
@@ -961,6 +957,8 @@ PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRi
 </ul>
 <p>结果写入 <code>cMatrix</code>。对读者可见的合同是：输出块由本次 <code>A * B</code> 生成，而不是在旧累加器上继续叠加。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="_8">通用约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <ul>
 <li>静态 shape 必须满足：</li>
@@ -992,13 +990,17 @@ PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRi
 <li>Right：<code>Loc == Right</code>，row-major，<code>SFractal == ColMajor</code></li>
 <li>Acc：<code>Loc == Acc</code>，非 row-major，<code>SFractal == RowMajor</code></li>
 </ul>
+</div>
 <h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>使用不是 <code>Left</code> / <code>Right</code> / <code>Acc</code> 的角色组合；</li>
 <li>形状不满足 <code>(M, K) x (K, N) -&gt; (M, N)</code>；</li>
 <li>在不支持的 target 上使用不支持的 dtype 组合；</li>
 <li>把某个 target 上偶然可运行的布局当成可移植合同。</li>
 </ul>
+</div>
 <h2 id="_10">性能与吞吐<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <p>仓内当前公开的性能数据主要来自 A2A3 costmodel。<code>TMATMUL</code>、<code>TMATMUL_ACC</code> 与 <code>TMATMUL_BIAS</code> 使用同一条 <code>mad/mmad</code> cube 模型：</p>
 <ul>
@@ -1010,8 +1012,7 @@ PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRi
 <li>fp32 bucket 为 <code>2</code> cycles。</li>
 </ul>
 <p>因此 A2A3 的公开公式是：</p>
-<pre><code class="language-text">cycles = 14 + ceil(M/16) * ceil(N/16) * ceil(K / baskK) * repeat_cost
-</code></pre>
+<pre class="highlight"><code class="language-text">cycles = 14 + ceil(M/16) * ceil(N/16) * ceil(K / baskK) * repeat_cost</code></pre>
 <p>仓内 costmodel 测试样例包括：</p>
 <ul>
 <li>half <code>40x50 * 50x60</code>：<code>62</code> cycles；</li>
@@ -1021,7 +1022,7 @@ PTO_INST RecordEvent TMATMUL(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRi
 <p>当前仓库没有公开单列的 A5 latency / throughput 表，因此 A5 这里只能精确写合法性和 dtype 边界，不能编造周期数字。</p>
 <h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1033,10 +1034,9 @@ void example_auto() {
   B b;
   C c;
   TMATMUL(c, a, b);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1051,8 +1051,7 @@ void example_manual() {
   TASSIGN(b, 0x2000);
   TASSIGN(c, 0x3000);
   TMATMUL(c, a, b);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../../matrix-and-matrix-vector_zh/">矩阵与矩阵-向量指令集</a></li>

@@ -916,11 +916,9 @@
 <p><code>pto.vldx2</code> 属于 PTO 的向量内存 / 数据搬运指令。它从 UB 中读取交错布局的数据，并一次返回两路结果向量。关键点不只是“读两次”，而是这两路结果构成一个有顺序的语义对。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vldx2 %low, %high, %source[%offset], &quot;DIST&quot;
-</code></pre>
+<pre class="highlight"><code class="language-text">vldx2 %low, %high, %source[%offset], "DIST"</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%low, %high = pto.vldx2 %source[%offset], &quot;DIST&quot; : !pto.ptr&lt;T, ub&gt;, index -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%low, %high = pto.vldx2 %source[%offset], "DIST" : !pto.ptr&lt;T, ub&gt;, index -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%source</code>：UB 基址</li>
@@ -934,28 +932,35 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会读取 UB 可见存储并返回 SSA 结果。它不会单独分配 buffer、发送事件，也不会建立栅栏。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>这条指令只对交错 / 去交错类分布合法。</li>
 <li>两个输出构成一个有序结果对，顺序必须被保留，不能在 lowering 里交换。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>使用超出 UB 可见空间的地址，或违反所选分布模式的地址 / 对齐契约，都是非法的。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vldx2</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">// DINTLV_B32
+<pre class="highlight"><code class="language-c">// DINTLV_B32
 for (int i = 0; i &lt; 64; i++) {
     low[i]  = UB[base + 8*i];
     high[i] = UB[base + 8*i + 4];
-}
-</code></pre>
-<pre><code class="language-mlir">%x, %y = pto.vldx2 %ub[%offset], &quot;DINTLV_B32&quot; : !pto.ptr&lt;f32, ub&gt;, index -&gt; !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;
-</code></pre>
+}</code></pre>
+<pre class="highlight"><code class="language-mlir">%x, %y = pto.vldx2 %ub[%offset], "DINTLV_B32" : !pto.ptr&lt;f32, ub&gt;, index -&gt; !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;</code></pre>
 <h2 id="_10">详细说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="_11">支持的分布模式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <p><code>DINTLV_B8</code>、<code>DINTLV_B16</code>、<code>DINTLV_B32</code>、<code>BDINTLV</code></p>

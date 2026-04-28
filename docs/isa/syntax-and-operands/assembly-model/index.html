@@ -994,69 +994,60 @@
 <p>All three forms are <strong>semantically equivalent</strong> — they describe the same ISA operation. A backend or verifier must accept any form and produce identical behavior.</p>
 <h2 id="bnf-grammar">BNF Grammar<a class="headerlink" href="#bnf-grammar" title="Permanent link">&para;</a></h2>
 <h3 id="assembly-form-pto-as">Assembly Form (PTO-AS)<a class="headerlink" href="#assembly-form-pto-as" title="Permanent link">&para;</a></h3>
-<pre><code>assembly-program  ::= assembly-stmt*
-assembly-stmt     ::= label? op-name operands? &quot;:&quot; type-ref (&quot;#&quot; attribute)*
-label             ::= identifier &quot;:&quot;
-op-name           ::= (&quot;pto.&quot;)? identifier (&quot;_&quot; identifier)*
-operands          ::= operand (&quot;,&quot; operand)*
+<pre class="highlight"><code>assembly-program  ::= assembly-stmt*
+assembly-stmt     ::= label? op-name operands? ":" type-ref ("#" attribute)*
+label             ::= identifier ":"
+op-name           ::= ("pto.")? identifier ("_" identifier)*
+operands          ::= operand ("," operand)*
 operand           ::= register | immediate | memory-operand | mask-operand
-register          ::= &quot;%&quot; identifier
+register          ::= "%" identifier
 immediate         ::= integer | hex-integer | floating-point
-hex-integer       ::= &quot;0x&quot; [0-9a-fA-F]+
-floating-point    ::= [0-9]+ &quot;.&quot; [0-9]+ (&quot;e&quot; [+-]? [0-9]+)?
-memory-operand     ::= register &quot;[&quot; register (&quot;,&quot; register)* &quot;]&quot;
-mask-operand      ::= &quot;%&quot; identifier &quot;:&quot; &quot;!&quot; pto.mask
-type-ref          ::= &quot;!&quot; pto &quot;.&quot; type-key &quot;&lt;&quot; type-params &quot;&gt;&quot;
-type-key          ::= &quot;tile&quot; | &quot;tile_buf&quot; | &quot;vreg&quot; | &quot;ptr&quot; | &quot;partition_tensor_view&quot; | &quot;mask&quot; | &quot;event&quot;
-</code></pre>
+hex-integer       ::= "0x" [0-9a-fA-F]+
+floating-point    ::= [0-9]+ "." [0-9]+ ("e" [+-]? [0-9]+)?
+memory-operand     ::= register "[" register ("," register)* "]"
+mask-operand      ::= "%" identifier ":" "!" pto.mask
+type-ref          ::= "!" pto "." type-key "&lt;" type-params "&gt;"
+type-key          ::= "tile" | "tile_buf" | "vreg" | "ptr" | "partition_tensor_view" | "mask" | "event"</code></pre>
 <h3 id="ssa-form-as-level-1">SSA Form (AS Level 1)<a class="headerlink" href="#ssa-form-as-level-1" title="Permanent link">&para;</a></h3>
-<pre><code>ssa-program       ::= ssa-stmt*
-ssa-stmt          ::= ssa-result &quot;=&quot; op-name operands &quot;:&quot; ssa-type -&gt; ssa-type
-ssa-result        ::= &quot;%&quot; identifier
-op-name           ::= &quot;pto.&quot; identifier (&quot;_&quot; identifier)*
-operands          ::= ssa-operand (&quot;,&quot; ssa-operand)*
+<pre class="highlight"><code>ssa-program       ::= ssa-stmt*
+ssa-stmt          ::= ssa-result "=" op-name operands ":" ssa-type -&gt; ssa-type
+ssa-result        ::= "%" identifier
+op-name           ::= "pto." identifier ("_" identifier)*
+operands          ::= ssa-operand ("," ssa-operand)*
 ssa-operand       ::= ssa-result | immediate | memory-operand
-ssa-type          ::= ssa-type-key &quot;&lt;&quot; type-params &quot;&gt;&quot;
-ssa-type-key      ::= &quot;tile&quot; | &quot;tile_buf&quot; | &quot;vreg&quot; | &quot;ptr&quot; | &quot;partition_tensor_view&quot; | &quot;mask&quot;
-</code></pre>
+ssa-type          ::= ssa-type-key "&lt;" type-params "&gt;"
+ssa-type-key      ::= "tile" | "tile_buf" | "vreg" | "ptr" | "partition_tensor_view" | "mask"</code></pre>
 <h3 id="dps-form-as-level-2">DPS Form (AS Level 2)<a class="headerlink" href="#dps-form-as-level-2" title="Permanent link">&para;</a></h3>
-<pre><code>dps-program       ::= dps-stmt*
-dps-stmt          ::= op-name &quot;ins(&quot; dps-ins &quot;)&quot; &quot;outs(&quot; dps-outs &quot;)&quot;
-dps-ins           ::= dps-ins-item (&quot;,&quot; dps-ins-item)*
-dps-outs          ::= dps-out-item (&quot;,&quot; dps-out-item)*
-dps-ins-item      ::= ssa-result &quot;:&quot; ssa-type
-dps-out-item      ::= ssa-result &quot;:&quot; ssa-type
-</code></pre>
+<pre class="highlight"><code>dps-program       ::= dps-stmt*
+dps-stmt          ::= op-name "ins(" dps-ins ")" "outs(" dps-outs ")"
+dps-ins           ::= dps-ins-item ("," dps-ins-item)*
+dps-outs          ::= dps-out-item ("," dps-out-item)*
+dps-ins-item      ::= ssa-result ":" ssa-type
+dps-out-item      ::= ssa-result ":" ssa-type</code></pre>
 <h2 id="operand-modifier-rules">Operand Modifier Rules<a class="headerlink" href="#operand-modifier-rules" title="Permanent link">&para;</a></h2>
 <h3 id="tile-operands">Tile Operands<a class="headerlink" href="#tile-operands" title="Permanent link">&para;</a></h3>
 <p>A tile operand may carry optional modifiers in PTO-AS:</p>
-<pre><code>%tile                     -- bare tile register
+<pre class="highlight"><code>%tile                     -- bare tile register
 %tile[%r, %c]            -- tile with GM base offset (row, col offsets)
-%tile!loc=vec            -- tile with location intent annotation
-</code></pre>
+%tile!loc=vec            -- tile with location intent annotation</code></pre>
 <p>In SSA form, location intent and valid-region information are encoded in the tile type:</p>
-<pre><code>!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
-!pto.tile_buf&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
-</code></pre>
+<pre class="highlight"><code>!pto.tile&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
+!pto.tile_buf&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;</code></pre>
 <h3 id="globaltensor-operands">GlobalTensor Operands<a class="headerlink" href="#globaltensor-operands" title="Permanent link">&para;</a></h3>
 <p>In PTO-AS, a <code>GlobalTensor</code> operand appears as a <code>memref</code> or <code>partition_tensor_view</code>:</p>
-<pre><code>%tensor                      -- bare GlobalTensor register
+<pre class="highlight"><code>%tensor                      -- bare GlobalTensor register
 %tensor[%r, %c]             -- with 2D base offset
-%tensor[%b, %h, %w, %r, %c] -- with 5D base offset (partition_tensor_view)
-</code></pre>
+%tensor[%b, %h, %w, %r, %c] -- with 5D base offset (partition_tensor_view)</code></pre>
 <h3 id="predicate-operands">Predicate Operands<a class="headerlink" href="#predicate-operands" title="Permanent link">&para;</a></h3>
 <p>A predicate operand is written as a mask register:</p>
-<pre><code>%mask : !pto.mask           -- predicate operand in SSA form
-</code></pre>
+<pre class="highlight"><code>%mask : !pto.mask           -- predicate operand in SSA form</code></pre>
 <p>Vector instructions that take a mask write it as an explicit operand:</p>
-<pre><code>%result = pto.vadd %src0, %src1, %mask : ... -&gt; ...
-</code></pre>
+<pre class="highlight"><code>%result = pto.vadd %src0, %src1, %mask : ... -&gt; ...</code></pre>
 <h3 id="immediate-operands">Immediate Operands<a class="headerlink" href="#immediate-operands" title="Permanent link">&para;</a></h3>
 <p>Immediate operands are encoded directly in the instruction:</p>
-<pre><code>tadds %dst, %src, 0x3F800000   -- 32-bit float immediate (1.0f)
+<pre class="highlight"><code>tadds %dst, %src, 0x3F800000   -- 32-bit float immediate (1.0f)
 tshrs %dst, %src, 16            -- 16-bit shift amount
-taddc %dst, %src0, %src1       -- carry-variant, no immediate
-</code></pre>
+taddc %dst, %src0, %src1       -- carry-variant, no immediate</code></pre>
 <h2 id="instruction-suffixes">Instruction Suffixes<a class="headerlink" href="#instruction-suffixes" title="Permanent link">&para;</a></h2>
 <p>PTO uses suffixes to distinguish operation variants:</p>
 <table>
@@ -1112,44 +1103,34 @@ taddc %dst, %src0, %src1       -- carry-variant, no immediate
 </table>
 <h2 id="attribute-syntax">Attribute Syntax<a class="headerlink" href="#attribute-syntax" title="Permanent link">&para;</a></h2>
 <p>Attributes modify operation behavior. In PTO-AS, they appear after <code>#</code>:</p>
-<pre><code>tstore %tile, %tensor #atomic=add    -- atomic store
+<pre class="highlight"><code>tstore %tile, %tensor #atomic=add    -- atomic store
 tcmps %dst, %src, 0   #cmp=gt        -- comparison mode
-tmatmul %c, %a, %b    #phase=relu    -- matmul phase mode
-</code></pre>
+tmatmul %c, %a, %b    #phase=relu    -- matmul phase mode</code></pre>
 <p>In SSA form, attributes appear as <code>{key = value}</code>:</p>
-<pre><code>%result = pto.tcmp %src0, %src1 {cmp = &quot;lt&quot;} : ... -&gt; ...
-</code></pre>
+<pre class="highlight"><code>%result = pto.tcmp %src0, %src1 {cmp = "lt"} : ... -&gt; ...</code></pre>
 <h2 id="complete-examples">Complete Examples<a class="headerlink" href="#complete-examples" title="Permanent link">&para;</a></h2>
 <h3 id="tile-compute-elementwise-addition">Tile Compute: Elementwise Addition<a class="headerlink" href="#tile-compute-elementwise-addition" title="Permanent link">&para;</a></h3>
-<p><strong>Assembly Form (PTO-AS)</strong>:</p>
-<pre><code>tadd %dst, %src0, %src1 : !pto.tile&lt;f32, 16, 16&gt;
-</code></pre>
-<p><strong>SSA Form (AS Level 1)</strong>:</p>
-<pre><code>%dst = pto.tadd %src0, %src1 : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;
-</code></pre>
-<p><strong>DPS Form (AS Level 2)</strong>:</p>
-<pre><code>pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
-          outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)
-</code></pre>
-<p><strong>C++ Intrinsic</strong>:</p>
-<pre><code class="language-cpp">TADD(TileDst, TileSrc0, TileSrc1);
-</code></pre>
+<p><strong>Assembly Form (PTO-AS)</strong>:
+<pre class="highlight"><code>tadd %dst, %src0, %src1 : !pto.tile&lt;f32, 16, 16&gt;</code></pre></p>
+<p><strong>SSA Form (AS Level 1)</strong>:
+<pre class="highlight"><code>%dst = pto.tadd %src0, %src1 : (!pto.tile&lt;f32, 16, 16&gt;, !pto.tile&lt;f32, 16, 16&gt;) -&gt; !pto.tile&lt;f32, 16, 16&gt;</code></pre></p>
+<p><strong>DPS Form (AS Level 2)</strong>:
+<pre class="highlight"><code>pto.tadd ins(%src0, %src1 : !pto.tile_buf&lt;f32, 16, 16&gt;, !pto.tile_buf&lt;f32, 16, 16&gt;)
+          outs(%dst : !pto.tile_buf&lt;f32, 16, 16&gt;)</code></pre></p>
+<p><strong>C++ Intrinsic</strong>:
+<pre class="highlight"><code class="language-cpp">TADD(TileDst, TileSrc0, TileSrc1);</code></pre></p>
 <h3 id="tile-load-from-globaltensor">Tile Load: From GlobalTensor<a class="headerlink" href="#tile-load-from-globaltensor" title="Permanent link">&para;</a></h3>
-<p><strong>Assembly Form (PTO-AS)</strong>:</p>
-<pre><code>tload %tile, %tensor[%r, %c] : (!pto.tile&lt;f32,16,16&gt;, !pto.memref&lt;f32,5&gt;) -&gt; !pto.tile&lt;f32,16,16&gt;
-</code></pre>
-<p><strong>SSA Form (AS Level 1)</strong>:</p>
-<pre><code>%tile = pto.tload %mem : !pto.partition_tensor_view&lt;1x1x1x16x16xf32&gt;
-    -&gt; !pto.tile_buf&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;
-</code></pre>
+<p><strong>Assembly Form (PTO-AS)</strong>:
+<pre class="highlight"><code>tload %tile, %tensor[%r, %c] : (!pto.tile&lt;f32,16,16&gt;, !pto.memref&lt;f32,5&gt;) -&gt; !pto.tile&lt;f32,16,16&gt;</code></pre></p>
+<p><strong>SSA Form (AS Level 1)</strong>:
+<pre class="highlight"><code>%tile = pto.tload %mem : !pto.partition_tensor_view&lt;1x1x1x16x16xf32&gt;
+    -&gt; !pto.tile_buf&lt;loc=vec, f32, 16, 16, RowMajor, NoneBox, None, Zero&gt;</code></pre></p>
 <h3 id="vector-compute-vector-addition-with-mask">Vector Compute: Vector Addition with Mask<a class="headerlink" href="#vector-compute-vector-addition-with-mask" title="Permanent link">&para;</a></h3>
-<p><strong>SSA Form (AS Level 1)</strong>:</p>
-<pre><code>%result = pto.vadd %src0, %src1, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+<p><strong>SSA Form (AS Level 1)</strong>:
+<pre class="highlight"><code>%result = pto.vadd %src0, %src1, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;</code></pre></p>
 <h3 id="scalar-compare-predicate-generation">Scalar Compare: Predicate Generation<a class="headerlink" href="#scalar-compare-predicate-generation" title="Permanent link">&para;</a></h3>
-<p><strong>SSA Form (AS Level 1)</strong>:</p>
-<pre><code>%pred = pto.pge_b32 %src0, %src1 : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;) -&gt; !pto.mask
-</code></pre>
+<p><strong>SSA Form (AS Level 1)</strong>:
+<pre class="highlight"><code>%pred = pto.pge_b32 %src0, %src1 : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;) -&gt; !pto.mask</code></pre></p>
 <h2 id="what-textual-spelling-does-not-replace">What Textual Spelling Does Not Replace<a class="headerlink" href="#what-textual-spelling-does-not-replace" title="Permanent link">&para;</a></h2>
 <p>Textual spelling does not replace:</p>
 <ul>

@@ -924,14 +924,13 @@
 <p>These <code>pto.*</code> forms establish explicit producer-consumer ordering across PTO execution stages. They belong to the scalar and control instructions even when they coordinate vector-facing pipelines, because what they expose architecturally is dependency state rather than vector payload math.</p>
 <h2 id="synchronization-hierarchy">Synchronization Hierarchy<a class="headerlink" href="#synchronization-hierarchy" title="Permanent link">&para;</a></h2>
 <p>The four synchronization modes form a containment hierarchy:</p>
-<pre><code>Event-based synchronization  (set_flag / wait_flag)
+<pre class="highlight"><code>Event-based synchronization  (set_flag / wait_flag)
         ↑
 Buffer-token protocol  (get_buf / rls_buf)  — requires event-based under the hood
         ↑
 Memory barrier  (mem_bar)  — may be used inside vector-visible scope
         ↑
-Inter-core coordination  (set_cross_core / wait_flag_dev / set_intra_block / wait_intra_core)
-</code></pre>
+Inter-core coordination  (set_cross_core / wait_flag_dev / set_intra_block / wait_intra_core)</code></pre>
 <ul>
 <li><strong>Event-based</strong> (<code>set_flag</code> / <code>wait_flag</code>): The foundational mode. Sets or waits on a named event signal between producer and consumer pipes. Used as the primitive for all higher-level modes.</li>
 <li><strong>Buffer-token</strong> (<code>get_buf</code> / <code>rls_buf</code>): A protocol built on top of event-based synchronization for double-buffered execution. <code>get_buf</code> acquires a buffer token and implicitly sets an event; <code>rls_buf</code> releases the token and implicitly sets a dependent event.</li>

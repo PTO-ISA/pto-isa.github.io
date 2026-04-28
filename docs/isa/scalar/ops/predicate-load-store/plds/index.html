@@ -961,21 +961,17 @@
 <p>The predicate register is updated atomically. All bits are meaningful only within the current element-type context; on A2/A3 and A5 unused upper bits are zeroed by the hardware; on CPU simulator they retain the value from the UB read.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.plds %ub_ptr : !pto.ptr&lt;i64, ub&gt; -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.plds %ub_ptr : !pto.ptr&lt;i64, ub&gt; -&gt; !pto.mask</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%mask = pto.plds %ub_ptr : !pto.ptr&lt;i64, ub&gt; -&gt; !pto.mask
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%mask = pto.plds %ub_ptr : !pto.ptr&lt;i64, ub&gt; -&gt; !pto.mask</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.plds ins(%ub_ptr : !pto.ptr&lt;i64, ub&gt;) outs(%mask : !pto.mask)
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.plds ins(%ub_ptr : !pto.ptr&lt;i64, ub&gt;) outs(%mask : !pto.mask)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">vector_bool dst;
+<pre class="highlight"><code class="language-cpp">vector_bool dst;
 __ubuf__ uint32_t *base;
 int32_t offset = 0;
 plds(dst, base, offset, __cce_simd::NORM);
-plds(dst, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
-</code></pre>
+plds(dst, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1013,19 +1009,27 @@ plds(dst, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>None. Does not implicitly fence or synchronize with any pipeline.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>UB address space</strong>: <code>%ub_ptr</code> MUST have address space <code>ub</code>. Pointers to other spaces are illegal.</li>
 <li><strong>Alignment</strong>: The effective address MUST be 64-bit aligned. Misaligned addresses are <strong>illegal</strong>.</li>
 <li><strong>Predicate width</strong>: The load transfers exactly 64 bits. The caller MUST ensure this matches the active element type context.</li>
 <li><strong>Single active predicate</strong>: Loading a new predicate does not implicitly clear or save a prior predicate. Programs that need to preserve predicate state MUST save it to UB before loading.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if <code>%ub_ptr</code> is not a UB-space pointer.</li>
 <li>Illegal if the effective address is not 64-bit aligned.</li>
 <li>Illegal if predicate width does not match the active element type context.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <table>
 <thead>
 <tr>
@@ -1056,22 +1060,21 @@ plds(dst, base, offset, __cce_simd::NORM, __cce_simd::POST_UPDATE);
 </tr>
 </tbody>
 </table>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="load-predicate-from-ub">Load predicate from UB<a class="headerlink" href="#load-predicate-from-ub" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-c">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void load_saved_mask(RegBuf&lt;predicate_t&gt;&amp; dst, Ptr&lt;ub_space_t, ub_t&gt; src) {
     PLDS(dst, src);
-}
-</code></pre>
+}</code></pre>
 <h3 id="ssa-form">SSA form<a class="headerlink" href="#ssa-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Load predicate from UB slot 0
+<pre class="highlight"><code class="language-mlir">// Load predicate from UB slot 0
 %mask = pto.plds %ub_mask_slot0 : !pto.ptr&lt;i64, ub&gt; -&gt; !pto.mask
 
 // Use predicate in vector select
-%result = pto.vsel %v_true, %v_false, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+%result = pto.vsel %v_true, %v_false, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-load-store/">Predicate Load Store</a></li>

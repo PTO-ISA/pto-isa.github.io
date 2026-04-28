@@ -916,11 +916,9 @@
 <p><code>pto.vstu</code> 属于 PTO 的向量内存 / 数据搬运指令。它显式消费一个输入对齐状态和一个逻辑 offset 状态，写入当前向量后，再返回更新后的对齐状态和 offset 状态。这样非对齐存储流的推进顺序在 SSA 里是完全可见的。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vstu %align_out, %offset_out, %align_in, %offset_in, %value, %base, &quot;MODE&quot;
-</code></pre>
+<pre class="highlight"><code class="language-text">vstu %align_out, %offset_out, %align_in, %offset_in, %value, %base, "MODE"</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%align_out, %offset_out = pto.vstu %align_in, %offset_in, %value, %base, &quot;MODE&quot; : !pto.align, index, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, index
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align_out, %offset_out = pto.vstu %align_in, %offset_in, %value, %base, "MODE" : !pto.align, index, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, index</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%align_in</code>：输入存储对齐状态</li>
@@ -936,23 +934,31 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会写 UB 可见内存，并推进一段有状态的非对齐存储流。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>对齐状态必须按程序顺序串接。</li>
 <li>最终仍然需要 <code>pto.vstar</code> / <code>pto.vstas</code> 这类终止 flush 形式，才能把缓冲尾部字节完全提交。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>使用超出 UB 可见空间的地址，或违反所选形式的地址 / 对齐契约，都是非法的。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vstu</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%align_out, %offset_out = pto.vstu %align_in, %offset_in, %value, %base, &quot;MODE&quot;
-    : !pto.align, index, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, index
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%align_out, %offset_out = pto.vstu %align_in, %offset_in, %value, %base, "MODE"
+    : !pto.align, index, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, index</code></pre>
 <h2 id="_10">详细说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="_11">模式令牌<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <p><code>POST_UPDATE</code>、<code>NO_POST_UPDATE</code></p>

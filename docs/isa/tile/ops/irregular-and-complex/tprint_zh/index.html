@@ -926,30 +926,28 @@
 <p>除非另有说明，语义在有效区域上定义，目标相关的行为标记为实现定义。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
-<pre><code class="language-text">tprint %src : !pto.tile&lt;...&gt; | !pto.global&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">tprint %src : !pto.tile&lt;...&gt; | !pto.global&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">// 适用于打印GlobalTensor或Vec类型Tile
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：
+<pre class="highlight"><code class="language-cpp">// 适用于打印GlobalTensor或Vec类型Tile
 template &lt;typename TileData&gt;
 PTO_INST void TPRINT(TileData &amp;src);
 
 // 适用于打印Acc类型Tile和Mat类型Tile(Mat打印仅适用于A3，A5暂不支持)
 template &lt;typename TileData, typename GlobalData&gt;
-PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);
-</code></pre>
+PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);</code></pre></p>
 <h3 id="t">支持的 T 类型<a class="headerlink" href="#t" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Tile</strong>：TileType必须是<code>Vec</code>、<code>Acc</code>、<code>Mat(仅A3支持)</code>，并具有支持的元素类型。</li>
 <li><strong>GlobalTensor</strong>：必须使用布局 <code>ND</code>、<code>DN</code> 或 <code>NZ</code>，并具有支持的元素类型。</li>
 </ul>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><strong>支持的元素类型</strong>:<ul>
 <li>浮点数：<code>float</code>、<code>half</code></li>
@@ -962,9 +960,10 @@ PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);
 <li>A5暂不支持<code>TileType</code>为<code>Mat</code>的Tile打印。</li>
 <li><strong>回显信息</strong>: <code>TileType</code>为<code>Mat</code>时，布局将按照<code>Layout::ND</code>进行打印，其他布局可能会导致信息错位。</li>
 </ul>
+</div>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="print-a-tile">Print a Tile<a class="headerlink" href="#print-a-tile" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 PTO_INTERNAL void DebugTile(__gm__ float *src) {
   using ValidSrcShape = TileShape2D&lt;float, 16, 16&gt;;
@@ -978,10 +977,9 @@ PTO_INTERNAL void DebugTile(__gm__ float *src) {
 
   TLOAD(srcTile, srcGlobal);
   TPRINT(srcTile);
-}
-</code></pre>
+}</code></pre>
 <h3 id="print-a-globaltensor">Print a GlobalTensor<a class="headerlink" href="#print-a-globaltensor" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 PTO_INTERNAL void DebugGlobalTensor(__gm__ float *src) {
   using ValidSrcShape = TileShape2D&lt;float, 16, 16&gt;;
@@ -990,25 +988,21 @@ PTO_INTERNAL void DebugGlobalTensor(__gm__ float *src) {
   GlobalDataSrc srcGlobal(src);
 
   TPRINT(srcGlobal);
-}
-</code></pre>
+}</code></pre>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
 <h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
+pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()</code></pre>
 <h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
+<pre class="highlight"><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
 # 可选（当该指令包含 tile 操作数时）：
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
-pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
-</code></pre>
+pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()</code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
+<pre class="highlight"><code class="language-text">pto.tprint %src : !pto.tile&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt; ()
 # AS Level 2 (DPS)
-pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)
-</code></pre>
+pto.tprint ins(%src : !pto.tile_buf&lt;...&gt; | !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
               
             </div>
           </div><footer>

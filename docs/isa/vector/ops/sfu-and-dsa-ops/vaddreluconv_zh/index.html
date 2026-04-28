@@ -914,16 +914,13 @@
 <p>把加法、ReLU 和元素类型转换融合成一条硬件操作。</p>
 <h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>它执行：</p>
-<pre><code class="language-text">dst[i] = convert(max(0, lhs[i] + rhs[i]))
-</code></pre>
+<pre class="highlight"><code class="language-text">dst[i] = convert(max(0, lhs[i] + rhs[i]))</code></pre>
 <p>也就是说，不仅完成 <code>add + relu</code>，还把结果直接转成目标类型。这样可以避免中间结果落到一个过渡向量寄存器里，也能把舍入、饱和、打包等行为收紧到一条定义明确的融合指令里。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vaddreluconv %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT0&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">vaddreluconv %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT0&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vaddreluconv %lhs, %rhs, %mask : (!pto.vreg&lt;NxT0&gt;, !pto.vreg&lt;NxT0&gt;, !pto.mask) -&gt; !pto.vreg&lt;MxT1&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vaddreluconv %lhs, %rhs, %mask : (!pto.vreg&lt;NxT0&gt;, !pto.vreg&lt;NxT0&gt;, !pto.mask) -&gt; !pto.vreg&lt;MxT1&gt;</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -972,21 +969,30 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生目标向量寄存器，没有其他架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>两个源向量必须具有相同的元素类型 <code>T0</code> 和相同的向量宽度 <code>N</code>。</li>
 <li><code>%mask</code> 的宽度必须与 <code>N</code> 一致。</li>
 <li>只允许后端支持的源 / 目标类型对。</li>
 <li>舍入、饱和和打包规则由这条融合指令本身定义，不能随意拆解成普通单指令序列再假定等价。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vaddreluconv</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <p>当前手册没有给出 <code>vaddreluconv</code> 的独立周期条目。</p>
@@ -1024,14 +1030,13 @@
 </tbody>
 </table>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-c">// f32 -&gt; f16
+<pre class="highlight"><code class="language-c">// f32 -&gt; f16
 for (int i = 0; i &lt; 64; i++)
     dst_f16[i] = f32_to_f16(max(src0_f32[i] + src1_f32[i], 0));
 
 // f16 -&gt; i8
 for (int i = 0; i &lt; 128; i++)
-    dst_i8[i] = f16_to_i8(max(src0_f16[i] + src1_f16[i], 0));
-</code></pre>
+    dst_i8[i] = f16_to_i8(max(src0_f16[i] + src1_f16[i], 0));</code></pre>
 <h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。

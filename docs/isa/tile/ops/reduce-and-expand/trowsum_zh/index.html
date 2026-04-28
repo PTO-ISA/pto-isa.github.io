@@ -923,18 +923,14 @@
 <p>也就是说，<code>trowsum</code> 把 <code>(R, C)</code> 压成 <code>(R, 1)</code>，保留行、折叠列。lowering 过程中通常会引入临时 tile，C++ intrinsic 因此要求显式传入 <code>tmp</code>。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
-<pre><code class="language-text">%dst = trowsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = trowsum %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.trowsum %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.trowsum %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.trowsum ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.trowsum ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
-PTO_INST RecordEvent TROWSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
+PTO_INST RecordEvent TROWSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code>：源 tile</li>
@@ -948,6 +944,8 @@ PTO_INST RecordEvent TROWSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileData
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>除产生目标 tile 外，没有额外架构副作用。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>dst</code> 与 <code>src</code> 都必须是 <code>TileType::Vec</code></li>
 <li><code>src</code> 必须是标准 ND 布局：行主且非分形</li>
@@ -963,10 +961,14 @@ PTO_INST RecordEvent TROWSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileData
 <li>支持类型：<code>half</code>、<code>float</code>、<code>int32_t</code>、<code>int16_t</code></li>
 <li><code>tmp</code> 会进入后端调用路径，但当前文档不额外扩大 checked implementation 没显式声明的 shape / layout 约束</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
+</div>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a2a3_1">A2A3<a class="headerlink" href="#a2a3_1" title="Permanent link">&para;</a></h3>
 <p><code>TROWSUM</code> 在 A2/A3 上通常会 lowering 成多阶段向量归约序列。英文页给出的要点是：</p>
@@ -1004,7 +1006,7 @@ PTO_INST RecordEvent TROWSUM(TileDataOut &amp;dst, TileDataIn &amp;src, TileData
 <h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <p>当前手册未单列 <code>trowsum</code> 的独立周期表，应视为目标 profile 相关。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example_auto() {
@@ -1015,8 +1017,7 @@ void example_auto() {
   DstT dst;
   TmpT tmp;
   TROWSUM(dst, src, tmp);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../reduce-and-expand_zh/">归约与扩展</a></li>

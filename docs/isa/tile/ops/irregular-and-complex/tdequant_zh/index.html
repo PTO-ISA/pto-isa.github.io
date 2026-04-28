@@ -918,18 +918,15 @@
 <div class="arithmatex">\[ \mathrm{dst}_{r,c} = \left(\mathrm{src}_{r,c} - \mathrm{offset}_r\right) \cdot \mathrm{scale}_r \]</div>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tdequant %src, %scale, %offset : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tdequant %src, %scale, %offset : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tdequant ins(%src, %scale, %offset : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
-              outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tdequant ins(%src, %scale, %offset : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
+              outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataPara, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataPara, typename... WaitEvents&gt;
 PTO_INST RecordEvent TDEQUANT(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDataPara &amp;scale, TileDataPara &amp;offset,
-                              WaitEvents &amp;... events);
-</code></pre>
+                              WaitEvents &amp;... events);</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -967,6 +964,8 @@ PTO_INST RecordEvent TDEQUANT(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDa
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>除产生目标 tile 外，没有额外架构副作用。不会隐式建立与无关流量的 fence。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>dst</code> 与 <code>src</code> 的 valid row / valid col 必须一致。</li>
 <li><code>scale</code> 和 <code>offset</code> 的行数必须与 <code>dst.GetValidRow()</code> 一致。</li>
@@ -975,11 +974,15 @@ PTO_INST RecordEvent TDEQUANT(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDa
 <li>当前仓内实现中，<code>scale</code> / <code>offset</code> 使用与 <code>dst</code> 相同的浮点元素类型。</li>
 <li>当前具体实现要求 row-major tile。</li>
 </ul>
+</div>
 <h2 id="_8">不允许的情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>使用不支持的类型组合、layout 或不匹配的 valid region。</li>
 <li>把 <code>scale</code> / <code>offset</code> 当作按列变化的参数，除非目标 profile 另行文档化。</li>
 </ul>
+</div>
 <h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1013,7 +1016,7 @@ PTO_INST RecordEvent TDEQUANT(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDa
 </table>
 <p>当前仓内在 CPU 仿真、A2/A3 和 A5 上都能找到具体实现。</p>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1028,8 +1031,7 @@ void example() {
   ParaTile offset;
 
   TDEQUANT(dst, src, scale, offset);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_10">相关页面<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../../irregular-and-complex_zh/">不规则与复杂</a></li>

@@ -915,19 +915,15 @@
 <p>该指令不直接产生 tensor 算术结果。它更新后续数据搬运操作会读取的 IMG2COL padding 控制状态。</p>
 <h2 id="_2">语法<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>文本拼写由 PTO ISA 的语法与操作数页面定义。</p>
-<pre><code class="language-text">pto.set_img2col_padding %cfg
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.set_img2col_padding %cfg</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.set_img2col_padding %cfg : !pto.fmatrix_config -&gt; ()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.set_img2col_padding %cfg : !pto.fmatrix_config -&gt; ()</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.set_img2col_padding ins(%cfg : !pto.fmatrix_config) outs()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.set_img2col_padding ins(%cfg : !pto.fmatrix_config) outs()</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename ConvTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent SET_IMG2COL_PADDING(ConvTileData &amp;src, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename ConvTileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent SET_IMG2COL_PADDING(ConvTileData &amp;src, WaitEvents &amp;... events);</code></pre>
 <h2 id="_3">输入<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -951,11 +947,14 @@ PTO_INST RecordEvent SET_IMG2COL_PADDING(ConvTileData &amp;src, WaitEvents &amp;
 <li><strong>CPU 模拟器</strong>：不影响架构状态。</li>
 </ul>
 <h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>该指令仅适用于暴露 IMG2COL 配置状态的后端。</li>
 <li><code>src</code> 必须是后端实现接受的有效 IMG2COL 配置 tile 类型。</li>
 <li>应在同一执行流中依赖它的 <code>pto.timg2col</code> 操作之前使用。</li>
 </ul>
+</div>
 <h2 id="_7">另请参阅<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../sync-and-config_zh/">同步与配置</a></li>

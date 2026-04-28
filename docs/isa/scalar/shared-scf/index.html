@@ -968,38 +968,45 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p><code>scf</code> itself does not create DMA, synchronization, or payload effects. Those effects come from the PTO instructions inside the structured regions.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>PTO control flow <strong>SHOULD</strong> stay in structured <code>scf</code> form unless a more specific architecture-visible mechanism is required.</li>
 <li>Region-carried values and branch results <strong>MUST</strong> be explicit through <code>scf.yield</code>.</li>
 <li>Predicate construction for <code>scf</code> control <strong>SHOULD</strong> come from the shared scalar instructions, not from undocumented control side channels.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <p>The following are <strong>ILLEGAL</strong>:</p>
 <ul>
 <li>pretending <code>scf</code> is a PTO mnemonic instruction set</li>
 <li>hiding loop-carried state that later affects PTO legality</li>
 <li>collapsing structured control into vague prose instead of documenting the carried values and branch conditions</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <p>The <code>scf</code> instruction set is largely target-neutral. Restrictions appear when a region contains target-profile-specific PTO instructions or when a backend imposes extra structure on a vector-execution scope.</p>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="counted-loop-around-vector-work">Counted Loop Around Vector Work<a class="headerlink" href="#counted-loop-around-vector-work" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">scf.for %i = %c0 to %tile_count step %c1 {
+<pre class="highlight"><code class="language-mlir">scf.for %i = %c0 to %tile_count step %c1 {
   %offset = arith.muli %i, %tile_stride : index
-  %mask = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
+  %mask = pto.pset_b32 "PAT_ALL" : !pto.mask
   %v = pto.vlds %ub[%offset] : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
   %abs = pto.vabs %v, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
   pto.vsts %abs, %ub_out[%offset], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask
-}
-</code></pre>
+}</code></pre>
 <h3 id="structured-conditional-around-tile-update">Structured Conditional Around Tile Update<a class="headerlink" href="#structured-conditional-around-tile-update" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%need_tail = arith.cmpi slt, %valid_cols, %tile_cols : index
+<pre class="highlight"><code class="language-mlir">%need_tail = arith.cmpi slt, %valid_cols, %tile_cols : index
 scf.if %need_tail {
   pto.tsubs ins(%tile, %bias : !pto.tile_buf&lt;...&gt;, f32) outs(%tile : !pto.tile_buf&lt;...&gt;)
 } else {
   pto.tadds ins(%tile, %bias : !pto.tile_buf&lt;...&gt;, f32) outs(%tile : !pto.tile_buf&lt;...&gt;)
-}
-</code></pre>
+}</code></pre>
 <h2 id="related-ops-and-instruction-set-links">Related Ops And Instruction Set Links<a class="headerlink" href="#related-ops-and-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../shared-arith/">Shared Scalar Arithmetic</a></li>

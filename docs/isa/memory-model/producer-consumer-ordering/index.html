@@ -939,7 +939,7 @@
 <p>Producer-consumer ordering is the most useful way to explain PTO visibility rules. A program is legal when each consumer sees the writes or state changes its producer is required to make visible, using the synchronization and movement rules of the active instruction set.</p>
 <h2 id="producer-consumer-state-machine">Producer-Consumer State Machine<a class="headerlink" href="#producer-consumer-state-machine" title="Permanent link">&para;</a></h2>
 <p>Every data movement or compute operation participates in a producer-consumer chain. The state machine for each operation is:</p>
-<pre><code>┌─────────────────┐
+<pre class="highlight"><code>┌─────────────────┐
 │   IDLE          │  Operation not yet issued
 └────────┬────────┘
          │ issue
@@ -954,8 +954,7 @@
 └────────┬────────┘    established the ordering edge
          │ (consumed by next operation)
          ▼
-    [Consumer]
-</code></pre>
+    [Consumer]</code></pre>
 <p>An operation is <strong>consumed</strong> by a subsequent operation when the consumer either:</p>
 <ol>
 <li>Passes the producer's <code>RecordEvent</code> as a <code>WaitEvents</code> argument.</li>
@@ -963,7 +962,7 @@
 </ol>
 <h2 id="tile-instructions-ordering">Tile Instructions Ordering<a class="headerlink" href="#tile-instructions-ordering" title="Permanent link">&para;</a></h2>
 <p>For <code>pto.t*</code> programs, the common pattern is:</p>
-<pre><code>┌─────────────────────────────────────────────────────┐
+<pre class="highlight"><code>┌─────────────────────────────────────────────────────┐
 │  TLOAD(tile, gtensor)                               │
 │  (produces tile state)                              │
 └─────────────────┬───────────────────────────────────┘
@@ -978,30 +977,27 @@
 ┌─────────────────────────────────────────────────────┐
 │  TSTORE(gtensor, tile)                              │
 │  (consumes tile state; produces GM write)           │
-└─────────────────────────────────────────────────────┘
-</code></pre>
+└─────────────────────────────────────────────────────┘</code></pre>
 <h3 id="recordevent-chaining">RecordEvent Chaining<a class="headerlink" href="#recordevent-chaining" title="Permanent link">&para;</a></h3>
 <p>The <code>RecordEvent</code> return value of each tile operation can be passed to the next operation as a <code>WaitEvents...</code> argument:</p>
-<pre><code class="language-cpp">RecordEvent e0 = TLOAD(a, ga);     // e0: TLOAD has completed
+<pre class="highlight"><code class="language-cpp">RecordEvent e0 = TLOAD(a, ga);     // e0: TLOAD has completed
 RecordEvent e1 = TLOAD(b, gb);     // e1: TLOAD has completed
 TMATMUL(c, a, b, e0, e1);         // waits for e0 and e1 before starting
 RecordEvent e2 = TMATMUL(...);
-TSTORE(gc, c, e2);                  // waits for e2 before starting
-</code></pre>
+TSTORE(gc, c, e2);                  // waits for e2 before starting</code></pre>
 <p>When an operation has multiple <code>WaitEvents...</code> arguments, it waits for ALL of them before beginning execution.</p>
 <h3 id="tsync">TSYNC<a class="headerlink" href="#tsync" title="Permanent link">&para;</a></h3>
 <p><code>TSYNC</code> provides a lightweight tile-buffer-scoped barrier when fine-grained event chaining is not needed:</p>
-<pre><code class="language-cpp">TLOAD(a, ga);
+<pre class="highlight"><code class="language-cpp">TLOAD(a, ga);
 TLOAD(b, gb);
 TSYNC();        // ensures both loads are complete before compute
 TADD(c, a, b);
 TSYNC();        // ensures compute is complete before store
-TSTORE(gc, c);
-</code></pre>
+TSTORE(gc, c);</code></pre>
 <p><code>TSYNC</code> is equivalent to chaining all prior <code>RecordEvent</code> values for the same tile buffer.</p>
 <h2 id="vector-instructions-ordering">Vector Instructions Ordering<a class="headerlink" href="#vector-instructions-ordering" title="Permanent link">&para;</a></h2>
 <p>For <code>pto.v*</code> programs, the ordering chain involves explicit DMA synchronization:</p>
-<pre><code>┌──────────────────────────────────────────────────────────┐
+<pre class="highlight"><code>┌──────────────────────────────────────────────────────────┐
 │  copy_gm_to_ubuf(%ub, %gm, ...)                         │
 │  (DMA: GM → UB)                                          │
 └────────────────┬─────────────────────────────────────────┘
@@ -1014,7 +1010,7 @@ TSTORE(gc, c);
                  │ (implicit on vlds)
                  ▼
 ┌──────────────────────────────────────────────────────────┐
-│  vlds %vreg, %ub[...] {dist = &quot;NORM&quot;}                  │
+│  vlds %vreg, %ub[...] {dist = "NORM"}                  │
 │  (UB → Vector Register)                                  │
 └────────────────┬─────────────────────────────────────────┘
                  │
@@ -1040,8 +1036,7 @@ TSTORE(gc, c);
 ┌──────────────────────────────────────────────────────────┐
 │  copy_ubuf_to_gm(%gm, %ub, ...)                          │
 │  (DMA: UB → GM)                                          │
-└──────────────────────────────────────────────────────────┘
-</code></pre>
+└──────────────────────────────────────────────────────────┘</code></pre>
 <h3 id="vector-instructions-vs-tile-instructions-ordering">Vector Instructions vs Tile Instructions Ordering<a class="headerlink" href="#vector-instructions-vs-tile-instructions-ordering" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1081,31 +1076,34 @@ TSTORE(gc, c);
 </table>
 <h2 id="cross-instruction-set-handoff">Cross-Instruction Set Handoff<a class="headerlink" href="#cross-instruction-set-handoff" title="Permanent link">&para;</a></h2>
 <p>When a tile-instruction set result is consumed by a vector-instruction set operation (or vice versa), the handoff must go through UB:</p>
-<pre><code>Tile Instructions                              Vector Instructions
+<pre class="highlight"><code>Tile Instructions                              Vector Instructions
     │                                         ▲
     │  TLOAD/TSTORE handles GM ↔ Tile Buffer  │
     │                                              │
     └──── TSTORE → UB → copy_ubuf_to_gm ──────────┘
-         (via copy_gm_to_ubuf on vector side)
-</code></pre>
+         (via copy_gm_to_ubuf on vector side)</code></pre>
 <p>The cross-instruction set handoff goes through GM or through an explicit UB double-buffering pattern:</p>
-<pre><code class="language-cpp">// Tile instructions produce result in tile c
+<pre class="highlight"><code class="language-cpp">// Tile instructions produce result in tile c
 TSTORE(gc, c);
 
 // Vector instructions consume from gc
 copy_gm_to_ubuf(%ub, %gm_out, ...);
 set_flag(PIPE_MTE2, PIPE_V, ID);
 wait_flag(PIPE_MTE2, PIPE_V, ID);
-%v = pto.vlds %ub[...] {dist = &quot;NORM&quot;};
-</code></pre>
+%v = pto.vlds %ub[...] {dist = "NORM"};</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>A consumer may only rely on visibility after the required producer-consumer edge is established.</li>
 <li>The exact synchronization mechanism may vary by instruction set or target profile.</li>
 <li>Instruction Set docs and per-op pages must state the relevant ordering expectations explicitly.</li>
 <li>An operation's <code>RecordEvent</code> return value is only valid for chaining to operations that execute AFTER the current operation in program order.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Describing a consumer as legal without saying how producer visibility is established.</li>
 <li>Assuming a target's convenient scheduling behavior is the architecture contract.</li>
@@ -1114,6 +1112,7 @@ wait_flag(PIPE_MTE2, PIPE_V, ID);
 <li>Issuing <code>copy_ubuf_to_gm</code> before <code>vsts</code> completes without an intervening <code>wait_flag</code>.</li>
 <li>Passing a <code>RecordEvent</code> from a later operation to an earlier operation (wrong direction) — this is illegal and produces a verification error.</li>
 </ul>
+</div>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../consistency-baseline/">Consistency Baseline</a></li>

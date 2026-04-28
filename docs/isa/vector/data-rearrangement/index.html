@@ -989,10 +989,9 @@
 <li><strong>syntax:</strong> <code>%low, %high = pto.vintlv %lhs, %rhs : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Interleave elements from two sources.</li>
 </ul>
-<pre><code class="language-c">// Interleave: merge even/odd elements from two sources
+<pre class="highlight"><code class="language-c">// Interleave: merge even/odd elements from two sources
 // low  = {src0[0], src1[0], src0[1], src1[1], ...}
-// high = {src0[N/2], src1[N/2], src0[N/2+1], src1[N/2+1], ...}
-</code></pre>
+// high = {src0[N/2], src1[N/2], src0[N/2+1], src1[N/2+1], ...}</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code> and <code>%rhs</code> are the two source vectors.</li>
 <li><strong>outputs:</strong> <code>%low</code> and <code>%high</code> are the two destination vectors.</li>
@@ -1006,10 +1005,9 @@
 <li><strong>syntax:</strong> <code>%low, %high = pto.vdintlv %lhs, %rhs : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Deinterleave elements into even/odd.</li>
 </ul>
-<pre><code class="language-c">// Deinterleave: separate even/odd elements
+<pre class="highlight"><code class="language-c">// Deinterleave: separate even/odd elements
 // low  = {src0[0], src0[2], src0[4], ...}  // even
-// high = {src0[1], src0[3], src0[5], ...}  // odd
-</code></pre>
+// high = {src0[1], src0[3], src0[5], ...}  // odd</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%lhs</code> and <code>%rhs</code> represent the interleaved source stream in the
   current PTO ISA vector instructions representation.</li>
@@ -1024,12 +1022,11 @@
 <li><strong>syntax:</strong> <code>%result = pto.vslide %src0, %src1, %amt : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, i16 -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Concatenate two vectors and extract N-element window at offset.</li>
 </ul>
-<pre><code class="language-c">// Conceptually: tmp[0..2N-1] = {src1, src0}
+<pre class="highlight"><code class="language-c">// Conceptually: tmp[0..2N-1] = {src1, src0}
 // dst[i] = tmp[amt + i]
 if (amt &gt;= 0)
     for (int i = 0; i &lt; N; i++)
-        dst[i] = (i &gt;= amt) ? src0[i - amt] : src1[N - amt + i];
-</code></pre>
+        dst[i] = (i &gt;= amt) ? src0[i - amt] : src1[N - amt + i];</code></pre>
 <p><strong>Use case:</strong> Sliding window operations, shift register patterns.</p>
 <ul>
 <li><strong>inputs:</strong> <code>%src0</code> and <code>%src1</code> provide the concatenated source window and
@@ -1045,9 +1042,8 @@ if (amt &gt;= 0)
 <li><strong>syntax:</strong> <code>%result = pto.vshift %src, %amt : !pto.vreg&lt;NxT&gt;, i16 -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Single-source slide (shift with zero fill).</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = (i &gt;= amt) ? src[i - amt] : 0;
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = (i &gt;= amt) ? src[i - amt] : 0;</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%src</code> is the source vector and <code>%amt</code> is the slide amount.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the shifted vector.</li>
@@ -1062,11 +1058,10 @@ if (amt &gt;= 0)
 <li><strong>syntax:</strong> <code>%result = pto.vsqz %src, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Compress — pack active lanes to front.</li>
 </ul>
-<pre><code class="language-c">int j = 0;
+<pre class="highlight"><code class="language-c">int j = 0;
 for (int i = 0; i &lt; N; i++)
     if (mask[i]) dst[j++] = src[i];
-while (j &lt; N) dst[j++] = 0;
-</code></pre>
+while (j &lt; N) dst[j++] = 0;</code></pre>
 <p><strong>Use case:</strong> Sparse data compaction, filtering.</p>
 <ul>
 <li><strong>inputs:</strong> <code>%src</code> is the source vector and <code>%mask</code> selects which elements are
@@ -1081,11 +1076,10 @@ while (j &lt; N) dst[j++] = 0;
 <li><strong>syntax:</strong> <code>%result = pto.vusqz %mask : !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Expand — scatter front elements to active positions.</li>
 </ul>
-<pre><code class="language-c">int j = 0;
+<pre class="highlight"><code class="language-c">int j = 0;
 for (int i = 0; i &lt; N; i++)
     if (mask[i]) dst[i] = src_front[j++];
-    else dst[i] = 0;
-</code></pre>
+    else dst[i] = 0;</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%mask</code> is the expansion/placement predicate.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the expanded vector image.</li>
@@ -1100,9 +1094,8 @@ for (int i = 0; i &lt; N; i++)
 <li><strong>syntax:</strong> <code>%result = pto.vperm %src, %index : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxI&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> In-register permute (table lookup). <strong>Not</strong> memory gather.</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src[index[i] % N];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src[index[i] % N];</code></pre>
 <p><strong>Note:</strong> This operates on register contents, unlike <code>pto.vgather2</code> which reads from UB memory.</p>
 <ul>
 <li><strong>inputs:</strong> <code>%src</code> is the source vector and <code>%index</code> supplies per-lane source
@@ -1118,9 +1111,8 @@ for (int i = 0; i &lt; N; i++)
 <li><strong>syntax:</strong> <code>%result = pto.vselr %src0, %src1 : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxI&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Register select with reversed mask semantics.</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = mask[i] ? src1[i] : src0[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = mask[i] ? src1[i] : src0[i];</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%src0</code> and <code>%src1</code> are source vectors.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the selected vector.</li>
@@ -1135,12 +1127,11 @@ for (int i = 0; i &lt; N; i++)
 <li><strong>syntax:</strong> <code>%result = pto.vpack %src0, %src1, %part : !pto.vreg&lt;NxT_wide&gt;, !pto.vreg&lt;NxT_wide&gt;, index -&gt; !pto.vreg&lt;2NxT_narrow&gt;</code></li>
 <li><strong>semantics:</strong> Narrowing pack — two wide vectors to one narrow vector.</li>
 </ul>
-<pre><code class="language-c">// e.g., two vreg&lt;64xi32&gt; → one vreg&lt;128xi16&gt;
+<pre class="highlight"><code class="language-c">// e.g., two vreg&lt;64xi32&gt; → one vreg&lt;128xi16&gt;
 for (int i = 0; i &lt; N; i++) {
     dst[i]     = truncate(src0[i]);
     dst[N + i] = truncate(src1[i]);
-}
-</code></pre>
+}</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%src0</code> and <code>%src1</code> are wide source vectors and <code>%part</code> selects
   the packing submode.</li>
@@ -1155,10 +1146,9 @@ for (int i = 0; i &lt; N; i++) {
 <li><strong>syntax:</strong> <code>%result = pto.vsunpack %src, %part : !pto.vreg&lt;NxT_narrow&gt;, index -&gt; !pto.vreg&lt;N/2xT_wide&gt;</code></li>
 <li><strong>semantics:</strong> Sign-extending unpack — narrow to wide (half).</li>
 </ul>
-<pre><code class="language-c">// e.g., vreg&lt;128xi16&gt; → vreg&lt;64xi32&gt; (one half)
+<pre class="highlight"><code class="language-c">// e.g., vreg&lt;128xi16&gt; → vreg&lt;64xi32&gt; (one half)
 for (int i = 0; i &lt; N/2; i++)
-    dst[i] = sign_extend(src[part_offset + i]);
-</code></pre>
+    dst[i] = sign_extend(src[part_offset + i]);</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%src</code> is the packed narrow vector and <code>%part</code> selects which half
   is unpacked.</li>
@@ -1171,9 +1161,8 @@ for (int i = 0; i &lt; N/2; i++)
 <li><strong>syntax:</strong> <code>%result = pto.vzunpack %src, %part : !pto.vreg&lt;NxT_narrow&gt;, index -&gt; !pto.vreg&lt;N/2xT_wide&gt;</code></li>
 <li><strong>semantics:</strong> Zero-extending unpack — narrow to wide (half).</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N/2; i++)
-    dst[i] = zero_extend(src[part_offset + i]);
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N/2; i++)
+    dst[i] = zero_extend(src[part_offset + i]);</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%src</code> is the packed narrow vector and <code>%part</code> selects which half
   is unpacked.</li>
@@ -1182,12 +1171,12 @@ for (int i = 0; i &lt; N/2; i++)
 </ul>
 <hr />
 <h2 id="typical-usage">Typical Usage<a class="headerlink" href="#typical-usage" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">// AoS → SoA conversion using deinterleave
+<pre class="highlight"><code class="language-mlir">// AoS → SoA conversion using deinterleave
 %even, %odd = pto.vdintlv %interleaved0, %interleaved1
     : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;
 
 // Filter: keep only elements passing condition
-%pass_mask = pto.vcmps %values, %threshold, %all, &quot;gt&quot;
+%pass_mask = pto.vcmps %values, %threshold, %all, "gt"
     : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
 %compacted = pto.vsqz %values, %pass_mask
     : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
@@ -1200,8 +1189,7 @@ for (int i = 0; i &lt; N/2; i++)
 
 // Type narrowing via pack
 %packed_i16 = pto.vpack %wide0_i32, %wide1_i32, %c0
-    : !pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, index -&gt; !pto.vreg&lt;128xi16&gt;
-</code></pre>
+    : !pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, index -&gt; !pto.vreg&lt;128xi16&gt;</code></pre>
 <hr />
 <h2 id="v2-interleave-forms">V2 Interleave Forms<a class="headerlink" href="#v2-interleave-forms" title="Permanent link">&para;</a></h2>
 <h3 id="ptovintlvv2"><code>pto.vintlvv2</code><a class="headerlink" href="#ptovintlvv2" title="Permanent link">&para;</a></h3>

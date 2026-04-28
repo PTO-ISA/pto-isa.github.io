@@ -947,19 +947,15 @@
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Schematic form:</p>
-<pre><code class="language-text">pto.sethf32mode {enable = true, mode = ...}
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.sethf32mode {enable = true, mode = ...}</code></pre>
 <h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.sethf32mode {enable = true, mode = ...}
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.sethf32mode {enable = true, mode = ...}</code></pre>
 <h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.sethf32mode ins({enable = true, mode = ...}) outs()
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.sethf32mode ins({enable = true, mode = ...}) outs()</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre><code class="language-cpp">template &lt;bool isEnable, RoundMode hf32TransMode = RoundMode::CAST_ROUND, typename... WaitEvents&gt;
-PTO_INST RecordEvent SETHF32MODE(WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;bool isEnable, RoundMode hf32TransMode = RoundMode::CAST_ROUND, typename... WaitEvents&gt;
+PTO_INST RecordEvent SETHF32MODE(WaitEvents &amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -990,24 +986,29 @@ PTO_INST RecordEvent SETHF32MODE(WaitEvents &amp;... events);
 <li><strong>CPU simulator</strong>: Updates software-simulation mode state when modeled; otherwise functional no-op.</li>
 </ul>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>The exact mode values and downstream hardware behavior are target-defined.</li>
 <li>This instruction has control-state side effects and should be ordered appropriately relative to dependent compute instructions.</li>
 <li>Programs must not treat this operation as tile-payload transformation; it only changes mode state.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Relying on HF32 behavior on a target profile that does not support HF32 transform mode.</li>
 <li>Using mode values outside the selected target profile's supported set.</li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void example_enable_hf32() {
   SETHF32MODE&lt;true, RoundMode::CAST_ROUND&gt;();
-}
-</code></pre>
+}</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../sync-and-config/">Sync And Config</a></li>

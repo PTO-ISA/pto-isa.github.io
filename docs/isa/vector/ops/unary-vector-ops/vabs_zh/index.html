@@ -916,11 +916,9 @@
 <p><code>pto.vabs</code> 逐 lane 计算绝对值。对每个谓词位为真的 lane <code>i</code>，执行 <code>dst[i] = abs(src[i])</code>。非活跃 lane 不参与计算，目标寄存器这些位置保持原值。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vabs %result, %input, %mask
-</code></pre>
+<pre class="highlight"><code class="language-text">vabs %result, %input, %mask</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vabs %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vabs %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <p>A5 当前文档化支持的类型：<code>i8-i32</code>、<code>f16</code>、<code>f32</code>。</p>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <table>
@@ -964,21 +962,30 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令除了产生 SSA 结果，没有其他架构副作用。它不会隐式占用 buffer、发送事件，也不会建立内存栅栏。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>源与结果的元素类型必须一致。</li>
 <li>对有符号整数，最小负值取绝对值时的溢出行为由目标平台定义。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vabs</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 当前文档化支持：<code>i8-i32</code>、<code>f16</code>、<code>f32</code>。</li>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 <li>任何依赖具体指令类型清单或特殊 lowering 路径的代码，都应视为 profile 相关。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <table>
@@ -1056,14 +1063,12 @@
 </table>
 <h3 id="_10">执行说明<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
 <p>在 A5 上，<code>vabs</code> 是一元操作里最低时延的那一档。对于 1024 元素、16 次迭代的向量循环，可以近似理解为：</p>
-<pre><code class="language-text">A5：首发 5 周期，之后约每次迭代 1 周期推进
-A2/A3：14 + C + R + (R-1)×18
-</code></pre>
+<pre class="highlight"><code class="language-text">A5：首发 5 周期，之后约每次迭代 1 周期推进
+A2/A3：14 + C + R + (R-1)×18</code></pre>
 <h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="c">C 语义<a class="headerlink" href="#c" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = (src[i] &lt; 0) ? -src[i] : src[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = (src[i] &lt; 0) ? -src[i] : src[i];</code></pre>
 <p>这与数学上的 <code>abs(src[i])</code> 等价。对整数类型，最小负值的溢出行为由目标平台决定。</p>
 <h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>

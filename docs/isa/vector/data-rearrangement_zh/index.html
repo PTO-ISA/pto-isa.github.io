@@ -930,18 +930,16 @@
 <li><strong>语法：</strong> <code>%low, %high = pto.vintlv %lhs, %rhs : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>语义：</strong> 把两个源向量交织成两路输出。</li>
 </ul>
-<pre><code class="language-c">// low  = {src0[0], src1[0], src0[1], src1[1], ...}
-// high = {src0[N/2], src1[N/2], src0[N/2+1], src1[N/2+1], ...}
-</code></pre>
+<pre class="highlight"><code class="language-c">// low  = {src0[0], src1[0], src0[1], src1[1], ...}
+// high = {src0[N/2], src1[N/2], src0[N/2+1], src1[N/2+1], ...}</code></pre>
 <p>两个输出构成一个成对结果，顺序必须保留。</p>
 <h3 id="ptovdintlv"><code>pto.vdintlv</code><a class="headerlink" href="#ptovdintlv" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>语法：</strong> <code>%low, %high = pto.vdintlv %lhs, %rhs : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>语义：</strong> 把交织流拆回偶数 / 奇数位置。</li>
 </ul>
-<pre><code class="language-c">// low  = {src0[0], src0[2], src0[4], ...}
-// high = {src0[1], src0[3], src0[5], ...}
-</code></pre>
+<pre class="highlight"><code class="language-c">// low  = {src0[0], src0[2], src0[4], ...}
+// high = {src0[1], src0[3], src0[5], ...}</code></pre>
 <p>这两条指令最容易被误写的点是“两个结果可交换”。它们不可交换，SSA 结果的顺序就是架构语义的一部分。</p>
 <hr />
 <h2 id="slide-shift">slide / shift<a class="headerlink" href="#slide-shift" title="Permanent link">&para;</a></h2>
@@ -964,11 +962,10 @@
 <li><strong>语法：</strong> <code>%result = pto.vsqz %src, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>语义：</strong> 把 mask 选中的活跃 lane 压紧到结果前部。</li>
 </ul>
-<pre><code class="language-c">int j = 0;
+<pre class="highlight"><code class="language-c">int j = 0;
 for (int i = 0; i &lt; N; i++)
     if (mask[i]) dst[j++] = src[i];
-while (j &lt; N) dst[j++] = 0;
-</code></pre>
+while (j &lt; N) dst[j++] = 0;</code></pre>
 <p>活跃元素之间的相对顺序必须与源 lane 顺序一致。</p>
 <h3 id="ptovusqz"><code>pto.vusqz</code><a class="headerlink" href="#ptovusqz" title="Permanent link">&para;</a></h3>
 <ul>
@@ -983,9 +980,8 @@ while (j &lt; N) dst[j++] = 0;
 <li><strong>语法：</strong> <code>%result = pto.vperm %src, %index : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxI&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>语义：</strong> 在寄存器内做表驱动置换。</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = src[index[i] % N];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = src[index[i] % N];</code></pre>
 <p>它是寄存器内 permutation，不是从向量 tile buffer 读数据的 gather。</p>
 <h3 id="ptovselr"><code>pto.vselr</code><a class="headerlink" href="#ptovselr" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1000,11 +996,10 @@ while (j &lt; N) dst[j++] = 0;
 <li><strong>语法：</strong> <code>%result = pto.vpack %src0, %src1, %part : !pto.vreg&lt;NxT_wide&gt;, !pto.vreg&lt;NxT_wide&gt;, index -&gt; !pto.vreg&lt;2NxT_narrow&gt;</code></li>
 <li><strong>语义：</strong> 把两个宽向量打包成一个窄向量。</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++) {
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++) {
     dst[i]     = truncate(src0[i]);
     dst[N + i] = truncate(src1[i]);
-}
-</code></pre>
+}</code></pre>
 <p>这是收窄操作，不是无损搬运。超出目标位宽的部分会按所选 pack 模式截断。</p>
 <h3 id="ptovsunpack"><code>pto.vsunpack</code><a class="headerlink" href="#ptovsunpack" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1019,10 +1014,10 @@ while (j &lt; N) dst[j++] = 0;
 <p><code>vsunpack</code> 与 <code>vzunpack</code> 的差别就在于扩展时是否保留符号位。</p>
 <hr />
 <h2 id="_6">典型用法<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">%even, %odd = pto.vdintlv %interleaved0, %interleaved1
+<pre class="highlight"><code class="language-mlir">%even, %odd = pto.vdintlv %interleaved0, %interleaved1
     : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;
 
-%pass_mask = pto.vcmps %values, %threshold, %all, &quot;gt&quot;
+%pass_mask = pto.vcmps %values, %threshold, %all, "gt"
     : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
 %compacted = pto.vsqz %values, %pass_mask
     : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
@@ -1033,8 +1028,7 @@ while (j &lt; N) dst[j++] = 0;
     : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
 
 %packed_i16 = pto.vpack %wide0_i32, %wide1_i32, %c0
-    : !pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, index -&gt; !pto.vreg&lt;128xi16&gt;
-</code></pre>
+    : !pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;, index -&gt; !pto.vreg&lt;128xi16&gt;</code></pre>
 <hr />
 <h2 id="v2">V2 交织形式<a class="headerlink" href="#v2" title="Permanent link">&para;</a></h2>
 <h3 id="ptovintlvv2"><code>pto.vintlvv2</code><a class="headerlink" href="#ptovintlvv2" title="Permanent link">&para;</a></h3>

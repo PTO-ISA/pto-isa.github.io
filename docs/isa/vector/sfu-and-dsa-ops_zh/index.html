@@ -937,27 +937,24 @@
 <li><strong>A5 类型：</strong> f16、f32</li>
 <li><strong>语义：</strong> Leaky ReLU，斜率由标量 <code>%alpha</code> 给出。</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = (src[i] &gt;= 0) ? src[i] : alpha * src[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = (src[i] &gt;= 0) ? src[i] : alpha * src[i];</code></pre>
 <h3 id="ptovprelu"><code>pto.vprelu</code><a class="headerlink" href="#ptovprelu" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>语法：</strong> <code>%result = pto.vprelu %input, %alpha : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 类型：</strong> f16、f32</li>
 <li><strong>语义：</strong> Parametric ReLU，斜率是逐元素向量。</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = (src[i] &gt;= 0) ? src[i] : alpha[i] * src[i];
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = (src[i] &gt;= 0) ? src[i] : alpha[i] * src[i];</code></pre>
 <h3 id="ptovexpdiff"><code>pto.vexpdiff</code><a class="headerlink" href="#ptovexpdiff" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>语法：</strong> <code>%result = pto.vexpdiff %input, %max : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 类型：</strong> f16、f32</li>
 <li><strong>语义：</strong> 计算 <code>exp(x - max)</code> 的融合形式，典型用途是数值稳定版 softmax。</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = expf(src[i] - max[i]);
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = expf(src[i] - max[i]);</code></pre>
 <p>这类融合形式的意义不只是“少一条指令”，还包括把数值路径固定成硬件期望的顺序。</p>
 <hr />
 <h2 id="_3">融合计算 + 转换<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
@@ -967,9 +964,8 @@
 <li><strong>A5 类型：</strong> f16、f32</li>
 <li><strong>语义：</strong> 先相加，再过 ReLU。</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = max(src0[i] + src1[i], 0);
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = max(src0[i] + src1[i], 0);</code></pre>
 <h3 id="ptovsubrelu"><code>pto.vsubrelu</code><a class="headerlink" href="#ptovsubrelu" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>语法：</strong> <code>%result = pto.vsubrelu %lhs, %rhs : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
@@ -1006,21 +1002,19 @@
 <li><strong>A5 类型：</strong> i32 / u32 的原生 32×32→64 扩宽乘</li>
 <li><strong>语义：</strong> 返回扩宽乘积的低半部分和高半部分。</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; 64; i++) {
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; 64; i++) {
     int64_t r = (int64_t)src0_i32[i] * (int64_t)src1_i32[i];
     dst_lo[i] = (int32_t)(r &amp; 0xFFFFFFFF);
     dst_hi[i] = (int32_t)(r &gt;&gt; 32);
-}
-</code></pre>
+}</code></pre>
 <h3 id="ptovmula"><code>pto.vmula</code><a class="headerlink" href="#ptovmula" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>语法：</strong> <code>%result = pto.vmula %acc, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>语义：</strong> 乘加融合。</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
     if (mask[i])
-        dst[i] = acc[i] + lhs[i] * rhs[i];
-</code></pre>
+        dst[i] = acc[i] + lhs[i] * rhs[i];</code></pre>
 <p><code>vmula</code> 不是总能用 <code>vmul + vadd</code> 替代。它是否保留更强的融合时序、舍入路径或吞吐特征，属于必须被后端保真的部分。</p>
 <hr />
 <h2 id="_5">索引生成<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
@@ -1029,9 +1023,8 @@
 <li><strong>语法：</strong> <code>%result = pto.vci %index {order = "ORDER"} : integer -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>语义：</strong> 生成一个逐 lane 索引向量。</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = base_index + i;
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = base_index + i;</code></pre>
 <p>这类操作常用于 gather/scatter、排序、argsort 等场景。虽然 <code>vci</code> 也会出现在转换类页面里，但在这里更适合作为“索引物化原语”来理解。</p>
 <hr />
 <h2 id="tile-buffer">直接作用于向量 tile buffer 的操作<a class="headerlink" href="#tile-buffer" title="Permanent link">&para;</a></h2>
@@ -1083,8 +1076,8 @@
 </ul>
 <hr />
 <h2 id="_8">典型用法<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">// Softmax：先减去最大值，再走 expdiff
-%max_broadcast = pto.vlds %ub_max[%c0] {dist = &quot;BRC_B32&quot;}
+<pre class="highlight"><code class="language-mlir">// Softmax：先减去最大值，再走 expdiff
+%max_broadcast = pto.vlds %ub_max[%c0] {dist = "BRC_B32"}
     : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 %exp_stable = pto.vexpdiff %logits, %max_broadcast
     : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
@@ -1098,8 +1091,7 @@
     : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // 为 argsort 生成索引
-%indices = pto.vci %c0 {order = &quot;ASC&quot;} : i32 -&gt; !pto.vreg&lt;64xi32&gt;
-</code></pre>
+%indices = pto.vci %c0 {order = "ASC"} : i32 -&gt; !pto.vreg&lt;64xi32&gt;</code></pre>
 <hr />
 <h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <ul>

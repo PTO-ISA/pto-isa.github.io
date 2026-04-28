@@ -938,10 +938,9 @@
 </ul>
 <h2 id="ptovecscope"><code>pto.vecscope</code>：默认向量作用域<a class="headerlink" href="#ptovecscope" title="Permanent link">&para;</a></h2>
 <h3 id="_7">语法<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vecscope {
+<pre class="highlight"><code class="language-mlir">pto.vecscope {
   // region body
-}
-</code></pre>
+}</code></pre>
 <h3 id="_8">语义<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <p><code>pto.vecscope</code> 允许 body 直接使用外层 SSA 值，也就是允许隐式捕获。所有生成或消费 <code>!pto.vreg</code>、<code>!pto.mask&lt;...&gt;</code>、<code>!pto.align</code> 的操作，都必须恰好被一个向量区间包围。</p>
 <h3 id="_9">约束<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
@@ -950,41 +949,39 @@
 <li>不管源形式是 <code>pto.vecscope</code>、<code>pto.strict_vecscope</code>，还是 lowered 之后带 <code>llvm.loop.aivector_scope</code> 的 loop carrier，只要操作生成或消费 <code>!pto.vreg</code>、<code>!pto.mask&lt;...&gt;</code>、<code>!pto.align</code>，就必须恰好属于一个向量区间。</li>
 </ul>
 <h3 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.set_loop2_stride_outtoub %c4096_i64, %c4096_i64 : i64, i64
+<pre class="highlight"><code class="language-mlir">pto.set_loop2_stride_outtoub %c4096_i64, %c4096_i64 : i64, i64
 pto.set_loop1_stride_outtoub %c4096_i64, %c4096_i64 : i64, i64
 pto.set_loop_size_outtoub %c1_i64, %c1_i64 : i64, i64
 pto.copy_gm_to_ubuf %7, %2, %3, %3, %c0_i64, %c32_i64, %4, %c0_i64, %c0_i64,
     %false, %c0_i64, %c128_i64, %c128_i64
     : !pto.ptr&lt;f32, gm&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64, i64, i64, i64, i64, i64, i1, i64, i64, i64
 
-pto.set_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
-pto.wait_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
+pto.set_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]
+pto.wait_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]
 
 pto.vecscope {
   scf.for %lane = %c0 to %9 step %c64 {
-    %mask = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask&lt;b32&gt;
+    %mask = pto.pset_b32 "PAT_ALL" : !pto.mask&lt;b32&gt;
     %v = pto.vlds %2[%lane] : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
     %abs = pto.vabs %v, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
     pto.vsts %abs, %8[%lane], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask&lt;b32&gt;
   }
 }
 
-pto.set_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
-pto.wait_flag[&quot;PIPE_V&quot;, &quot;PIPE_MTE3&quot;, &quot;EVENT_ID0&quot;]
+pto.set_flag["PIPE_V", "PIPE_MTE3", "EVENT_ID0"]
+pto.wait_flag["PIPE_V", "PIPE_MTE3", "EVENT_ID0"]
 pto.set_loop_size_ubtoout %c1_i64, %c1_i64 : i64, i64
 pto.set_loop1_stride_ubtoout %c4096_i64, %c4096_i64 : i64, i64
 pto.set_loop2_stride_ubtoout %c4096_i64, %c4096_i64 : i64, i64
 pto.copy_ubuf_to_gm %8, %14, %3, %3, %c0_i64, %c32_i64, %4, %c0_i64, %c128_i64, %c128_i64
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, gm&gt;, i64, i64, i64, i64, i64, i64, i64, i64
-</code></pre>
+    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, gm&gt;, i64, i64, i64, i64, i64, i64, i64, i64</code></pre>
 <h2 id="ptostrict_vecscope"><code>pto.strict_vecscope</code>：严格向量作用域<a class="headerlink" href="#ptostrict_vecscope" title="Permanent link">&para;</a></h2>
 <h3 id="_11">语法<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.strict_vecscope(%arg1, %arg2, ...) {
+<pre class="highlight"><code class="language-mlir">pto.strict_vecscope(%arg1, %arg2, ...) {
 ^bb0(%in1: &lt;type&gt;, %in2: &lt;type&gt;, ...):
   // region body
 }
-: (&lt;type1&gt;, &lt;type2&gt;, ...) -&gt; ()
-</code></pre>
+: (&lt;type1&gt;, &lt;type2&gt;, ...) -&gt; ()</code></pre>
 <h3 id="_12">语义<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p><code>pto.strict_vecscope</code> 要求 body 使用到的所有外部值都必须通过 op operand 显式传入，并在 block argument 中接收。它拒绝隐式捕获。</p>
 <h3 id="_13">约束<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
@@ -994,14 +991,13 @@ pto.copy_ubuf_to_gm %8, %14, %3, %3, %c0_i64, %c32_i64, %4, %c0_i64, %c128_i64, 
 <li>这个作用域 op 本身只定义区间边界与 region 形参契约。</li>
 </ul>
 <h3 id="_14">示例<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.strict_vecscope(%ub_in, %ub_out, %lane, %remaining) {
+<pre class="highlight"><code class="language-mlir">pto.strict_vecscope(%ub_in, %ub_out, %lane, %remaining) {
 ^bb0(%in: !pto.ptr&lt;f32, ub&gt;, %out: !pto.ptr&lt;f32, ub&gt;, %iv: index, %rem: i32):
   %mask, %next_remaining = pto.plt_b32 %rem : i32 -&gt; !pto.mask&lt;b32&gt;, i32
   %v = pto.vlds %in[%iv] : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
   %abs = pto.vabs %v, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
   pto.vsts %abs, %out[%iv], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask&lt;b32&gt;
-} : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, index, i32) -&gt; ()
-</code></pre>
+} : (!pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, index, i32) -&gt; ()</code></pre>
 <p>当你希望向量作用域的所有输入都显式出现在 region 签名里，而不是依赖外层 SSA 可见性时，应使用 <code>pto.strict_vecscope</code>。</p>
 <h2 id="ptovecscope-ptostrict_vecscope"><code>pto.vecscope</code> 与 <code>pto.strict_vecscope</code> 的区别<a class="headerlink" href="#ptovecscope-ptostrict_vecscope" title="Permanent link">&para;</a></h2>
 <table>

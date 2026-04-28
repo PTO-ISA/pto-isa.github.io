@@ -1012,17 +1012,15 @@
 </ul>
 <h3 id="predicate-and-zero-merge-behavior">Predicate and Zero-Merge Behavior<a class="headerlink" href="#predicate-and-zero-merge-behavior" title="Permanent link">&para;</a></h3>
 <p>Inactive lanes (as determined by the <code>%mask</code> operand) do not participate in the conversion and produce zero in the destination lane:</p>
-<pre><code class="language-c">for (int i = 0; i &lt; min(N, M); i++) {
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; min(N, M); i++) {
     if (mask[i])
         dst[i] = convert(src[i], T0, T1, rnd, sat);
     else
         dst[i] = 0;  // zero-merge for inactive lanes
-}
-</code></pre>
+}</code></pre>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-assembly">PTO.vcvt  vd, vs, vmask, rnd, sat, part
-</code></pre>
+<pre class="highlight"><code class="language-assembly">PTO.vcvt  vd, vs, vmask, rnd, sat, part</code></pre>
 <p>Where:
 - <code>vd</code> is the destination vector register
 - <code>vs</code> is the source vector register
@@ -1031,16 +1029,13 @@
 - <code>sat</code> is the saturation mode (optional)
 - <code>part</code> is the part mode for width-changing conversions (optional)</p>
 <h3 id="mlir-ssa-form">MLIR SSA Form<a class="headerlink" href="#mlir-ssa-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vcvt %input, %mask {rnd = &quot;RND&quot;, sat = &quot;SAT&quot;, part = &quot;PART&quot;}
-    : !pto.vreg&lt;NxT0&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;MxT1&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vcvt %input, %mask {rnd = "RND", sat = "SAT", part = "PART"}
+    : !pto.vreg&lt;NxT0&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;MxT1&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">%result = pto.vcvt %input, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;}
-    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xi32&gt;
-</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vcvt %input, %mask {rnd = "R", sat = "SAT"}
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xi32&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">PTO.vcvt  v0, v1, vmask, R, SAT, NONE
-</code></pre>
+<pre class="highlight"><code class="language-mlir">PTO.vcvt  v0, v1, vmask, R, SAT, NONE</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1083,6 +1078,8 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p><code>pto.vcvt</code> has no architectural side effects beyond producing its SSA result. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <h3 id="type-constraints">Type Constraints<a class="headerlink" href="#type-constraints" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Only the source/destination type pairs listed in the <a href="#supported-type-matrix">Supported Type Matrix</a> are legal.</li>
@@ -1100,17 +1097,24 @@
 <li><code>sat</code>: Use <code>"SAT"</code> to enable saturation on overflow; <code>"NOSAT"</code> (default) wraps or produces undefined results on overflow.</li>
 <li><code>part</code>: Only valid for width-changing conversions. Use <code>"EVEN"</code> to write to even-indexed lanes of each lane group, <code>"ODD"</code> for odd-indexed lanes.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported element type pairs, mismatched mask granularity, and invalid attribute combinations.</li>
 <li>Conversions that overflow the destination range and have <code>sat = "NOSAT"</code> produce target-defined results (may wrap or be undefined).</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li><strong>A5</strong>: Full <code>pto.vcvt</code> surface is supported on Ascend 950. See the <a href="#supported-type-matrix">Supported Type Matrix</a> and <a href="#latency-and-throughput-a5">Latency and Throughput</a> sections.</li>
 <li><strong>CPU simulation</strong>: Behavior is preserved with floating-point semantics matching IEEE 754 where applicable. Latency values are target-defined.</li>
 <li><strong>A2/A3</strong>: Subset support only; the specific type pairs and attribute combinations available on A2/A3-class targets are target-defined. Code that depends on a specific conversion pair should treat it as target-profile-specific.</li>
 </ul>
+</details>
 <h2 id="rounding-modes">Rounding Modes<a class="headerlink" href="#rounding-modes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1590,14 +1594,13 @@
 </table>
 <h2 id="width-changing-conversion-pattern">Width-Changing Conversion Pattern<a class="headerlink" href="#width-changing-conversion-pattern" title="Permanent link">&para;</a></h2>
 <p>For conversions that change lane width (e.g., f32 → f16), use even/odd parts and combine:</p>
-<pre><code class="language-mlir">// Convert two f32 vectors to one f16 vector using even/odd placement
-%even = pto.vcvt %in0, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;, part = &quot;EVEN&quot;}
+<pre class="highlight"><code class="language-mlir">// Convert two f32 vectors to one f16 vector using even/odd placement
+%even = pto.vcvt %in0, %mask {rnd = "R", sat = "SAT", part = "EVEN"}
     : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
-%odd  = pto.vcvt %in1, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;, part = &quot;ODD&quot;}
+%odd  = pto.vcvt %in1, %mask {rnd = "R", sat = "SAT", part = "ODD"}
     : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
 %result = pto.vor %even, %odd, %mask
-    : !pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask&lt;b16&gt; -&gt; !pto.vreg&lt;128xf16&gt;
-</code></pre>
+    : !pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask&lt;b16&gt; -&gt; !pto.vreg&lt;128xf16&gt;</code></pre>
 <h2 id="latency-and-throughput-a5">Latency and Throughput (A5)<a class="headerlink" href="#latency-and-throughput-a5" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1623,12 +1626,13 @@
 </tr>
 </tbody>
 </table>
-<blockquote>
-<p><strong>Note:</strong> Only representative traces are listed. Other <code>pto.vcvt</code> conversion pairs depend on the RV lowering in the trace. CPU simulation and A2/A3 throughput data is target-defined.</p>
-</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note:</p>
+<p>Only representative traces are listed. Other <code>pto.vcvt</code> conversion pairs depend on the RV lowering in the trace. CPU simulation and A2/A3 throughput data is target-defined.</p>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="c-code">C Code<a class="headerlink" href="#c-code" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">// Float to Int with round-to-nearest and saturation
+<pre class="highlight"><code class="language-c">// Float to Int with round-to-nearest and saturation
 float src[64];
 int dst[64];
 int mask[64];
@@ -1639,45 +1643,41 @@ for (int i = 0; i &lt; 64; i++) {
     } else {
         dst[i] = 0;  // zero-merge for inactive lanes
     }
-}
-</code></pre>
+}</code></pre>
 <h3 id="mlir-ssa-form_1">MLIR SSA Form<a class="headerlink" href="#mlir-ssa-form_1" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Convert f32 to i32 with saturation
-%result = pto.vcvt %input_f32, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;}
+<pre class="highlight"><code class="language-mlir">// Convert f32 to i32 with saturation
+%result = pto.vcvt %input_f32, %mask {rnd = "R", sat = "SAT"}
     : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xi32&gt;
 
 // Convert f32 to f16 using even/odd parts
-%even = pto.vcvt %in0, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;, part = &quot;EVEN&quot;}
+%even = pto.vcvt %in0, %mask {rnd = "R", sat = "SAT", part = "EVEN"}
     : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
-%odd  = pto.vcvt %in1, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;, part = &quot;ODD&quot;}
+%odd  = pto.vcvt %in1, %mask {rnd = "R", sat = "SAT", part = "ODD"}
     : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
 
 // Convert i32 to f32
 %float_result = pto.vcvt %input_i32, %mask
-    : !pto.vreg&lt;64xi32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+    : !pto.vreg&lt;64xi32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h3 id="typical-usage-quantization">Typical Usage: Quantization<a class="headerlink" href="#typical-usage-quantization" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Quantize f32 activations to i8 with scale
+<pre class="highlight"><code class="language-mlir">// Quantize f32 activations to i8 with scale
 // Scale factor applied first
 %scaled = pto.vmul %input, %scale, %mask
     : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Round and saturate to i32
-%quantized = pto.vcvt %scaled, %mask {rnd = &quot;R&quot;, sat = &quot;SAT&quot;}
+%quantized = pto.vcvt %scaled, %mask {rnd = "R", sat = "SAT"}
     : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xi32&gt;
 
 // Narrow i32 → i8 via pack ops
-// (use pto.vpack or similar width-reduction sequence)
-</code></pre>
+// (use pto.vpack or similar width-reduction sequence)</code></pre>
 <h3 id="typical-usage-mixed-precision">Typical Usage: Mixed Precision<a class="headerlink" href="#typical-usage-mixed-precision" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// bf16 → f32 for high-precision accumulation
-%f32_vec = pto.vcvt %bf16_input, %mask {part = &quot;EVEN&quot;}
+<pre class="highlight"><code class="language-mlir">// bf16 → f32 for high-precision accumulation
+%f32_vec = pto.vcvt %bf16_input, %mask {part = "EVEN"}
     : !pto.vreg&lt;128xbf16&gt;, !pto.mask&lt;b16&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // f32 → bf16 for storage
-%bf16_out = pto.vcvt %f32_result, %mask {rnd = &quot;R&quot;, part = &quot;EVEN&quot;}
-    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xbf16&gt;
-</code></pre>
+%bf16_out = pto.vcvt %f32_result, %mask {rnd = "R", part = "EVEN"}
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;128xbf16&gt;</code></pre>
 <h2 id="detailed-notes">Detailed Notes<a class="headerlink" href="#detailed-notes" title="Permanent link">&para;</a></h2>
 <h3 id="rounding-mode-selection-guide">Rounding Mode Selection Guide<a class="headerlink" href="#rounding-mode-selection-guide" title="Permanent link">&para;</a></h3>
 <table>

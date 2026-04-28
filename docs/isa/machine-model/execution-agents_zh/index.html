@@ -911,13 +911,12 @@
 <h1 id="profile">执行代理与目标 Profile<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h1>
 <p>PTO 使用一套架构可见的三级执行层次：host、device 和 core。这不是硬件方框图的原样复刻，而是把工作准备、派发和执行发生的位置显式写出来，同时把 target profile 的能力差异放到明确层次上。</p>
 <h2 id="_1">执行层次<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<pre><code class="language-text">HOST
+<pre class="highlight"><code class="language-text">HOST
   -&gt; 准备参数、提交程序、管理运行时
 DEVICE
   -&gt; 调度合法 PTO 工作到各核心，管理 GM
 CORE / AI CORE
-  -&gt; 标量单元、UB、Tile Register File、Vector Pipeline、Matrix Unit、DMA Engine
-</code></pre>
+  -&gt; 标量单元、UB、Tile Register File、Vector Pipeline、Matrix Unit、DMA Engine</code></pre>
 <h2 id="host">Host<a class="headerlink" href="#host" title="Permanent link">&para;</a></h2>
 <p>Host 负责：</p>
 <ul>
@@ -980,9 +979,8 @@ CORE / AI CORE
 </table>
 <h2 id="vlane">向量寄存器架构（VLane）<a class="headerlink" href="#vlane" title="Permanent link">&para;</a></h2>
 <p>在 A5 上，向量寄存器由 <strong>8 个 VLane</strong> 组成，每个 VLane 32 字节：</p>
-<pre><code class="language-text">vreg (256 bytes total):
-| VLane0 | VLane1 | ... | VLane7 |
-</code></pre>
+<pre class="highlight"><code class="language-text">vreg (256 bytes total):
+| VLane0 | VLane1 | ... | VLane7 |</code></pre>
 <p>各类型在每个 VLane 中的元素数：</p>
 <table>
 <thead>
@@ -1164,17 +1162,23 @@ CORE / AI CORE
 </tbody>
 </table>
 <h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>架构可见的依赖顺序必须在目标调度后保留</li>
 <li>target profile 可以缩窄支持集合，但不能重定义合法 PTO 语义</li>
 <li>profile 专属特性不能写成通用 PTO 保证</li>
 </ul>
+</div>
 <h2 id="_4">不允许的情形<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>把 A5 专属特性写成 PTO 普遍保证</li>
 <li>把 CPU 模拟器的行为或性能当成硬件 profile 契约</li>
 <li>把 profile 限制写成 ISA 自相矛盾</li>
 </ul>
+</div>
 <h2 id="_5">相关页面<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../ordering-and-synchronization_zh/">顺序与同步</a></li>

@@ -920,15 +920,15 @@
 <p>其中 <code>cmp ∈ {EQ, NE, GT, GE, LT, LE}</code>。</p>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：</p>
-<pre><code class="language-text">twait %signal, %cmp_value {cmp = #pto.cmp&lt;EQ&gt;} : (!pto.memref&lt;i32&gt;, i32)
-twait %signal_matrix, %cmp_value {cmp = #pto.cmp&lt;GE&gt;} : (!pto.memref&lt;i32, MxN&gt;, i32)
-</code></pre>
+<pre class="highlight"><code class="language-text">twait %signal, %cmp_value {cmp = #pto.cmp&lt;EQ&gt;} : (!pto.memref&lt;i32&gt;, i32)
+twait %signal_matrix, %cmp_value {cmp = #pto.cmp&lt;GE&gt;} : (!pto.memref&lt;i32, MxN&gt;, i32)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
-PTO_INST void TWAIT(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp cmp, WaitEvents&amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalSignalData, typename... WaitEvents&gt;
+PTO_INST void TWAIT(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp cmp, WaitEvents&amp;... events);</code></pre>
 <h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>GlobalSignalData::DType</code> 必须为 <code>int32_t</code></li>
 <li><code>signalData</code> 必须指向本地地址（当前 NPU）</li>
@@ -970,21 +970,20 @@ PTO_INST void TWAIT(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp 
 </tr>
 </tbody>
 </table>
+</div>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="_7">等待单个信号<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void wait_for_ready(__gm__ int32_t* local_signal) {
+<pre class="highlight"><code class="language-cpp">void wait_for_ready(__gm__ int32_t* local_signal) {
     comm::Signal sig(local_signal);
     comm::TWAIT(sig, 1, comm::WaitCmp::EQ);
-}
-</code></pre>
+}</code></pre>
 <h3 id="_8">等待计数器达到阈值<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void wait_for_count(__gm__ int32_t* local_counter, int expected_count) {
+<pre class="highlight"><code class="language-cpp">void wait_for_count(__gm__ int32_t* local_counter, int expected_count) {
     comm::Signal counter(local_counter);
     comm::TWAIT(counter, expected_count, comm::WaitCmp::GE);
-}
-</code></pre>
+}</code></pre>
 <h3 id="tnotify">与 TNOTIFY 配合<a class="headerlink" href="#tnotify" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">void producer(__gm__ int32_t* remote_flag) {
+<pre class="highlight"><code class="language-cpp">void producer(__gm__ int32_t* remote_flag) {
     comm::Signal flag(remote_flag);
     comm::TNOTIFY(flag, 1, comm::NotifyOp::Set);
 }
@@ -992,8 +991,7 @@ PTO_INST void TWAIT(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp 
 void consumer(__gm__ int32_t* local_flag) {
     comm::Signal flag(local_flag);
     comm::TWAIT(flag, 1, comm::WaitCmp::EQ);
-}
-</code></pre>
+}</code></pre>
               
             </div>
           </div><footer>

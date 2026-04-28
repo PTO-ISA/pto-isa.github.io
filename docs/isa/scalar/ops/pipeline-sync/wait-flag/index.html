@@ -948,11 +948,9 @@
 <p><code>pto.wait_flag</code> is the consumer half of the explicit event protocol. The destination pipeline stalls until the matching <code>(SRC_PIPE, DST_PIPE, EVENT_ID)</code> signal becomes visible, after which later work on the destination pipeline may proceed.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">wait_flag[&quot;SRC_PIPE&quot;, &quot;DST_PIPE&quot;, &quot;EVENT_ID&quot;]
-</code></pre>
+<pre class="highlight"><code class="language-text">wait_flag["SRC_PIPE", "DST_PIPE", "EVENT_ID"]</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.wait_flag[&quot;SRC_PIPE&quot;, &quot;DST_PIPE&quot;, &quot;EVENT_ID&quot;]
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.wait_flag["SRC_PIPE", "DST_PIPE", "EVENT_ID"]</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1000,24 +998,32 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>Stalls the destination pipeline until the matching event is signaled. Other pipelines may continue according to the target profile.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>The selected pipe identifiers and event identifier MUST be valid for the selected target profile.</li>
 <li>Waiting on an event that is never signaled is an illegal PTO program.</li>
 <li>Portable code MUST pair each wait with the intended producer-side <code>pto.set_flag</code>.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported pipe or event identifiers, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
 <li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>CPU simulation preserves the visible event protocol but may not expose all low-level hazards that motivate it on hardware.</li>
 <li>A2/A3 and A5 may use different concrete pipe and event spaces; portable code must rely on the documented PTO contract plus the selected target profile.</li>
 </ul>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.wait_flag[&quot;PIPE_MTE2&quot;, &quot;PIPE_V&quot;, &quot;EVENT_ID0&quot;]
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.wait_flag["PIPE_MTE2", "PIPE_V", "EVENT_ID0"]</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../pipeline-sync/">Pipeline Sync</a></li>

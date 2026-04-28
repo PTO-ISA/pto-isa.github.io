@@ -959,8 +959,7 @@
 <p>PTO does not hide movement between global memory and local execution state. <code>GlobalTensor</code> is the architecture-visible GM-facing object, and movement operations define when data enters or leaves local tile buffers or vector registers. PTO treats the vector tile buffer and the hardware Unified Buffer as the same architectural destination for <code>TileType::Vec</code>; this page avoids describing them as two separate user-visible concepts.</p>
 <h2 id="globaltensor">GlobalTensor<a class="headerlink" href="#globaltensor" title="Permanent link">&para;</a></h2>
 <h3 id="globaltensor-template-signature">GlobalTensor Template Signature<a class="headerlink" href="#globaltensor-template-signature" title="Permanent link">&para;</a></h3>
-<pre><code>GlobalTensor&lt;DType, Shape, Stride, Layout&gt;
-</code></pre>
+<pre class="highlight"><code>GlobalTensor&lt;DType, Shape, Stride, Layout&gt;</code></pre>
 <table>
 <thead>
 <tr>
@@ -1051,7 +1050,7 @@
 </table>
 <h2 id="tile-instructions-data-path">Tile Instructions Data Path<a class="headerlink" href="#tile-instructions-data-path" title="Permanent link">&para;</a></h2>
 <p>The tile instructions (<code>pto.t*</code>) move data between GM and tile buffers through MTE2/MTE3. For <code>TileType::Vec</code>, the destination tile buffer is the hardware Unified Buffer; for <code>Left</code>, <code>Right</code>, and <code>Acc</code>, the destination tile buffers map to L0A, L0B, and L0C respectively.</p>
-<pre><code>GM
+<pre class="highlight"><code>GM
   │
   │  copy via DMA engine
   ▼
@@ -1063,12 +1062,10 @@ Tile Compute
   │
   │  copy via DMA engine
   ▼
-GM
-</code></pre>
+GM</code></pre>
 <h3 id="tload">TLOAD<a class="headerlink" href="#tload" title="Permanent link">&para;</a></h3>
 <p><code>TLOAD</code> moves data from a <code>GlobalTensor</code> into the destination tile buffer:</p>
-<pre><code>dst[i, j] = src[ r0 + i, c0 + j ]
-</code></pre>
+<pre class="highlight"><code>dst[i, j] = src[ r0 + i, c0 + j ]</code></pre>
 <p>Where <code>r0</code> and <code>c0</code> are the base offsets derived from the <code>GlobalTensor</code> shape/stride and the tile's declared valid region <code>(Rv, Cv)</code>.</p>
 <p><strong>Transfer size</strong>: <code>TLOAD</code> transfers exactly <code>dst.GetValidRow() × dst.GetValidCol()</code> elements.</p>
 <p><strong>Constraints</strong>:
@@ -1078,8 +1075,7 @@ GM
   - <code>TileType::Mat</code>: ND→ND, DN→DN, NZ→NZ, ND→NZ, DN→ZN</p>
 <h3 id="tstore">TSTORE<a class="headerlink" href="#tstore" title="Permanent link">&para;</a></h3>
 <p><code>TSTORE</code> moves data from the source tile buffer to a <code>GlobalTensor</code>:</p>
-<pre><code>dst[ r0 + i, c0 + j ] = src[i, j]
-</code></pre>
+<pre class="highlight"><code>dst[ r0 + i, c0 + j ] = src[i, j]</code></pre>
 <p>Where <code>i ∈ [0, src.GetValidRow())</code>, <code>j ∈ [0, src.GetValidCol())</code>.</p>
 <p><strong>Transfer size</strong>: <code>TSTORE</code> transfers exactly <code>src.GetValidRow() × src.GetValidCol()</code> elements.</p>
 <h3 id="atomic-store-variants">Atomic Store Variants<a class="headerlink" href="#atomic-store-variants" title="Permanent link">&para;</a></h3>
@@ -1112,7 +1108,7 @@ GM
 </table>
 <h2 id="vector-instructions-data-path">Vector Instructions Data Path<a class="headerlink" href="#vector-instructions-data-path" title="Permanent link">&para;</a></h2>
 <p>The vector instructions (<code>pto.v*</code>) require an explicit GM↔vector-tile-buffer DMA step before vector loads and after vector stores:</p>
-<pre><code>GM
+<pre class="highlight"><code>GM
   │
   │  copy_ubuf_to_gm / copy_gm_to_ubuf (DMA, MTE2/MTE3)
   ▼
@@ -1124,8 +1120,7 @@ Vector Registers  ──►  Vector Compute  ──►  Vector Registers
                                                 │
                                                 │  vsts / vsst / vscatter (vector store)
                                                 ▼
-                                   Vector Tile Buffer ──► GM
-</code></pre>
+                                   Vector Tile Buffer ──► GM</code></pre>
 <h3 id="dma-copy-operations">DMA Copy Operations<a class="headerlink" href="#dma-copy-operations" title="Permanent link">&para;</a></h3>
 <p>The following scalar/control operations configure and execute GM↔UB DMA:</p>
 <table>
@@ -1265,6 +1260,8 @@ Vector Registers  ──►  Vector Compute  ──►  Vector Registers
 </table>
 <p>MTE1, MTE2, and MTE3 can operate in parallel with the Vector Pipeline and Matrix Multiply Unit when proper <code>set_flag</code>/<code>wait_flag</code> synchronization is used.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>Movement legality depends on source instruction set, destination instruction set, layout, and target profile.</li>
 <li>Movement ops do not erase valid-region rules; they carry or define them.</li>
@@ -1272,16 +1269,20 @@ Vector Registers  ──►  Vector Compute  ──►  Vector Registers
 <li>DMA copy operations require explicit synchronization before their data is consumed by vector compute.</li>
 <li><code>TLOAD</code>/<code>TSTORE</code> carry valid-region information implicitly; the transfer size is determined by the destination/source tile's valid region.</li>
 </ul>
+</div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Cases That Are Not Allowed</p>
 <ul>
 <li>Documenting data movement as though it were implicit when the ISA requires an explicit move.</li>
 <li>Assuming vector-buffer traffic and tile-buffer traffic share the same legality contract.</li>
 <li>Silently relying on target-specific movement shortcuts as if they were architecture-wide.</li>
 <li>Issuing a <code>vlds</code> before the corresponding <code>copy_gm_to_ubuf</code> has completed without an intervening <code>set_flag</code>/<code>wait_flag</code>.</li>
 </ul>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="tile-instructions-elementwise-add">Tile Instructions: Elementwise Add<a class="headerlink" href="#tile-instructions-elementwise-add" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&amp; ga,
@@ -1291,10 +1292,9 @@ void vec_add(Tile&lt;float, 16, 16&gt;&amp; c, const GlobalTensor&lt;float&gt;&a
     TLOAD(b, gb);           // GM → local tile buffer B
     TADD(c, a, b);          // c = a + b, iterated over c's valid region
     TSTORE(gc, c);          // Local tile buffer C → GM
-}
-</code></pre>
+}</code></pre>
 <h3 id="vector-instructions-fine-grained-vector-loadstore">Vector Instructions: Fine-Grained Vector Load/Store<a class="headerlink" href="#vector-instructions-fine-grained-vector-loadstore" title="Permanent link">&para;</a></h3>
-<pre><code class="language-c">// 1. DMA copy from GM to UB staging area
+<pre class="highlight"><code class="language-c">// 1. DMA copy from GM to UB staging area
 copy_gm_to_ubuf(%ub_ptr, %gm_ptr, %sid, %n_burst, %len_burst, %stride_dst, %stride_src);
 
 // 2. Signal Vector pipe that data is ready
@@ -1302,7 +1302,7 @@ set_flag(PIPE_MTE2, PIPE_V, EVENT_ID0);
 
 // 3. Wait for data, then vector load
 wait_flag(PIPE_MTE2, PIPE_V, EVENT_ID0);
-%vreg = pto.vlds %ub[%offset] {dist = &quot;NORM&quot;} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;;
+%vreg = pto.vlds %ub[%offset] {dist = "NORM"} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;;
 
 // 4. Vector compute
 %result = pto.vadd %vreg, %vreg : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;;
@@ -1311,8 +1311,7 @@ wait_flag(PIPE_MTE2, PIPE_V, EVENT_ID0);
 pto.vsts %result, %ub_out[%offset] : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; ();
 
 // 6. DMA copy from UB back to GM
-copy_ubuf_to_gm(%ub_out, %gm_out, %sid, %n_burst, %len_burst, %reserved, %stride_dst, %stride_src);
-</code></pre>
+copy_ubuf_to_gm(%ub_out, %gm_out, %sid, %n_burst, %len_burst, %reserved, %stride_dst, %stride_src);</code></pre>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../tiles-and-valid-regions/">Tiles And Valid Regions</a></li>

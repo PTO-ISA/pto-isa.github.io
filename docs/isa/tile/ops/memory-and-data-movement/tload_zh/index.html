@@ -918,19 +918,15 @@
 <p>其中 <code>r0 / c0</code> 由 <code>GlobalTensor</code> 当前视图和 tile 的装载位置共同决定。真正的搬运范围由目标 tile 的 valid region 决定，而不是物理 tile 矩形。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
-<pre><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%t0 = tload %sv[%c0, %c0] : (!pto.memref&lt;...&gt;, index, index) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
-!pto.tile&lt;loc, dtype, rows, cols, blayout, slayout, fractal, pad&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tload %mem : !pto.partition_tensor_view&lt;MxNxdtype&gt; -&gt;
+!pto.tile&lt;loc, dtype, rows, cols, blayout, slayout, fractal, pad&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tload ins(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &amp;... events);
-</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &amp;... events);</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code>：源 <code>GlobalTensor</code></li>
@@ -943,11 +939,14 @@ PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &a
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会从 GM 读取，并写入 tile 本地存储。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li><code>sizeof(TileData::DType)</code> 必须与 <code>sizeof(GlobalData::DType)</code> 一致</li>
 <li>搬运范围由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定</li>
 <li><code>src.GetShape(dim)</code> 与 <code>dst.GetValidRow()/GetValidCol()</code> 在运行时都必须大于 0</li>
 </ul>
+</div>
 <h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
 <h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <ul>
@@ -972,13 +971,16 @@ PTO_INST RecordEvent TLOAD(TileData &amp;dst, GlobalData &amp;src, WaitEvents &a
 <li><code>Mat</code> 路径额外受 <code>TLoadCubeCheck</code> 与 MX 格式规则约束</li>
 </ul>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
+</div>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>当前仓内没有把 <code>tload</code> 单列成完整公开周期表，但在 A2A3 的带宽模型里，GM → Vec Buffer 取 <code>128 B/cycle</code>，GM → Mat 取 <code>256 B/cycle</code>。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
 template &lt;typename T&gt;
@@ -991,8 +993,7 @@ void example_auto(__gm__ T* in) {
   GTensor gin(in);
   TileT t;
   TLOAD(t, gin);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../memory-and-data-movement_zh/">内存与数据搬运</a></li>

@@ -916,11 +916,9 @@
 <p><code>pto.vsort32</code> 是一个 UB-to-UB 排序 helper。它读取 <code>%src</code> 指向的 UB 数据，按 <code>%config</code> 所定义的比较方式和方向完成排序，再把结果写回 <code>%dest</code>。它不是纯向量寄存器算术，而是服务于排序流水的专用辅助操作。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">vsort32 %dest, %src, %config
-</code></pre>
+<pre class="highlight"><code class="language-text">vsort32 %dest, %src, %config</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vsort32 %dest, %src, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vsort32 %dest, %src, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64</code></pre>
 <h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>%dest</code>、<code>%src</code>：UB 指针</li>
@@ -933,26 +931,34 @@
 <h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>这条指令会直接读写 UB 内存。</p>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
 <li>它是 UB-to-UB 加速器 helper，而不是纯 <code>vreg -&gt; vreg</code> 操作。</li>
 </ul>
+</div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>verifier 会拒绝非法的操作数形状、不支持的元素类型以及不合法的属性组合。</li>
 <li>约束部分列出的额外非法情形，同样属于 <code>pto.vsort32</code> 的契约。</li>
 </ul>
+</div>
 <h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A5 是当前手册里最细的具体 profile；CPU 模拟器和 A2/A3 类目标可以在保留可见 PTO 契约的前提下做等效模拟。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a5">A5 时延<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <p>当前手册未单列 <code>vsort32</code> 的周期级条目。</p>
 <h3 id="a2a3">A2/A3 吞吐<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <p>仓内现有 costmodel 没有直接给出 <code>vsort32</code> 的独立 <code>SetParam</code>，排序相关可参照 <code>vbitsort</code> 与 <code>vmrgsort4</code> 的分块 / 归并路径。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.vsort32 %dest, %src, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vsort32 %dest, %src, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64</code></pre>
 <h2 id="_11">性能<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="_12">时延与吞吐披露<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>PTO 微指令页面当前使用的时序来源是 <code>~/visa.txt</code> 与最新抓取的 <code>PTOAS/docs/vpto-spec.md</code>（<code>feature_vpto_backend</code> 分支）。

@@ -927,25 +927,21 @@
 <h2 id="_5">汇编语法<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>同步形式：</p>
-<pre><code class="language-text">%acc = tgemv.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%acc = tgemv.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">%c = pto.tgemv.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-</code></pre>
+<pre class="highlight"><code class="language-text">%c = pto.tgemv.bias %a, %b, %bias : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">pto.tgemv.bias ins(%a, %b, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tgemv.bias ins(%a, %b, %bias : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%c : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename TileBias, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileRes, typename TileLeft, typename TileRight, typename TileBias, typename... WaitEvents&gt;
 PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData,
                                 WaitEvents &amp;... events);
 
 template &lt;AccPhase Phase, typename TileRes, typename TileLeft, typename TileRight, typename TileBias,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileRight &amp;bMatrix, TileBias &amp;biasData,
-                                WaitEvents &amp;... events);
-</code></pre>
+                                WaitEvents &amp;... events);</code></pre>
 <h2 id="_6">输入与输出<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>aMatrix</code>：左操作数 tile，必须是 <code>Left</code>。</li>
@@ -954,6 +950,8 @@ PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <li><code>cMatrix</code>：结果累加器 tile，必须是 <code>Acc</code>。</li>
 </ul>
 <h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="_8">通用约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>TGEMV</code> 的角色、shape、dtype 和 target-profile 约束在这里全部成立；</li>
@@ -973,16 +971,19 @@ PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <li><code>TileBias::Rows == 1</code></li>
 <li><code>TileBias::isRowMajor == true</code></li>
 </ul>
+</div>
 <h2 id="_9">不允许的情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">不允许的情形</p>
 <ul>
 <li>bias 不是单行；</li>
 <li>bias 的角色或 dtype 不合法；</li>
 <li>违反 <code>TGEMV</code> 的任一合法性约束。</li>
 </ul>
+</div>
 <h2 id="_10">性能与吞吐<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <p>当前仓内 A2A3 costmodel 对 <code>TGEMV_BIAS</code> 仍复用 <code>mad/mmad</code> 的 GEMV 公式：</p>
-<pre><code class="language-text">cycles = 14 + ceil(N/16) * ceil(K / baskK) * repeat_cost
-</code></pre>
+<pre class="highlight"><code class="language-text">cycles = 14 + ceil(N/16) * ceil(K / baskK) * repeat_cost</code></pre>
 <p>其中：</p>
 <ul>
 <li><code>baskK = 32 / sizeof(left_element_type)</code>；</li>
@@ -992,7 +993,7 @@ PTO_INST RecordEvent TGEMV_BIAS(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <p>当前仓库没有公开单列的 A5 latency / throughput 表。</p>
 <h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1006,10 +1007,9 @@ void example_auto() {
   Bias bias;
   C c;
   TGEMV_BIAS(c, a, b, bias);
-}
-</code></pre>
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
@@ -1027,8 +1027,7 @@ void example_manual() {
   TASSIGN(bias, 0x3000);
   TASSIGN(c, 0x4000);
   TGEMV_BIAS(c, a, b, bias);
-}
-</code></pre>
+}</code></pre>
 <h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../tgemv_zh/">TGEMV</a></li>

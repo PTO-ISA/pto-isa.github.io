@@ -948,11 +948,9 @@
 <p>The DMA engine reads <code>%n_burst</code> rows from <code>%source</code> and writes them to <code>%dest</code>. <code>%len_burst</code> controls the contiguous byte count copied per row, while <code>%src_stride</code> and <code>%dst_stride</code> specify the row-to-row start offsets for the copy. This form is useful when the producer and consumer both operate in UB space but a DMA-style row copy is still preferred over vector payload instructions.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text">copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride
-</code></pre>
+<pre class="highlight"><code class="language-text">copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64, i64, i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64, i64, i64, i64</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1020,24 +1018,32 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>Reads UB-visible storage, writes UB-visible storage, and consumes the active UB DMA state for the selected target profile.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li>Source and destination regions MUST both satisfy the UB alignment rules of the selected target profile.</li>
 <li><code>%len_burst</code> MUST fit within both the source and destination row stride.</li>
 <li>If source and destination regions alias, portable code MUST provide ordering that avoids undefined behavior. On A2/A3 and A5: if source and destination regions alias, the copy may proceed in either forward or backward direction and the exact order is not guaranteed; the programmer must ensure the copy is sequenced to avoid data hazard. On CPU simulator: aliasing is resolved by copying to a temporary buffer first.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>The verifier rejects illegal operand shapes, unsupported pipe or event identifiers, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
 <li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>CPU simulation preserves the visible copy contract but may not expose all DMA overlap hazards.</li>
 <li>A2/A3 and A5 may narrow supported element sizes, row widths, or overlap behavior.</li>
 </ul>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64, i64, i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64, i64, i64, i64</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../dma-copy/">DMA Copy</a></li>

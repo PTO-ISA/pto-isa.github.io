@@ -973,12 +973,10 @@
 - See the target-profile specification for the full bit-field layout</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre><code class="language-asm">vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-asm">vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config
-    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64
-</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config
+    : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1031,6 +1029,8 @@
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>This operation has no architectural side effect beyond producing its SSA results. It does not implicitly reserve buffers, signal events, or establish memory fences.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Pre-sorted inputs</strong>: ALL four input segments MUST be pre-sorted in the order specified by <code>%config</code>. Feeding unsorted data produces undefined output.</li>
 <li><strong>Same sort order</strong>: All four input segments MUST use the same sort order and comparison mode as encoded in <code>%config</code>.</li>
@@ -1038,20 +1038,27 @@
 <li><strong>UB address space</strong>: All pointers MUST have address space <code>ub</code>.</li>
 <li><strong>Single active predicate</strong>: Loading a new predicate does not implicitly save a prior predicate. Programs that need to preserve predicate state MUST save it first.</li>
 </ul>
+</div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Exceptions</p>
 <ul>
 <li>Illegal if any input pointer is not a UB-space pointer.</li>
 <li>Illegal if the effective address (base + areg * 8) is not 64-bit aligned.</li>
 <li>Illegal if the <code>dist</code> attribute value is not in the allowed set for this form.</li>
 </ul>
+</div>
 <h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>Target-Profile Restrictions</summary>
 <ul>
 <li>A5 is the most detailed concrete profile in the current manual; CPU simulation and A2/A3-class targets may support narrower subsets or emulate the behavior while preserving the visible PTO contract.</li>
 <li>The <code>config</code> word layout and supported element types are profile-specific.</li>
 </ul>
+</details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="merge-4-sorted-segments">Merge 4 sorted segments<a class="headerlink" href="#merge-4-sorted-segments" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Pre-condition: four sorted arrays in UB
+<pre class="highlight"><code class="language-mlir">// Pre-condition: four sorted arrays in UB
 // %sorted_a, %sorted_b, %sorted_c, %sorted_d each contain sorted data
 
 // Merge all four into one sorted output
@@ -1059,10 +1066,9 @@ pto.vmrgsort4 %dest,
                %sorted_a, %sorted_b, %sorted_c, %sorted_d,
                %count, %config
     : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;,
-       !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64
-</code></pre>
+       !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64</code></pre>
 <h3 id="sort-preparation-pipeline">Sort preparation pipeline<a class="headerlink" href="#sort-preparation-pipeline" title="Permanent link">&para;</a></h3>
-<pre><code class="language-mlir">// Step 1: Sort each segment independently (e.g., using vsort32)
+<pre class="highlight"><code class="language-mlir">// Step 1: Sort each segment independently (e.g., using vsort32)
 pto.vsort32 %sorted_a, %unsorted_a, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
 pto.vsort32 %sorted_b, %unsorted_b, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
 pto.vsort32 %sorted_c, %unsorted_c, %config : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64
@@ -1073,8 +1079,7 @@ pto.vmrgsort4 %dest,
                %sorted_a, %sorted_b, %sorted_c, %sorted_d,
                %count, %config
     : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;,
-       !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64
-</code></pre>
+       !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64</code></pre>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <h3 id="a5-latency">A5 Latency<a class="headerlink" href="#a5-latency" title="Permanent link">&para;</a></h3>
 <p>SFU operations have higher latency than standard arithmetic ops. Consult the target profile's performance model for cycle-accurate estimates.</p>

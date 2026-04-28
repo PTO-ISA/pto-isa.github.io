@@ -912,35 +912,33 @@
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><code>TGET</code> 是远程读原语：把远端 NPU 上的 GM 数据读到当前 NPU 的本地 GM。<code>pto.tget</code> 是 IR 形式，<code>TGET</code> 是 C++ intrinsic 形式，两者描述的是同一条通信指令。</p>
 <p>数据路径为：</p>
-<pre><code class="language-text">远端 GM -&gt; 暂存 Tile（UB） -&gt; 本地 GM
-</code></pre>
+<pre class="highlight"><code class="language-text">远端 GM -&gt; 暂存 Tile（UB） -&gt; 本地 GM</code></pre>
 <p>当 <code>GlobalTensor</code> 的行或列超出单个 UB Tile 的容量时，<code>TGET</code> 会自动沿 <code>DIM_3</code> 和 <code>DIM_4</code> 做二维滑动分块，不需要手工把传输拆成小块。</p>
 <h2 id="_2">数学语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>对有效区域中的每个元素 <code>(i, j)</code>：</p>
 <div class="arithmatex">\[ \mathrm{dst}^{\mathrm{local}}_{i,j} = \mathrm{src}^{\mathrm{remote}}_{i,j} \]</div>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：</p>
-<pre><code class="language-text">pto.tget %dst_local, %src_remote : (!pto.memref&lt;...&gt;, !pto.memref&lt;...&gt;)
-</code></pre>
+<pre class="highlight"><code class="language-text">pto.tget %dst_local, %src_remote : (!pto.memref&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>lowering 会引入 UB 暂存 Tile 来承接 GM→UB→GM 的路径，因此 C++ 接口要求显式传入 <code>stagingTileData</code>，或在双缓冲场景下传入 <code>pingTile</code> / <code>pongTile</code>。</p>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
 <h3 id="tile">单暂存 Tile<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TGET(GlobalDstData &amp;dstGlobalData,
                           GlobalSrcData &amp;srcGlobalData,
                           TileData &amp;stagingTileData,
-                          WaitEvents&amp;... events);
-</code></pre>
+                          WaitEvents&amp;... events);</code></pre>
 <h3 id="_4">乒乓双缓冲<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;typename GlobalDstData, typename GlobalSrcData, typename TileData, typename... WaitEvents&gt;
 PTO_INST RecordEvent TGET(GlobalDstData &amp;dstGlobalData,
                           GlobalSrcData &amp;srcGlobalData,
                           TileData &amp;pingTile,
                           TileData &amp;pongTile,
-                          WaitEvents&amp;... events);
-</code></pre>
+                          WaitEvents&amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <h3 id="_6">类型约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>GlobalSrcData::RawDType</code> 必须等于 <code>GlobalDstData::RawDType</code></li>
@@ -958,9 +956,10 @@ PTO_INST RecordEvent TGET(GlobalDstData &amp;dstGlobalData,
 <li><code>pingTile</code> 与 <code>pongTile</code> 的类型和维度必须一致</li>
 <li>两者必须位于不重叠的 UB 偏移</li>
 </ul>
+</div>
 <h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="_10">基础形式<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 #include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -978,10 +977,9 @@ void remote_read(__gm__ T* local_data, __gm__ T* remote_addr) {
     TASSIGN(stagingTile, 0);
 
     comm::TGET(dstG, srcG, stagingTile);
-}
-</code></pre>
+}</code></pre>
 <h3 id="_11">大张量自动分块<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">using GShape  = Shape&lt;1, 1, 1, 4096, 4096&gt;;
+<pre class="highlight"><code class="language-cpp">using GShape  = Shape&lt;1, 1, 1, 4096, 4096&gt;;
 using GStride = BaseShape2D&lt;T, 4096, 4096, Layout::ND&gt;;
 using GTensor = GlobalTensor&lt;T, GShape, GStride, Layout::ND&gt;;
 
@@ -990,17 +988,15 @@ GTensor dstG(local_data);
 TileT stagingTile(64, 64);
 TASSIGN(stagingTile, 0);
 
-comm::TGET(dstG, srcG, stagingTile);
-</code></pre>
+comm::TGET(dstG, srcG, stagingTile);</code></pre>
 <h3 id="_12">乒乓双缓冲<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
-<pre><code class="language-cpp">constexpr size_t tileUBBytes = ((64 * 64 * sizeof(float) + 1023) / 1024) * 1024;
+<pre class="highlight"><code class="language-cpp">constexpr size_t tileUBBytes = ((64 * 64 * sizeof(float) + 1023) / 1024) * 1024;
 TileT pingTile(64, 64);
 TileT pongTile(64, 64);
 TASSIGN(pingTile, 0);
 TASSIGN(pongTile, tileUBBytes);
 
-comm::TGET(dstG, srcG, pingTile, pongTile);
-</code></pre>
+comm::TGET(dstG, srcG, pingTile, pongTile);</code></pre>
 <h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../communication-runtime_zh/">通信与运行时</a></li>

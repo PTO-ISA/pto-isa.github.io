@@ -959,10 +959,9 @@
 <li><strong>syntax:</strong> <code>%result = pto.vcmp %src0, %src1, %seed, "CMP_MODE" : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.mask</code></li>
 <li><strong>semantics:</strong> Element-wise comparison, output predicate mask.</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
     if (seed[i])
-        dst[i] = (src0[i] CMP src1[i]) ? 1 : 0;
-</code></pre>
+        dst[i] = (src0[i] CMP src1[i]) ? 1 : 0;</code></pre>
 <p><strong>Compare modes:</strong></p>
 <table>
 <thead>
@@ -998,11 +997,10 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Example:</strong></p>
-<pre><code class="language-mlir">%all_active = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
-%lt_mask = pto.vcmp %a, %b, %all_active, &quot;lt&quot; : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
-// lt_mask[i] = 1 if a[i] &lt; b[i]
-</code></pre>
+<p><strong>Example:</strong>
+<pre class="highlight"><code class="language-mlir">%all_active = pto.pset_b32 "PAT_ALL" : !pto.mask
+%lt_mask = pto.vcmp %a, %b, %all_active, "lt" : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
+// lt_mask[i] = 1 if a[i] &lt; b[i]</code></pre></p>
 <ul>
 <li><strong>inputs:</strong> <code>%src0</code>, <code>%src1</code>, and <code>%seed</code>; <code>CMP_MODE</code> selects the comparison
   predicate.</li>
@@ -1017,15 +1015,13 @@
 <li><strong>syntax:</strong> <code>%result = pto.vcmps %src, %scalar, %seed, "CMP_MODE" : !pto.vreg&lt;NxT&gt;, T, !pto.mask -&gt; !pto.mask</code></li>
 <li><strong>semantics:</strong> Compare vector against scalar.</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
     if (seed[i])
-        dst[i] = (src[i] CMP scalar) ? 1 : 0;
-</code></pre>
-<p><strong>Example:</strong></p>
-<pre><code class="language-mlir">%positive_mask = pto.vcmps %values, %c0_f32, %all_active, &quot;gt&quot;
+        dst[i] = (src[i] CMP scalar) ? 1 : 0;</code></pre>
+<p><strong>Example:</strong>
+<pre class="highlight"><code class="language-mlir">%positive_mask = pto.vcmps %values, %c0_f32, %all_active, "gt"
     : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
-// positive_mask[i] = 1 if values[i] &gt; 0
-</code></pre>
+// positive_mask[i] = 1 if values[i] &gt; 0</code></pre></p>
 <ul>
 <li><strong>inputs:</strong> <code>%src</code> is the vector source, <code>%scalar</code> is the scalar comparison
   value, and <code>%seed</code> is the incoming predicate.</li>
@@ -1040,14 +1036,12 @@
 <li><strong>syntax:</strong> <code>%result = pto.vsel %src0, %src1, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Per-lane select based on mask.</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = mask[i] ? src0[i] : src1[i];
-</code></pre>
-<p><strong>Example — Conditional assignment:</strong></p>
-<pre><code class="language-mlir">// dst = mask ? true_vals : false_vals
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = mask[i] ? src0[i] : src1[i];</code></pre>
+<p><strong>Example — Conditional assignment:</strong>
+<pre class="highlight"><code class="language-mlir">// dst = mask ? true_vals : false_vals
 %result = pto.vsel %true_vals, %false_vals, %condition
-    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre></p>
 <ul>
 <li><strong>inputs:</strong> <code>%src0</code> is the true-path vector, <code>%src1</code> is the false-path vector,
   and <code>%mask</code> selects between them.</li>
@@ -1061,9 +1055,8 @@
 <li><strong>syntax:</strong> <code>%result = pto.vselr %src0, %src1 : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Select with reversed mask semantics.</li>
 </ul>
-<pre><code class="language-c">for (int i = 0; i &lt; N; i++)
-    dst[i] = mask[i] ? src1[i] : src0[i];  // reversed from vsel
-</code></pre>
+<pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
+    dst[i] = mask[i] ? src1[i] : src0[i];  // reversed from vsel</code></pre>
 <ul>
 <li><strong>inputs:</strong> <code>%src0</code> and <code>%src1</code> are the source vectors.</li>
 <li><strong>outputs:</strong> <code>%result</code> is the selected vector.</li>
@@ -1083,29 +1076,28 @@
 </ul>
 <hr />
 <h2 id="typical-usage">Typical Usage<a class="headerlink" href="#typical-usage" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">// Clamp negative values to zero (manual ReLU)
-%all = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
+<pre class="highlight"><code class="language-mlir">// Clamp negative values to zero (manual ReLU)
+%all = pto.pset_b32 "PAT_ALL" : !pto.mask
 %zero = pto.vbr %c0_f32 : f32 -&gt; !pto.vreg&lt;64xf32&gt;
-%neg_mask = pto.vcmps %input, %c0_f32, %all, &quot;lt&quot; : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
+%neg_mask = pto.vcmps %input, %c0_f32, %all, "lt" : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
 %clamped = pto.vsel %zero, %input, %neg_mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Element-wise max via compare+select
-%gt_mask = pto.vcmp %a, %b, %all, &quot;gt&quot; : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
+%gt_mask = pto.vcmp %a, %b, %all, "gt" : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.mask
 %max_ab = pto.vsel %a, %b, %gt_mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Threshold filter
-%above_thresh = pto.vcmps %scores, %threshold, %all, &quot;ge&quot; : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
-%filtered = pto.vsel %scores, %zero, %above_thresh : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+%above_thresh = pto.vcmps %scores, %threshold, %all, "ge" : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
+%filtered = pto.vsel %scores, %zero, %above_thresh : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <hr />
 <h2 id="compare-select-pattern">Compare + Select Pattern<a class="headerlink" href="#compare-select-pattern" title="Permanent link">&para;</a></h2>
-<pre><code class="language-mlir">// Softmax safe exp: exp(x - max) where x &lt; max returns exp of negative
+<pre class="highlight"><code class="language-mlir">// Softmax safe exp: exp(x - max) where x &lt; max returns exp of negative
 // but we want to clamp to avoid underflow
 
-%all = pto.pset_b32 &quot;PAT_ALL&quot; : !pto.mask
+%all = pto.pset_b32 "PAT_ALL" : !pto.mask
 
 // 1. Compare against threshold
-%too_small = pto.vcmps %x_minus_max, %min_exp_arg, %all, &quot;lt&quot;
+%too_small = pto.vcmps %x_minus_max, %min_exp_arg, %all, "lt"
     : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
 
 // 2. Clamp values below threshold
@@ -1113,8 +1105,7 @@
     : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
 
 // 3. Safe exp
-%exp_result = pto.vexp %clamped, %all : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-</code></pre>
+%exp_result = pto.vexp %clamped, %all : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
               
             </div>
           </div><footer>
