@@ -947,6 +947,7 @@ PTO_INST RecordEvent TPRELU(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDa
 <li>迭代域由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定。</li>
 <li>A3 需要临时空间，而 A5 不使用 <code>tmp</code>。</li>
 <li>A3 上，两个源 tile、目标 tile 和临时空间不能互相重叠。</li>
+<li>A3 上，<code>tmp.GetValidRow()</code> 必须大于等于 <code>dst.GetValidCol() + 1</code>。</li>
 </ul>
 </div>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
@@ -956,11 +957,14 @@ PTO_INST RecordEvent TPRELU(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDa
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
 </div>
-<h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
 <ul>
 <li>A3 需要 <code>tmp</code> 参与实现。</li>
 <li>A5 保留相同的 PTO 可见语义，但不要求 <code>tmp</code> 真正参与硬件路径。</li>
 </ul>
+</details>
 <h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
 <p>英文页当前把 <code>TPRELU</code> 归到与二元算术同一类模型：</p>
