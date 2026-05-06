@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/README_zh/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TPOP/" />
       <link rel="shortcut icon" href="../../../img/favicon.ico" />
-    <title>README zh - PTO ISA Manual</title>
+    <title>TPOP - PTO ISA Manual</title>
     <link rel="stylesheet" href="../../../css/theme.css" />
     <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "README zh";
-        var mkdocs_page_input_path = "docs/isa/README_zh.md";
-        var mkdocs_page_url = "/docs/isa/README_zh/";
+        var mkdocs_page_name = "TPOP";
+        var mkdocs_page_input_path = "docs/isa/TPOP.md";
+        var mkdocs_page_url = "/docs/isa/TPOP/";
       </script>
     
     <!--[if lt IE 9]>
@@ -897,7 +897,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">README zh</li>
+      <li class="breadcrumb-item active">TPOP</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -906,64 +906,139 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/isa/README_zh.md` -->
+                <!-- Generated from `docs/isa/TPOP.md` -->
 
-<p align="center">
-  <img src="../../figures/pto_logo.svg" alt="PTO Tile Lib" width="180" />
-</p>
+<h1 id="tpop">TPOP<a class="headerlink" href="#tpop" title="Permanent link">&para;</a></h1>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Pop a consumer tile from a <code>TPipe</code> FIFO for Cube-Vector communication.</p>
+<p>This page describes both the TileData overload and the <code>GlobalData</code> slot-view overload. In the TileData flow, <code>TPOP</code> performs both the data-ready wait and the free-space notification; a separate <code>TFREE</code> is not required for the same tile. In the <code>GlobalData</code> flow, <code>TPOP</code> returns a FIFO slot view and the caller must release it with <code>TFREE(Pipe&amp;, GlobalData&amp;)</code>.</p>
+<h2 id="operation-semantics">Operation Semantics<a class="headerlink" href="#operation-semantics" title="Permanent link">&para;</a></h2>
+<p>For the TileData overload, <code>TPOP</code> performs three steps:</p>
+<ol>
+<li>Wait for producer data-ready synchronization.</li>
+<li>Load the current FIFO slot into the consumer tile.</li>
+<li>Notify free space when <code>Pipe::shouldNotifyFree(tileIndex)</code> is true.</li>
+</ol>
+<p>The consumer tile index is incremented after the FIFO slot address is computed. The free-space notification uses the popped tile index.</p>
+<p>For the <code>GlobalData</code> overload, <code>TPOP</code> waits for data-ready, assigns <code>gmTensor</code> to the current FIFO slot address, and increments the consumer tile index. It does not load data into a local tile and does not release the slot.</p>
+<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
+<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
+<pre class="highlight"><code class="language-cpp">template &lt;typename Pipe, typename TileCons, TileSplitAxis Split,
+          std::enable_if_t&lt;is_tile_data_v&lt;TileCons&gt;, int&gt; = 0, typename... WaitEvents&gt;
+PTO_INST RecordEvent TPOP(Pipe &amp;pipe, TileCons &amp;tile, WaitEvents &amp;... events);
 
-<h1 id="pto-isa">PTO ISA 手册与参考<a class="headerlink" href="#pto-isa" title="Permanent link">&para;</a></h1>
-<p>本文档目录是 PTO ISA 的权威文档树。它将架构手册、指令集指南、家族契约和精确的指令参考分组整合在同一个位置。</p>
-<h2 id="pto-isa_1">PTO ISA 中的文本汇编<a class="headerlink" href="#pto-isa_1" title="Permanent link">&para;</a></h2>
-<p>本树是权威的 PTO ISA 手册。文本汇编拼写属于 PTO ISA 的语法层，而非第二份并行的架构手册。</p>
+template &lt;typename Pipe, typename GlobalData, TileSplitAxis Split,
+          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0, typename... WaitEvents&gt;
+PTO_INST RecordEvent TPOP(Pipe &amp;pipe, GlobalData &amp;gmTensor, WaitEvents &amp;... events);</code></pre>
+<p><code>Pipe</code> is typically an A2A3 <code>TPipe</code> declared in <code>include/pto/npu/a2a3/TPush.hpp</code>:</p>
+<pre class="highlight"><code class="language-cpp">template &lt;uint8_t FlagID, uint8_t DirType, uint32_t SlotSize, uint32_t SlotNum,
+          uint32_t LocalSlotNum = 2, bool IsNoSplit = false, bool EN_UNIT_FLAG = false&gt;
+struct TPipe;</code></pre>
+<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li>PTO ISA 定义了架构可见的语义、合法性、状态、排序、目标 profile 边界，以及 tile、vector、scalar、communication、系统调度操作的可见行为</li>
-<li>PTO-AS 是用于编写这些操作和操作数的汇编拼写。它是 PTO ISA 的表达方式的一部分，而非具有不同语义的分立 ISA</li>
+<li><strong>A2A3 TileData consumer</strong>:<ul>
+<li><code>TileCons::Loc</code> must be <code>TileType::Vec</code> or <code>TileType::Mat</code>.</li>
+<li><code>Direction::DIR_C2V</code>: vector consumes data produced by cube.</li>
+<li><code>Direction::DIR_V2C</code>: cube consumes data produced by vector.</li>
+<li><code>Direction::DIR_BOTH</code>: both C2V and V2C consumers are supported by the same pipe type.</li>
 </ul>
-<p>如果问题是"PTO 程序在 CPU、A2/A3 和 A5 上的含义是什么？"，请留在本树中。如果问题是"这个操作的操作数形状或文本拼写是什么？"，请使用本树中语法与操作数相关的页面。</p>
-<h2 id="_1">从这里开始<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<h2 id="_2">模型层次<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>阅读顺序与手册章节地图一致：先编程模型与机器模型，再语法与状态，再内存，最后是操作码参考。</p>
-<ul>
-<li><a href="../programming-model/tiles-and-valid-regions_zh/">编程模型</a></li>
-<li><a href="../machine-model/execution-agents_zh/">机器模型</a></li>
-<li><a href="../syntax-and-operands/assembly-model_zh/">语法与操作数</a></li>
-<li><a href="../state-and-types/type-system_zh/">类型系统</a></li>
-<li><a href="../state-and-types/location-intent-and-legality_zh/">位置意图与合法性</a></li>
-<li>
-<p><a href="../memory-model/consistency-baseline_zh/">内存模型</a></p>
 </li>
-<li>
-<p><a href="../instruction-families/README_zh/">指令集总览</a></p>
+<li><strong>Local consumer buffers</strong>:<ul>
+<li>For C2V vector consumers, <code>TPipe</code> assigns the tile to <code>C2V_CONSUMER_BUF</code> with local FIFO rotation.</li>
+<li>For V2C matrix consumers, <code>TPipe</code> assigns the tile to <code>V2C_CONSUMER_BUF</code> with local FIFO rotation.</li>
+</ul>
 </li>
-<li><a href="../instruction-families/README_zh/">指令族</a></li>
-<li><a href="../reference/format-of-instruction-descriptions_zh/">指令描述格式</a></li>
-<li><a href="../tile/README_zh/">Tile 指令集参考</a></li>
-<li><a href="../vector/README_zh/">Vector 指令集参考</a></li>
-<li><a href="../scalar/README_zh/">标量与控制参考</a></li>
-<li><a href="../comm/README_zh/">通信指令集参考</a></li>
-<li><a href="../system/README_zh/">系统调度指令集参考</a></li>
-<li><a href="../conventions_zh/">通用约定</a></li>
+<li><strong>Split behavior</strong>:<ul>
+<li><code>TileSplitAxis::TILE_NO_SPLIT</code>: no sub-vector offset is applied.</li>
+<li><code>TileSplitAxis::TILE_UP_DOWN</code>: vector subblocks consume row halves.</li>
+<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>: vector subblocks consume column halves.</li>
 </ul>
-<h2 id="_3">支持性参考<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../reference/README_zh/">参考注释</a>（术语表、诊断、可移植性、规范来源）</li>
+</li>
+<li><strong>Synchronization</strong>:<ul>
+<li>Data-ready wait is performed for each <code>TPOP</code>.</li>
+<li>Free-space notifications are sparse and controlled by <code>Pipe::SyncPeriod</code>.</li>
 </ul>
-<h2 id="_4">核间通信<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../TALLOC_zh/">TALLOC</a> - 将 TPipe FIFO 槽位分配为一个 GlobalTensor 视图。</li>
-<li><a href="../TPUSH_zh/">TPUSH</a> - 将生产者 tile 推入 TPipe FIFO，用于 Cube-Vector 通信。</li>
-<li><a href="../TPOP_zh/">TPOP</a> - 从 TPipe FIFO 弹出消费者 tile/globalTensor，用于 Cube-Vector 通信。</li>
-<li><a href="../TFREE_zh/">TFREE</a> - 释放 TPipe 的 FIFO 空间；对于 TileData/GlobalTensor 的 TPOP 流程，该操作为空操作。</li>
+</li>
+<li><strong>GlobalData slot view</strong>:<ul>
+<li><code>gmTensor</code> is assigned to the FIFO slot base address selected by <code>pipe.cons.tileIndex</code>.</li>
+<li>For C2V split modes, vector subblock offsets are applied according to <code>Split</code>.</li>
+<li>The caller must call <code>TFREE(Pipe&amp;, GlobalData&amp;)</code> after all loads from the slot view are complete.</li>
 </ul>
-<p><code>tile/</code>、<code>vector/</code>、<code>scalar/</code>、<code>comm/</code> 和 <code>system/</code> 下的分组指令集树是权威的 PTO ISA 路径。</p>
-<ul>
-<li><code>docs/isa/tile/ops/</code></li>
-<li><code>docs/isa/vector/ops/</code></li>
-<li><code>docs/isa/scalar/ops/</code></li>
-<li><code>docs/isa/comm/</code></li>
-<li><code>docs/isa/system/ops/</code></li>
+</li>
 </ul>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<h3 id="c2v-vector-pop">C2V Vector Pop<a class="headerlink" href="#c2v-vector-pop" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+template &lt;typename T&gt;
+AICORE void example_c2v(__gm__ void *fifoMem)
+{
+    constexpr uint32_t M = 128;
+    constexpr uint32_t N = 128;
+    constexpr uint32_t FlagID = 0;
+    constexpr uint32_t FifoDepth = 2;
+    constexpr uint32_t LocalBase = 0x0;
+
+    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(T), FifoDepth&gt;;
+    using VecTile = Tile&lt;TileType::Vec, T, M / 2, N, BLayout::RowMajor, M / 2, N&gt;;
+
+    Pipe pipe(fifoMem, LocalBase, 0x0);
+    VecTile tile;
+
+    TPOP&lt;Pipe, VecTile, TileSplitAxis::TILE_UP_DOWN&gt;(pipe, tile);
+}</code></pre>
+<h3 id="v2c-matrix-pop">V2C Matrix Pop<a class="headerlink" href="#v2c-matrix-pop" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+template &lt;typename T&gt;
+AICORE void example_v2c(__gm__ void *fifoMem)
+{
+    constexpr uint32_t M = 128;
+    constexpr uint32_t N = 128;
+    constexpr uint32_t FlagID = 0;
+    constexpr uint32_t FifoDepth = 2;
+    constexpr uint32_t LocalBase = 0x0;
+
+    using Pipe = TPipe&lt;FlagID, Direction::DIR_V2C, M * N * sizeof(T), FifoDepth&gt;;
+    using MatTile = Tile&lt;TileType::Mat, T, M, N, BLayout::ColMajor, M, N, SLayout::RowMajor, 512&gt;;
+
+    Pipe pipe(fifoMem, 0x0, LocalBase);
+    MatTile tile;
+
+    TPOP&lt;Pipe, MatTile, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, tile);
+}</code></pre>
+<h3 id="globaldata-slot-pop">GlobalData Slot Pop<a class="headerlink" href="#globaldata-slot-pop" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+template &lt;typename T&gt;
+AICORE void example_globaldata(__gm__ void *fifoMem)
+{
+    constexpr uint32_t M = 128;
+    constexpr uint32_t N = 128;
+    constexpr uint32_t FlagID = 0;
+    constexpr uint32_t FifoDepth = 2;
+
+    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(T), FifoDepth&gt;;
+    using SlotGlobal = GlobalTensor&lt;T, Shape&lt;1, 1, 1, M / 2, N&gt;, Stride&lt;1, 1, 1, N, 1&gt;&gt;;
+    using VecTile = Tile&lt;TileType::Vec, T, M / 2, N, BLayout::RowMajor, M / 2, N&gt;;
+
+    Pipe pipe(fifoMem, 0x0, 0x0);
+    SlotGlobal slot;
+    VecTile tile;
+    TASSIGN(tile, 0x0);
+
+    TPOP&lt;Pipe, SlotGlobal, TileSplitAxis::TILE_UP_DOWN&gt;(pipe, slot);
+    TLOAD(tile, slot);
+    TFREE&lt;Pipe, SlotGlobal, TileSplitAxis::TILE_UP_DOWN&gt;(pipe, slot);
+}</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
+<p>The current public assembly reference does not define a stable PTO-AS spelling for <code>TPOP</code>. Use the C++ intrinsic form for manual CV FIFO programming.</p>
               
             </div>
           </div><footer>
