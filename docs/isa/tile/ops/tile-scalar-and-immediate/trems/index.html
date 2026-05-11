@@ -968,9 +968,15 @@
 <pre class="highlight"><code class="language-text">pto.trems ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataTmp, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;auto PrecisionType = RemSAlgorithm::DEFAULT, typename TileDataDst, typename TileDataSrc,
+          typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TREMS(TileDataDst &amp;dst, TileDataSrc &amp;src, typename TileDataSrc::DType scalar,
                            TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
+<p><code>PrecisionType</code> selects the scalar remainder algorithm:</p>
+<ul>
+<li><code>RemSAlgorithm::DEFAULT</code>: normal algorithm, faster with lower precision.</li>
+<li><code>RemSAlgorithm::HIGH_PRECISION</code>: high-precision algorithm, slower and supported only for <code>float</code>.</li>
+</ul>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code> is the source tile.</li>
@@ -996,6 +1002,12 @@ PTO_INST RecordEvent TREMS(TileDataDst &amp;dst, TileDataSrc &amp;src, typename 
 <p><strong>Valid Region</strong>:</p>
 <ul>
 <li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
+</ul>
+</li>
+<li>
+<p><strong>High-precision algorithm</strong>:</p>
+<ul>
+<li>Only available on A5; A2A3 ignores the <code>PrecisionType</code> option.</li>
 </ul>
 </li>
 </ul>
