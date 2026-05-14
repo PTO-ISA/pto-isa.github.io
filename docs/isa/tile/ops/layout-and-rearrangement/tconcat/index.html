@@ -374,6 +374,12 @@
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.tconcat</a>
     <ul class="current">
     <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#basic-form-3-arguments">Basic Form (3 Arguments)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#indexed-form-5-6-arguments">Indexed Form (5-6 Arguments)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
@@ -381,17 +387,45 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General Constraints / Checks</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#shape-constraints">Shape Constraints</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#data-type-constraints">Data Type Constraints</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-implementation-checks">A5 Implementation Checks</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#indexed-form">Indexed Form</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#auto-mode_1">Auto Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual-mode_1">Manual Mode</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#related-instructions">Related Instructions</a>
     </li>
     </ul>
                 </li>
@@ -934,26 +968,145 @@
 
 <h1 id="tconcat">TCONCAT<a class="headerlink" href="#tconcat" title="Permanent link">&para;</a></h1>
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
-<p><img alt="TCONCAT tile operation" src="../../../../../figures/isa/TCONCAT.svg" /></p>
+<h3 id="basic-form-3-arguments">Basic Form (3 Arguments)<a class="headerlink" href="#basic-form-3-arguments" title="Permanent link">&para;</a></h3>
+<p><img alt="TCONCAT basic form" src="../../../../../figures/isa/TCONCAT.svg" /></p>
+<h3 id="indexed-form-5-6-arguments">Indexed Form (5-6 Arguments)<a class="headerlink" href="#indexed-form-5-6-arguments" title="Permanent link">&para;</a></h3>
+<p><img alt="TCONCAT indexed form" src="../../../../../figures/isa/TCONCAT_idx.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Concatenate two source tiles along the column dimension into a destination tile.</p>
+<p>Concatenate two source tiles (<code>src0</code> and <code>src1</code>) horizontally into a destination tile (<code>dst</code>) along the column dimension.
+Each row of <code>dst</code> contains the concatenation of the corresponding rows from <code>src0</code> and <code>src1</code>.</p>
+<p><code>TCONCAT</code> is used for:</p>
+<ul>
+<li>Concatenating two tiles along the column axis.</li>
+<li>Joining tiles in attention and transformer kernels, such as KV cache fragments.</li>
+<li>Combining partial results from split operations.</li>
+</ul>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
-<p>Semantics are instruction-specific. Unless stated otherwise, behavior is defined over the destination valid region.</p>
+<p>For each row <code>i</code> in the valid region:</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i, j} = \begin{cases} \mathrm{src0}_{i, j} &amp; \text{if } 0 \le j &lt; \mathrm{validCols0} \\ \mathrm{src1}_{i, j - \mathrm{validCols0}} &amp; \text{if } \mathrm{validCols0} \le j &lt; \mathrm{validCols0} + \mathrm{validCols1} \end{cases} \]</div>
+<p>Where <code>validCols0 = src0.GetValidCol()</code> and <code>validCols1 = src1.GetValidCol()</code>.</p>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = pto.tconcat ...</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">pto.tconcat ins(...) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+<p>PTO-AS form: see <a href="../../../../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = pto.tconcat %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tconcat ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>.</p>
+<p>Declared in <code>include/pto/npu/a5/TConcat.hpp</code>:</p>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDst, typename TileSrc0, typename TileSrc1&gt;
+PTO_INST void TCONCAT(TileDst &amp;dst, TileSrc0 &amp;src0, TileSrc1 &amp;src1);
+
+template &lt;typename TileDst, typename TileSrc0, typename TileSrc1, typename TileSrc0Idx, typename TileSrc1Idx&gt;
+PTO_INST void TCONCAT(TileDst &amp;dst, TileSrc0 &amp;src0, TileSrc1 &amp;src1, TileSrc0Idx &amp;src0Idx, TileSrc1Idx &amp;src1Idx);
+
+template &lt;typename TileDst, typename TileSrc0, typename TileSrc1, typename TileDstIdx, typename TileSrc0Idx,
+          typename TileSrc1Idx&gt;
+PTO_INST void TCONCAT(TileDst &amp;dst, TileSrc0 &amp;src0, TileSrc1 &amp;src1, TileDstIdx &amp;dstIdx, TileSrc0Idx &amp;src0Idx,
+                      TileSrc1Idx &amp;src1Idx);</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
-<p>Refer to backend-specific legality checks for data type/layout/location/shape constraints.</p>
-</div>
+<h3 id="general-constraints-checks">General Constraints / Checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TCONCAT</code> has three overload variants:<ul>
+<li>Basic form: <code>TCONCAT(dst, src0, src1)</code> concatenates full valid regions.</li>
+<li>Indexed form (5 args): <code>TCONCAT(dst, src0, src1, src0Idx, src1Idx)</code> uses per-row index tiles to specify dynamic column counts.</li>
+<li>Indexed form (6 args): <code>TCONCAT(dst, src0, src1, dstIdx, src0Idx, src1Idx)</code> also outputs the concatenated column count per row.</li>
+</ul>
+</li>
+<li>All tiles must have <code>TileType::Vec</code>.</li>
+<li>All tiles must use row-major layout (<code>isRowMajor == true</code>).</li>
+</ul>
+<h3 id="shape-constraints">Shape Constraints<a class="headerlink" href="#shape-constraints" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Basic form:<ul>
+<li><code>dst.GetValidRow() == src0.GetValidRow() == src1.GetValidRow()</code></li>
+<li><code>dst.GetValidCol() == src0.GetValidCol() + src1.GetValidCol()</code></li>
+</ul>
+</li>
+<li>Indexed form:<ul>
+<li>Row count constraints match the basic form.</li>
+<li>Column counts are determined dynamically from index tiles.</li>
+<li><code>dstIdx.GetValidRow() == 1</code> for the 6-argument form.</li>
+</ul>
+</li>
+</ul>
+<h3 id="data-type-constraints">Data Type Constraints<a class="headerlink" href="#data-type-constraints" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
+<li>Source and destination tiles must have identical element types.</li>
+<li>Index tiles must use integer types (<code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>).</li>
+</ul>
+<h3 id="a5-implementation-checks">A5 Implementation Checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>All tiles must be <code>TileType::Vec</code>.</li>
+<li>All tiles must be row-major layout.</li>
+<li><code>validRows</code> must not exceed the physical tile rows for any operand.</li>
+<li>Index tiles, if provided, must satisfy type compatibility checks.</li>
+</ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<p>See related instruction pages in <code>docs/isa/</code> for concrete Auto/Manual usage patterns.</p>
+<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto() {
+    using TileT = Tile&lt;TileType::Vec, float, 16, 32&gt;;
+    TileT src0(16, 16);
+    TileT src1(16, 16);
+    TileT dst(16, 32);
+
+    TCONCAT(dst, src0, src1);
+}</code></pre>
+<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual() {
+    using TileT = Tile&lt;TileType::Vec, half, 16, 64, BLayout::RowMajor, 16, 64&gt;;
+    TileT src0, src1, dst;
+
+    TASSIGN(src0, 0x1000);
+    TASSIGN(src1, 0x2000);
+    TASSIGN(dst, 0x3000);
+
+    src0.SetValidRegion(16, 32);
+    src1.SetValidRegion(16, 32);
+
+    TCONCAT(dst, src0, src1);
+}</code></pre>
+<h3 id="indexed-form">Indexed Form<a class="headerlink" href="#indexed-form" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_indexed() {
+    using TileT = Tile&lt;TileType::Vec, float, 16, 64&gt;;
+    using IdxTileT = Tile&lt;TileType::Vec, int32_t, 16, 1&gt;;
+
+    TileT src0(16, 32);
+    TileT src1(16, 32);
+    TileT dst(16, 64);
+    IdxTileT src0Idx, src1Idx;
+
+    TCONCAT(dst, src0, src1, src0Idx, src1Idx);
+}</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
+<h3 id="auto-mode_1">Auto Mode<a class="headerlink" href="#auto-mode_1" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
+%dst = pto.tconcat %src0, %src1 : (!pto.tile&lt;16x32xf32&gt;, !pto.tile&lt;16x32xf32&gt;) -&gt; !pto.tile&lt;16x64xf32&gt;</code></pre>
+<h3 id="manual-mode_1">Manual Mode<a class="headerlink" href="#manual-mode_1" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
+# Optional for tile operands:
+# pto.tassign %src0, @tile(0x1000)
+# pto.tassign %src1, @tile(0x2000)
+# pto.tassign %dst, @tile(0x3000)
+%dst = pto.tconcat %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h2 id="related-instructions">Related Instructions<a class="headerlink" href="#related-instructions" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tinsert/">TINSERT</a> - Insert a sub-tile into a destination tile at a specified offset.</li>
+<li><a href="../textract/">TEXTRACT</a> - Extract a sub-tile from a source tile.</li>
+<li><a href="../treshape/">TRESHAPE</a> - Reinterpret a tile as another tile type/shape.</li>
+</ul>
               
             </div>
           </div><footer>

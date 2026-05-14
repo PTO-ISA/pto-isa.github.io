@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/tile/ops/layout-and-rearrangement/tconcat_zh/" />
       <link rel="shortcut icon" href="../../../../../../img/favicon.ico" />
-    <title>TCONCAT - PTO ISA Manual</title>
+    <title>Tconcat zh - PTO ISA Manual</title>
     <link rel="stylesheet" href="../../../../../../css/theme.css" />
     <link rel="stylesheet" href="../../../../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,7 +13,7 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "TCONCAT";
+        var mkdocs_page_name = "Tconcat zh";
         var mkdocs_page_input_path = "docs/isa/tile/ops/layout-and-rearrangement/tconcat_zh.md";
         var mkdocs_page_url = "/docs/isa/tile/ops/layout-and-rearrangement/tconcat_zh/";
       </script>
@@ -897,7 +897,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">TCONCAT</li>
+      <li class="breadcrumb-item active">Tconcat zh</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -906,16 +906,146 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="tconcat">TCONCAT<a class="headerlink" href="#tconcat" title="Permanent link">&para;</a></h1>
-<p>自动生成的中文入口页，用于保证中文导航保持在中文路径下。</p>
-<h2 id="_1">当前状态<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+                <!-- Generated from `docs/isa/tile/ops/layout-and-rearrangement/tconcat_zh.md` -->
+
+<h1 id="tconcat">TCONCAT<a class="headerlink" href="#tconcat" title="Permanent link">&para;</a></h1>
+<h2 id="tile">Tile 操作示意图<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h2>
+<h3 id="3">基本形式（3参数）<a class="headerlink" href="#3" title="Permanent link">&para;</a></h3>
+<p><img alt="TCONCAT 基本形式" src="../../../../../figures/isa/TCONCAT.svg" /></p>
+<h3 id="5-6">索引形式（5-6参数）<a class="headerlink" href="#5-6" title="Permanent link">&para;</a></h3>
+<p><img alt="TCONCAT 索引形式" src="../../../../../figures/isa/TCONCAT_idx.svg" /></p>
+<h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>将两个源 Tile（<code>src0</code> 和 <code>src1</code>）沿列维度水平拼接到目标 Tile（<code>dst</code>）中。<code>dst</code> 的每一行包含来自 <code>src0</code> 和 <code>src1</code> 对应行的拼接结果。</p>
+<p><code>TCONCAT</code> 用于：</p>
 <ul>
-<li><a href="../tconcat/">对应英文页面</a></li>
-<li><a href="../../../../PTO-Virtual-ISA-Manual_zh.md">中文手册入口</a></li>
-<li><a href="../../../../README_zh/">中文 ISA 指令参考入口</a></li>
+<li>沿列轴拼接两个 Tile（水平拼接）</li>
+<li>在 attention 和 transformer 架构中拼接 Tile（例如拼接 KV cache 条目）</li>
+<li>合并来自拆分操作的局部结果</li>
 </ul>
-<h2 id="_2">说明<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当前 PTO ISA 的新英文手册结构已经展开，但对应的中文正文尚未完全按新结构补齐。在中文导航中点击本页时，你仍然停留在中文路径下；若需要完整细节，请使用上面的英文页面或已有中文参考页。</p>
+<h2 id="_2">数学解释<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对于有效区域中的每一行 <code>i</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i, j} = \begin{cases} \mathrm{src0}_{i, j} &amp; \text{若 } 0 \le j &lt; \mathrm{validCols0} \\ \mathrm{src1}_{i, j - \mathrm{validCols0}} &amp; \text{若 } \mathrm{validCols0} \le j &lt; \mathrm{validCols0} + \mathrm{validCols1} \end{cases} \]</div>
+<p>其中 <code>validCols0 = src0.GetValidCol()</code> 和 <code>validCols1 = src1.GetValidCol()</code>。</p>
+<h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式：参见 <a href="../../../../assembly/PTO-AS_zh.md">PTO-AS 规范</a>。</p>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = pto.tconcat %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tconcat ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+<h2 id="c">C++ 内建函数<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/npu/a5/TConcat.hpp</code>：</p>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDst, typename TileSrc0, typename TileSrc1&gt;
+PTO_INST void TCONCAT(TileDst &amp;dst, TileSrc0 &amp;src0, TileSrc1 &amp;src1);
+
+template &lt;typename TileDst, typename TileSrc0, typename TileSrc1, typename TileSrc0Idx, typename TileSrc1Idx&gt;
+PTO_INST void TCONCAT(TileDst &amp;dst, TileSrc0 &amp;src0, TileSrc1 &amp;src1, TileSrc0Idx &amp;src0Idx, TileSrc1Idx &amp;src1Idx);
+
+template &lt;typename TileDst, typename TileSrc0, typename TileSrc1, typename TileDstIdx, typename TileSrc0Idx, typename TileSrc1Idx&gt;
+PTO_INST void TCONCAT(TileDst &amp;dst, TileSrc0 &amp;src0, TileSrc1 &amp;src1, TileDstIdx &amp;dstIdx, TileSrc0Idx &amp;src0Idx, TileSrc1Idx &amp;src1Idx);</code></pre>
+<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">通用约束 / 检查<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>TCONCAT</code> 有三种重载变体：<ul>
+<li>基本形式：<code>TCONCAT(dst, src0, src1)</code> - 拼接完整有效区域</li>
+<li>索引形式（5参数）：<code>TCONCAT(dst, src0, src1, src0Idx, src1Idx)</code> - 使用每行索引 Tile 指定动态列数</li>
+<li>索引形式（6参数）：<code>TCONCAT(dst, src0, src1, dstIdx, src0Idx, src1Idx)</code> - 同时输出每行的拼接列数</li>
+</ul>
+</li>
+<li>所有 Tile 必须为 <code>TileType::Vec</code>（向量 Tile）</li>
+<li>所有 Tile 必须使用行主序布局（<code>isRowMajor == true</code>）</li>
+</ul>
+<h3 id="_6">形状约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>基本形式：<ul>
+<li><code>dst.GetValidRow() == src0.GetValidRow() == src1.GetValidRow()</code></li>
+<li><code>dst.GetValidCol() == src0.GetValidCol() + src1.GetValidCol()</code></li>
+</ul>
+</li>
+<li>索引形式：<ul>
+<li>行数约束与基本形式相同</li>
+<li>列数由索引 Tile 动态确定</li>
+<li>6参数形式要求 <code>dstIdx.GetValidRow() == 1</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="_7">数据类型约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持的元素类型：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code></li>
+<li>源 Tile 和目标 Tile 必须具有相同的元素类型</li>
+<li>索引 Tile 必须使用整数类型（<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>）</li>
+</ul>
+<h3 id="a5">A5 实现检查<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>所有 Tile 必须为 <code>TileType::Vec</code></li>
+<li>所有 Tile 必须为行主序布局</li>
+<li><code>validRows</code> 不能超过任何操作数的物理 Tile 行数</li>
+<li>索引 Tile（如果提供）必须满足类型兼容性检查</li>
+</ul>
+<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h3 id="auto">Auto 模式<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto() {
+    using TileT = Tile&lt;TileType::Vec, float, 16, 32&gt;;
+    TileT src0(16, 16);
+    TileT src1(16, 16);
+    TileT dst(16, 32);
+
+    TCONCAT(dst, src0, src1);
+}</code></pre>
+<h3 id="manual">Manual 模式<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual() {
+    using TileT = Tile&lt;TileType::Vec, half, 16, 64, BLayout::RowMajor, 16, 64&gt;;
+    TileT src0, src1, dst;
+
+    TASSIGN(src0, 0x1000);
+    TASSIGN(src1, 0x2000);
+    TASSIGN(dst, 0x3000);
+
+    src0.SetValidRegion(16, 32);
+    src1.SetValidRegion(16, 32);
+
+    TCONCAT(dst, src0, src1);
+}</code></pre>
+<h3 id="_9">索引形式示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_indexed() {
+    using TileT = Tile&lt;TileType::Vec, float, 16, 64&gt;;
+    using IdxTileT = Tile&lt;TileType::Vec, int32_t, 16, 1&gt;;
+
+    TileT src0(16, 32);
+    TileT src1(16, 32);
+    TileT dst(16, 64);
+    IdxTileT src0Idx, src1Idx;
+
+    TCONCAT(dst, src0, src1, src0Idx, src1Idx);
+}</code></pre>
+<h2 id="asm">ASM 形式示例<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="auto_1">Auto 模式<a class="headerlink" href="#auto_1" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Auto 模式：编译器/运行时管理放置和调度。
+%dst = pto.tconcat %src0, %src1 : (!pto.tile&lt;16x32xf32&gt;, !pto.tile&lt;16x32xf32&gt;) -&gt; !pto.tile&lt;16x64xf32&gt;</code></pre>
+<h3 id="manual_1">Manual 模式<a class="headerlink" href="#manual_1" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Manual 模式：在发出指令之前必须显式绑定资源。
+# Tile 操作数的可选绑定：
+# pto.tassign %src0, @tile(0x1000)
+# pto.tassign %src1, @tile(0x2000)
+# pto.tassign %dst, @tile(0x3000)
+%dst = pto.tconcat %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h2 id="_10">相关指令<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../tinsert_zh/">TINSERT</a> - 在指定偏移处将子 Tile 插入到目标 Tile 中</li>
+<li><a href="../textract_zh/">TEXTRACT</a> - 从源 Tile 中提取子 Tile</li>
+<li><a href="../treshape_zh/">TRESHAPE</a> - 将 Tile 重新解释为另一种 Tile 类型/形状</li>
+</ul>
               
             </div>
           </div><footer>
