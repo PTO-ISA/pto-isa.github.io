@@ -121,6 +121,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsync/">pto.tsync</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/syncall/">pto.syncall</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tassign/">pto.tassign</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/talias/">pto.talias</a>
@@ -322,6 +324,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tload/">pto.tload</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tprefetch/">pto.tprefetch</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tprefetch-async/">pto.tprefetch_async</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tstore/">pto.tstore</a>
                 </li>
@@ -846,6 +850,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#template-parameter">Template Parameter</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#constraints">Constraints</a>
@@ -932,7 +938,7 @@
 <h1 id="ptotgather">pto.tgather<a class="headerlink" href="#ptotgather" title="Permanent link">&para;</a></h1>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>Gather operation: the calling NPU (root) collects data from all ranks in the parallel group and concatenates the results along <strong>DIM_3</strong> (row dimension) into a local output buffer.</p>
-<p>Only the root needs to execute <code>pto.tgather</code>. Non-root ranks only need to ensure their source buffers are ready and remain valid for the duration of the operation. Calling <code>pto.tgather</code> on non-root ranks is undefined behavior.</p>
+<p>Only the root needs to execute <code>TGATHER</code>. Non-root ranks only need to ensure their source buffers are ready and remain valid for the duration of the operation. Calling <code>TGATHER</code> on non-root ranks is undefined behavior.</p>
 <p><strong>Large Tile Support</strong>: When the GlobalTensor exceeds the UB tile capacity in rows and/or columns, the transfer is automatically chunked via 2D sliding — the same mechanism used by other PTO-COMM instructions.</p>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
 <p>Each rank <span class="arithmatex">\(r\)</span> has source data of shape <span class="arithmatex">\((D_0, D_1, D_2, H, W)\)</span>. The gather concatenates all <span class="arithmatex">\(N\)</span> ranks along DIM_3:</p>
@@ -941,22 +947,31 @@
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>PTO-AS form: see <a href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a>.</p>
 <p>Synchronous form:</p>
-<pre class="highlight"><code class="language-text">pto.tgather %group, %dst : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
-<p>Lowering introduces UB staging tile(s) for the GM→UB→GM data path; the C++ intrinsic requires explicit <code>stagingTileData</code> (or <code>pingTile</code> / <code>pongTile</code>) operand(s).</p>
+<p><pre class="highlight"><code class="language-text">pto.tgather %group, %dst : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
+Lowering introduces UB staging tile(s) for the GM→UB→GM data path; the C++ intrinsic requires explicit <code>stagingTileData</code> (or <code>pingTile</code> / <code>pongTile</code>) operand(s).</p>
+<h2 id="template-parameter">Template Parameter<a class="headerlink" href="#template-parameter" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>engine</code>:<ul>
+<li><code>CollEngine::AIV</code> (default)</li>
+<li><code>CollEngine::CCU</code> (Ascend950, NPU_ARCH 3510 only)</li>
+</ul>
+</li>
+</ul>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/comm/pto_comm_inst.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">// Basic gather (single staging tile)
-template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent GATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
-                            TileData &amp;stagingTileData, WaitEvents&amp;... events);
+template &lt;CollEngine engine = CollEngine::AIV,
+          typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... Args&gt;
+PTO_INST RecordEvent TGATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
+                             TileData &amp;stagingTileData, Args&amp;... args);
 
 // Ping-pong gather (double buffering with two staging tiles)
-template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent GATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
-                            TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);</code></pre>
+template &lt;CollEngine engine = CollEngine::AIV,
+          typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... Args&gt;
+PTO_INST RecordEvent TGATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
+                             TileData &amp;pingTile, TileData &amp;pongTile, Args&amp;... args);</code></pre>
+<p>When <code>engine == CollEngine::CCU</code>, the first variadic argument must be a <code>CcuTriggerContext</code> containing the CKE slot VA and gate mask. The AIV kernel triggers the CKE gate; the actual gather data path runs on the CCU engine.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
 <ul>
 <li><strong>Type constraints</strong>:<ul>
 <li><code>ParallelGroup::value_type::RawDType</code> must equal <code>GlobalDstData::RawDType</code>.</li>
@@ -981,7 +996,9 @@ PTO_INST RecordEvent GATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData 
 </ul>
 </li>
 </ul>
-</div>
+<blockquote>
+<p><strong>CCU path</strong>: Unlike the AIV path where only root calls <code>TGATHER</code>, the CCU path requires all ranks to register and launch the CCU kernel via host-side <code>HcclCcuKernelRegister</code> / <code>HcclCcuKernelLaunch</code>. See <code>tests/npu/a5/comm/st/testcase/tgather_ccu/</code> for a complete example.</p>
+</blockquote>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-gather-single-staging-tile">Basic Gather (Single Staging Tile)<a class="headerlink" href="#basic-gather-single-staging-tile" title="Permanent link">&para;</a></h3>
 <p>Each rank contributes <code>ROWS × COLS</code> data. The root collects them into <code>NRANKS * ROWS</code> rows.
@@ -1007,7 +1024,7 @@ void gather(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_rank) {
     GResult dstG(result);
     TileT stagingTile(TILE_ROWS, TILE_COLS);
 
-    comm::GATHER(group, dstG, stagingTile);
+    comm::TGATHER(group, dstG, stagingTile);
 }</code></pre>
 <h3 id="ping-pong-gather-double-buffering">Ping-Pong Gather (Double Buffering)<a class="headerlink" href="#ping-pong-gather-double-buffering" title="Permanent link">&para;</a></h3>
 <p>Uses two UB tiles to overlap TLOAD of the next chunk (MTE2) with TSTORE of the current chunk (MTE3).</p>
@@ -1017,6 +1034,7 @@ using namespace pto;
 
 template &lt;typename T, int ROWS, int COLS, int TILE_ROWS, int TILE_COLS, int NRANKS&gt;
 void gather_pingpong(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_rank) {
+    // Tile can be smaller than the data in both dimensions
     using TileT = Tile&lt;TileType::Vec, T, TILE_ROWS, TILE_COLS, BLayout::RowMajor, -1, -1&gt;;
     using GPerRank = GlobalTensor&lt;T, Shape&lt;1,1,1,ROWS,COLS&gt;,
                                   BaseShape2D&lt;T, ROWS, COLS, Layout::ND&gt;, Layout::ND&gt;;
@@ -1033,7 +1051,8 @@ void gather_pingpong(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_ran
     TileT pingTile(TILE_ROWS, TILE_COLS);
     TileT pongTile(TILE_ROWS, TILE_COLS);
 
-    comm::GATHER(group, dstG, pingTile, pongTile);
+    // Ping-pong: overlaps TLOAD and TSTORE for better throughput
+    comm::TGATHER(group, dstG, pingTile, pongTile);
 }</code></pre>
               
             </div>

@@ -121,6 +121,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsync/">pto.tsync</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/syncall/">pto.syncall</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tassign/">pto.tassign</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/talias/">pto.talias</a>
@@ -322,6 +324,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tload/">pto.tload</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tprefetch/">pto.tprefetch</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tprefetch-async/">pto.tprefetch_async</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tstore/">pto.tstore</a>
                 </li>
@@ -908,7 +912,7 @@
               
                 <!-- Generated from `docs/isa/comm/TGATHER_zh.md` -->
 
-<h1 id="tgather">TGATHER<a class="headerlink" href="#tgather" title="Permanent link">&para;</a></h1>
+<h1 id="ptotgather">pto.tgather<a class="headerlink" href="#ptotgather" title="Permanent link">&para;</a></h1>
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>Gather 操作：调用方 NPU（根节点）从并行组中所有 rank 收集数据，并沿 <strong>DIM_3</strong>（行维度）拼接到本地输出缓冲区。</p>
 <p>只有根节点需要执行 <code>TGATHER</code>。非根节点只需确保在操作期间其源缓冲区已就绪且保持有效。在非根节点上调用 <code>TGATHER</code> 属于未定义行为。</p>
@@ -918,24 +922,33 @@
 <div class="arithmatex">\[\mathrm{dst}_{d_0, d_1, d_2,\; r \cdot H + i,\; j} = \mathrm{src}^{(r)}_{d_0, d_1, d_2,\; i,\; j} \quad \forall\, r \in [0, N),\; i \in [0, H),\; j \in [0, W)\]</div>
 <p>目标 tensor 的形状为 <span class="arithmatex">\((D_0, D_1, D_2, N \times H, W)\)</span>。</p>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../syntax-and-operands/assembly-model_zh/">PTO ISA 语法与操作数</a>。</p>
+<p>PTO-AS 形式见<a href="../../syntax-and-operands/assembly-model_zh/">汇编拼写与操作数</a>。</p>
 <p>同步形式：</p>
-<pre class="highlight"><code class="language-text">tgather %group, %dst : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
+<pre class="highlight"><code class="language-text">pto.tgather %group, %dst : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>降级时会为 GM→UB→GM 数据路径引入 UB 暂存 Tile；C++ 内建接口需要显式传入 <code>stagingTileData</code>（或 <code>pingTile</code> / <code>pongTile</code>）操作数。</p>
+<h2 id="_4">模板参数<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>engine</code>：<ul>
+<li><code>CollEngine::AIV</code>（默认）</li>
+<li><code>CollEngine::CCU</code>（Ascend950，仅 NPU_ARCH 3510）</li>
+</ul>
+</li>
+</ul>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
 <pre class="highlight"><code class="language-cpp">// 基础 gather（单暂存 Tile）
-template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
+template &lt;CollEngine engine = CollEngine::AIV,
+          typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... Args&gt;
 PTO_INST RecordEvent TGATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
-                             TileData &amp;stagingTileData, WaitEvents&amp;... events);
+                             TileData &amp;stagingTileData, Args&amp;... args);
 
 // 乒乓 gather（使用两个暂存 Tile 实现双缓冲）
-template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
+template &lt;CollEngine engine = CollEngine::AIV,
+          typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... Args&gt;
 PTO_INST RecordEvent TGATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
-                             TileData &amp;pingTile, TileData &amp;pongTile, WaitEvents&amp;... events);</code></pre>
-<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">约束</p>
+                             TileData &amp;pingTile, TileData &amp;pongTile, Args&amp;... args);</code></pre>
+<p>当 <code>engine == CollEngine::CCU</code> 时，可变参数的第一个参数必须是包含 CKE slot 虚拟地址和 gate mask 的 <code>CcuTriggerContext</code>。AIV kernel 触发 CKE gate，实际的 gather 数据路径在 CCU 引擎上执行。</p>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>类型约束</strong>：<ul>
 <li><code>ParallelGroup::value_type::RawDType</code> 必须等于 <code>GlobalDstData::RawDType</code>。</li>
@@ -960,8 +973,10 @@ PTO_INST RecordEvent TGATHER(ParallelGroupType &amp;parallelGroup, GlobalDstData
 </ul>
 </li>
 </ul>
-</div>
-<h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>CCU 路径</strong>：与 AIV 路径（仅根节点调用 <code>TGATHER</code>）不同，CCU 路径要求所有 rank 通过宿主侧 <code>HcclCcuKernelRegister</code> / <code>HcclCcuKernelLaunch</code> 注册并启动 CCU kernel。完整示例参见 <code>tests/npu/a5/comm/st/testcase/tgather_ccu/</code>。</p>
+</blockquote>
+<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="gather-tile">基础 Gather（单暂存 Tile）<a class="headerlink" href="#gather-tile" title="Permanent link">&para;</a></h3>
 <p>每个 rank 提供 <code>ROWS × COLS</code> 的数据，根节点将其收集到 <code>NRANKS * ROWS</code> 行中。
 Tile 大小（<code>TILE_ROWS × TILE_COLS</code>）可小于每 rank 的数据——此时实现会自动沿 DIM_3 和 DIM_4 通过二维滑动进行分块传输。</p>

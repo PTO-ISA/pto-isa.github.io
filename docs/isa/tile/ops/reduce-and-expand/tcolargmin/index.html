@@ -121,6 +121,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../sync-and-config/tsync/">pto.tsync</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../sync-and-config/syncall/">pto.syncall</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../sync-and-config/tassign/">pto.tassign</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../sync-and-config/talias/">pto.talias</a>
@@ -307,6 +309,8 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#about-temporary-tile-tmp-for-a5">About temporary tile tmp for A5</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#valueindex-mode">Value+index mode</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
@@ -316,6 +320,8 @@
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#auto-value-index">Auto Value + Index</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
     </li>
@@ -380,6 +386,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../memory-and-data-movement/tload/">pto.tload</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../memory-and-data-movement/tprefetch/">pto.tprefetch</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../memory-and-data-movement/tprefetch-async/">pto.tprefetch_async</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../memory-and-data-movement/tstore/">pto.tstore</a>
                 </li>
@@ -971,34 +979,49 @@
 <h1 id="ptotcolargmin">pto.tcolargmin<a class="headerlink" href="#ptotcolargmin" title="Permanent link">&para;</a></h1>
 <p><code>pto.tcolargmin</code> is part of the <a href="../../../reduce-and-expand/">Reduce And Expand</a> instruction set.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Get the row index of the minimum element for each column.</p>
+<p>Get the row index of the minimum element for each column. A value+index variant also returns the minimum
+value for each column.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Get the row index of the minimum element for each column.</p>
+<p>Get the row index of the minimum element for each column. The 4-operand overload returns both the minimum
+value and the row index for each column.</p>
 <p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= j &lt; C</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{0,j} = \underset{0 \le i &lt; R}{\operatorname{argmin}} \; \mathrm{src}_{i,j} \]</div>
+<p>For value+index mode:</p>
+<div class="arithmatex">\[ \mathrm{dstVal}_{0,j} = \min_{0 \le i &lt; R} \mathrm{src}_{i,j} \]</div>
+<div class="arithmatex">\[ \mathrm{dstIdx}_{0,j} = \underset{0 \le i &lt; R}{\operatorname{argmin}} \; \mathrm{src}_{i,j} \]</div>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
 <p>Synchronous form:</p>
-<pre class="highlight"><code class="language-text">%dst = tcolargmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
+<pre class="highlight"><code class="language-text">%dst = tcolargmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+%dstVal, %dstIdx = tcolargmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;</code></pre>
 <p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
 <h3 id="assembly">Assembly<a class="headerlink" href="#assembly" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = tcolargmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = pto.tcolargmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tcolargmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+%dstVal, %dstIdx = pto.tcolargmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">pto.tcolargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+<pre class="highlight"><code class="language-text">pto.tcolargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+pto.tcolargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dstVal, %dstIdx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCOLARGMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);</code></pre>
+PTO_INST RecordEvent TCOLARGMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
+
+template &lt;typename TileDataOutVal, typename TileDataOutIdx, typename TileDataIn, typename TileDataTmp,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TCOLARGMIN(TileDataOutVal&amp; dstVal, TileDataOutIdx&amp; dstIdx, TileDataIn&amp; src, TileDataTmp&amp; tmp,
+                                WaitEvents&amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src</code> is the source tile.</li>
 <li><code>tmp</code> is a temporary tile used for intermediate storage.</li>
 <li><code>dst</code> names the destination tile. The operation writes the column-wise argmin to <code>dst[0, j]</code> for each column <code>j</code>.</li>
+<li>In value+index mode, <code>dstVal</code> names the value output tile and <code>dstIdx</code> names the index output tile.</li>
 </ul>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the row index of the column-wise minimum: for each column <code>j</code>, <code>dst[0,j]</code> = argmin of all elements in column <code>j</code> of <code>src</code>. The output tile has shape <code>(1, C)</code> where <code>C</code> is the number of columns in <code>src</code>.</p>
+<p><code>dst</code> holds the row index of the column-wise minimum: for each column <code>j</code>, <code>dst[0,j]</code> = argmin of all elements in column <code>j</code> of <code>src</code>. The output tile has shape <code>(1, C)</code> where <code>C</code> is the number of columns in <code>src</code>.
+In value+index mode, <code>dstVal[0,j]</code> holds the minimum value and <code>dstIdx[0,j]</code> holds its row index.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
@@ -1048,6 +1071,17 @@ stride = ceil(repeats * 2 / elementPerBlock) * elementPerBlock + ceil(repeats / 
 <li><code>tmp</code> temporary tile is <strong>not used</strong> in the A5 implementation. The A5 uses vector register-based computation (<code>__VEC_SCOPE__</code>) and does not require scratch tile storage.</li>
 <li><code>tmp</code> is retained in the C++ intrinsic signature solely for API compatibility with A2A3.</li>
 </ul>
+<h3 id="valueindex-mode">Value+index mode<a class="headerlink" href="#valueindex-mode" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>dstVal</code> must be a <code>TileType::Vec</code> tile with standard ND layout.</li>
+<li><code>dstVal</code> element type must match <code>src</code>.</li>
+<li>8-bit source element types are not supported by the value+index overload.</li>
+<li><code>dstVal.GetValidRow() == 1</code></li>
+<li><code>dstVal.GetValidCol() == dstIdx.GetValidCol()</code></li>
+<li><code>dstVal.GetValidCol() == src.GetValidCol()</code></li>
+<li>For 16-bit source element types, <code>dstIdx</code> must use <code>uint16_t</code> or <code>int16_t</code>.</li>
+<li>For 32-bit source element types, <code>dstIdx</code> must use <code>uint32_t</code> or <code>int32_t</code>.</li>
+</ul>
 </div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <div class="admonition danger">
@@ -1090,6 +1124,22 @@ void example_auto() {
   TmpT tmp(1, 32);
   TCOLARGMIN(dst, src, tmp);
 }</code></pre>
+<h3 id="auto-value-index">Auto Value + Index<a class="headerlink" href="#auto-value-index" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto_value_index() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 256, BLayout::RowMajor, -1, -1&gt;;
+  using DstValT = Tile&lt;TileType::Vec, float, 1, 256, BLayout::RowMajor, -1, -1&gt;;
+  using DstIdxT = Tile&lt;TileType::Vec, int32_t, 1, 256, BLayout::RowMajor, -1, -1&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 1, 32, BLayout::RowMajor, -1, -1&gt;;
+  SrcT src(16, 255);
+  DstValT dstVal(1, 255);
+  DstIdxT dstIdx(1, 255);
+  TmpT tmp(1, 32);
+  TCOLARGMIN(dstVal, dstIdx, src, tmp);
+}</code></pre>
 <h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1118,8 +1168,10 @@ void example_manual() {
 %dst = pto.tcolargmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = tcolargmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+%dstVal, %dstIdx = tcolargmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
-pto.tcolargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+pto.tcolargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+pto.tcolargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dstVal, %dstIdx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../reduce-and-expand/">Reduce And Expand</a></li>

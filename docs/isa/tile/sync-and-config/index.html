@@ -137,6 +137,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/tsync/">pto.tsync</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/syncall/">pto.syncall</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/tassign/">pto.tassign</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/talias/">pto.talias</a>
@@ -338,6 +340,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tload/">pto.tload</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tprefetch/">pto.tprefetch</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tprefetch-async/">pto.tprefetch_async</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tstore/">pto.tstore</a>
                 </li>
@@ -956,6 +960,13 @@
 </tr>
 <tr>
 <td></td>
+<td><a href="../ops/sync-and-config/syncall/">pto.syncall</a></td>
+<td>Cross-core synchronization barrier</td>
+<td>Sync</td>
+<td><code>SYNCALL()</code></td>
+</tr>
+<tr>
+<td></td>
 <td><a href="../ops/sync-and-config/talias/">pto.talias</a></td>
 <td>Create an alias view that shares tile storage</td>
 <td>View</td>
@@ -1017,6 +1028,7 @@
 <ul>
 <li><strong><code>TASSIGN</code></strong>: binds a physical UB address to a tile register. Without <code>TASSIGN</code>, the compiler/runtime auto-assigns addresses. <code>TASSIGN</code> enables manual placement for performance tuning.</li>
 <li><strong><code>TSYNC</code></strong>: waits on event tokens (<code>events...</code>) or inserts per-op pipeline barriers (<code>TSYNC&lt;Op&gt;()</code>). See <a href="../../machine-model/ordering-and-synchronization/">Ordering and Synchronization</a> for the full event model.</li>
+<li><strong><code>SYNCALL</code></strong>: synchronizes selected core participants through the cross-core control plane. Hardware mode uses FFTS, and software mode uses GM polling workspace.</li>
 <li><strong><code>TALIAS</code></strong>: creates a second tile view over the same payload storage. It changes the visible tile view, not the underlying bytes.</li>
 <li><strong><code>SETHF32MODE</code> / <code>SETTF32MODE</code> / <code>SETFMATRIX</code> / <code>SET_IMG2COL_RPT</code> / <code>SET_IMG2COL_PADDING</code></strong>: tile-local configuration for HF32/TF32 computation mode, FMATRIX engine binding, and IMG2COL parameters. These program tile-side registers consumed by subsequent compute and DMA operations.</li>
 <li><strong><code>SUBVIEW</code></strong>: creates a logical view of a tile with adjusted offsets and/or reduced shape. The underlying storage is shared with the source tile.</li>
@@ -1068,6 +1080,10 @@ PTO_INST RecordEvent TSYNC(EventTs&amp;... events);
 // Pipeline barrier for op class
 template &lt;typename OpTag&gt;
 PTO_INST void TSYNC();
+
+// Cross-core synchronization barrier
+template &lt;SyncCoreType CoreType = SyncCoreType::AIVOnly&gt;
+PTO_INST void SYNCALL();
 
 // Set computation modes
 PTO_INST void SETHF32MODE(bool enable, RoundMode mode);

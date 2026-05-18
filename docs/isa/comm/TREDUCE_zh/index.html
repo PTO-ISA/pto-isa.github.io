@@ -121,6 +121,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tsync/">pto.tsync</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/syncall/">pto.syncall</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/tassign/">pto.tassign</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/sync-and-config/talias/">pto.talias</a>
@@ -322,6 +324,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tload/">pto.tload</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tprefetch/">pto.tprefetch</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tprefetch-async/">pto.tprefetch_async</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/memory-and-data-movement/tstore/">pto.tstore</a>
                 </li>
@@ -908,7 +912,7 @@
               
                 <!-- Generated from `docs/isa/comm/TREDUCE_zh.md` -->
 
-<h1 id="treduce">TREDUCE<a class="headerlink" href="#treduce" title="Permanent link">&para;</a></h1>
+<h1 id="ptotreduce">pto.treduce<a class="headerlink" href="#ptotreduce" title="Permanent link">&para;</a></h1>
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>Reduce 操作：从多个远端 NPU 收集数据并在本地执行逐元素归约。</p>
 <p>只有根节点需要执行 <code>TREDUCE</code>。非根节点只需确保在操作期间其源缓冲区已就绪且保持有效。在非根节点上调用 <code>TREDUCE</code> 属于未定义行为。</p>
@@ -918,26 +922,35 @@
 <div class="arithmatex">\[\mathrm{dst}^{\mathrm{local}}_{i,j} = \bigoplus_{r=0}^{N-1} \mathrm{src}^{(r)}_{i,j}\]</div>
 <p>其中 <span class="arithmatex">\(N\)</span> 为 rank 总数，<span class="arithmatex">\(\oplus\)</span> 为归约运算（求和、取最大值、取最小值等）。</p>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../syntax-and-operands/assembly-model_zh/">PTO ISA 语法与操作数</a>。</p>
+<p>PTO-AS 形式见<a href="../../syntax-and-operands/assembly-model_zh/">汇编拼写与操作数</a>。</p>
 <p>同步形式：</p>
-<pre class="highlight"><code class="language-text">treduce %group, %dst {op = #pto.reduce_op&lt;Sum&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
-treduce %group, %dst {op = #pto.reduce_op&lt;Max&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
+<pre class="highlight"><code class="language-text">pto.treduce %group, %dst {op = #pto.reduce_op&lt;Sum&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)
+pto.treduce %group, %dst {op = #pto.reduce_op&lt;Max&gt;} : (!pto.group&lt;...&gt;, !pto.memref&lt;...&gt;)</code></pre>
 <p>降级时会为 reduce 流水线引入内部累加 Tile 和接收 Tile；C++ 内建接口需要显式传入 <code>accTileData</code>、<code>recvTileData</code>（或 <code>accTileData</code>、<code>pingTileData</code>、<code>pongTileData</code>）操作数。</p>
+<h2 id="_4">模板参数<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>engine</code>：<ul>
+<li><code>CollEngine::AIV</code>（默认）</li>
+<li><code>CollEngine::CCU</code>（Ascend950，仅 NPU_ARCH 3510）</li>
+</ul>
+</li>
+</ul>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/comm/pto_comm_inst.hpp</code>：</p>
 <pre class="highlight"><code class="language-cpp">// 基础 reduce（累加 Tile + 接收 Tile）
-template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
+template &lt;CollEngine engine = CollEngine::AIV,
+          typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... Args&gt;
 PTO_INST RecordEvent TREDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
-                              TileData &amp;accTileData, TileData &amp;recvTileData, ReduceOp op, WaitEvents&amp;... events);
+                              TileData &amp;accTileData, TileData &amp;recvTileData, ReduceOp op, Args&amp;... args);
 
 // 乒乓 reduce（累加 Tile + ping/pong Tile 实现双缓冲）
-template &lt;typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... WaitEvents&gt;
+template &lt;CollEngine engine = CollEngine::AIV,
+          typename ParallelGroupType, typename GlobalDstData, typename TileData, typename... Args&gt;
 PTO_INST RecordEvent TREDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData &amp;dstGlobalData,
                               TileData &amp;accTileData, TileData &amp;pingTileData, TileData &amp;pongTileData,
-                              ReduceOp op, WaitEvents&amp;... events);</code></pre>
-<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">约束</p>
+                              ReduceOp op, Args&amp;... args);</code></pre>
+<p>当 <code>engine == CollEngine::CCU</code> 时，可变参数的第一个参数必须是包含 CKE slot 虚拟地址和 gate mask 的 <code>CcuTriggerContext</code>。AIV kernel 触发 CKE gate，实际的 reduce 数据路径在 CCU 引擎上执行。</p>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>类型约束</strong>：<ul>
 <li><code>ParallelGroup::value_type::RawDType</code> 必须等于 <code>GlobalDstData::RawDType</code>。</li>
@@ -961,9 +974,11 @@ PTO_INST RecordEvent TREDUCE(ParallelGroupType &amp;parallelGroup, GlobalDstData
 </ul>
 </li>
 </ul>
-</div>
-<h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="_6">基础求和归约<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p><strong>CCU 路径</strong>：与 AIV 路径（仅根节点调用 <code>TREDUCE</code>）不同，CCU 路径要求所有 rank 通过宿主侧 <code>HcclCcuKernelRegister</code> / <code>HcclCcuKernelLaunch</code> 注册并启动 CCU kernel。完整示例参见 <code>tests/npu/a5/comm/st/testcase/treduce_ccu/</code>。</p>
+</blockquote>
+<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="_7">基础求和归约<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;
@@ -982,7 +997,7 @@ void reduce_sum(__gm__ T* group_addrs[NRANKS], __gm__ T* result, int my_rank) {
     TileT accTile, recvTile;
     comm::TREDUCE(group, dstG, accTile, recvTile, comm::ReduceOp::Sum);
 }</code></pre>
-<h3 id="_7">最大值归约<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<h3 id="_8">最大值归约<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
 
 using namespace pto;

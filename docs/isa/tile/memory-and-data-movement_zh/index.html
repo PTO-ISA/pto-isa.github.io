@@ -121,6 +121,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/tsync/">pto.tsync</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/syncall/">pto.syncall</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/tassign/">pto.tassign</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/talias/">pto.talias</a>
@@ -322,6 +324,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tload/">pto.tload</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tprefetch/">pto.tprefetch</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tprefetch-async/">pto.tprefetch_async</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tstore/">pto.tstore</a>
                 </li>
@@ -928,6 +932,10 @@
 <td>预取数据到本地缓冲</td>
 </tr>
 <tr>
+<td><code>pto.tprefetch_async</code></td>
+<td>通过 SDMA CMO 异步预取 GM 数据到 L2 Cache</td>
+</tr>
+<tr>
 <td><code>pto.tstore</code></td>
 <td>从 tile 写回 GlobalTensor</td>
 </tr>
@@ -957,6 +965,7 @@ TSTORE: dst[r0 + i, c0 + j] = src[i, j]</code></pre>
 </ul>
 <h3 id="tprefetch">预取：TPREFETCH<a class="headerlink" href="#tprefetch" title="Permanent link">&para;</a></h3>
 <p><code>TPREFETCH</code> 会提前把后续可能要用到的 GM 数据搬进 tile 可见的本地路径。它的意义不在于改变数据布局，而在于把“稍后会访问的数据”尽早拉近。</p>
+<p><code>TPREFETCH_ASYNC</code> 使用 SDMA CMO 将扁平连续的 GlobalTensor 区域预热到 L2 Cache。它返回 <code>comm::AsyncEvent</code>；依赖该预取结果的后续消费者需要在发起相关加载前等待该事件。</p>
 <h3 id="mgather-mscatter">索引搬运：MGATHER / MSCATTER<a class="headerlink" href="#mgather-mscatter" title="Permanent link">&para;</a></h3>
 <p>索引类搬运允许非连续地址访问：</p>
 <pre class="highlight"><code class="language-text">gather:  dst[i] = src[index[i]]

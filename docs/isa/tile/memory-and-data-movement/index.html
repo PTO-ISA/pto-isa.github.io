@@ -121,6 +121,8 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/tsync/">pto.tsync</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/syncall/">pto.syncall</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/tassign/">pto.tassign</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sync-and-config/talias/">pto.talias</a>
@@ -352,6 +354,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tload/">pto.tload</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tprefetch/">pto.tprefetch</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tprefetch-async/">pto.tprefetch_async</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/memory-and-data-movement/tstore/">pto.tstore</a>
                 </li>
@@ -966,6 +970,12 @@
 <td><code>TPREFETCH(dst, gtensor)</code></td>
 </tr>
 <tr>
+<td><a href="../ops/memory-and-data-movement/tprefetch-async/">pto.tprefetch_async</a></td>
+<td>Asynchronously prefetch GM into L2 via SDMA CMO</td>
+<td>GM → L2 cache</td>
+<td><code>TPREFETCH_ASYNC(gtensor, ctx)</code></td>
+</tr>
+<tr>
 <td><a href="../ops/memory-and-data-movement/tstore/">pto.tstore</a></td>
 <td>Store from tile to GM</td>
 <td>local tile buffer → GM</td>
@@ -999,6 +1009,7 @@ TSTORE: dst[ r0 + i, c0 + j ] = src[i,j]</code></pre>
 <p>Transfer size: <code>dst.GetValidRow() × dst.GetValidCol()</code> elements.</p>
 <h3 id="prefetch-tprefetch">Prefetch (TPREFETCH)<a class="headerlink" href="#prefetch-tprefetch" title="Permanent link">&para;</a></h3>
 <p><code>TPREFETCH</code> initiates a non-blocking DMA transfer from GM to the tile buffer. It does not stall the pipeline. A subsequent operation that reads the tile buffer must wait for the transfer to complete via <code>TSYNC</code> or <code>set_flag</code>/<code>wait_flag</code>.</p>
+<p><code>TPREFETCH_ASYNC</code> uses SDMA CMO to warm the L2 cache for a flat contiguous GlobalTensor region. It returns a <code>comm::AsyncEvent</code>; consumers that require the prefetched data must wait on that event before issuing the dependent load.</p>
 <h3 id="gatherscatter-mgather-mscatter">Gather/Scatter (MGATHER, MSCATTER)<a class="headerlink" href="#gatherscatter-mgather-mscatter" title="Permanent link">&para;</a></h3>
 <p>An index tile specifies which GM elements to transfer:</p>
 <div class="arithmatex">\[ \mathrm{dst}_i = \mathrm{src}_{\mathrm{index}_i} \]</div>
@@ -1165,6 +1176,9 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileDat
 // Prefetch
 template &lt;typename TileData, typename GlobalData&gt;
 PTO_INST RecordEvent TPREFETCH(TileData&amp; dst, GlobalData&amp; src);
+
+template &lt;typename GlobalData, typename... WaitEvents&gt;
+PTO_INST comm::AsyncEvent TPREFETCH_ASYNC(GlobalData&amp; src, PrefetchAsyncContext&amp; ctx, WaitEvents&amp;... events);
 
 // Gather/Scatter
 template &lt;typename TileData, typename GlobalData, typename IndexData&gt;
