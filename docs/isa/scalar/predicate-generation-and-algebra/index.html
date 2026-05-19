@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -773,7 +797,7 @@
     <ul class="current">
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">Instruction Set Overview</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#the-ptomask-type">The !pto.mask Type</a>
+    <li class="toctree-l3"><a class="reference internal" href="#the-ptomaskg-type">The !pto.mask&lt;G&gt; Type</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#sub-category-overview">Sub-category Overview</a>
     </li>
@@ -947,9 +971,9 @@
                 <!-- Generated from `docs/isa/scalar/predicate-generation-and-algebra.md` -->
 
 <h1 id="predicate-generation-and-algebra">Predicate Generation And Algebra<a class="headerlink" href="#predicate-generation-and-algebra" title="Permanent link">&para;</a></h1>
-<p>Predicate generation and algebra operations create, combine, pack, unpack, and interleave <code>!pto.mask</code> values on the scalar and control instructions. The <code>!pto.mask</code> type is the lane-masking mechanism that <code>pto.v*</code> vector operations consume.</p>
-<h2 id="the-ptomask-type">The <code>!pto.mask</code> Type<a class="headerlink" href="#the-ptomask-type" title="Permanent link">&para;</a></h2>
-<p><code>!pto.mask</code> is a predicate mask type whose width is tied to the active element type rather than being a fixed number of bits:</p>
+<p>Predicate generation and algebra operations create, combine, pack, unpack, and interleave <code>!pto.mask&lt;G&gt;</code> values on the scalar and control instructions. The <code>!pto.mask&lt;G&gt;</code> type is the lane-masking mechanism that <code>pto.v*</code> vector operations consume.</p>
+<h2 id="the-ptomaskg-type">The <code>!pto.mask&lt;G&gt;</code> Type<a class="headerlink" href="#the-ptomaskg-type" title="Permanent link">&para;</a></h2>
+<p><code>!pto.mask&lt;G&gt;</code> is a predicate mask type whose width is tied to the active element type rather than being a fixed number of bits:</p>
 <table>
 <thead>
 <tr>
@@ -1032,14 +1056,14 @@
 </tr>
 <tr>
 <td>Deinterleave</td>
-<td><code>pdintlv_b8</code></td>
-<td>Split one 2N-bit mask into two N-bit masks</td>
+<td><code>pdintlv_b8</code>, <code>pdintlv_b16</code>, <code>pdintlv_b32</code></td>
+<td>Deinterleave two predicate sources into two predicate outputs at the matching granularity</td>
 <td>Static</td>
 </tr>
 <tr>
 <td>Interleave</td>
-<td><code>pintlv_b16</code></td>
-<td>Combine two N-bit masks into one 2N-bit mask</td>
+<td><code>pintlv_b8</code>, <code>pintlv_b16</code>, <code>pintlv_b32</code></td>
+<td>Interleave two predicate sources into two predicate outputs at the matching granularity</td>
 <td>Static</td>
 </tr>
 </tbody>
@@ -1115,7 +1139,7 @@
 <h2 id="shared-constraints">Shared Constraints<a class="headerlink" href="#shared-constraints" title="Permanent link">&para;</a></h2>
 <p>All predicate generation and algebra operations MUST satisfy:</p>
 <ol>
-<li><strong>Operand type</strong>: All predicate operands MUST be <code>!pto.mask</code>. Mixing predicate operands with scalar or vector register operands is <strong>illegal</strong>.</li>
+<li><strong>Operand type</strong>: All predicate operands MUST be <code>!pto.mask&lt;G&gt;</code>. Mixing predicate operands with scalar or vector register operands is <strong>illegal</strong>.</li>
 <li><strong>Predicate width consistency</strong>: All operands in a single operation MUST share the same predicate width. Operations that mix N-bit and 2N-bit predicates MUST use explicit pack/unpack.</li>
 <li><strong>Pattern token validity</strong>: Pattern tokens MUST be supported by the target profile. Using a pattern token outside its supported width context is <strong>illegal</strong>.</li>
 <li><strong>Scalar operand type</strong>: For <code>pge_*</code> and <code>plt_*</code> operations, the scalar operand type MUST match the variant suffix (<code>_b8</code> → i8, <code>_b16</code> → i16, <code>_b32</code> → i32).</li>
@@ -1163,7 +1187,11 @@
 <h3 id="interleave-deinterleave">Interleave / Deinterleave<a class="headerlink" href="#interleave-deinterleave" title="Permanent link">&para;</a></h3>
 <ul>
 <li><a href="../ops/predicate-generation-and-algebra/pdintlv-b8/">pto.pdintlv_b8</a></li>
+<li><a href="../ops/predicate-generation-and-algebra/pdintlv-b16/">pto.pdintlv_b16</a></li>
+<li><a href="../ops/predicate-generation-and-algebra/pdintlv-b32/">pto.pdintlv_b32</a></li>
+<li><a href="../ops/predicate-generation-and-algebra/pintlv-b8/">pto.pintlv_b8</a></li>
 <li><a href="../ops/predicate-generation-and-algebra/pintlv-b16/">pto.pintlv_b16</a></li>
+<li><a href="../ops/predicate-generation-and-algebra/pintlv-b32/">pto.pintlv_b32</a></li>
 </ul>
 <h2 id="related-material">Related Material<a class="headerlink" href="#related-material" title="Permanent link">&para;</a></h2>
 <ul>

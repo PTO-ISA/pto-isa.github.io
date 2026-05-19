@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -970,7 +994,7 @@
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">vmulconv %dst, %lhs, %rhs, %mask : !pto.vreg&lt;NxT0&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">%result = pto.vmulconv %lhs, %rhs, %mask : (!pto.vreg&lt;NxT0&gt;, !pto.vreg&lt;NxT0&gt;, !pto.mask) -&gt; !pto.vreg&lt;MxT1&gt;</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vmulconv %lhs, %rhs, %mask : (!pto.vreg&lt;NxT0&gt;, !pto.vreg&lt;NxT0&gt;, !pto.mask&lt;G&gt;) -&gt; !pto.vreg&lt;MxT1&gt;</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -997,7 +1021,7 @@
 <tr>
 <td></td>
 <td><code>%mask</code></td>
-<td><code>!pto.mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
 <td>Predicate mask; lanes where mask bit is 1 are active</td>
 </tr>
 </tbody>
@@ -1100,7 +1124,7 @@
 for (int i = 0; i &lt; 128; i++)
     dst_i8[i] = f16_to_i8(max(src0_f16[i] * src1_f16[i], 0));</code></pre>
 <h3 id="mlir-form">MLIR form<a class="headerlink" href="#mlir-form" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">%result = pto.vmulconv %lhs, %rhs, %mask : (!pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask) -&gt; !pto.vreg&lt;128xi8&gt;</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vmulconv %lhs, %rhs, %mask : (!pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask&lt;G&gt;) -&gt; !pto.vreg&lt;128xi8&gt;</code></pre>
 <h2 id="extended-arithmetic">Extended Arithmetic<a class="headerlink" href="#extended-arithmetic" title="Permanent link">&para;</a></h2>
 <p>This operation performs element-type conversion as part of the fused sequence. The conversion may involve rounding, saturation, or other type-specific behavior.</p>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>

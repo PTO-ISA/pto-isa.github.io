@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -913,30 +937,37 @@
                 <!-- Generated from `docs/isa/scalar/dma-copy_zh.md` -->
 
 <h1 id="dma">DMA 拷贝<a class="headerlink" href="#dma" title="Permanent link">&para;</a></h1>
-<p>这些 <code>pto.*</code> 形式配置并执行 GM↔UB 以及 UB 内部的标量侧 DMA 搬运。它们属于标量与控制指令，因为它们定义的是配置和搬运行为，而不是向量寄存器计算。</p>
+<p>这些 <code>pto.*</code> 形式配置并执行 GM、UB、L1 之间的标量侧 DMA 搬运。它们属于标量与控制指令，因为它们定义的是 DMA 配置和搬运行为，而不是向量寄存器计算。</p>
 <h2 id="_1">本指令集覆盖<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <ul>
-<li>GM↔UB 传输的嵌套循环大小和 stride 配置</li>
-<li>GM → UB 拷贝</li>
-<li>UB → GM 拷贝</li>
-<li>UB → UB 拷贝</li>
+<li>使用内联 burst / loop / pad 子句的分组 GM↔UB 传输</li>
+<li>分组 UB↔UB 与 UB→L1 拷贝</li>
+<li>（pre-v0.6 历史）独立的循环大小与循环 stride 配置寄存器</li>
 </ul>
-<h2 id="per-op">per-op 页面<a class="headerlink" href="#per-op" title="Permanent link">&para;</a></h2>
+<h2 id="v06">v0.6 分组传输指令<a class="headerlink" href="#v06" title="Permanent link">&para;</a></h2>
+<p>以下是 PTO ISA v0.6 微指令表面中四条公开的分组 DMA 接口。每条指令都通过内联的 <code>nburst(...)</code> / <code>loop(...)</code> 子句表达自己的重复结构，不再需要外部独立的循环/步长配置寄存器。</p>
 <ul>
-<li><code>pto.set_loop_size_outtoub</code></li>
-<li><code>pto.set_loop2_stride_outtoub</code></li>
-<li><code>pto.set_loop1_stride_outtoub</code></li>
-<li><code>pto.set_loop_size_ubtoout</code></li>
-<li><code>pto.set_loop2_stride_ubtoout</code></li>
-<li><code>pto.set_loop1_stride_ubtoout</code></li>
-<li><code>pto.copy_gm_to_ubuf</code></li>
-<li><code>pto.copy_ubuf_to_gm</code></li>
-<li><code>pto.copy_ubuf_to_ubuf</code></li>
+<li><a href="../ops/dma-copy/copy-gm-to-ubuf_zh/">pto.mte_gm_ub</a>：GM → UB，附带可选 <code>pad(...)</code> 做 32B 对齐行填充</li>
+<li><a href="../ops/dma-copy/copy-ubuf-to-gm_zh/">pto.mte_ub_gm</a>：UB → GM，剥除 load 时增加的 padding</li>
+<li><a href="../ops/dma-copy/copy-ubuf-to-ubuf_zh/">pto.mte_ub_ub</a>：UB 内拷贝，以 32B 为单位的 burst + gap 字段</li>
+<li><a href="../ops/dma-copy/mte-ub-l1_zh/">pto.mte_ub_l1</a>：UB → L1（cube CBUF），以 32B 为单位的 burst + gap 字段</li>
 </ul>
+<h2 id="pre-v06">Pre-v0.6 已弃用配置指令<a class="headerlink" href="#pre-v06" title="Permanent link">&para;</a></h2>
+<p>下列指令对应旧的表面：循环计数与每层步长在独立的配置寄存器里编程，再由单独的拷贝指令消费。v0.6 把这些信息全部放进了分组传输指令本身的 <code>nburst(...)</code> 与外层 <code>loop(...)</code> 子句。下面这些页面保留作为历史参考与 pre-v0.6 移植用途。</p>
+<ul>
+<li><a href="../ops/dma-copy/set-loop-size-outtoub_zh/">pto.set_loop_size_outtoub</a></li>
+<li><a href="../ops/dma-copy/set-loop2-stride-outtoub_zh/">pto.set_loop2_stride_outtoub</a></li>
+<li><a href="../ops/dma-copy/set-loop1-stride-outtoub_zh/">pto.set_loop1_stride_outtoub</a></li>
+<li><a href="../ops/dma-copy/set-loop-size-ubtoout_zh/">pto.set_loop_size_ubtoout</a></li>
+<li><a href="../ops/dma-copy/set-loop2-stride-ubtoout_zh/">pto.set_loop2_stride_ubtoout</a></li>
+<li><a href="../ops/dma-copy/set-loop1-stride-ubtoout_zh/">pto.set_loop1_stride_ubtoout</a></li>
+</ul>
+<p>旧的执行指令 <code>pto.copy_gm_to_ubuf</code> / <code>pto.copy_ubuf_to_gm</code> / <code>pto.copy_ubuf_to_ubuf</code> 已被 v0.6 的分组形式 <code>pto.mte_gm_ub</code> / <code>pto.mte_ub_gm</code> / <code>pto.mte_ub_ub</code> 取代（链接见上方）。它们对应的 per-op 页面（URL slug 保留不变）现在直接记录 v0.6 表面。</p>
 <h2 id="_2">相关页面<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../control-and-configuration_zh/">控制与配置</a></li>
 <li><a href="../../vector/dma-copy_zh/">向量 DMA 路径</a></li>
+<li><a href="./ops/pipeline-sync/">流水线同步</a></li>
 </ul>
               
             </div>

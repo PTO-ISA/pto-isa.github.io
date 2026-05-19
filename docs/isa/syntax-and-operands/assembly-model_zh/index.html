@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -994,7 +1018,7 @@ dps-out-item      ::= ssa-result ":" ssa-type</code></pre>
 %tensor[%r, %c]
 %tensor[%b, %h, %w, %r, %c]</code></pre>
 <h3 id="_4">谓词操作数<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%mask : !pto.mask</code></pre>
+<pre class="highlight"><code class="language-text">%mask : !pto.mask&lt;G&gt;</code></pre>
 <p>向量指令把 mask 作为显式操作数：</p>
 <pre class="highlight"><code class="language-text">%result = pto.vadd %src0, %src1, %mask : ... -&gt; ...</code></pre>
 <h3 id="_5">立即数操作数<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
@@ -1071,9 +1095,9 @@ tmatmul %c, %a, %b #phase=relu</code></pre>
 <h3 id="tile_2">Tile 加载<a class="headerlink" href="#tile_2" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">tload %tile, %tensor[%r, %c] : (!pto.tile&lt;f32,16,16&gt;, !pto.memref&lt;f32,5&gt;) -&gt; !pto.tile&lt;f32,16,16&gt;</code></pre>
 <h3 id="_9">向量加法<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%result = pto.vadd %src0, %src1, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
+<pre class="highlight"><code class="language-text">%result = pto.vadd %src0, %src1, %mask : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt;) -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h3 id="_10">谓词生成<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%pred = pto.pge_b32 %src0, %src1 : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;) -&gt; !pto.mask</code></pre>
+<pre class="highlight"><code class="language-text">%pred = pto.pge_b32 %src0, %src1 : (!pto.vreg&lt;64xi32&gt;, !pto.vreg&lt;64xi32&gt;) -&gt; !pto.mask&lt;b32&gt;</code></pre>
 <h2 id="_11">文本拼写不能替代的内容<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <p>文本拼写不能替代：</p>
 <ul>

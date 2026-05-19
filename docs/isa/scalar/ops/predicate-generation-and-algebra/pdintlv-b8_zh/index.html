@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -913,22 +937,78 @@
                 <!-- Generated from `docs/isa/scalar/ops/predicate-generation-and-algebra/pdintlv-b8_zh.md` -->
 
 <h1 id="ptopdintlv_b8">pto.pdintlv_b8<a class="headerlink" href="#ptopdintlv_b8" title="Permanent link">&para;</a></h1>
-<p>对谓词做按位去交错。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">pdintlv_b8 %dst0, %dst1, %src : !pto.mask, !pto.mask, !pto.mask</code></pre>
+<p><code>pto.pdintlv_b8</code> 属于 <a href="../../../predicate-generation-and-algebra_zh/">谓词生成与代数</a> 指令集。</p>
+<h2 id="_1">摘要<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>按 <code>b8</code> 粒度对两个谓词源做按位去交错，分别生成低半和高半两路谓词输出。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>pto.pdintlv_b8</code> 是谓词去交错家族（<code>pto.pdintlv_b8</code> / <a href="../pdintlv-b16_zh/"><code>pto.pdintlv_b16</code></a> / <a href="../pdintlv-b32_zh/"><code>pto.pdintlv_b32</code></a>）的 8 位元素粒度变体。它接收两个 <code>!pto.mask&lt;b8&gt;</code> 源，按相同的 <code>b8</code> 粒度产生两路去交错后的谓词。底层硬件的谓词寄存器位模式保持不变；改变的只是把这些位按 8 位元素分组的方式。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">%dst0, %dst1 = pto.pdintlv_b8 %src : !pto.mask -&gt; !pto.mask, !pto.mask</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">pto.pdintlv_b8 ins(%src : !pto.mask) outs(%dst0, %dst1 : !pto.mask, !pto.mask)</code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<pre class="highlight"><code class="language-mlir">%low, %high = pto.pdintlv_b8 %src0, %src1
+    : !pto.mask&lt;b8&gt;, !pto.mask&lt;b8&gt; -&gt; !pto.mask&lt;b8&gt;, !pto.mask&lt;b8&gt;</code></pre>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>操作数</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%src0</code></td>
+<td><code>!pto.mask&lt;b8&gt;</code></td>
+<td>第一路谓词源</td>
+</tr>
+<tr>
+<td><code>%src1</code></td>
+<td><code>!pto.mask&lt;b8&gt;</code></td>
+<td>第二路谓词源</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%low</code></td>
+<td><code>!pto.mask&lt;b8&gt;</code></td>
+<td>从 <code>%src0</code> / <code>%src1</code> 去交错产生的低半</td>
+</tr>
+<tr>
+<td><code>%high</code></td>
+<td><code>!pto.mask&lt;b8&gt;</code></td>
+<td>从 <code>%src0</code> / <code>%src1</code> 去交错产生的高半</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>无。<code>pto.pdintlv_b8</code> 是纯粹的谓词变换：不会读写 UB、GM，也不会改变除两路 SSA 结果以外的任何架构状态。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
-<li>参与操作的谓词宽度必须兼容。</li>
-<li>pattern / partition token 必须属于文档化取值域。</li>
+<li>所有操作数和结果都必须使用 <code>!pto.mask&lt;b8&gt;</code>。混合谓词粒度是非法的；如果生产者产生的是另一种粒度，先用 <code>pto.pbitcast</code> 重新解释。</li>
+<li>两路输出形成一个有序对 (<code>%low</code>, <code>%high</code>)，这种配对关系必须保持。</li>
 </ul>
-<h2 id="_3">相关页面<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+</div>
+<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<pre class="highlight"><code class="language-mlir">%lo, %hi = pto.pdintlv_b8 %m0, %m1
+    : !pto.mask&lt;b8&gt;, !pto.mask&lt;b8&gt; -&gt; !pto.mask&lt;b8&gt;, !pto.mask&lt;b8&gt;</code></pre>
+<h2 id="_9">相关页面<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../../predicate-generation-and-algebra_zh/">谓词生成与代数</a></li>
+<li>指令集总览：<a href="../../../predicate-generation-and-algebra_zh/">谓词生成与代数</a></li>
+<li>其它变体：<a href="../pdintlv-b16_zh/">pto.pdintlv_b16</a>、<a href="../pdintlv-b32_zh/">pto.pdintlv_b32</a></li>
+<li>反向操作：<a href="../pintlv-b8_zh/">pto.pintlv_b8</a></li>
+<li>谓词粒度重解释：<a href="../../../../vector/ops/conversion-ops/pbitcast_zh/">pto.pbitcast</a></li>
 </ul>
               
             </div>

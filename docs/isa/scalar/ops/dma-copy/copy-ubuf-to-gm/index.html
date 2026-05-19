@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -750,12 +774,6 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
-    </li>
-        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -944,66 +962,56 @@
               
                 <!-- Generated from `docs/isa/scalar/ops/dma-copy/copy-ubuf-to-gm.md` -->
 
-<h1 id="ptocopy_ubuf_to_gm">pto.copy_ubuf_to_gm<a class="headerlink" href="#ptocopy_ubuf_to_gm" title="Permanent link">&para;</a></h1>
-<p><code>pto.copy_ubuf_to_gm</code> is part of the <a href="../../../dma-copy/">DMA Copy</a> instruction set.</p>
+<h1 id="ptomte_ub_gm">pto.mte_ub_gm<a class="headerlink" href="#ptomte_ub_gm" title="Permanent link">&para;</a></h1>
+<p><code>pto.mte_ub_gm</code> is part of the <a href="../../../dma-copy/">DMA Copy</a> instruction set.</p>
+<div class="admonition note">
+<p class="admonition-title">PTO ISA v0.6 surface</p>
+<p>The v0.6 PTO micro-instruction surface replaces the earlier <code>pto.copy_ubuf_to_gm</code> plus standalone <code>set_loop_size_*</code> / <code>set_loop_stride_*</code> configuration ops with a single grouped instruction: <code>pto.mte_ub_gm</code> with inline <code>nburst(...)</code> and optional <code>loop(...)</code> clauses.</p>
+</div>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Execute a DMA transfer from Unified Buffer into Global Memory using the current UB→GM loop and stride configuration.</p>
+<p>Execute a grouped UB→GM DMA transfer. <code>nburst(...)</code> defines the innermost repeated burst transfer, and optional <code>loop(...)</code> groups add outer repetition levels.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>The DMA engine reads <code>%n_burst</code> rows from <code>%ub_src</code> and writes them to <code>%gm_dst</code>. <code>%len_burst</code> controls the contiguous byte count copied per row, so padded bytes in the UB row are not written back unless they are part of the burst length. <code>%src_stride</code> and <code>%dst_stride</code> specify the row-to-row start offsets for this copy invocation.</p>
+<p>The MTE3 engine reads <code>%n_burst</code> source rows from <code>%ub_src</code> and writes them to <code>%gm_dst</code>. Each row transfers <code>%len_burst</code> contiguous bytes, and the source / destination stride operands give the start-to-start byte distance from one row to the next. Optional outer <code>loop(...)</code> groups wrap <code>nburst(...)</code> to express multi-level repetition without external loop-config state. Padding bytes added during a previous GM→UB load are stripped: MTE3 reads <code>%len_burst</code> bytes from each 32B-aligned UB row and writes only valid data to GM.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">copy_ubuf_to_gm %ub_src, %gm_dst, %sid, %n_burst, %len_burst, %reserved, %dst_stride, %src_stride</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">pto.copy_ubuf_to_gm %ub_src, %gm_dst, %sid, %n_burst, %len_burst, %reserved, %dst_stride, %src_stride : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, gm&gt;, i64, i64, i64, i64, i64, i64</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.mte_ub_gm %ub_src, %gm_dst, %len_burst
+  nburst(%n_burst, %src_stride, %dst_stride)
+  [loop(%loop_count, %loop_src_stride, %loop_dst_stride)]*
+  : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, gm&gt;, i64, i64, i64, i64,
+    [loop i64, i64, i64,]*</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Operand</th>
-<th>Type</th>
+<th>Parameter</th>
+<th>Width</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>%ub_src</td>
-<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
-<td>UB source pointer</td>
+<td><code>%ub_src</code></td>
+<td>ptr</td>
+<td>UB source pointer (<code>!pto.ptr&lt;T, ub&gt;</code>, 32B-aligned)</td>
 </tr>
 <tr>
-<td>%gm_dst</td>
-<td><code>!pto.ptr&lt;T, gm&gt;</code></td>
-<td>GM destination pointer</td>
+<td><code>%gm_dst</code></td>
+<td>ptr</td>
+<td>GM destination pointer (<code>!pto.ptr&lt;T, gm&gt;</code>)</td>
 </tr>
 <tr>
-<td>%sid</td>
-<td><code>i64</code></td>
-<td>DMA stream identifier</td>
+<td><code>%len_burst</code></td>
+<td>16 bits</td>
+<td>Contiguous bytes transferred per burst row</td>
 </tr>
 <tr>
-<td>%n_burst</td>
-<td><code>i64</code></td>
-<td>Number of burst rows to transfer</td>
+<td><code>nburst(%n_burst, %src_stride, %dst_stride)</code></td>
+<td>16 bits / 21 bits / 40 bits</td>
+<td>Required innermost burst group: count, UB source stride, GM destination stride</td>
 </tr>
 <tr>
-<td>%len_burst</td>
-<td><code>i64</code></td>
-<td>Contiguous byte count transferred per row</td>
-</tr>
-<tr>
-<td>%reserved</td>
-<td><code>i64</code></td>
-<td>Reserved field; portable code should pass zero unless a target profile documents another meaning</td>
-</tr>
-<tr>
-<td>%dst_stride</td>
-<td><code>i64</code></td>
-<td>GM row-to-row start offset in bytes</td>
-</tr>
-<tr>
-<td>%src_stride</td>
-<td><code>i64</code></td>
-<td>UB row-to-row start offset in bytes</td>
+<td><code>loop(%loop_count, %loop_src_stride, %loop_dst_stride)</code></td>
+<td>21 bits / 21 bits / 40 bits</td>
+<td>Optional outer repetition group: count, UB source stride, GM destination stride</td>
 </tr>
 </tbody>
 </table>
@@ -1025,21 +1033,23 @@
 </tbody>
 </table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>Reads UB-visible storage, writes GM-visible storage, and consumes the active UB→GM loop and stride configuration.</p>
+<p>Reads UB-visible storage and writes GM-visible storage. The MTE3 pipe is engaged for the duration of the transfer; downstream consumers (and ordering against further GM writes) must synchronize through <code>pto.set_flag</code> / <code>pto.wait_flag</code> (<code>PIPE_V</code> → <code>PIPE_MTE3</code>, and <code>pto.mem_bar</code> between back-to-back stores to the same GM address).</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <div class="admonition warning">
 <p class="admonition-title">Constraints</p>
 <ul>
-<li><code>%ub_src</code> MUST satisfy the UB alignment requirements of the selected target profile.</li>
-<li><code>%len_burst</code> MUST fit within the configured row stride and DMA limits of the selected target profile.</li>
-<li>Only the requested burst bytes are copied from each UB row; padded tail bytes remain local to UB.</li>
+<li><code>nburst(...)</code> is always required.</li>
+<li>Each <code>loop(...)</code> group must be provided as a complete triple when present.</li>
+<li><code>nburst(...)</code> is the innermost group.</li>
+<li><code>loop(...)</code> groups are ordered from inner to outer; the first <code>loop(...)</code> group wraps <code>nburst(...)</code>, and each additional <code>loop(...)</code> group wraps all earlier groups.</li>
+<li><code>%ub_src</code> MUST be 32-byte aligned.</li>
 </ul>
 </div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <div class="admonition danger">
 <p class="admonition-title">Exceptions</p>
 <ul>
-<li>The verifier rejects illegal operand shapes, unsupported pipe or event identifiers, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
+<li>The verifier rejects illegal operand shapes, malformed clause groups, and attribute combinations not valid for the selected target profile.</li>
 <li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
 </div>
@@ -1052,12 +1062,25 @@
 </ul>
 </details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre class="highlight"><code class="language-mlir">pto.copy_ubuf_to_gm %ub_src, %gm_dst, %sid, %n_burst, %len_burst, %reserved, %dst_stride, %src_stride : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, gm&gt;, i64, i64, i64, i64, i64, i64</code></pre>
+<pre class="highlight"><code class="language-mlir">// Two-level outbound transfer: rows x tiles.
+pto.mte_ub_gm %ub_in, %gm_out, %len_burst
+  nburst(%rows, %ub_row_stride, %gm_row_stride)
+  loop(%tiles, %ub_tile_stride, %gm_tile_stride)
+  : !pto.ptr&lt;f16, ub&gt;, !pto.ptr&lt;f16, gm&gt;, i64, i64, i64, i64,
+    loop i64, i64, i64</code></pre>
+<pre class="highlight"><code class="language-mlir">// Three-level outbound transfer: rows x tiles x batches.
+pto.mte_ub_gm %ub_in, %gm_out, %len_burst
+  nburst(%rows, %ub_row_stride, %gm_row_stride)
+  loop(%tiles, %ub_tile_stride, %gm_tile_stride)
+  loop(%batches, %ub_batch_stride, %gm_batch_stride)
+  : !pto.ptr&lt;f16, ub&gt;, !pto.ptr&lt;f16, gm&gt;, i64, i64, i64, i64,
+    loop i64, i64, i64, loop i64, i64, i64</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../dma-copy/">DMA Copy</a></li>
-<li>Previous op in instruction set: <a href="../copy-gm-to-ubuf/">pto.copy_gm_to_ubuf</a></li>
-<li>Next op in instruction set: <a href="../copy-ubuf-to-ubuf/">pto.copy_ubuf_to_ubuf</a></li>
+<li>Reverse direction: <a href="../copy-gm-to-ubuf/">pto.mte_gm_ub</a></li>
+<li>Intra-UB copy: <a href="../copy-ubuf-to-ubuf/">pto.mte_ub_ub</a></li>
+<li>Pipeline sync: <a href="../../pipeline-sync/set-flag/">pto.set_flag</a>, <a href="../../pipeline-sync/wait-flag/">pto.wait_flag</a>, <a href="../../pipeline-sync/mem-bar/">pto.mem_bar</a></li>
 <li>Control-shell overview: <a href="../../../control-and-configuration/">Control and configuration</a></li>
 </ul>
               

@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -932,22 +956,50 @@
 <li>所有有状态的非对齐形式都以 SSA 结果的方式暴露状态更新。</li>
 </ul>
 <h2 id="_6">对齐状态相关操作<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="ptoinit_align"><code>pto.init_align</code><a class="headerlink" href="#ptoinit_align" title="Permanent link">&para;</a></h3>
-<p><strong>语法</strong>：<code>%align = pto.init_align : -&gt; !pto.align</code></p>
-<p><strong>语义</strong>：初始化一个新的对齐状态。</p>
+<h3 id="ptoinit_align-store"><code>pto.init_align</code>：初始化 store 端对齐状态载体<a class="headerlink" href="#ptoinit_align-store" title="Permanent link">&para;</a></h3>
+<p><strong>语法</strong>：<code>%result = pto.init_align : !pto.align</code></p>
+<p><strong>语义</strong>：初始化 store 端对齐状态载体。</p>
+<p><strong>输出</strong>：<code>%result</code> 是一个全新的、零初始化的对齐状态载体，用于 <strong>store 端</strong> 的非对齐流，例如 <code>pto.vstus</code>、<code>pto.vstur</code>、<code>pto.vstar</code>、<code>pto.vstas</code> 和 <code>pto.pstu</code>。</p>
+<p><strong>约束</strong>：此操作只用于 store 端初始化。非对齐 load 流仍然必须从 <code>pto.vldas</code> 开始，而不是 <code>pto.init_align</code>。</p>
 <pre class="highlight"><code class="language-c">align = init_align();</code></pre>
 <h3 id="ptovldas-load"><code>pto.vldas</code>：为非对齐 load 预热对齐状态<a class="headerlink" href="#ptovldas-load" title="Permanent link">&para;</a></h3>
-<p><strong>语法</strong>：<code>%align = pto.vldas %ub : !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></p>
-<p><strong>语义</strong>：为后续的非对齐 load 预热对齐状态。源地址周围的对齐块会作为后续 load 流的种子状态。</p>
+<p><strong>语法</strong>：<code>%result = pto.vldas %source : !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></p>
+<p><strong>语义</strong>：为后续的非对齐 load 预热对齐缓冲区。</p>
+<p><strong>输入</strong>：<code>%source</code> 是 UB 地址，其所在的对齐块用于作为 load 对齐状态的种子。</p>
+<p><strong>输出</strong>：<code>%result</code> 是初始化后的 load 端对齐状态。</p>
+<p><strong>约束</strong>：</p>
+<ul>
+<li>此操作是同一对齐状态链上 <code>pto.vldus</code> 流的必备起始操作。</li>
+<li>源地址本身不需要 32 字节对齐；硬件会将其截断到对齐块边界以执行预热 load。</li>
+</ul>
+<p><strong>延迟</strong>：<strong>9</strong> 周期。</p>
 <pre class="highlight"><code class="language-mlir">%align = pto.vldas %ub : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align</code></pre>
 <h3 id="ptovldus-load"><code>pto.vldus</code>：带对齐状态更新的非对齐 load<a class="headerlink" href="#ptovldus-load" title="Permanent link">&para;</a></h3>
-<p><strong>语法</strong>：<code>%vec, %align_out = pto.vldus %ub, %align : !pto.ptr&lt;T, ub&gt;, !pto.align -&gt; !pto.vreg&lt;NxT&gt;, !pto.align</code></p>
-<p><strong>语义</strong>：使用给定的对齐状态执行一次非对齐 load，并同时返回加载得到的向量与更新后的对齐状态。</p>
+<p><strong>语法</strong>：<code>%result, %align_out = pto.vldus %source, %align : !pto.ptr&lt;T, ub&gt;, !pto.align -&gt; !pto.vreg&lt;NxT&gt;, !pto.align</code></p>
+<p><strong>语义</strong>：使用预热好的对齐状态执行一次非对齐 load。</p>
+<p><strong>输入</strong>：<code>%source</code> 是当前 UB 地址；<code>%align</code> 是由 <code>pto.vldas</code> 或前一条 <code>pto.vldus</code> 产出的 load 端对齐状态。</p>
+<p><strong>输出</strong>：<code>%result</code> 是装配出的向量值；<code>%align_out</code> 是更新后的对齐状态。</p>
+<p><strong>约束</strong>：</p>
+<ul>
+<li>同一向量循环中，第一条依赖的 <code>pto.vldus</code> 之前必须出现匹配的 <code>pto.vldas</code>。</li>
+<li>A5 no-post 接口在内部保留了一个结构体形式的返回值以便下沉，但其中的 <code>base</code> 字段不是用户可见的有意义状态；VPTO 在表面上隐藏该值，仅暴露更新后的对齐状态载体。</li>
+<li>重新使用原始的 <code>%source</code> 会启动一个新的显式访问点；如果调用方希望再次进行 no-post 访问，应显式计算下一个源指针，并配上必需的对齐状态初始化。</li>
+</ul>
+<p><strong>延迟</strong>：<strong>9</strong> 周期。</p>
 <pre class="highlight"><code class="language-mlir">%vec, %align_out = pto.vldus %ub, %align : !pto.ptr&lt;f32, ub&gt;, !pto.align -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align</code></pre>
-<h3 id="ptovstus-store"><code>pto.vstus</code>：带对齐状态更新的非对齐 store<a class="headerlink" href="#ptovstus-store" title="Permanent link">&para;</a></h3>
-<p><strong>语法</strong>：<code>%align_out = pto.vstus %align, %offset, %vec, %ub : !pto.align, i32, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></p>
-<p><strong>语义</strong>：使用给定的对齐状态执行一次非对齐 store，并返回更新后的对齐状态。</p>
-<pre class="highlight"><code class="language-mlir">%store_align = pto.init_align : -&gt; !pto.align
+<h3 id="ptovstus-no-post-store"><code>pto.vstus</code>：带标量偏移的 no-post 非对齐 store<a class="headerlink" href="#ptovstus-no-post-store" title="Permanent link">&para;</a></h3>
+<p><strong>语法</strong>：<code>%align_out = pto.vstus %align_in, %offset, %value, %base : !pto.align, i32, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align</code></p>
+<p><strong>语义</strong>：带标量偏移的 no-post 非对齐 store。</p>
+<p><strong>输入</strong>：<code>%align_in</code> 是输入的 store 端对齐状态；<code>%offset</code> 是标量步长；<code>%value</code> 是被存储的向量；<code>%base</code> 是 UB 基址。</p>
+<p><strong>输出</strong>：<code>%align_out</code> 是更新后的缓冲尾部状态。</p>
+<p><strong>约束</strong>：</p>
+<ul>
+<li>这是非对齐 store 家族里带标量偏移的有状态形式。同一个流的首个 <code>%align_in</code> 应来自 <code>pto.init_align</code>。</li>
+<li>此指令 <strong>不</strong> 表示「从 <code>%base + %offset</code> 开始存储一整个向量」。相反，<code>%offset</code> 描述当前这步在流中前进多远，而 <code>%align_out</code> 携带尚未提交的尾部残量。</li>
+<li>no-post 表面不暴露已更新的基址指针。后续 flush 操作（<code>pto.vstas</code> / <code>pto.vstar</code>）必须显式使用与本条 <code>pto.vstus</code> 对应的目的地/偏移对，指明同一个逻辑 flush 点。</li>
+</ul>
+<p><strong>延迟</strong>：<strong>9</strong> 周期。</p>
+<pre class="highlight"><code class="language-mlir">%store_align = pto.init_align : !pto.align
 %next_align = pto.vstus %store_align, %offset, %vec, %ub
     : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align</code></pre>
 <h2 id="_7">完整的对齐状态流模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
@@ -962,7 +1014,7 @@
 %result1 = pto.vabs %v1, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // ─── Store 流 ───
-%store_align0 = pto.init_align : -&gt; !pto.align
+%store_align0 = pto.init_align : !pto.align
 %align_out1 = pto.vstus %store_align0, %c32, %result0, %ub_out : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align
 %align_out2 = pto.vstus %align_out1, %c32, %result1, %ub_out : !pto.align, i32, !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt; -&gt; !pto.align</code></pre>
 <h2 id="_8">约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
@@ -971,9 +1023,9 @@
 <ul>
 <li><code>pto.vldas</code> 必须是非对齐 load 流的起始操作。</li>
 <li><code>pto.vldus</code> 必须接在同一条对齐状态链上的 <code>pto.vldas</code> 之后。</li>
-<li><code>pto.vstus</code> 必须以 <code>pto.init_align</code> 启动新的 store 对齐流。</li>
+<li>store 端的非对齐流（<code>pto.vstus</code> 及相关的 <code>pto.vstur</code>、<code>pto.vstar</code>、<code>pto.vstas</code>、<code>pto.pstu</code>）必须由 <code>pto.init_align</code> 初始化。<code>pto.init_align</code> <strong>只用于 store 端</strong>，不能用来预热 load 流。</li>
 <li>对齐状态必须在线性流中传递，不能随意分叉。</li>
-<li>对于 <code>pto.vstus</code>，<code>%offset</code> 控制每次 store 在流中的步进。</li>
+<li>对于 <code>pto.vstus</code>，<code>%offset</code> 控制每一步在流中前进多远，而不是相对 <code>%base</code> 的绝对存储位移。后续 flush 操作（<code>pto.vstas</code> / <code>pto.vstar</code>）必须复用配套的目的地/偏移对。</li>
 </ul>
 </div>
 <h2 id="_9">为什么要显式化对齐状态<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>

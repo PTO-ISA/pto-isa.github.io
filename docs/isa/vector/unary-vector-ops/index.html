@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -722,7 +746,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -999,10 +1023,10 @@
   %remaining_init = arith.constant 1024 : i32
   %_:1 = scf.for %offset = %c0 to %total step %c64
       iter_args(%remaining = %remaining_init) -&gt; (i32) {
-    %mask, %next_remaining = pto.plt_b32 %remaining : i32 -&gt; !pto.mask, i32
+    %mask, %next_remaining = pto.plt_b32 %remaining : i32 -&gt; !pto.mask&lt;G&gt;, i32
     %vec = pto.vlds %ub_in[%offset] : !pto.ptr -&gt; !pto.vreg&lt;64xf32&gt;
-    %out = pto.vabs %vec, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-    pto.vsts %out, %ub_out[%offset], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr, !pto.mask
+    %out = pto.vabs %vec, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+    pto.vsts %out, %ub_out[%offset], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr, !pto.mask&lt;b32&gt;
     scf.yield %next_remaining : i32
   }
 }</code></pre>
@@ -1250,7 +1274,7 @@
 <h2 id="arithmetic">Arithmetic<a class="headerlink" href="#arithmetic" title="Permanent link">&para;</a></h2>
 <h3 id="ptovabs"><code>pto.vabs</code><a class="headerlink" href="#ptovabs" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vabs %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vabs %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 RV:</strong> <code>RV_VABS_FP</code>; <strong>Latency:</strong> 5 (f32/f16), 5 (i32/i16/i8)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
@@ -1264,7 +1288,7 @@
 <hr />
 <h3 id="ptovneg"><code>pto.vneg</code><a class="headerlink" href="#ptovneg" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vneg %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vneg %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 RV:</strong> <code>RV_VMULS</code> (uses scalar-multiply hardware); <strong>Latency:</strong> 8 (f32/f16), 8 (i32/i16/i8)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
@@ -1279,7 +1303,7 @@
 <h2 id="transcendental">Transcendental<a class="headerlink" href="#transcendental" title="Permanent link">&para;</a></h2>
 <h3 id="ptovexp"><code>pto.vexp</code><a class="headerlink" href="#ptovexp" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vexp %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vexp %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 RV:</strong> <code>RV_VEXP</code>; <strong>Latency:</strong> 16 (f32), 21 (f16)</li>
 <li><strong>A2/A3 throughput:</strong> 2 cycles/repeat (f32), 4 cycles/repeat (f16); <strong>interval:</strong> 18 cycles</li>
 </ul>
@@ -1289,12 +1313,12 @@
 <li><strong>inputs:</strong> <code>%input</code> is the source vector and <code>%mask</code> selects active lanes.</li>
 <li><strong>outputs:</strong> <code>%result</code> holds <code>exp(input[i])</code> per active lane.</li>
 <li><strong>constraints and limitations:</strong> Only floating-point element types are legal.</li>
-<li><strong>Performance note:</strong> f32 is significantly faster than f16 on A5 (16 vs 21 cycles). For f16, prefer <code>vexpdiff</code> (fused exp-diff) for numerical stability in softmax.</li>
+<li><strong>Performance note:</strong> f32 is significantly faster than f16 on A5 (16 vs 21 cycles). For f16, prefer <code>vexpdif</code> (fused exp-diff) for numerical stability in softmax.</li>
 </ul>
 <hr />
 <h3 id="ptovln"><code>pto.vln</code><a class="headerlink" href="#ptovln" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vln %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vln %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 RV:</strong> <code>RV_VLN</code>; <strong>Latency:</strong> 18 (f32), 23 (f16)</li>
 <li><strong>A2/A3 throughput:</strong> 2 cycles/repeat (f32), 4 cycles/repeat (f16); <strong>interval:</strong> 18 cycles</li>
 </ul>
@@ -1308,7 +1332,7 @@
 <hr />
 <h3 id="ptovsqrt"><code>pto.vsqrt</code><a class="headerlink" href="#ptovsqrt" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vsqrt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vsqrt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 RV:</strong> <code>RV_VSQRT</code>; <strong>Latency:</strong> 17 (f32), 22 (f16)</li>
 <li><strong>A2/A3 throughput:</strong> 2 cycles/repeat (f32), 4 cycles/repeat (f16); <strong>interval:</strong> 18 cycles</li>
 </ul>
@@ -1323,7 +1347,7 @@
 <hr />
 <h3 id="ptovrsqrt"><code>pto.vrsqrt</code><a class="headerlink" href="#ptovrsqrt" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vrsqrt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vrsqrt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>Latency:</strong> equivalent to <code>vsqrt</code>; uses <code>RV_VRSQRT</code> hardware path</li>
 <li><strong>A2/A3 throughput:</strong> 2 cycles/repeat (f32), 4 cycles/repeat (f16); <strong>interval:</strong> 18 cycles</li>
 </ul>
@@ -1337,7 +1361,7 @@
 <hr />
 <h3 id="ptovrec"><code>pto.vrec</code><a class="headerlink" href="#ptovrec" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vrec %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vrec %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>Latency:</strong> synthesized via <code>vdiv</code>; throughput matches <code>vdiv</code></li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
@@ -1352,7 +1376,7 @@
 <h2 id="activation">Activation<a class="headerlink" href="#activation" title="Permanent link">&para;</a></h2>
 <h3 id="ptovrelu"><code>pto.vrelu</code><a class="headerlink" href="#ptovrelu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vrelu %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vrelu %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 RV:</strong> <code>RV_VRELU</code>; <strong>Latency:</strong> 5 (f32/f16)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
@@ -1368,7 +1392,7 @@
 <h2 id="bitwise">Bitwise<a class="headerlink" href="#bitwise" title="Permanent link">&para;</a></h2>
 <h3 id="ptovnot"><code>pto.vnot</code><a class="headerlink" href="#ptovnot" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vnot %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vnot %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 RV:</strong> <code>RV_VNOT</code>; <strong>Latency:</strong> 5 (integer types only)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 18 cycles</li>
 </ul>
@@ -1382,7 +1406,7 @@
 <hr />
 <h3 id="ptovbcnt"><code>pto.vbcnt</code><a class="headerlink" href="#ptovbcnt" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vbcnt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vbcnt %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Population count — counts the number of set bits in each lane's element.</li>
 </ul>
 <pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
@@ -1395,7 +1419,7 @@
 <hr />
 <h3 id="ptovcls"><code>pto.vcls</code><a class="headerlink" href="#ptovcls" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vcls %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vcls %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Count leading sign bits — for a signed integer, counts how many bits from the MSB are equal to the sign bit.</li>
 </ul>
 <pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
@@ -1409,7 +1433,7 @@
 <h2 id="movement">Movement<a class="headerlink" href="#movement" title="Permanent link">&para;</a></h2>
 <h3 id="ptovmov"><code>pto.vmov</code><a class="headerlink" href="#ptovmov" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vmov %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vmov %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 RV:</strong> <code>RV_VLD</code> (proxy); <strong>Latency:</strong> 9 (f32/f16), 9 (integer)</li>
 <li><strong>A2/A3 throughput:</strong> 1 cycle/repeat; <strong>interval:</strong> 13 cycles (<code>A2A3_INTERVAL_VCOPY</code>)</li>
 </ul>
@@ -1423,14 +1447,14 @@
 <hr />
 <h2 id="typical-usage">Typical Usage<a class="headerlink" href="#typical-usage" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-mlir">// Softmax numerator: exp(x - max) using vexp
-%sub = pto.vsub %x, %max_broadcast, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-%exp = pto.vexp %sub, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+%sub = pto.vsub %x, %max_broadcast, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+%exp = pto.vexp %sub, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Reciprocal for division
-%sum_rcp = pto.vrec %sum, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+%sum_rcp = pto.vrec %sum, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // ReLU activation (lowest latency unary on A5: 5 cycles)
-%activated = pto.vrelu %linear_out, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
+%activated = pto.vrelu %linear_out, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
               
             </div>
           </div><footer>

@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -950,10 +974,10 @@
     pto.vecscope {
       %_:1 = scf.for %offset = %c0 to %c1024 step %c64
           iter_args(%remaining = %c1024_i32) -&gt; (i32) {
-        %mask, %next = pto.plt_b32 %remaining : i32 -&gt; !pto.mask, i32
+        %mask, %next = pto.plt_b32 %remaining : i32 -&gt; !pto.mask&lt;G&gt;, i32
         %vec = pto.vlds %ub_in[%offset] : !pto.ptr -&gt; !pto.vreg&lt;64xf32&gt;
-        %out = pto.vabs %vec, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-        pto.vsts %out, %ub_out[%offset], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr, !pto.mask
+        %out = pto.vabs %vec, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+        pto.vsts %out, %ub_out[%offset], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr, !pto.mask&lt;b32&gt;
         scf.yield %next : i32
       }
     }
@@ -1140,9 +1164,9 @@
       -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align, !pto.ptr&lt;f32, ub&gt;</code></pre>
 <hr />
 <h2 id="_5">双路加载与去交织<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<h3 id="ptovldx2"><code>pto.vldx2</code><a class="headerlink" href="#ptovldx2" title="Permanent link">&para;</a></h3>
+<h3 id="ptovldsx2"><code>pto.vldsx2</code><a class="headerlink" href="#ptovldsx2" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>语法：</strong> <code>%low, %high = pto.vldx2 %source[%offset], "DIST" : !pto.ptr&lt;T, ub&gt;, index -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语法：</strong> <code>%low, %high = pto.vldsx2 %source[%offset], "DIST" : !pto.ptr&lt;T, ub&gt;, index -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>语义：</strong> 从交织布局中一次装出两路结果，常用于 AoS→SoA 转换。</li>
 </ul>
 <p>合法分布模式包括 <code>DINTLV_B8</code>、<code>DINTLV_B16</code>、<code>DINTLV_B32</code>、<code>BDINTLV</code>。</p>
@@ -1161,7 +1185,7 @@
 <p>真正决定“从哪里读”的是 stride token，而不只是 lane 编号。</p>
 <h3 id="ptovsldb"><code>pto.vsldb</code><a class="headerlink" href="#ptovsldb" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>语法：</strong> <code>%result = pto.vsldb %source, %offset, %mask : !pto.ptr&lt;T, ub&gt;, i32, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语法：</strong> <code>%result = pto.vsldb %source, %offset, %mask : !pto.ptr&lt;T, ub&gt;, i32, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>语义：</strong> 按 block stride 从向量 tile buffer 装载，常用于二维 tile 访问。</li>
 </ul>
 <p>这里的 <code>%offset</code> 不是普通字节偏移，而是一个编码了 stride / repeat 规律的控制字。被 mask 关闭的 block 会在结果中清零，也不应为该 block 触发地址越界异常。</p>
@@ -1188,7 +1212,7 @@
 </ul>
 <h3 id="ptovgather2_bc"><code>pto.vgather2_bc</code><a class="headerlink" href="#ptovgather2_bc" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>语法：</strong> <code>%result = pto.vgather2_bc %source, %offsets, %mask : !pto.ptr&lt;T, ub&gt;, !pto.vreg&lt;NxI&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>语法：</strong> <code>%result = pto.vgather2_bc %source, %offsets, %mask : !pto.ptr&lt;T, ub&gt;, !pto.vreg&lt;NxI&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>语义：</strong> 带广播语义的 gather，受谓词控制。</li>
 </ul>
 <p>被 mask 关闭的 lane 不参与地址合并，也不会触发地址异常，结果位置按零填充。</p>
@@ -1196,7 +1220,7 @@
 <h2 id="_7">连续存储<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="ptovsts"><code>pto.vsts</code><a class="headerlink" href="#ptovsts" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>语法：</strong> <code>pto.vsts %value, %dest[%offset], %mask {dist = "DIST"} : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, !pto.mask</code></li>
+<li><strong>语法：</strong> <code>pto.vsts %value, %dest[%offset], %mask {dist = "DIST"} : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, !pto.mask&lt;G&gt;</code></li>
 <li><strong>语义：</strong> 按给定分布模式，把向量寄存器写回向量 tile buffer。</li>
 </ul>
 <p>约束：</p>
@@ -1231,9 +1255,9 @@
 </tr>
 </tbody>
 </table>
-<h3 id="ptovstx2"><code>pto.vstx2</code><a class="headerlink" href="#ptovstx2" title="Permanent link">&para;</a></h3>
+<h3 id="ptovstsx2"><code>pto.vstsx2</code><a class="headerlink" href="#ptovstsx2" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>语法：</strong> <code>pto.vstx2 %low, %high, %dest[%offset], "DIST", %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, index, !pto.mask</code></li>
+<li><strong>语法：</strong> <code>pto.vstsx2 %low, %high, %dest[%offset], "DIST", %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, index, !pto.mask&lt;G&gt;</code></li>
 <li><strong>语义：</strong> 双路交织存储，常用于 SoA→AoS 转换。</li>
 </ul>
 <p>合法分布模式包括 <code>INTLV_B8</code>、<code>INTLV_B16</code>、<code>INTLV_B32</code>。</p>
@@ -1251,7 +1275,7 @@
 <p>真正定义写入模式的是 stride token。</p>
 <h3 id="ptovsstb"><code>pto.vsstb</code><a class="headerlink" href="#ptovsstb" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>语法：</strong> <code>pto.vsstb %value, %dest, %offset, %mask : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, i32, !pto.mask</code></li>
+<li><strong>语法：</strong> <code>pto.vsstb %value, %dest, %offset, %mask : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, i32, !pto.mask&lt;G&gt;</code></li>
 <li><strong>语义：</strong> 按 block stride 存储二维 tile。</li>
 </ul>
 <p>这里的 <code>%offset</code> 同样是控制字，而不是普通的字节偏移。</p>

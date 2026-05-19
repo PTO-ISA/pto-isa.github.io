@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -602,6 +626,10 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#ptovtrc">pto.vtrc</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ptovbitcast">pto.vbitcast</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ptopbitcast">pto.pbitcast</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#typical-usage">Typical Usage</a>
     </li>
     </ul>
@@ -686,7 +714,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -1083,7 +1111,7 @@
     : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
 %odd  = pto.vcvt %in1 {round_mode = "ROUND_R", sat = "RS_ENABLE", part = "PART_ODD"}
     : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;128xf16&gt;
-%result = pto.vor %even, %odd, %mask : !pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask -&gt; !pto.vreg&lt;128xf16&gt;</code></pre>
+%result = pto.vor %even, %odd, %mask : !pto.vreg&lt;128xf16&gt;, !pto.vreg&lt;128xf16&gt;, !pto.mask&lt;b16&gt; -&gt; !pto.vreg&lt;128xf16&gt;</code></pre>
 <hr />
 <h2 id="ptovtrc"><code>pto.vtrc</code><a class="headerlink" href="#ptovtrc" title="Permanent link">&para;</a></h2>
 <ul>
@@ -1109,9 +1137,34 @@
 // input:  [1.4, 2.6, -1.5, 3.0]
 // output: [1.0, 3.0, -2.0, 3.0]</code></pre></p>
 <hr />
+<h2 id="ptovbitcast"><code>pto.vbitcast</code><a class="headerlink" href="#ptovbitcast" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>syntax:</strong> <code>%result = pto.vbitcast %input : !pto.vreg&lt;NxT0&gt; -&gt; !pto.vreg&lt;MxT1&gt;</code></li>
+<li><strong>semantics:</strong> Bitwise reinterpretation of a vreg vector without changing the underlying bit pattern. Performs a pure type cast that preserves the exact bits of each element, changing only their interpretation (for example, from floating-point to integer).</li>
+<li><strong>inputs:</strong> <code>%input</code> is the source vector register value.</li>
+<li><strong>outputs:</strong> <code>%result</code> is the reinterpreted vector register value.</li>
+<li><strong>constraints and limitations:</strong></li>
+<li>Both source and result must be <code>!pto.vreg&lt;...&gt;</code> types.</li>
+<li>Source and result vectors must have the same total bit width (currently 2048 bits): <code>N * bitwidth(T0) = M * bitwidth(T1) = 2048</code>.</li>
+<li>Only integer and floating-point element types are supported.</li>
+</ul>
+<p>See <a href="../ops/conversion-ops/vbitcast/"><code>pto.vbitcast</code></a> for full details, type-pair examples, and the comparison with <code>pto.vcvt</code>.</p>
+<hr />
+<h2 id="ptopbitcast"><code>pto.pbitcast</code><a class="headerlink" href="#ptopbitcast" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>syntax:</strong> <code>%result = pto.pbitcast %input : !pto.mask&lt;G0&gt; -&gt; !pto.mask&lt;G1&gt;</code></li>
+<li><strong>semantics:</strong> Bitwise reinterpretation of a predicate register without changing the underlying predicate-register image. Makes mask-family granularity reinterpretation explicit in VPTO IR when a producer and consumer expect different <code>!pto.mask&lt;...&gt;</code> views of the same hardware predicate state.</li>
+<li><strong>inputs:</strong> <code>%input</code> is the source predicate register value.</li>
+<li><strong>outputs:</strong> <code>%result</code> is the reinterpreted predicate register value.</li>
+<li><strong>constraints and limitations:</strong></li>
+<li>Both source and result must be <code>!pto.mask&lt;...&gt;</code> types.</li>
+<li><code>pto.pbitcast</code> does not materialize or normalize predicate contents; it only changes which mask granularity the surrounding VPTO IR uses to interpret the same predicate bits.</li>
+</ul>
+<p>See <a href="../ops/conversion-ops/pbitcast/"><code>pto.pbitcast</code></a> for full details and examples.</p>
+<hr />
 <h2 id="typical-usage">Typical Usage<a class="headerlink" href="#typical-usage" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-mlir">// Quantization: f32 → i8 with saturation
-%scaled = pto.vmuls %input, %scale, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+%scaled = pto.vmuls %input, %scale, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 %quantized = pto.vcvt %scaled {round_mode = "ROUND_R", sat = "RS_ENABLE"}
     : !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xi32&gt;
 // Then narrow i32 → i8 via pack ops

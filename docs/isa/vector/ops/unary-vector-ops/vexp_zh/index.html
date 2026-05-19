@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -923,11 +947,11 @@
 <p>活跃 lane 会把指数值写入 <code>dst[i]</code>；非活跃 lane 则保持目标原值，不会被自动清零。</p>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%result = vexp %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask</code></pre>
+<pre class="highlight"><code class="language-text">%result = vexp %input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">%result = pto.vexp %input, %mask : (!pto.vreg&lt;NxT&gt;, !pto.mask) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
+<pre class="highlight"><code class="language-mlir">%result = pto.vexp %input, %mask : (!pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt;) -&gt; !pto.vreg&lt;NxT&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">pto.vexp ins(%input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask)
+<pre class="highlight"><code class="language-mlir">pto.vexp ins(%input, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt;)
           outs(%result : !pto.vreg&lt;NxT&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>声明位于 <code>include/pto/common/pto_instr.hpp</code>：</p>
@@ -983,7 +1007,7 @@ PTO_INST RecordEvent VEXP(VecDst&amp; dst, const VecSrc&amp; src,
 </tr>
 <tr>
 <td><code>%mask</code></td>
-<td><code>!pto.mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
 <td>谓词掩码；掩码位为 1 的 lane 为活跃 lane</td>
 </tr>
 </tbody>
@@ -1114,13 +1138,13 @@ PTO_INST RecordEvent VEXP(VecDst&amp; dst, const VecSrc&amp; src,
 <p>示例：1024 个 f32 元素，16 次迭代：</p>
 <pre class="highlight"><code class="language-text">A5（流水重叠）：16 + 15×2 = 46 周期
 A2/A3：13 + 26 + 32 + 270 = 341 周期</code></pre>
-<p><strong>性能说明：</strong> 对数值稳定的 softmax，更推荐使用 <code>vexpdiff</code> 融合形式，而不是先 <code>vsub</code> 再 <code>vexp</code>。</p>
+<p><strong>性能说明：</strong> 对数值稳定的 softmax，更推荐使用 <code>vexpdif</code> 融合形式，而不是先 <code>vsub</code> 再 <code>vexp</code>。</p>
 <h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="softmax">Softmax 分子（数值稳定形式）<a class="headerlink" href="#softmax" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-mlir">%max_bc = pto.vlds %ub_max[%c0] {dist = "BRC"} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 %sub = pto.vsub %x, %max_bc, %mask
-    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-%exp = pto.vexp %sub, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+%exp = pto.vexp %sub, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h3 id="c_1">C++ 用法<a class="headerlink" href="#c_1" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;

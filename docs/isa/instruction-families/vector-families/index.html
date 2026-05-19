@@ -163,6 +163,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -486,7 +510,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -500,7 +524,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -710,7 +734,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -1089,7 +1113,7 @@ Vector Registers (!pto.vreg&lt;NxT&gt;) ──► Vector Compute (pto.v*) ──
 <td></td>
 <td>SFU and DSA Instructions</td>
 <td>Special function units and DSA-style operations</td>
-<td><code>vprelu</code>, <code>vexpdiff</code>, <code>vaxpy</code>, <code>vtranspose</code>, <code>vsort32</code></td>
+<td><code>vprelu</code>, <code>vexpdif</code>, <code>vaxpy</code>, <code>vtranspose</code>, <code>vsort32</code></td>
 </tr>
 </tbody>
 </table>
@@ -1098,7 +1122,7 @@ Vector Registers (!pto.vreg&lt;NxT&gt;) ──► Vector Compute (pto.v*) ──
 <ul>
 <li>Vector registers (<code>!pto.vreg&lt;NxT&gt;</code>)</li>
 <li>Scalar registers or immediate operands</li>
-<li>Predicate masks (<code>!pto.mask</code>) — selects which lanes participate</li>
+<li>Predicate masks (<code>!pto.mask&lt;G&gt;</code>) — selects which lanes participate</li>
 <li>Memory addresses (<code>!pto.ptr&lt;T, ub&gt;</code>) — for load/store ops</li>
 <li>Rounding-mode or distribution-mode attributes</li>
 </ul>
@@ -1214,7 +1238,7 @@ Vector Registers (!pto.vreg&lt;NxT&gt;) ──► Vector Compute (pto.v*) ──
 </tbody>
 </table>
 <h2 id="mask-behavior">Mask Behavior<a class="headerlink" href="#mask-behavior" title="Permanent link">&para;</a></h2>
-<p>Vector operations can be gated by a predicate mask. A predicate mask (<code>!pto.mask</code>) with width equal to the vector length <code>N</code> selects which lanes participate:</p>
+<p>Vector operations can be gated by a predicate mask. A predicate mask (<code>!pto.mask&lt;G&gt;</code>) with width equal to the vector length <code>N</code> selects which lanes participate:</p>
 <ul>
 <li>Lanes where the mask bit is <strong>1</strong>: the operation executes normally.</li>
 <li>Lanes where the mask bit is <strong>0</strong>: the operation produces a <strong>defined result</strong> but the specific value depends on the operation:</li>
@@ -1269,9 +1293,9 @@ Vector Registers (!pto.vreg&lt;NxT&gt;) ──► Vector Compute (pto.v*) ──
 vlds %vreg, %ub_ptr[%offset] {dist = "NORM"} : !pto.ptr&lt;f32, ub&gt;</code></pre>
 <h3 id="ssa-form-as-level-1">SSA Form (AS Level 1)<a class="headerlink" href="#ssa-form-as-level-1" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-mlir">%vdst = pto.vadd %vsrc0, %vsrc1, %mask
-    : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask) -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
+    : (!pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt;) -&gt; !pto.vreg&lt;64xf32&gt;</code></pre>
 <h3 id="dps-form-as-level-2">DPS Form (AS Level 2)<a class="headerlink" href="#dps-form-as-level-2" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">pto.vadd ins(%vsrc0, %vsrc1, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask)
+<pre class="highlight"><code class="language-mlir">pto.vadd ins(%vsrc0, %vsrc1, %mask : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt;)
           outs(%vdst : !pto.vreg&lt;64xf32&gt;)</code></pre>
 <p>See <a href="../../syntax-and-operands/assembly-model/">Assembly Spelling And Operands</a> for the full syntax specification.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>

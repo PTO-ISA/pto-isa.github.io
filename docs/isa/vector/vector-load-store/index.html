@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -454,7 +478,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#dual-loads-deinterleave">Dual Loads (Deinterleave)</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ptovldx2">pto.vldx2</a>
+    <li class="toctree-l4"><a class="reference internal" href="#ptovldsx2">pto.vldsx2</a>
     </li>
         </ul>
     </li>
@@ -484,7 +508,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#dual-stores-interleave">Dual Stores (Interleave)</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#ptovstx2">pto.vstx2</a>
+    <li class="toctree-l4"><a class="reference internal" href="#ptovstsx2">pto.vstsx2</a>
     </li>
         </ul>
     </li>
@@ -526,7 +550,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -540,7 +564,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -750,7 +774,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -1035,10 +1059,10 @@
     pto.vecscope {
       %_:1 = scf.for %offset = %c0 to %c1024 step %c64
           iter_args(%remaining = %c1024_i32) -&gt; (i32) {
-        %mask, %next = pto.plt_b32 %remaining : i32 -&gt; !pto.mask, i32
+        %mask, %next = pto.plt_b32 %remaining : i32 -&gt; !pto.mask&lt;G&gt;, i32
         %vec = pto.vlds %ub_in[%offset] : !pto.ptr -&gt; !pto.vreg&lt;64xf32&gt;
-        %out = pto.vabs %vec, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
-        pto.vsts %out, %ub_out[%offset], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr, !pto.mask
+        %out = pto.vabs %vec, %mask : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+        pto.vsts %out, %ub_out[%offset], %mask : !pto.vreg&lt;64xf32&gt;, !pto.ptr, !pto.mask&lt;b32&gt;
         scf.yield %next : i32
       }
     }
@@ -1261,9 +1285,9 @@
 %vec, %align2, %ub2 = pto.vldus %ub, %align : !pto.ptr&lt;f32, ub&gt;, !pto.align -&gt; !pto.vreg&lt;64xf32&gt;, !pto.align, !pto.ptr&lt;f32, ub&gt;</code></pre></p>
 <hr />
 <h2 id="dual-loads-deinterleave">Dual Loads (Deinterleave)<a class="headerlink" href="#dual-loads-deinterleave" title="Permanent link">&para;</a></h2>
-<h3 id="ptovldx2"><code>pto.vldx2</code><a class="headerlink" href="#ptovldx2" title="Permanent link">&para;</a></h3>
+<h3 id="ptovldsx2"><code>pto.vldsx2</code><a class="headerlink" href="#ptovldsx2" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%low, %high = pto.vldx2 %source[%offset], "DIST" : !pto.ptr&lt;T, ub&gt;, index -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%low, %high = pto.vldsx2 %source[%offset], "DIST" : !pto.ptr&lt;T, ub&gt;, index -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Dual load with deinterleave (AoS → SoA conversion).</li>
 <li><strong>inputs:</strong>
   <code>%source</code> is the UB base pointer, <code>%offset</code> is the displacement, and <code>DIST</code>
@@ -1281,7 +1305,7 @@ for (int i = 0; i &lt; 64; i++) {
     high[i] = UB[base + 8*i + 4];   // odd elements
 }</code></pre>
 <p><strong>Example — Load interleaved XY pairs into separate X/Y vectors:</strong>
-<pre class="highlight"><code class="language-mlir">%x, %y = pto.vldx2 %ub[%offset], "DINTLV_B32" : !pto.ptr&lt;f32, ub&gt;, index -&gt; !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;</code></pre></p>
+<pre class="highlight"><code class="language-mlir">%x, %y = pto.vldsx2 %ub[%offset], "DINTLV_B32" : !pto.ptr&lt;f32, ub&gt;, index -&gt; !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;</code></pre></p>
 <hr />
 <h2 id="strided-loads">Strided Loads<a class="headerlink" href="#strided-loads" title="Permanent link">&para;</a></h2>
 <h3 id="ptovsld"><code>pto.vsld</code><a class="headerlink" href="#ptovsld" title="Permanent link">&para;</a></h3>
@@ -1300,7 +1324,7 @@ for (int i = 0; i &lt; 64; i++) {
 <hr />
 <h3 id="ptovsldb"><code>pto.vsldb</code><a class="headerlink" href="#ptovsldb" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vsldb %source, %offset, %mask : !pto.ptr&lt;T, ub&gt;, i32, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vsldb %source, %offset, %mask : !pto.ptr&lt;T, ub&gt;, i32, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Block-strided load for 2D tile access.</li>
 <li><strong>inputs:</strong>
   <code>%source</code> is the UB base pointer, <code>%offset</code> is the packed stride/control word,
@@ -1350,7 +1374,7 @@ for (int i = 0; i &lt; 64; i++) {
 <hr />
 <h3 id="ptovgather2_bc"><code>pto.vgather2_bc</code><a class="headerlink" href="#ptovgather2_bc" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vgather2_bc %source, %offsets, %mask : !pto.ptr&lt;T, ub&gt;, !pto.vreg&lt;NxI&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vgather2_bc %source, %offsets, %mask : !pto.ptr&lt;T, ub&gt;, !pto.vreg&lt;NxI&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Gather with broadcast, conditioned by mask.</li>
 <li><strong>inputs:</strong>
   <code>%source</code> is the UB base pointer, <code>%offsets</code> contains gather indices, and
@@ -1366,7 +1390,7 @@ for (int i = 0; i &lt; 64; i++) {
 <h2 id="contiguous-stores">Contiguous Stores<a class="headerlink" href="#contiguous-stores" title="Permanent link">&para;</a></h2>
 <h3 id="ptovsts"><code>pto.vsts</code><a class="headerlink" href="#ptovsts" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>pto.vsts %value, %dest[%offset], %mask {dist = "DIST"} : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, !pto.mask</code></li>
+<li><strong>syntax:</strong> <code>pto.vsts %value, %dest[%offset], %mask {dist = "DIST"} : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, !pto.mask&lt;G&gt;</code></li>
 <li><strong>semantics:</strong> Vector store with distribution mode.</li>
 <li><strong>inputs:</strong>
   <code>%value</code> is the source vector, <code>%dest</code> is the UB base pointer, <code>%offset</code> is
@@ -1413,12 +1437,12 @@ for (int i = 0; i &lt; 64; i++) {
 </tbody>
 </table>
 <p><strong>Example — Contiguous store:</strong>
-<pre class="highlight"><code class="language-mlir">pto.vsts %v, %ub[%offset], %mask {dist = "NORM_B32"} : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask</code></pre></p>
+<pre class="highlight"><code class="language-mlir">pto.vsts %v, %ub[%offset], %mask {dist = "NORM_B32"} : !pto.vreg&lt;64xf32&gt;, !pto.ptr&lt;f32, ub&gt;, !pto.mask&lt;b32&gt;</code></pre></p>
 <hr />
 <h2 id="dual-stores-interleave">Dual Stores (Interleave)<a class="headerlink" href="#dual-stores-interleave" title="Permanent link">&para;</a></h2>
-<h3 id="ptovstx2"><code>pto.vstx2</code><a class="headerlink" href="#ptovstx2" title="Permanent link">&para;</a></h3>
+<h3 id="ptovstsx2"><code>pto.vstsx2</code><a class="headerlink" href="#ptovstsx2" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>pto.vstx2 %low, %high, %dest[%offset], "DIST", %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, index, !pto.mask</code></li>
+<li><strong>syntax:</strong> <code>pto.vstsx2 %low, %high, %dest[%offset], "DIST", %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, index, !pto.mask&lt;G&gt;</code></li>
 <li><strong>semantics:</strong> Dual interleaved store (SoA → AoS conversion).</li>
 <li><strong>inputs:</strong>
   <code>%low</code> and <code>%high</code> are the two source vectors, <code>%dest</code> is the UB base pointer,
@@ -1454,7 +1478,7 @@ for (int i = 0; i &lt; 64; i++) {
 <hr />
 <h3 id="ptovsstb"><code>pto.vsstb</code><a class="headerlink" href="#ptovsstb" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>pto.vsstb %value, %dest, %offset, %mask : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, i32, !pto.mask</code></li>
+<li><strong>syntax:</strong> <code>pto.vsstb %value, %dest, %offset, %mask : !pto.vreg&lt;NxT&gt;, !pto.ptr&lt;T, ub&gt;, i32, !pto.mask&lt;G&gt;</code></li>
 <li><strong>semantics:</strong> Block-strided store for 2D tile access.</li>
 <li><strong>inputs:</strong>
   <code>%value</code> is the source vector, <code>%dest</code> is the UB base pointer, <code>%offset</code> is

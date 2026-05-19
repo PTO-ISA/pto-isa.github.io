@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -912,19 +936,126 @@
               
                 <!-- Generated from `docs/isa/scalar/ops/dma-copy/copy-ubuf-to-gm_zh.md` -->
 
-<h1 id="ptocopy_ubuf_to_gm">pto.copy_ubuf_to_gm<a class="headerlink" href="#ptocopy_ubuf_to_gm" title="Permanent link">&para;</a></h1>
-<p>把数据从 Unified Buffer 回写到 Global Memory。</p>
-<h2 id="_1">语法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<pre class="highlight"><code class="language-mlir">pto.copy_ubuf_to_gm %ub_src, %gm_dst,
-    %sid, %n_burst, %len_burst, %reserved, %dst_stride, %src_stride
-    : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, gm&gt;, i64, i64, i64, i64, i64, i64</code></pre>
-<h2 id="_2">关键约束<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h1 id="ptomte_ub_gm">pto.mte_ub_gm<a class="headerlink" href="#ptomte_ub_gm" title="Permanent link">&para;</a></h1>
+<p><code>pto.mte_ub_gm</code> 属于 <a href="../../../dma-copy_zh/">DMA Copy</a> 指令集。</p>
+<div class="admonition note">
+<p class="admonition-title">PTO ISA v0.6 表面</p>
+<p>v0.6 PTO 微指令表面已把旧的 <code>pto.copy_ubuf_to_gm</code> 与独立的 <code>set_loop_size_*</code> / <code>set_loop_stride_*</code> 配置指令合并成一个分组指令 <code>pto.mte_ub_gm</code>，并通过内联的 <code>nburst(...)</code> 与可选的 <code>loop(...)</code> 子句承载所有重复结构。</p>
+</div>
+<h2 id="_1">摘要<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>执行一次分组 UB→GM DMA 传输。<code>nburst(...)</code> 描述最内层的重复 burst，<code>loop(...)</code> 可选地追加外层重复。</p>
+<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>MTE3 引擎从 <code>%ub_src</code> 读取 <code>%n_burst</code> 行，写入 <code>%gm_dst</code>。每行搬运 <code>%len_burst</code> 字节的连续数据，源/目标步长操作数给出相邻行起点的字节距离。可选的外层 <code>loop(...)</code> 子句把 <code>nburst(...)</code> 包裹起来表达多层重复。在 GM→UB 加载时增加的填充字节会被剥除：MTE3 仅从每个 32B 对齐的 UB 行读取 <code>%len_burst</code> 个字节，写入 GM 的只是有效数据。</p>
+<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<pre class="highlight"><code class="language-mlir">pto.mte_ub_gm %ub_src, %gm_dst, %len_burst
+  nburst(%n_burst, %src_stride, %dst_stride)
+  [loop(%loop_count, %loop_src_stride, %loop_dst_stride)]*
+  : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, gm&gt;, i64, i64, i64, i64,
+    [loop i64, i64, i64,]*</code></pre>
+<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>位宽</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>%ub_src</code></td>
+<td>ptr</td>
+<td>UB 源指针（<code>!pto.ptr&lt;T, ub&gt;</code>，32B 对齐）</td>
+</tr>
+<tr>
+<td><code>%gm_dst</code></td>
+<td>ptr</td>
+<td>GM 目标指针（<code>!pto.ptr&lt;T, gm&gt;</code>）</td>
+</tr>
+<tr>
+<td><code>%len_burst</code></td>
+<td>16 bits</td>
+<td>每行连续搬运的字节数</td>
+</tr>
+<tr>
+<td><code>nburst(%n_burst, %src_stride, %dst_stride)</code></td>
+<td>16 / 21 / 40 bits</td>
+<td>必备最内层 burst 组：数量、UB 源步长、GM 目标步长</td>
+</tr>
+<tr>
+<td><code>loop(%loop_count, %loop_src_stride, %loop_dst_stride)</code></td>
+<td>21 / 21 / 40 bits</td>
+<td>可选外层重复组：数量、UB 源步长、GM 目标步长</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td><code>—</code></td>
+<td>此形式不返回 SSA 值；它把数据写入 Global Memory。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>读取 UB 可见存储并写入 GM 可见存储。MTE3 流水线在传输期间被占用；下游消费者（以及对同一 GM 地址的后续写入排序）需要通过 <code>pto.set_flag</code> / <code>pto.wait_flag</code>（<code>PIPE_V</code> → <code>PIPE_MTE3</code>），以及在背靠背写同一 GM 地址时通过 <code>pto.mem_bar</code> 做显式同步。</p>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">约束</p>
 <ul>
-<li>当前 target profile 可能对该形式施加额外限制。</li>
+<li><code>nburst(...)</code> 必须存在。</li>
+<li>每个 <code>loop(...)</code> 子句出现时必须给出完整三元组。</li>
+<li><code>nburst(...)</code> 是最内层。</li>
+<li><code>loop(...)</code> 子句按从内到外排序；第一个 <code>loop(...)</code> 包裹 <code>nburst(...)</code>，每多一个 <code>loop(...)</code> 又把前面所有层包裹起来。</li>
+<li><code>%ub_src</code> 必须 32 字节对齐。</li>
 </ul>
-<h2 id="_3">相关页面<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+</div>
+<h2 id="_8">异常<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">异常</p>
 <ul>
-<li><a href="../../../dma-copy_zh/">DMA 拷贝</a></li>
+<li>verifier 会拒绝非法的 operand 形状、错误的子句组以及目标 profile 不支持的属性组合。</li>
+<li>约束中列出的其它非法情形同样属于契约。</li>
+</ul>
+</div>
+<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
+<details class="info">
+<summary>目标 Profile 限制</summary>
+<ul>
+<li>CPU 仿真保留可见拷贝契约，但可能不暴露所有 DMA 重叠风险。</li>
+<li>A2/A3 和 A5 可能收窄元素大小、行宽或 cache 控制语义。</li>
+</ul>
+</details>
+<h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<pre class="highlight"><code class="language-mlir">// 两层 outbound 传输：rows × tiles。
+pto.mte_ub_gm %ub_in, %gm_out, %len_burst
+  nburst(%rows, %ub_row_stride, %gm_row_stride)
+  loop(%tiles, %ub_tile_stride, %gm_tile_stride)
+  : !pto.ptr&lt;f16, ub&gt;, !pto.ptr&lt;f16, gm&gt;, i64, i64, i64, i64,
+    loop i64, i64, i64</code></pre>
+<pre class="highlight"><code class="language-mlir">// 三层 outbound 传输：rows × tiles × batches。
+pto.mte_ub_gm %ub_in, %gm_out, %len_burst
+  nburst(%rows, %ub_row_stride, %gm_row_stride)
+  loop(%tiles, %ub_tile_stride, %gm_tile_stride)
+  loop(%batches, %ub_batch_stride, %gm_batch_stride)
+  : !pto.ptr&lt;f16, ub&gt;, !pto.ptr&lt;f16, gm&gt;, i64, i64, i64, i64,
+    loop i64, i64, i64, loop i64, i64, i64</code></pre>
+<h2 id="_10">相关页面<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<ul>
+<li>指令集总览：<a href="../../../dma-copy_zh/">DMA Copy</a></li>
+<li>反向传输：<a href="../copy-gm-to-ubuf_zh/">pto.mte_gm_ub</a></li>
+<li>UB 内拷贝：<a href="../copy-ubuf-to-ubuf_zh/">pto.mte_ub_ub</a></li>
+<li>流水线同步：<a href="../../pipeline-sync/set-flag_zh/">pto.set_flag</a>、<a href="../../pipeline-sync/wait-flag_zh/">pto.wait_flag</a>、<a href="../../pipeline-sync/mem-bar_zh/">pto.mem_bar</a></li>
+<li>控制壳总览：<a href="../../../control-and-configuration_zh/">Control and configuration</a></li>
 </ul>
               
             </div>

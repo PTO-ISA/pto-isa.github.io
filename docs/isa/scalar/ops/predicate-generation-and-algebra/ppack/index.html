@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -966,11 +990,11 @@
 <div class="arithmatex">\[ \mathrm{dst}_{2N} = \begin{cases} \mathrm{ZERO}(N) \Vert \mathrm{src}_N &amp; \text{if } P = \text{LOWER} \\ \mathrm{src}_N \Vert \mathrm{ZERO}(N) &amp; \text{if } P = \text{HIGHER} \end{cases} \]</div>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">%dst = pto.ppack %src, "PART" : !pto.mask -&gt; !pto.mask</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.ppack %src, "PART" : !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">%dst = pto.ppack %src, "PART" : !pto.mask -&gt; !pto.mask</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.ppack %src, "PART" : !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">pto.ppack ins(%src, "PART" : !pto.mask) outs(%dst : !pto.mask)</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.ppack ins(%src, "PART" : !pto.mask&lt;G&gt;) outs(%dst : !pto.mask&lt;G&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">vector_bool dst;
 vector_bool src;
@@ -987,7 +1011,7 @@ ppack(dst, src, __cce_simd::LOWER);</code></pre>
 <tbody>
 <tr>
 <td><code>%src</code></td>
-<td><code>!pto.mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
 <td>Source N-bit predicate</td>
 </tr>
 <tr>
@@ -1009,7 +1033,7 @@ ppack(dst, src, __cce_simd::LOWER);</code></pre>
 <tbody>
 <tr>
 <td><code>%dst</code></td>
-<td><code>!pto.mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
 <td>2N-bit predicate with the source in the selected half</td>
 </tr>
 </tbody>
@@ -1080,22 +1104,22 @@ void pack_for_f32(RegBuf&lt;predicate_t&gt;&amp; dst,
 // %hi: lanes 0-14 active (from plt_b32 iteration 2, rem = 15)
 
 // Pack %lo into lower half of 64-bit predicate
-%full_lo = pto.ppack %lo, "LOWER" : !pto.mask -&gt; !pto.mask
+%full_lo = pto.ppack %lo, "LOWER" : !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;
 
 // Pack %hi into upper half of 64-bit predicate
-%full_hi = pto.ppack %hi, "HIGHER" : !pto.mask -&gt; !pto.mask
+%full_hi = pto.ppack %hi, "HIGHER" : !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;
 
 // OR them together to get full 64-lane tail mask
-%tail = pto.por %full_lo, %full_hi, %full_lo : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
+%tail = pto.por %full_lo, %full_hi, %full_lo : !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;</code></pre>
 <h3 id="construct-a-full-width-mask-from-two-half-width-masks">Construct a full-width mask from two half-width masks<a class="headerlink" href="#construct-a-full-width-mask-from-two-half-width-masks" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-mlir">// Pack lower half
-%dst_lower = pto.ppack %src_lower, "LOWER" : !pto.mask -&gt; !pto.mask
+%dst_lower = pto.ppack %src_lower, "LOWER" : !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;
 
 // Pack upper half
-%dst_upper = pto.ppack %src_upper, "HIGHER" : !pto.mask -&gt; !pto.mask
+%dst_upper = pto.ppack %src_upper, "HIGHER" : !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;
 
 // Combine with OR to get full-width predicate
-%combined = pto.por %dst_lower, %dst_upper, %dst_lower : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
+%combined = pto.por %dst_lower, %dst_upper, %dst_lower : !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -668,7 +692,7 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#ptovprelu">pto.vprelu</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ptovexpdiff">pto.vexpdiff</a>
+    <li class="toctree-l4"><a class="reference internal" href="#ptovexpdif">pto.vexpdif</a>
     </li>
         </ul>
     </li>
@@ -724,7 +748,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -997,7 +1021,7 @@
 <h2 id="fused-activation-ops-vregvreg">Fused Activation Ops (vreg→vreg)<a class="headerlink" href="#fused-activation-ops-vregvreg" title="Permanent link">&para;</a></h2>
 <h3 id="ptovlrelu"><code>pto.vlrelu</code><a class="headerlink" href="#ptovlrelu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vlrelu %input, %alpha, %mask : !pto.vreg&lt;NxT&gt;, T, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vlrelu %input, %alpha, %mask : !pto.vreg&lt;NxT&gt;, T, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 types:</strong> f16, f32</li>
 <li><strong>semantics:</strong> Leaky ReLU with scalar alpha.</li>
 </ul>
@@ -1027,9 +1051,9 @@
   current A5 instruction set.</li>
 </ul>
 <hr />
-<h3 id="ptovexpdiff"><code>pto.vexpdiff</code><a class="headerlink" href="#ptovexpdiff" title="Permanent link">&para;</a></h3>
+<h3 id="ptovexpdif"><code>pto.vexpdif</code><a class="headerlink" href="#ptovexpdif" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vexpdiff %input, %max : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vexpdif %input, %max : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 types:</strong> f16, f32</li>
 <li><strong>semantics:</strong> Fused exp(x - max) for numerically stable softmax.</li>
 </ul>
@@ -1129,7 +1153,7 @@ for (int i = 0; i &lt; 128; i++)
 <h2 id="extended-arithmetic">Extended Arithmetic<a class="headerlink" href="#extended-arithmetic" title="Permanent link">&para;</a></h2>
 <h3 id="ptovmull"><code>pto.vmull</code><a class="headerlink" href="#ptovmull" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%low, %high = pto.vmull %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%low, %high = pto.vmull %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>A5 types:</strong> i32/u32 (native 32×32→64 widening multiply)</li>
 <li><strong>semantics:</strong> Widening multiply with high/low results.</li>
 </ul>
@@ -1148,7 +1172,7 @@ for (int i = 0; i &lt; 128; i++)
 <hr />
 <h3 id="ptovmula"><code>pto.vmula</code><a class="headerlink" href="#ptovmula" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vmula %acc, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vmula %acc, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Multiply-accumulate.</li>
 </ul>
 <pre class="highlight"><code class="language-c">for (int i = 0; i &lt; N; i++)
@@ -1232,8 +1256,8 @@ for (int i = 0; i &lt; 128; i++)
 <hr />
 <h2 id="current-implementation-instruction-set-summary">Current Implementation Instruction Set Summary<a class="headerlink" href="#current-implementation-instruction-set-summary" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>pto.vmull %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
-<li><code>pto.vmula %acc, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><code>pto.vmull %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;</code></li>
+<li><code>pto.vmula %acc, %lhs, %rhs, %mask : !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><code>pto.vci %index {order = "ORDER"} : integer -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><code>pto.vbitsort %dest, %src, %indices, %repeat_times : !pto.ptr&lt;...&gt;, !pto.ptr&lt;...&gt;, !pto.ptr&lt;...&gt;, index</code></li>
 <li><code>pto.vmrgsort4 %dest, %src0, %src1, %src2, %src3, %count, %config : !pto.ptr&lt;...&gt;, !pto.ptr&lt;...&gt;, !pto.ptr&lt;...&gt;, !pto.ptr&lt;...&gt;, !pto.ptr&lt;...&gt;, i64, i64</code></li>
@@ -1242,10 +1266,10 @@ for (int i = 0; i &lt; 128; i++)
 <h2 id="typical-usage">Typical Usage<a class="headerlink" href="#typical-usage" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-mlir">// Softmax with fused expdiff
 %max_broadcast = pto.vlds %ub_max[%c0] {dist = "BRC_B32"} : !pto.ptr&lt;f32, ub&gt; -&gt; !pto.vreg&lt;64xf32&gt;
-%exp_stable = pto.vexpdiff %logits, %max_broadcast : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
+%exp_stable = pto.vexpdif %logits, %max_broadcast : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Leaky ReLU activation
-%activated = pto.vlrelu %linear_out, %alpha_scalar, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+%activated = pto.vlrelu %linear_out, %alpha_scalar, %mask : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Fused residual add + ReLU
 %residual = pto.vaddrelu %conv_out, %skip_connection : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt; -&gt; !pto.vreg&lt;64xf32&gt;

@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -913,9 +937,9 @@
                 <!-- Generated from `docs/isa/scalar/predicate-generation-and-algebra_zh.md` -->
 
 <h1 id="_1">谓词生成与代数<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>谓词生成与代数操作在标量与控制指令集中创建、组合、打包、解包和交错 <code>!pto.mask</code>。<code>!pto.mask</code> 是 <code>pto.v*</code> 向量操作消费的 lane mask 机制。</p>
-<h2 id="ptomask"><code>!pto.mask</code> 类型<a class="headerlink" href="#ptomask" title="Permanent link">&para;</a></h2>
-<p><code>!pto.mask</code> 的宽度与当前元素类型绑定：</p>
+<p>谓词生成与代数操作在标量与控制指令集中创建、组合、打包、解包和交错 <code>!pto.mask&lt;G&gt;</code>。<code>!pto.mask&lt;G&gt;</code> 是 <code>pto.v*</code> 向量操作消费的 lane mask 机制。</p>
+<h2 id="ptomaskg"><code>!pto.mask&lt;G&gt;</code> 类型<a class="headerlink" href="#ptomaskg" title="Permanent link">&para;</a></h2>
+<p><code>!pto.mask&lt;G&gt;</code> 的宽度与当前元素类型绑定：</p>
 <table>
 <thead>
 <tr>
@@ -970,13 +994,13 @@
 </tr>
 <tr>
 <td>Interleave / deinterleave</td>
-<td><code>pdintlv_b8</code>, <code>pintlv_b16</code></td>
+<td><code>pdintlv_b8</code>、<code>pdintlv_b16</code>、<code>pdintlv_b32</code>、<code>pintlv_b8</code>、<code>pintlv_b16</code>、<code>pintlv_b32</code></td>
 </tr>
 </tbody>
 </table>
 <h2 id="_3">共享约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
-<li>所有谓词操作数必须是 <code>!pto.mask</code></li>
+<li>所有谓词操作数必须是 <code>!pto.mask&lt;G&gt;</code></li>
 <li>同一操作中的谓词宽度必须一致</li>
 <li>pattern token 必须被当前 profile 支持</li>
 <li><code>pge_*</code> / <code>plt_*</code> 的标量类型必须与后缀匹配</li>

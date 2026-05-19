@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -959,18 +983,18 @@
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <p>Stream predicate register to UB with alignment state tracking. High-throughput variant that relaxes alignment requirements at the cost of weaker write atomicity guarantees.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p><code>pto.pstu</code> writes a predicate word from <code>!pto.mask</code> to a UB address while tracking and updating alignment state. Unlike <code>psts</code>, this operation does not require 64-bit alignment and may batch multiple predicate writes into a single DMA transaction.</p>
+<p><code>pto.pstu</code> writes a predicate word from <code>!pto.mask&lt;G&gt;</code> to a UB address while tracking and updating alignment state. Unlike <code>psts</code>, this operation does not require 64-bit alignment and may batch multiple predicate writes into a single DMA transaction.</p>
 <p>For alignment state <code>align_in</code>, predicate <code>mask</code>, and base address <code>base</code>:</p>
 <div class="arithmatex">\[ align\_out = align\_in \oplus mask $$
 $$ base\_out = base + \mathrm{sizeof}(predicate) \]</div>
 <p>The <code>%align_out</code> state carries forward into the next <code>pstu</code> call, enabling streaming writes without per-op synchronization.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">%align_out, %base_out = pto.pstu %align_in, %mask, %base_in : !pto.align, !pto.mask, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;</code></pre>
+<pre class="highlight"><code class="language-mlir">%align_out, %base_out = pto.pstu %align_in, %mask, %base_in : !pto.align, !pto.mask&lt;G&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">%align_out, %base_out = pto.pstu %align_in, %mask, %base_in : !pto.align, !pto.mask, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;</code></pre>
+<pre class="highlight"><code class="language-mlir">%align_out, %base_out = pto.pstu %align_in, %mask, %base_in : !pto.align, !pto.mask&lt;G&gt;, !pto.ptr&lt;T, ub&gt; -&gt; !pto.align, !pto.ptr&lt;T, ub&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">pto.pstu ins(%align_in, %mask, %base_in : !pto.align, !pto.mask, !pto.ptr&lt;T, ub&gt;)
+<pre class="highlight"><code class="language-mlir">pto.pstu ins(%align_in, %mask, %base_in : !pto.align, !pto.mask&lt;G&gt;, !pto.ptr&lt;T, ub&gt;)
        outs(%align_out, %base_out : !pto.align, !pto.ptr&lt;T, ub&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">vector_align alignData;
@@ -994,7 +1018,7 @@ pstu(alignData, src, base);</code></pre>
 </tr>
 <tr>
 <td><code>%mask</code></td>
-<td><code>!pto.mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
 <td>Predicate register to stream-store</td>
 </tr>
 <tr>
@@ -1103,13 +1127,13 @@ void stream_masks(Ptr&lt;ub_space_t, ub_t&gt; dst_base,
 }</code></pre>
 <h3 id="ssa-form-chaining-stream-stores">SSA form — chaining stream stores<a class="headerlink" href="#ssa-form-chaining-stream-stores" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-mlir">// Initialize alignment state (e.g., from a dummy load or zero)
-%align0 = pto.plds %ub_dummy : !pto.ptr&lt;i64, ub&gt; -&gt; !pto.mask
+%align0 = pto.plds %ub_dummy : !pto.ptr&lt;i64, ub&gt; -&gt; !pto.mask&lt;G&gt;
 
 // Stream store first predicate; align_out carries forward
-%align1, %base1 = pto.pstu %align0, %mask0, %base0 : !pto.align, !pto.mask, !pto.ptr&lt;i64, ub&gt; -&gt; !pto.align, !pto.ptr&lt;i64, ub&gt;
+%align1, %base1 = pto.pstu %align0, %mask0, %base0 : !pto.align, !pto.mask&lt;G&gt;, !pto.ptr&lt;i64, ub&gt; -&gt; !pto.align, !pto.ptr&lt;i64, ub&gt;
 
 // Stream store second predicate using updated alignment state
-%align2, %base2 = pto.pstu %align1, %mask1, %base1 : !pto.align, !pto.mask, !pto.ptr&lt;i64, ub&gt; -&gt; !pto.align, !pto.ptr&lt;i64, ub&gt;</code></pre>
+%align2, %base2 = pto.pstu %align1, %mask1, %base1 : !pto.align, !pto.mask&lt;G&gt;, !pto.ptr&lt;i64, ub&gt; -&gt; !pto.align, !pto.ptr&lt;i64, ub&gt;</code></pre>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>For exact predicate save/restore across kernel boundaries, use <code>psts</code> instead. <code>pstu</code> is intended for high-throughput streaming scenarios where some loss of per-word atomicity is acceptable.</p>

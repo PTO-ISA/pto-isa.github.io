@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -964,11 +988,11 @@
 <p>XOR is commonly used to invert one predicate within a mask context: <code>pxor %p, %inv, %mask</code> produces <code>mask XOR inv</code>, effectively inverting <code>inv</code> where <code>mask</code> is 1.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">%dst = pto.pxor %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.pxor %src0, %src1, %mask : !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">%dst = pto.pxor %src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
+<pre class="highlight"><code class="language-mlir">%dst = pto.pxor %src0, %src1, %mask : !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">pto.pxor ins(%src0, %src1, %mask : !pto.mask, !pto.mask, !pto.mask) outs(%dst : !pto.mask)</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.pxor ins(%src0, %src1, %mask : !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt;) outs(%dst : !pto.mask&lt;G&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">vector_bool dst;
 vector_bool src0;
@@ -987,17 +1011,17 @@ pxor(dst, src0, src1, mask);</code></pre>
 <tbody>
 <tr>
 <td><code>%src0</code></td>
-<td><code>!pto.mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
 <td>First source predicate</td>
 </tr>
 <tr>
 <td><code>%src1</code></td>
-<td><code>!pto.mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
 <td>Second source predicate</td>
 </tr>
 <tr>
 <td><code>%mask</code></td>
-<td><code>!pto.mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
 <td>Optional masking predicate</td>
 </tr>
 </tbody>
@@ -1014,7 +1038,7 @@ pxor(dst, src0, src1, mask);</code></pre>
 <tbody>
 <tr>
 <td><code>%dst</code></td>
-<td><code>!pto.mask</code></td>
+<td><code>!pto.mask&lt;G&gt;</code></td>
 <td>Bitwise XOR of src0 and src1</td>
 </tr>
 </tbody>
@@ -1073,11 +1097,11 @@ void invert_with_mask(RegBuf&lt;predicate_t&gt;&amp; dst,
 // %mask_b: lanes active in set B
 
 // Symmetric difference: lanes active in exactly one set
-%diff = pto.pxor %mask_a, %mask_b, %mask_a : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask
+%diff = pto.pxor %mask_a, %mask_b, %mask_a : !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;
 
 // Intersection: lanes active in both sets (via De Morgan: A AND B = NOT(A XOR B))
-%inv = pto.pnot %diff, %diff : !pto.mask, !pto.mask -&gt; !pto.mask
-%intersection = pto.pand %mask_a, %mask_b, %mask_a : !pto.mask, !pto.mask, !pto.mask -&gt; !pto.mask</code></pre>
+%inv = pto.pnot %diff, %diff : !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;
+%intersection = pto.pand %mask_a, %mask_b, %mask_a : !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt;, !pto.mask&lt;G&gt; -&gt; !pto.mask&lt;G&gt;</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../predicate-generation-and-algebra/">Predicate Generation And Algebra</a></li>

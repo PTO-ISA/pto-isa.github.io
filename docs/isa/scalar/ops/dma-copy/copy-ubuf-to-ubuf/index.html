@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -752,12 +776,6 @@
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
-    </li>
-        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
     </li>
@@ -944,61 +962,49 @@
               
                 <!-- Generated from `docs/isa/scalar/ops/dma-copy/copy-ubuf-to-ubuf.md` -->
 
-<h1 id="ptocopy_ubuf_to_ubuf">pto.copy_ubuf_to_ubuf<a class="headerlink" href="#ptocopy_ubuf_to_ubuf" title="Permanent link">&para;</a></h1>
-<p><code>pto.copy_ubuf_to_ubuf</code> is part of the <a href="../../../dma-copy/">DMA Copy</a> instruction set.</p>
+<h1 id="ptomte_ub_ub">pto.mte_ub_ub<a class="headerlink" href="#ptomte_ub_ub" title="Permanent link">&para;</a></h1>
+<p><code>pto.mte_ub_ub</code> is part of the <a href="../../../dma-copy/">DMA Copy</a> instruction set.</p>
+<div class="admonition note">
+<p class="admonition-title">PTO ISA v0.6 surface</p>
+<p>The v0.6 PTO micro-instruction surface replaces the earlier <code>pto.copy_ubuf_to_ubuf</code> with the grouped <code>pto.mte_ub_ub</code> instruction, expressed with an inline <code>nburst(...)</code> clause. Burst length, source gap, and destination gap are all encoded in units of 32 bytes.</p>
+</div>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Execute a DMA transfer between two Unified Buffer regions.</p>
+<p>Execute a grouped intra-UB copy. <code>nburst(...)</code> defines the repeated burst transfer between two UB regions.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>The DMA engine reads <code>%n_burst</code> rows from <code>%source</code> and writes them to <code>%dest</code>. <code>%len_burst</code> controls the contiguous byte count copied per row, while <code>%src_stride</code> and <code>%dst_stride</code> specify the row-to-row start offsets for the copy. This form is useful when the producer and consumer both operate in UB space but a DMA-style row copy is still preferred over vector payload instructions.</p>
+<p>The MTE engine reads <code>%n_burst</code> blocks of <code>%len_burst * 32</code> bytes from <code>%ub_src</code> and writes them to <code>%ub_dst</code>. Between bursts, the source advances by <code>(len_burst + src_gap) * 32</code> bytes and the destination advances by <code>(len_burst + dst_gap) * 32</code> bytes. <code>src_gap</code> and <code>dst_gap</code> are the inter-burst gap fields (in 32-byte units) that follow each copied block.</p>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64, i64, i64, i64</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.mte_ub_ub %ub_src, %ub_dst, %len_burst
+  nburst(%n_burst, %src_gap, %dst_gap)
+  : !pto.ptr&lt;T, ub&gt;, !pto.ptr&lt;T, ub&gt;, i64, i64, i64, i64</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Operand</th>
-<th>Type</th>
+<th>Parameter</th>
+<th>Width</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>%source</td>
-<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
-<td>UB source pointer</td>
+<td><code>%ub_src</code></td>
+<td>ptr</td>
+<td>UB source pointer (<code>!pto.ptr&lt;T, ub&gt;</code>, 32B-aligned)</td>
 </tr>
 <tr>
-<td>%dest</td>
-<td><code>!pto.ptr&lt;T, ub&gt;</code></td>
-<td>UB destination pointer</td>
+<td><code>%ub_dst</code></td>
+<td>ptr</td>
+<td>UB destination pointer (<code>!pto.ptr&lt;T, ub&gt;</code>, 32B-aligned)</td>
 </tr>
 <tr>
-<td>%sid</td>
-<td><code>i64</code></td>
-<td>DMA stream identifier</td>
+<td><code>%len_burst</code></td>
+<td>16 bits</td>
+<td>Burst length in units of 32 bytes</td>
 </tr>
 <tr>
-<td>%n_burst</td>
-<td><code>i64</code></td>
-<td>Number of burst rows to transfer</td>
-</tr>
-<tr>
-<td>%len_burst</td>
-<td><code>i64</code></td>
-<td>Contiguous byte count transferred per row</td>
-</tr>
-<tr>
-<td>%src_stride</td>
-<td><code>i64</code></td>
-<td>UB source row-to-row start offset in bytes</td>
-</tr>
-<tr>
-<td>%dst_stride</td>
-<td><code>i64</code></td>
-<td>UB destination row-to-row start offset in bytes</td>
+<td><code>nburst(%n_burst, %src_gap, %dst_gap)</code></td>
+<td>16 bits / 16 bits / 16 bits</td>
+<td>Required copy burst group: count, source gap, destination gap</td>
 </tr>
 </tbody>
 </table>
@@ -1015,26 +1021,25 @@
 <tr>
 <td>None</td>
 <td><code>—</code></td>
-<td>This form does not return SSA values; it writes data into Unified Buffer memory.</td>
+<td>This form does not return SSA values; it writes data into the Unified Buffer destination region.</td>
 </tr>
 </tbody>
 </table>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>Reads UB-visible storage, writes UB-visible storage, and consumes the active UB DMA state for the selected target profile.</p>
+<p>Reads UB-visible storage and writes UB-visible storage. The MTE pipe is engaged for the duration of the transfer; downstream consumers must synchronize through the appropriate pipeline-sync primitives.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <div class="admonition warning">
 <p class="admonition-title">Constraints</p>
 <ul>
-<li>Source and destination regions MUST both satisfy the UB alignment rules of the selected target profile.</li>
-<li><code>%len_burst</code> MUST fit within both the source and destination row stride.</li>
-<li>If source and destination regions alias, portable code MUST provide ordering that avoids undefined behavior. On A2/A3 and A5: if source and destination regions alias, the copy may proceed in either forward or backward direction and the exact order is not guaranteed; the programmer must ensure the copy is sequenced to avoid data hazard. On CPU simulator: aliasing is resolved by copying to a temporary buffer first.</li>
+<li>UB source and destination addresses must be 32-byte aligned.</li>
+<li><code>%len_burst</code>, <code>%src_gap</code>, and <code>%dst_gap</code> are encoded in units of 32 bytes.</li>
 </ul>
 </div>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <div class="admonition danger">
 <p class="admonition-title">Exceptions</p>
 <ul>
-<li>The verifier rejects illegal operand shapes, unsupported pipe or event identifiers, and attribute combinations that are not valid for the selected instruction set or target profile.</li>
+<li>The verifier rejects illegal operand shapes and clause groups not valid for the selected target profile.</li>
 <li>Any additional illegality stated in the constraints section is also part of the contract.</li>
 </ul>
 </div>
@@ -1043,16 +1048,18 @@
 <summary>Target-Profile Restrictions</summary>
 <ul>
 <li>CPU simulation preserves the visible copy contract but may not expose all DMA overlap hazards.</li>
-<li>A2/A3 and A5 may narrow supported element sizes, row widths, or overlap behavior.</li>
+<li>A2/A3 and A5 may narrow supported element sizes, burst lengths, or gap encodings.</li>
 </ul>
 </details>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre class="highlight"><code class="language-mlir">pto.copy_ubuf_to_ubuf %source, %dest, %sid, %n_burst, %len_burst, %src_stride, %dst_stride : !pto.ptr&lt;f32, ub&gt;, !pto.ptr&lt;f32, ub&gt;, i64, i64, i64, i64, i64</code></pre>
+<pre class="highlight"><code class="language-mlir">pto.mte_ub_ub %ub_src, %ub_dst, %len32b
+  nburst(%rows, %src_gap, %dst_gap)
+  : !pto.ptr&lt;i16, ub&gt;, !pto.ptr&lt;i16, ub&gt;, i64, i64, i64, i64</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Instruction set overview: <a href="../../../dma-copy/">DMA Copy</a></li>
-<li>Previous op in instruction set: <a href="../copy-ubuf-to-gm/">pto.copy_ubuf_to_gm</a></li>
-<li>Next op in instruction set: (none)</li>
+<li>GM↔UB transfers: <a href="../copy-gm-to-ubuf/">pto.mte_gm_ub</a>, <a href="../copy-ubuf-to-gm/">pto.mte_ub_gm</a></li>
+<li>UB→L1 transfer (cube path): <a href="../mte-ub-l1/">pto.mte_ub_l1</a></li>
 <li>Control-shell overview: <a href="../../../control-and-configuration/">Control and configuration</a></li>
 </ul>
               

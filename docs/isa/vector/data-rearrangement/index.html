@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -718,7 +742,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -1059,7 +1083,7 @@ if (amt &gt;= 0)
 <h2 id="compress-expand">Compress / Expand<a class="headerlink" href="#compress-expand" title="Permanent link">&para;</a></h2>
 <h3 id="ptovsqz"><code>pto.vsqz</code><a class="headerlink" href="#ptovsqz" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vsqz %src, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vsqz %src, %mask : !pto.vreg&lt;NxT&gt;, !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Compress — pack active lanes to front.</li>
 </ul>
 <pre class="highlight"><code class="language-c">int j = 0;
@@ -1077,7 +1101,7 @@ while (j &lt; N) dst[j++] = 0;</code></pre>
 <hr />
 <h3 id="ptovusqz"><code>pto.vusqz</code><a class="headerlink" href="#ptovusqz" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>syntax:</strong> <code>%result = pto.vusqz %mask : !pto.mask -&gt; !pto.vreg&lt;NxT&gt;</code></li>
+<li><strong>syntax:</strong> <code>%result = pto.vusqz %mask : !pto.mask&lt;G&gt; -&gt; !pto.vreg&lt;NxT&gt;</code></li>
 <li><strong>semantics:</strong> Expand — scatter front elements to active positions.</li>
 </ul>
 <pre class="highlight"><code class="language-c">int j = 0;
@@ -1181,15 +1205,15 @@ for (int i = 0; i &lt; N/2; i++)
 
 // Filter: keep only elements passing condition
 %pass_mask = pto.vcmps %values, %threshold, %all, "gt"
-    : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask -&gt; !pto.mask
+    : !pto.vreg&lt;64xf32&gt;, f32, !pto.mask&lt;b32&gt; -&gt; !pto.mask&lt;b32&gt;
 %compacted = pto.vsqz %values, %pass_mask
-    : !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+    : !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Sliding window sum
 %prev_window = pto.vslide %curr, %prev, %c1
     : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, i16 -&gt; !pto.vreg&lt;64xf32&gt;
 %window_sum = pto.vadd %curr, %prev_window, %all
-    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask -&gt; !pto.vreg&lt;64xf32&gt;
+    : !pto.vreg&lt;64xf32&gt;, !pto.vreg&lt;64xf32&gt;, !pto.mask&lt;b32&gt; -&gt; !pto.vreg&lt;64xf32&gt;
 
 // Type narrowing via pack
 %packed_i16 = pto.vpack %wide0_i32, %wide1_i32, %c0

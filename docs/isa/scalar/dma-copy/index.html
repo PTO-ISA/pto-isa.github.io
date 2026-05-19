@@ -115,6 +115,30 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../tile/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" >View And Tile Buffer</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/view-and-tile-buf/">Instruction Set Contract</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/make-tensor-view/">pto.make_tensor_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-dim/">pto.get_tensor_view_dim</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/get-tensor-view-stride/">pto.get_tensor_view_stride</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tensor-view-addr/">pto.tensor_view_addr</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/partition-view/">pto.partition_view</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/alloc-tile/">pto.alloc_tile</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/subset/">pto.subset</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/set-validshape/">pto.set_validshape</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../tile/ops/view-and-tile-buf/tile-buf-addr/">pto.tile_buf_addr</a>
+                </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" >Sync And Config</a>
     <ul>
                 <li class="toctree-l2"><a class="reference internal" href="../../tile/sync-and-config/">Instruction Set Contract</a>
@@ -438,7 +462,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldus/">pto.vldus</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldx2/">pto.vldx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vldsx2/">pto.vldsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsld/">pto.vsld</a>
                 </li>
@@ -452,7 +476,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsts/">pto.vsts</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstx2/">pto.vstx2</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vstsx2/">pto.vstsx2</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/vector-load-store/vsst/">pto.vsst</a>
                 </li>
@@ -662,7 +686,7 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vprelu/">pto.vprelu</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdiff/">pto.vexpdiff</a>
+                <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vexpdif/">pto.vexpdif</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../../vector/ops/sfu-and-dsa-ops/vaddrelu/">pto.vaddrelu</a>
                 </li>
@@ -731,7 +755,9 @@
     <ul class="current">
     <li class="toctree-l3"><a class="reference internal" href="#what-this-instruction-set-covers">What This Instruction Set Covers</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#per-op-pages">Per-Op Pages</a>
+    <li class="toctree-l3"><a class="reference internal" href="#v06-grouped-transfer-ops">v0.6 Grouped Transfer Ops</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deprecated-pre-v06-configuration-ops">Deprecated Pre-v0.6 Configuration Ops</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#related-material">Related Material</a>
     </li>
@@ -923,15 +949,23 @@
                 <!-- Generated from `docs/isa/scalar/dma-copy.md` -->
 
 <h1 id="dma-copy">DMA Copy<a class="headerlink" href="#dma-copy" title="Permanent link">&para;</a></h1>
-<p>These <code>pto.*</code> forms configure and execute scalar-side DMA movement between GM and UB or inside UB. They are part of the scalar and control instructions because they define configuration and copy behavior, not vector-register compute.</p>
+<p>These <code>pto.*</code> forms configure and execute scalar-side DMA movement between GM, UB, and L1. They are part of the scalar and control instructions because they describe DMA configuration and copy behavior, not vector-register compute.</p>
 <h2 id="what-this-instruction-set-covers">What This Instruction Set Covers<a class="headerlink" href="#what-this-instruction-set-covers" title="Permanent link">&para;</a></h2>
 <ul>
-<li>nested-loop size and stride registers for GM↔UB transfers</li>
-<li>GM to UB copies</li>
-<li>UB to GM copies</li>
-<li>UB to UB copies</li>
+<li>Grouped GM↔UB transfers with inline burst / loop / pad clauses</li>
+<li>Grouped UB↔UB and UB→L1 copies</li>
+<li>(Pre-v0.6) standalone loop-size and loop-stride configuration registers</li>
 </ul>
-<h2 id="per-op-pages">Per-Op Pages<a class="headerlink" href="#per-op-pages" title="Permanent link">&para;</a></h2>
+<h2 id="v06-grouped-transfer-ops">v0.6 Grouped Transfer Ops<a class="headerlink" href="#v06-grouped-transfer-ops" title="Permanent link">&para;</a></h2>
+<p>These are the four public grouped DMA interfaces in the PTO ISA v0.6 micro-instruction surface. Each instruction expresses its repetition structure via inline <code>nburst(...)</code> / <code>loop(...)</code> clauses on the op itself; standalone loop / stride configuration registers are no longer required.</p>
+<ul>
+<li><a href="../ops/dma-copy/copy-gm-to-ubuf/">pto.mte_gm_ub</a> — GM → UB, with optional <code>pad(...)</code> for 32B-aligned row padding</li>
+<li><a href="../ops/dma-copy/copy-ubuf-to-gm/">pto.mte_ub_gm</a> — UB → GM, strips padding added during load</li>
+<li><a href="../ops/dma-copy/copy-ubuf-to-ubuf/">pto.mte_ub_ub</a> — intra-UB copy in 32B-unit bursts with gap fields</li>
+<li><a href="../ops/dma-copy/mte-ub-l1/">pto.mte_ub_l1</a> — UB → L1 (cube CBUF), 32B-unit bursts with gap fields</li>
+</ul>
+<h2 id="deprecated-pre-v06-configuration-ops">Deprecated Pre-v0.6 Configuration Ops<a class="headerlink" href="#deprecated-pre-v06-configuration-ops" title="Permanent link">&para;</a></h2>
+<p>These ops correspond to the older surface where loop counts and per-level strides were programmed via standalone configuration registers and then consumed by a separate copy op. In v0.6 the same information lives inline on the grouped transfer op (<code>nburst(...)</code> and outer <code>loop(...)</code> clauses). The pages below are retained for historical reference and pre-v0.6 ports.</p>
 <ul>
 <li><a href="../ops/dma-copy/set-loop-size-outtoub/">pto.set_loop_size_outtoub</a></li>
 <li><a href="../ops/dma-copy/set-loop2-stride-outtoub/">pto.set_loop2_stride_outtoub</a></li>
@@ -939,14 +973,13 @@
 <li><a href="../ops/dma-copy/set-loop-size-ubtoout/">pto.set_loop_size_ubtoout</a></li>
 <li><a href="../ops/dma-copy/set-loop2-stride-ubtoout/">pto.set_loop2_stride_ubtoout</a></li>
 <li><a href="../ops/dma-copy/set-loop1-stride-ubtoout/">pto.set_loop1_stride_ubtoout</a></li>
-<li><a href="../ops/dma-copy/copy-gm-to-ubuf/">pto.copy_gm_to_ubuf</a></li>
-<li><a href="../ops/dma-copy/copy-ubuf-to-gm/">pto.copy_ubuf_to_gm</a></li>
-<li><a href="../ops/dma-copy/copy-ubuf-to-ubuf/">pto.copy_ubuf_to_ubuf</a></li>
 </ul>
+<p>The legacy execution ops <code>pto.copy_gm_to_ubuf</code> / <code>pto.copy_ubuf_to_gm</code> / <code>pto.copy_ubuf_to_ubuf</code> have been replaced by the v0.6 grouped forms <code>pto.mte_gm_ub</code> / <code>pto.mte_ub_gm</code> / <code>pto.mte_ub_ub</code> linked above. Their per-op pages (URL slugs preserved) now document the v0.6 surface.</p>
 <h2 id="related-material">Related Material<a class="headerlink" href="#related-material" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../control-and-configuration/">Control and configuration</a></li>
 <li><a href="../../vector/dma-copy/">Vector Instruction Set: DMA Copy</a></li>
+<li><a href="./ops/pipeline-sync/">Pipeline Synchronization</a></li>
 </ul>
               
             </div>
