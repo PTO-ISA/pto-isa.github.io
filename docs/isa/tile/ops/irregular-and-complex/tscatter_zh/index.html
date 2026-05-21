@@ -940,7 +940,12 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TSCATTER tile operation" src="../../../../../figures/isa/TSCATTER.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TSCATTER</code> 按索引 Tile 给出的目标偏移，把源 Tile 中的元素分散写入目标 Tile。它适合表达“不规则写回到本地 Tile”这类模式：数据仍然留在 tile 空间里，但目的位置不再由规则的行列映射决定。</p>
+<p><code>TSCATTER</code> 提供两种操作模式：</p>
+<ul>
+<li>索引散播：按索引 Tile 给出的目标偏移，把源 Tile 中的元素分散写入目标 Tile。</li>
+<li>掩码散播：按掩码模式把源元素写入更宽的目标 Tile，并把未选中的位置填零。</li>
+</ul>
+<p>索引散播适合表达“不规则写回到本地 Tile”这类模式：数据仍然留在 tile 空间里，但目的位置不再由规则的行列映射决定。</p>
 <p>和规则搬运不同，<code>TSCATTER</code> 的关键输入不是另一个 shape，而是 <code>indexes</code>。每个索引元素都表示目标 Tile 在线性存储视角下的一个元素偏移。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>设：</p>
@@ -957,7 +962,12 @@
 <li>没有被任何索引命中的目标位置，在当前实现里保持为零值，而不是保留调用前的 <code>dst</code> 内容。</li>
 <li>如果多个源元素落到同一个目标位置，最终值属于实现定义行为；当前实现按行优先顺序遍历，因此后写入的元素会覆盖前值。</li>
 </ul>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_4">掩码散播<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>掩码散播是 A5-only 重载。它把每个源元素写入扩展后目标分组中的一个选中 lane，并把同一分组中其他 lane 填零。</p>
+<p>对于源元素 <code>(i, j)</code> 和掩码模式 <code>P</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,\ F_P \cdot j + \mathrm{pos}_P} = \mathrm{src}_{i,j} \]</div>
+<p>其中 <code>F_P</code> 是扩展倍数：<code>P1111</code> 为 1，<code>P0101</code>/<code>P1010</code> 为 2，<code>P0001</code>/<code>P0010</code>/<code>P0100</code>/<code>P1000</code> 为 4。同一扩展分组中未选中的列会被写为 0。</p>
+<h2 id="_5">汇编语法<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
 <p>同步形式：</p>
 <pre class="highlight"><code class="language-text">%dst = tscatter %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
@@ -968,11 +978,70 @@
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename TileDataI, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSCATTER(TileDataD &amp;dst, TileDataS &amp;src, TileDataI &amp;indexes, WaitEvents &amp;... events);</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+PTO_INST RecordEvent TSCATTER(TileDataD &amp;dst, TileDataS &amp;src, TileDataI &amp;indexes, WaitEvents &amp;... events);
+
+template &lt;MaskPattern maskPattern = MaskPattern::P1111, typename DstTileData, typename SrcTileData,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TSCATTER(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);</code></pre>
+<p><code>MaskPattern</code> 定义于 <code>include/pto/common/type.hpp</code>：</p>
+<table>
+<thead>
+<tr>
+<th>值</th>
+<th>模式</th>
+<th>选中 lane</th>
+<th>扩展倍数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>P0101</code></td>
+<td><code>0101...</code></td>
+<td>每 2-lane 分组的第一个 lane</td>
+<td>x2</td>
+</tr>
+<tr>
+<td><code>P1010</code></td>
+<td><code>1010...</code></td>
+<td>每 2-lane 分组的第二个 lane</td>
+<td>x2</td>
+</tr>
+<tr>
+<td><code>P0001</code></td>
+<td><code>0001...</code></td>
+<td>每 4-lane 分组的第一个 lane</td>
+<td>x4</td>
+</tr>
+<tr>
+<td><code>P0010</code></td>
+<td><code>0010...</code></td>
+<td>每 4-lane 分组的第二个 lane</td>
+<td>x4</td>
+</tr>
+<tr>
+<td><code>P0100</code></td>
+<td><code>0100...</code></td>
+<td>每 4-lane 分组的第三个 lane</td>
+<td>x4</td>
+</tr>
+<tr>
+<td><code>P1000</code></td>
+<td><code>1000...</code></td>
+<td>每 4-lane 分组的第四个 lane</td>
+<td>x4</td>
+</tr>
+<tr>
+<td><code>P1111</code></td>
+<td><code>1111...</code></td>
+<td>全部 lane，等同于 <code>TMOV</code></td>
+<td>x1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <div class="admonition warning">
 <p class="admonition-title">约束</p>
-<h3 id="_6">通用约束<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<h3 id="_7">通用约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>dst</code>、<code>src</code>、<code>indexes</code> 都必须是 <code>TileType::Vec</code>。</li>
 <li><code>dst</code> 与 <code>src</code> 的元素类型必须完全一致。</li>
@@ -1003,8 +1072,20 @@ PTO_INST RecordEvent TSCATTER(TileDataD &amp;dst, TileDataS &amp;src, TileDataI 
 <li><code>dst/src</code> 支持 <code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>uint8_t</code>、<code>half</code>、<code>float32_t</code>、<code>bfloat16_t</code></li>
 <li><code>indexes</code> 支持 <code>int16_t</code>、<code>int32_t</code>、<code>uint16_t</code>、<code>uint32_t</code></li>
 </ul>
+<h3 id="a5_1">掩码散播检查（仅 A5）<a class="headerlink" href="#a5_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>DstTileData::Loc</code> 与 <code>SrcTileData::Loc</code> 必须是 <code>TileType::Vec</code>。</li>
+<li><code>DstTileData::DType</code> 与 <code>SrcTileData::DType</code> 必须一致，且属于 TSCATTER 支持的数据类型。</li>
+<li><code>maskPattern</code> 必须是 <code>P0101</code>、<code>P1010</code>、<code>P0001</code>、<code>P0010</code>、<code>P0100</code>、<code>P1000</code> 或 <code>P1111</code>。</li>
+<li><code>SrcTileData::ValidRow</code> 必须等于 <code>DstTileData::ValidRow</code>。</li>
+<li><code>DstTileData::ValidCol</code> 必须等于 <code>SrcTileData::ValidCol * F_P</code>，其中 <code>F_P</code> 为对应掩码的扩展倍数。</li>
+</ul>
 </div>
-<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">掩码散播填零</p>
+<p>A5 掩码散播在写入源元素前，会把目标 Tile 的整个 UB 分配区域初始化为 0，而不只限于 valid region。代码不得让该目标 UB 分配区域与其他仍然活跃的数据重叠。</p>
+</div>
+<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1032,7 +1113,19 @@ void example_manual() {
   TASSIGN(idx, 0x3000);
   TSCATTER(dst, src, idx);
 }</code></pre>
-<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h3 id="_9">掩码散播<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_mask_scatter() {
+  using SrcTileT = Tile&lt;TileType::Vec, half, 16, 64&gt;;
+  using DstTileT = Tile&lt;TileType::Vec, half, 16, 128&gt;;
+  SrcTileT src;
+  DstTileT dst;
+  TSCATTER&lt;MaskPattern::P1010&gt;(dst, src);
+}</code></pre>
+<h2 id="_10">相关页面<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../../irregular-and-complex_zh/">不规则与复杂指令集</a></li>
 <li><a href="../../../../state-and-types/layout_zh/">布局参考</a></li>
