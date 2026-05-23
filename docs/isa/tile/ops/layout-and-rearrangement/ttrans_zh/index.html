@@ -991,6 +991,7 @@ PTO_INST RecordEvent TTRANS(TileDataDst &amp;dst, TileDataSrc &amp;src, TileData
 <li>支持在<code>TileType::Vec</code>上的ConvTile的格式转换。其元素大小必须是 <code>1</code>、<code>2</code> 或 <code>4</code> 字节。元素类型限制为<code>uint32_t</code>、<code>int32_t</code>、<code>float</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>uint8_t</code>、<code>int8_t</code>。</li>
 <li>支持ConvTile从<code>NCHW</code>到<code>NC1HWC0</code>的变换，其中<code>C1 == (C + C0 - 1)/C0</code>，HW满足对齐要求，即<code>H*W*sizeof(T)==0</code>. C0对应<code>c0_size</code>, 即<code>C0 * sizeof(T) == 32</code>。C0也可以为4。</li>
 <li>支持ConvTile从<code>NC1HWC0</code>到<code>FRACTAL_Z</code>的变换, 其中<code>N1 == (N + N0 - 1)/N0</code>。N0为16。</li>
+<li>支持ConvTile从<code>NCDHW</code>到<code>FRACTAL_Z_3D</code>的变换，目标形状为<code>[D * C1 * H * W, N1, N0, C0]</code>，其中<code>C1 == (C + C0 - 1) / C0</code>且<code>N1 == (N + N0 - 1) / N0</code>。<code>N0</code>为<code>16</code>。<code>C0</code>取决于元素宽度：4-bit数据为<code>64</code>，8-bit数据为<code>32</code>，16-bit数据为<code>16</code>，32-bit数据为<code>8</code>。临时Tile必须足够容纳<code>(D + 1) * N * C1 * C0 * H * W</code>个中间元素，以及<code>H * W * alignedC0</code>个scratch元素；<code>alignedC0</code>会将<code>dstC0</code>按16/32-bit数据上取整到<code>16</code>，按8-bit数据上取整到<code>32</code>。</li>
 </ul>
 </li>
 </ul>
