@@ -961,20 +961,45 @@
 pto.tgather ins(%src, {maskPattern = #pto.mask_pattern&lt;P0101&gt;} : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<h3 id="gather">基于索引的 Gather<a class="headerlink" href="#gather" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS0, typename TileDataS1, typename TileDataTmp, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGATHER(TileDataD &amp;dst, TileDataS0 &amp;src0, TileDataS1 &amp;src1, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
-
-template &lt;typename DstTileData, typename SrcTileData, MaskPattern maskPattern, typename... WaitEvents&gt;
+PTO_INST RecordEvent TGATHER(TileDataD &amp;dst, TileDataS0 &amp;src0, TileDataS1 &amp;src1, TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
+<h3 id="gather_1">基于掩码模式的 Gather<a class="headerlink" href="#gather_1" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, MaskPattern maskPattern, typename... WaitEvents&gt;
 PTO_INST RecordEvent TGATHER(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);</code></pre>
+<h3 id="gathertgather_cmp">基于比较的 Gather（TGather_cmp）<a class="headerlink" href="#gathertgather_cmp" title="Permanent link">&para;</a></h3>
+<p>收集满足与每行阈值标量比较条件的元素的索引。</p>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS, typename TileDataS1, typename TileDataC, typename TileDataTmp, CmpMode cmpMode, typename... WaitEvents&gt;
+PTO_INST RecordEvent TGATHER(TileDataD &amp;dst, TileDataS &amp;src0, TileDataS1 &amp;k_value, TileDataC &amp;cdst, TileDataTmp &amp;tmp, uint32_t offset, WaitEvents &amp;... events);</code></pre>
+<p>对于 <code>src0</code> 的每一行 <code>i</code>，使用 <code>cmpMode</code>（GT 或 EQ）将每个元素 <code>src0[i, j]</code> 与阈值 <code>k_value[i]</code> 比较。匹配元素的索引被收集到 <code>dst[i]</code> 中。每行的匹配数量存储在 <code>cdst[i]</code> 中。<code>offset</code> 参数指定起始索引值。</p>
+<h4 id="gather_2">基于比较的 Gather 约束<a class="headerlink" href="#gather_2" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>A2A3</strong>:<ul>
+<li><code>TileDataD::DType</code> 必须是 <code>int32_t</code> 或 <code>uint32_t</code>。</li>
+<li><code>TileDataS::DType</code> 必须是 <code>float</code>、<code>half</code>，或 <code>int32_t</code>（仅 EQ 模式）。</li>
+<li><code>TileDataS1::DType</code> 必须是 <code>int32_t</code> 或 <code>uint32_t</code>。</li>
+<li><code>cmpMode</code> 必须是 <code>CmpMode::GT</code> 或 <code>CmpMode::EQ</code>。</li>
+</ul>
+</li>
+<li><strong>A5</strong>:<ul>
+<li><code>TileDataD::DType</code> 必须是 <code>int32_t</code> 或 <code>uint32_t</code>。</li>
+<li><code>TileDataS::DType</code> 必须是 <code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code> 或 <code>float</code>。</li>
+<li><code>TileDataS1::DType</code> 必须是 <code>uint16_t</code> 或 <code>uint32_t</code>。</li>
+<li><code>cmpMode</code> 必须是 <code>CmpMode::GT</code> 或 <code>CmpMode::EQ</code>。</li>
+</ul>
+</li>
+</ul>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <div class="admonition warning">
 <p class="admonition-title">约束</p>
 <ul>
 <li><strong>基于索引的 gather：实现检查 (A2A3)</strong>:<ul>
-<li><code>sizeof(DstTileData::DType)</code> 对应类型必须是 <code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>float</code> 之一。</li>
-<li><code>sizeof(Src1TileData::DType)</code> 对应类型必须是 <code>int32_t</code>、<code>uint32_t</code> 之一。</li>
+<li><code>sizeof(DstTileData::DType)</code> 必须是 2 或 4 字节（b16/b32）。</li>
+<li><code>sizeof(Src1TileData::DType)</code> 必须是 4 字节（b32: <code>int32_t</code>、<code>uint32_t</code>）。</li>
 <li><code>DstTileData::DType</code> 必须与 <code>Src0TileData::DType</code> 类型相同。</li>
-<li><code>src1.GetValidCol() == Src1TileData::Cols</code> 且 <code>dst.GetValidCol() == DstTileData::Cols</code>。</li>
+<li><code>TmpTileData::DType</code> 必须与 <code>Src1TileData::DType</code> 类型相同。</li>
+<li><code>src1.GetValidCol() == TmpTileData::Cols</code> 且 <code>src1.GetValidRow() == TmpTileData::Rows</code>。</li>
+<li><code>dst.GetValidCol() == DstTileData::Cols</code>（连续的目标存储）。</li>
 </ul>
 </li>
 <li><strong>基于索引的 gather：实现检查 (A5)</strong>:<ul>

@@ -1010,18 +1010,25 @@ pto.tgather ins(%src, {maskPattern = #pto.mask_pattern&lt;P0101&gt;} : !pto.tile
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileDataD, typename TileDataS0, typename TileDataS1, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TGATHER(TileDataD &amp;dst, TileDataS0 &amp;src0, TileDataS1 &amp;src1, TileDataTmp &amp;tmp, WaitEvents &amp;... events);
 
-template &lt;typename DstTileData, typename SrcTileData, MaskPattern maskPattern, typename... WaitEvents&gt;
-PTO_INST RecordEvent TGATHER(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);</code></pre>
+template &lt;typename DstTileData, typename SrcTileData, MaskPattern maskPattern, auto gatherType = GatherAxis::GATHER_ROW, typename... WaitEvents&gt;
+PTO_INST RecordEvent TGATHER(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);
+
+template &lt;typename TileDataD, typename TileDataS, typename TileDataS1, typename TileDataC, typename TileDataTmp, CmpMode cmpMode, typename... WaitEvents&gt;
+PTO_INST RecordEvent TGATHER(TileDataD &amp;dst, TileDataS &amp;src0, TileDataS1 &amp;k_value, TileDataC &amp;cdst, TileDataTmp &amp;tmp, uint32_t offset, WaitEvents &amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>src0</code> is the source tile.</li>
 <li><code>indices</code> (index-based gather): index tile providing gather indices.</li>
 <li><code>tmp</code> (optional): temporary tile for index-based gather.</li>
 <li><code>maskPattern</code> (mask-pattern gather): compile-time mask pattern.</li>
+<li><code>gatherType</code> (mask-pattern gather): compile-time gather axis; defaults to <code>GatherAxis::GATHER_ROW</code>.</li>
+<li><code>k_value</code> (comparison-based gather): per-row threshold tile.</li>
+<li><code>cdst</code> (comparison-based gather): per-row match-count output tile.</li>
+<li><code>offset</code> (comparison-based gather): starting index value for gathered indices.</li>
 <li><code>dst</code> names the destination tile. The operation iterates over dst's valid region.</li>
 </ul>
 <h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds gathered elements from <code>src0</code> at positions specified by <code>indices</code> or <code>maskPattern</code>.</p>
+<p><code>dst</code> holds gathered elements from <code>src0</code> at positions specified by <code>indices</code> or <code>maskPattern</code>. For comparison-based gather, <code>dst</code> holds the matching indices and <code>cdst</code> holds the match count per row.</p>
 <h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
 <p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
@@ -1049,10 +1056,12 @@ PTO_INST RecordEvent TGATHER(DstTileData &amp;dst, SrcTileData &amp;src, WaitEve
 <li>
 <p><strong>Index-based gather: implementation checks (A2A3)</strong>:</p>
 <ul>
-<li><code>sizeof(DstTileData::DType)</code> must be must be <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
-<li><code>sizeof(Src1TileData::DType)</code> must be must be <code>int32_t</code>, <code>uint32_t</code>.</li>
+<li><code>sizeof(DstTileData::DType)</code> must be 2 or 4 bytes (b16/b32).</li>
+<li><code>sizeof(Src1TileData::DType)</code> must be 4 bytes (b32: <code>int32_t</code>, <code>uint32_t</code>).</li>
 <li><code>DstTileData::DType</code> must be the same type as <code>Src0TileData::DType</code>.</li>
-<li><code>src1.GetValidCol() == Src1TileData::Cols</code> and <code>dst.GetValidCol() == DstTileData::Cols</code>.</li>
+<li><code>TmpTileData::DType</code> must be the same type as <code>Src1TileData::DType</code>.</li>
+<li><code>src1.GetValidCol() == TmpTileData::Cols</code> and <code>src1.GetValidRow() == TmpTileData::Rows</code>.</li>
+<li><code>dst.GetValidCol() == DstTileData::Cols</code> (continuous dst storage).</li>
 </ul>
 </li>
 <li>
@@ -1082,6 +1091,24 @@ or <code>half</code> or <code>bfloat16_t</code> or <code>float</code>.</li>
 <li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> must be <code>int8_t</code> or <code>uint8_t</code> or <code>int16_t</code> or <code>uint16_t</code> or <code>int32_t</code> or <code>uint32_t</code>
 or <code>half</code> or <code>bfloat16_t</code> or <code>float</code> or <code>float8_e4m3_t</code>or <code>float8_e5m2_t</code> or <code>hifloat8_t</code>.</li>
 <li>Supported dtypes are restricted to a target-defined set (checked via <code>static_assert</code> in the implementation), and <code>sizeof(dst element) == sizeof(src element)</code>, <code>dst.GetValidCol() == DstTileData::Cols</code> (continuous dst storage).</li>
+</ul>
+</li>
+<li>
+<p><strong>Comparison-based gather: implementation checks (A2A3)</strong>:</p>
+<ul>
+<li><code>TileDataD::DType</code> must be <code>int32_t</code> or <code>uint32_t</code>.</li>
+<li><code>TileDataS::DType</code> must be <code>float</code>, <code>half</code>, or <code>int32_t</code> (EQ mode only).</li>
+<li><code>TileDataS1::DType</code> must be <code>int32_t</code> or <code>uint32_t</code>.</li>
+<li><code>cmpMode</code> must be <code>CmpMode::GT</code> or <code>CmpMode::EQ</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>Comparison-based gather: implementation checks (A5)</strong>:</p>
+<ul>
+<li><code>TileDataD::DType</code> must be <code>int32_t</code> or <code>uint32_t</code>.</li>
+<li><code>TileDataS::DType</code> must be <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, or <code>float</code>.</li>
+<li><code>TileDataS1::DType</code> must be <code>uint16_t</code> or <code>uint32_t</code>.</li>
+<li><code>cmpMode</code> must be <code>CmpMode::GT</code> or <code>CmpMode::EQ</code>.</li>
 </ul>
 </li>
 </ul>
