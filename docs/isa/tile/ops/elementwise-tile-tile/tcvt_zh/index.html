@@ -1100,8 +1100,116 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode
 <h2 id="target-profile">Target-Profile 限制<a class="headerlink" href="#target-profile" title="Permanent link">&para;</a></h2>
 <p><code>pto.tcvt</code> 在 CPU 仿真、A2/A3 和 A5 上都保留 PTO 可见语义，但具体支持的类型对、是否需要 scratch、以及饱和关闭后的溢出处理仍然依赖 backend。</p>
 <p>当前 checkout 中，fp16 → int8 的非饱和路径通过带 scratch 的 helper 实现，并且会按行做子分块处理。</p>
-<h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
-<h3 id="_12">自动模式<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<h2 id="_11">支持的转换<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>源类型</th>
+<th>A2A3 目标类型</th>
+<th>A5 目标类型</th>
+<th>差异</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP32</td>
+<td>FP16, FP32（仅舍入）, BF16, I16, I32, I64</td>
+<td>FP32, FP16, BF16, I16, I32, I64, FP8_E4M3, FP8_E5M2, H8</td>
+<td>A5 新增 FP8/H8 目标</td>
+</tr>
+<tr>
+<td>FP16</td>
+<td>FP32, I32, I16, I8, U8, S4（int4b_t）</td>
+<td>FP32, I32, I16, I8, U8, H8</td>
+<td>A2A3 有 S4；A5 有 H8</td>
+</tr>
+<tr>
+<td>BF16</td>
+<td>FP32, I32</td>
+<td>FP32, I32, FP16, FP4_E1M2X2, FP4_E2M1X2</td>
+<td>A5 新增 FP16/FP4 目标</td>
+</tr>
+<tr>
+<td>I16</td>
+<td>FP16, FP32</td>
+<td>U8, FP16, FP32, U32, I32</td>
+<td>A5 新增 U8/U32/I32</td>
+</tr>
+<tr>
+<td>I32</td>
+<td>FP32, I16, I64, FP16（deq 路径）</td>
+<td>FP32, I16, U16, I64, U8</td>
+<td>A2A3 支持 I32 -&gt; FP16（half，deq）；A5 不支持</td>
+</tr>
+<tr>
+<td>I64</td>
+<td>FP32, I32</td>
+<td>FP32, I32</td>
+<td>相同</td>
+</tr>
+<tr>
+<td>U8</td>
+<td>FP16</td>
+<td>FP16, U16</td>
+<td>A5 新增 U16</td>
+</tr>
+<tr>
+<td>I8</td>
+<td>FP16</td>
+<td>FP16, I16, I32</td>
+<td>A5 新增 I16/I32</td>
+</tr>
+<tr>
+<td>S4（int4b_t）</td>
+<td>FP16</td>
+<td>N/A</td>
+<td>A2A3 独有</td>
+</tr>
+<tr>
+<td>U32</td>
+<td>N/A</td>
+<td>U8, U16, I16</td>
+<td>A5 独有源类型</td>
+</tr>
+<tr>
+<td>FP8_E4M3</td>
+<td>N/A</td>
+<td>FP32</td>
+<td>A5 独有源类型</td>
+</tr>
+<tr>
+<td>FP8_E5M2</td>
+<td>N/A</td>
+<td>FP32</td>
+<td>A5 独有源类型</td>
+</tr>
+<tr>
+<td>H8</td>
+<td>N/A</td>
+<td>FP32</td>
+<td>A5 独有源类型</td>
+</tr>
+<tr>
+<td>FP4_E1M2X2</td>
+<td>N/A</td>
+<td>BF16</td>
+<td>A5 独有源类型</td>
+</tr>
+<tr>
+<td>FP4_E2M1X2</td>
+<td>N/A</td>
+<td>BF16</td>
+<td>A5 独有源类型</td>
+</tr>
+</tbody>
+</table>
+<p>说明：</p>
+<ul>
+<li>A2A3 支持 I32 -&gt; FP16（half，deq 路径）；A5 不支持 I32 -&gt; FP16。</li>
+<li>A5 不支持 FP16 -&gt; FP8_E4M3 和 FP16 -&gt; FP8_E5M2。</li>
+</ul>
+<h2 id="_12">示例<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h3 id="_13">自动模式<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
@@ -1116,7 +1224,7 @@ void example_auto() {
 <pre class="highlight"><code class="language-cpp">using TmpT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
 TmpT tmp;
 TCVT(dst, src, tmp, RoundMode::CAST_TRUNC, SaturationMode::OFF);</code></pre>
-<h2 id="_13">相关页面<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
+<h2 id="_14">相关页面<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></li>
 <li>上一条指令：<a href="../tsubc_zh/">pto.tsubc</a></li>

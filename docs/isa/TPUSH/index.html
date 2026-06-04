@@ -958,14 +958,14 @@ PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, TileProd &amp;tile, WaitEvents &amp;.
 template &lt;typename Pipe, typename GlobalData, TileSplitAxis Split,
           std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0, typename... WaitEvents&gt;
 PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, GlobalData &amp;gmTensor, WaitEvents &amp;... events);</code></pre>
-<p><code>Pipe</code> is typically an A2A3 <code>TPipe</code> declared in <code>include/pto/npu/a2a3/TPush.hpp</code>:</p>
+<p><code>Pipe</code> is typically an <code>TPipe</code> declared in <code>TPush.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;uint8_t FlagID, uint8_t DirType, uint32_t SlotSize, uint32_t SlotNum,
           uint32_t LocalSlotNum = 2, bool IsNoSplit = false, bool EN_UNIT_FLAG = false&gt;
 struct TPipe;</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>A2A3 TileData producer</strong>:<ul>
-<li><code>TileProd::Loc</code> must be <code>TileType::Acc</code> or <code>TileType::Vec</code>.</li>
+<li><strong>TileData producer</strong>:<ul>
+<li><code>TileProd::Loc</code> must be <code>TileType::Acc</code>, <code>TileType::Vec</code>, or <code>TileType::Ctrl</code>.</li>
 <li><code>Direction::DIR_C2V</code>: Cube produces an accumulator tile for vector consumption.</li>
 <li><code>Direction::DIR_V2C</code>: Vector produces a vector tile for cube consumption.</li>
 <li><code>Direction::DIR_BOTH</code>: both C2V and V2C producers are supported by the same pipe type.</li>
@@ -992,6 +992,15 @@ struct TPipe;</code></pre>
 <li><code>gmTensor</code> must be a FIFO slot view returned by <code>TALLOC</code>.</li>
 <li>Data must be written into <code>gmTensor</code> before calling <code>TPUSH(Pipe&amp;, GlobalData&amp;)</code>.</li>
 <li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> ignores the tensor contents and only commits the FIFO slot to the consumer.</li>
+</ul>
+</li>
+<li><strong>Tile Type Support</strong>:<ul>
+<li><strong>TPUSH/TPOP Supported Tile Types</strong>:<ul>
+<li><code>TileType::Acc</code> (Accumulator Tile): Used by Cube core for C2V direction communication.</li>
+<li><code>TileType::Vec</code> (Vector Tile): Used by Vector core for V2C direction communication.</li>
+<li><code>TileType::Ctrl</code> (Control Tile): Used by Vector core for V2C_CTRL direction control signal transmission.</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

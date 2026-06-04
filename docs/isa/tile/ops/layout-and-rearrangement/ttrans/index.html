@@ -1019,9 +1019,44 @@ PTO_INST RecordEvent TTRANS(TileDataDst &amp;dst, TileDataSrc &amp;src, TileData
 <p class="admonition-title">Constraints</p>
 <ul>
 <li>
+<ul>
+<li>The C++ API requires <code>tmp</code>. Some implementations may not use it when the selected path can execute without temporary storage.</li>
+<li>Basic parameters:<ul>
+<li><code>RowStride</code> is <code>32</code> for 8-bit element types and <code>16</code> for 16/32-bit element types.</li>
+<li><code>ElemPerBlock</code> is <code>32 / sizeof(T)</code>, the number of elements in one 32-byte block.</li>
+<li>8-bit types are <code>uint8_t</code> and <code>int8_t</code>; 16-bit types are <code>uint16_t</code>, <code>int16_t</code>, <code>half</code>, and <code>bfloat16_t</code>; 32-bit types are <code>uint32_t</code>, <code>int32_t</code>, and <code>float</code>.</li>
+</ul>
+</li>
+<li>When stride alignment requirements are met (<code>dstStride % RowStride == 0</code>, <code>srcStride % ElemPerBlock == 0</code>, and <code>srcStride / ElemPerBlock &lt;= 255</code>), the implementation uses <code>tmp</code> for the efficient transpose path. Otherwise it uses scalar copy and does not need <code>tmp</code>.</li>
+<li>
+<p>2D tile transpose <code>[H, W] -&gt; [W, H]</code>:</p>
+<pre class="highlight"><code class="language-text">tmpSize = W * ceil(H / RowStride) * RowStride * sizeof(T)</code></pre>
+<p>where <code>W</code> is <code>validCol</code>, <code>H</code> is <code>validRow</code>, and <code>tmpStride</code> must be aligned to <code>RowStride</code>. <code>tmp</code> is needed only when the stride alignment requirements are met.</p>
+</li>
+</ul>
 <p><strong>Temporary tile</strong>:</p>
 <ul>
-<li>The C++ API requires <code>tmp</code>, but some implementations may not use it.</li>
+<li>
+<ul>
+<li>
+<p>Forward <code>[N, C, H, W] -&gt; [N, C1, H, W, C0]</code>:</p>
+<pre class="highlight"><code class="language-text">tmpSize = H * W * ceil(C0 / RowStride) * RowStride * sizeof(T)</code></pre>
+<p>where <code>C1 = (C + C0 - 1) / C0</code> and the transpose domain is <code>C0</code> rows by <code>H * W</code> columns.</p>
+</li>
+</ul>
+<p><code>NCHW &lt;-&gt; NC1HWC0</code>:</p>
+<ul>
+<li>
+<p>Reverse <code>[N, C1, H, W, C0] -&gt; [N, C, H, W]</code>:</p>
+<pre class="highlight"><code class="language-text">tmpSize = C0 * ceil((H * W) / RowStride) * RowStride * sizeof(T)</code></pre>
+<p>where the transpose domain is <code>H * W</code> rows by <code>C0</code> columns.</p>
+</li>
+</ul>
+</li>
+<li>
+<p><code>GNCHW &lt;-&gt; GNC1HWC0</code> uses the same formulas as <code>NCHW &lt;-&gt; NC1HWC0</code>, with <code>G</code> carried as an outer group dimension.</p>
+</li>
+<li><code>NC1HWC0 -&gt; FRACTAL_Z</code> and <code>GNC1HWC0 -&gt; FRACTAL_Z</code> do not require temporary space; they directly execute memory reorganization.</li>
 </ul>
 </li>
 <li>

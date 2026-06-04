@@ -357,11 +357,25 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.mscatter</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#row-coalesce-coalescerow">Row Coalesce (Coalesce::Row)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#element-coalesce-coalesceelem">Element Coalesce (Coalesce::Elem)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#atomic-accumulation">Atomic Accumulation</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#conflict-resolution">Conflict Resolution</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#out-of-bounds-behaviour">Out-of-Bounds Behaviour</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
@@ -370,20 +384,98 @@
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#cpu-reference-form">CPU Reference Form</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-form">A2/A3 Form</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-form">A5 Form</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
+    <li class="toctree-l4"><a class="reference internal" href="#parameters-npu-forms">Parameters (NPU forms)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#enums">Enums</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#atomic-type-support">Atomic Type Support</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#tile-constraints-cpu">Tile Constraints (CPU)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
+    <li class="toctree-l4"><a class="reference internal" href="#tile-constraints-a2a3">Tile Constraints (A2/A3)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
+    <li class="toctree-l4"><a class="reference internal" href="#tile-constraints-a5">Tile Constraints (A5)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#dynamic-runtime-shapes-a2a3-and-a5">Dynamic Runtime Shapes (A2/A3 and A5)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mode-resolution">Mode Resolution</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#layout-support">Layout Support</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#nz-layout-a2a3">NZ Layout (A2/A3)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#why-elem-mode-uses-scalar-gm-writes-a2a3">Why Elem Mode Uses Scalar GM Writes (A2/A3)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#aligned-vs-unaligned-tile-shapes">Aligned vs Unaligned Tile Shapes</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#minimum-tile-shape">Minimum Tile Shape</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pipe-synchronisation-model">Pipe / Synchronisation Model</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3-explicit-pipe-handshakes">A2/A3 — explicit pipe handshakes</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-simt-launch-with-vs-handshake">A5 — SIMT launch with V↔S handshake</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#cache-coherence-flush-pattern-a5-wrappers">Cache-Coherence Flush Pattern (A5 wrappers)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ub-memory-budget">UB Memory Budget</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#cpu-simulator">CPU simulator</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3">A2/A3</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5">A5</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#runtime-dispatch-requirement-a5">Runtime Dispatch Requirement (A5)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#performance-considerations">Performance Considerations</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3_1">A2/A3</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5_1">A5</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#row-coalesce-embedding-scatter-a2a3-or-a5">Row Coalesce — Embedding Scatter (A2/A3 or A5)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#row-coalesce-atomic-add-aggregation">Row Coalesce — Atomic-Add Aggregation</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#element-coalesce-sparse-update">Element Coalesce — Sparse Update</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#deterministic-last-write-wins-a5-only">Deterministic Last-Write-Wins (A5 only)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#element-coalesce-1-1-degenerate-case">Element Coalesce — (1, 1) Degenerate Case</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
     </li>
@@ -393,7 +485,7 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#related-instructions">Related Instructions</a>
     </li>
     </ul>
                 </li>
@@ -979,111 +1071,738 @@
                 <!-- Generated from `docs/isa/tile/ops/memory-and-data-movement/mscatter.md` -->
 
 <h1 id="ptomscatter">pto.mscatter<a class="headerlink" href="#ptomscatter" title="Permanent link">&para;</a></h1>
-<p><code>pto.mscatter</code> is part of the <a href="../../../memory-and-data-movement/">Memory And Data Movement</a> instruction set.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Scatter-store elements from a tile into global memory using per-element indices.</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Scatter-store elements from a tile into global memory using per-element indices. It is part of the tile memory/data-movement instruction set, so the visible behavior includes explicit transfer between GM-visible data and tile-visible state.</p>
-<p>For each element <code>(i, j)</code> in the source valid region:</p>
-<div class="arithmatex">\[ \mathrm{mem}[\mathrm{idx}_{i,j}] = \mathrm{src}_{i,j} \]</div>
-<p>If multiple elements map to the same destination location, the final value is <strong>undefined on A2/A3 and A5</strong> (MSCATTER aliases are illegal and must not occur in correct programs); on the CPU simulator, the last writer in row-major iteration order wins.</p>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="MSCATTER tile operation" src="../../../../../figures/isa/MSCATTER.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p><code>MSCATTER</code> writes data from a UB source tile into a GM <code>GlobalTensor</code> through a UB index tile. The operating mode is selected explicitly through the <code>Coalesce</code> template parameter:</p>
+<ul>
+<li><strong><code>Coalesce::Row</code></strong> (default) — scatter full rows <code>src[r, :]</code> into <code>table[idx[r], :]</code>. The index tile is 1-D (<code>[1, R]</code> row-major; on A5 also <code>[R, 1]</code> column-major). <code>R = 1</code> is allowed.</li>
+<li><strong><code>Coalesce::Elem</code></strong> — element-wise scatter from <code>src[R, C]</code> (or <code>src[1, N]</code>) into a linearized <code>table</code> through <code>idx[R, C]</code>. The index tile must have the same valid shape as the source. The degenerate <code>(1, 1)</code> case is allowed.</li>
+</ul>
+<p>Write behaviour is controlled by orthogonal template policies:</p>
+<ul>
+<li><code>ScatterAtomicOp</code> — <code>None</code> (plain store), <code>Add</code>, <code>Max</code>, <code>Min</code>. Atomic dtype support varies per target (see the table below).</li>
+<li><code>ScatterOOB</code> — <code>Undefined</code>, <code>Skip</code>, <code>Clamp</code>, <code>Wrap</code>. There is no <code>Zero</code> option (the operation writes into an existing table; out-of-bounds indices have no real destination to zero).</li>
+<li><code>ScatterConflict</code> (<strong>A5 only</strong>) — <code>Last</code> (deterministic largest-index wins, only consulted when <code>Atomic == None</code>) or <code>Default</code> (warp-scheduler dependent). A2/A3 has no <code>ScatterConflict</code> parameter because the kernel is strictly sequential and collisions are resolved by "last write wins".</li>
+</ul>
+<p>Per-target dispatch summary:</p>
+<ul>
+<li><strong>CPU Simulator</strong> — pure C++ reference. The implementation walks <code>validRow * validCol</code> with a plain sequential <code>for</code> loop in row-major order and writes <code>table[idx[i, j]] = src[i, j]</code> (Elem semantics). When multiple sources map to the same destination, the last writer in row-major iteration order wins. No atomic mode is exposed at the intrinsic surface.</li>
+<li><strong>A2/A3 VEC-CORE</strong> — single-threaded scalar / MTE3 walk driven from the scalar pipe. Row mode issues one wide <code>copy_ubuf_to_gm_align_b*</code> DMA per row through <code>tablePtr + safeIdx * tableRowStride</code> (where <code>tableRowStride = table.GetStride(DIM_3)</code> and <code>tableRows = ∏ Shape[0..3]</code>); Elem mode performs a scalar UB→GM store per element (DMA bursts cannot satisfy per-element UB-source 32-byte alignment). Supports ND-GM with ND-UB <strong>and</strong> NZ-GM with NZ-UB tile pairs. Always "last write wins" for <code>ScatterAtomicOp::None</code>.</li>
+<li><strong>A5 SIMT</strong> — SIMT launch through <code>cce::async_invoke</code> with up to <code>dim3{32, 32}</code> (1024 threads). Row mode uses warp-parallel lane writes that the SIMT hardware coalesces into 128 B GM bursts when consecutive; Elem mode maps one lane to one element with per-lane scalar GM stores. The Row kernel computes <code>dstRow = table + safeIdx * validCols</code>, so the GM table is treated as <strong>packed ND with row stride = <code>validCols</code></strong> — <code>MScatterCheck</code> enforces <code>GlobalTable::staticShape[4] == TileSrc::ValidCol</code> at compile time, and <code>tableRows = Shape[3]</code>. <code>Conflict::Last</code> is implemented as a slot-centric reverse scan (<code>last_owner_find_*</code>) so the result is deterministic and race-free. NZ block-stride layouts are not implemented on A5. The <code>(1, 1)</code> Elem case bypasses the SIMT launch and runs <code>MScatterScalarImpl</code> on the AIV vector core.</li>
+</ul>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
+<h3 id="row-coalesce-coalescerow">Row Coalesce (<code>Coalesce::Row</code>)<a class="headerlink" href="#row-coalesce-coalescerow" title="Permanent link">&para;</a></h3>
+<p>Source <code>src[R, C]</code>, index <code>idx[1, R]</code> (or <code>idx[R, 1]</code> on A5), table <code>table[TableRows, C]</code>. For each row <code>r</code>:</p>
+<div class="arithmatex">\[ \mathrm{table}_{\mathrm{idx}_{r},\; j} \;\leftarrow\; \mathrm{atom}\!\left(\mathrm{table}_{\mathrm{idx}_{r},\; j},\; \mathrm{src}_{r, j}\right) \quad\text{for } 0 \le j &lt; C \]</div>
+<p>where <code>atom</code> is the identity (replace) for <code>ScatterAtomicOp::None</code> or the corresponding atomic accumulation otherwise.</p>
+<h3 id="element-coalesce-coalesceelem">Element Coalesce (<code>Coalesce::Elem</code>)<a class="headerlink" href="#element-coalesce-coalesceelem" title="Permanent link">&para;</a></h3>
+<p>Source <code>src[R, C]</code>, index <code>idx[R, C]</code> (same valid shape as <code>src</code>), flat table of length <code>TableSize</code>:</p>
+<div class="arithmatex">\[ \mathrm{table}[\mathrm{idx}_{r, c}] \;\leftarrow\; \mathrm{atom}\!\left(\mathrm{table}[\mathrm{idx}_{r, c}],\; \mathrm{src}_{r, c}\right) \]</div>
+<p><code>TableSize = Shape[0] * Shape[1] * Shape[2] * Shape[3] * Shape[4]</code> of the destination <code>GlobalTensor</code>. For NZ tables (A2/A3) the scalar <code>idx</code> is decomposed into <code>(logicalRow, logicalCol)</code> and then translated to the NZ block-stride GM offset through <code>MScatterNZGmOffset</code>.</p>
+<h3 id="atomic-accumulation">Atomic Accumulation<a class="headerlink" href="#atomic-accumulation" title="Permanent link">&para;</a></h3>
+<p>When <code>ScatterAtomicOp::Add</code> / <code>Max</code> / <code>Min</code> is selected:</p>
+<div class="arithmatex">\[ \mathrm{table}[\cdot] \mathrel{\oplus}= \mathrm{src}_{\cdot},\quad \oplus \in \{+,\; \max,\; \min\} \]</div>
+<h3 id="conflict-resolution">Conflict Resolution<a class="headerlink" href="#conflict-resolution" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>A2/A3.</strong> The kernel is strictly sequential in increasing <code>(r)</code> (Row) or <code>(r, c)</code> (Elem) order. For <code>ScatterAtomicOp::None</code>, <strong>the later write always wins</strong> ("last write wins"). For <code>ScatterAtomicOp::Add</code> every Row-mode store goes through the MTE3 atomic-add unit and every Elem-mode store does a scalar read-add-write; duplicate destination indices accumulate.</li>
+<li><strong>A5.</strong> With <code>ScatterAtomicOp::None</code>:<ul>
+<li><strong><code>Conflict::Last</code></strong> — the source position with the <strong>largest flat index</strong> that targets a given destination slot is the one whose value is stored. Matches the sequential semantics of <code>for i in 0..N: table[idx[i]] = src[i]</code>. Implemented as a slot-centric reverse scan (per-warp <code>last_owner_find_*</code>), race-free by construction.</li>
+<li><strong><code>Conflict::Default</code></strong> — the surviving writer is warp-scheduler dependent. For collision-free index sets the result is identical to <code>Last</code>.</li>
+</ul>
+</li>
+<li><strong>CPU simulator.</strong> Last writer in row-major iteration order wins (matches <code>Conflict::Last</code>).</li>
+</ul>
+<p>Atomic modes ignore <code>ScatterConflict</code> because the GM atomic R-M-W serialises colliding writes by itself.</p>
+<h3 id="out-of-bounds-behaviour">Out-of-Bounds Behaviour<a class="headerlink" href="#out-of-bounds-behaviour" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">enum class ScatterOOB : uint8_t {
+    Undefined = 0,  // No bounds check; caller guarantees valid indices
+    Skip      = 1,  // Drop the write (preserve original table value)
+    Clamp     = 2,  // Clamp index to capacity - 1
+    Wrap      = 3   // Index modulo capacity
+};</code></pre>
+<p><code>capacity</code> is <code>TableRows</code> (Row mode) or <code>TableSize</code> (Elem mode):</p>
+<ul>
+<li><code>Undefined</code>: caller guarantees <code>idx &lt; capacity</code>; no remap is applied.</li>
+<li><code>Skip</code>: out-of-bounds rows / elements are simply not written (no DMA issued, no scalar store performed). The original table value at that GM address is preserved.</li>
+<li><code>Clamp</code>: <code>idx = min(idx, capacity - 1)</code> before access.</li>
+<li><code>Wrap</code>: <code>idx = idx % capacity</code> before access.</li>
+</ul>
+<p>There is no <code>Zero</code> option — an OOB index never identifies a real destination slot, so <code>Skip</code> is the natural "do nothing on OOB" policy.</p>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
+<p>PTO-AS form: see <a href="../../../../syntax-and-operands/assembly-model/">PTO-AS Specification</a>.</p>
 <p>Synchronous form:</p>
 <pre class="highlight"><code class="language-text">mscatter %src, %mem, %idx : !pto.memref&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;</code></pre>
+<p>Row coalesce:</p>
+<pre class="highlight"><code class="language-text">mscatter.row %table, %src, %idx : (!pto.memref&lt;...&gt;, !pto.tile&lt;RxCxT&gt;, !pto.tile&lt;1xRxi32&gt;)</code></pre>
+<p>Element coalesce:</p>
+<pre class="highlight"><code class="language-text">mscatter.elem %table, %src, %idx : (!pto.memref&lt;...&gt;, !pto.tile&lt;RxCxT&gt;, !pto.tile&lt;RxCxi32&gt;)</code></pre>
+<p>OOB and atomic variants append the mode suffix (<code>mscatter.row.clamp.atomic_add</code>, <code>mscatter.elem.skip</code>, etc.).</p>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.mscatter %src, %idx, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.mscatter ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>Declared in <code>include/pto/common/pto_instr.hpp</code> (the shared dispatcher) and the per-target implementation headers (<code>include/pto/cpu/MGatherScatter.hpp</code>, <code>include/pto/npu/a2a3/MScatter.hpp</code>, <code>include/pto/npu/a5/MScatter.hpp</code>).</p>
+<h3 id="cpu-reference-form">CPU Reference Form<a class="headerlink" href="#cpu-reference-form" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">template &lt;typename GlobalData, typename TileSrc, typename TileInd, typename... WaitEvents&gt;
 PTO_INST RecordEvent MSCATTER(GlobalData &amp;dst, TileSrc &amp;src, TileInd &amp;indexes, WaitEvents &amp;... events);</code></pre>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
+<p>The CPU form has no <code>Coalesce</code>, <code>ScatterAtomicOp</code>, <code>ScatterOOB</code>, or <code>ScatterConflict</code> template parameter. The implementation always walks <code>validRow × validCol</code> and writes <code>dst.data()[indexes.data()[idxOff]] = src.data()[srcOff]</code> — Elem semantics regardless of the index tile shape. Atomic is always plain replace; the last writer in row-major iteration order wins. Bounds are not enforced.</p>
+<h3 id="a2a3-form">A2/A3 Form<a class="headerlink" href="#a2a3-form" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">template &lt;Coalesce        CMode  = Coalesce::Row,
+          ScatterAtomicOp AtomOp = ScatterAtomicOp::None,
+          ScatterOOB      Oob    = ScatterOOB::Undefined,
+          typename GlobalTable, typename TileSrc, typename TileIdx,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent MSCATTER(GlobalTable&amp; table, TileSrc&amp; src, TileIdx&amp; idx,
+                              WaitEvents&amp;... events);</code></pre>
+<p>A2/A3 has no <code>ScatterConflict</code> template parameter (the kernel is always sequential, so collisions are deterministic "last write wins"). Dispatched as a regular AIV function call — no async-launch or cross-core orchestration.</p>
+<h3 id="a5-form">A5 Form<a class="headerlink" href="#a5-form" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">template &lt;Coalesce         Mode     = Coalesce::Row,
+          ScatterAtomicOp  Atomic   = ScatterAtomicOp::None,
+          ScatterOOB       Oob      = ScatterOOB::Undefined,
+          ScatterConflict  Conflict = ScatterConflict::Last,
+          typename GlobalTable, typename TileSrc, typename TileIdx,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent MSCATTER(GlobalTable&amp; table, TileSrc&amp; src, TileIdx&amp; idx,
+                              WaitEvents&amp;... events);</code></pre>
+<p>The implementation launches one of <code>simt_mscatter_row_kernel</code>, <code>simt_mscatter_row_last_kernel</code>, <code>simt_mscatter_elem_kernel</code>, or <code>simt_mscatter_elem_last_kernel</code> through <code>cce::async_invoke&lt;…&gt;(cce::dim3{32, kLaunchWarps}, …)</code>. UB addressing inside the SIMT kernel goes through <code>tile_offset_2d&lt;TileX&gt;(r, c)</code>, which makes the kernel layout-agnostic for UB tiles. The degenerate Elem <code>(1, 1)</code> case bypasses the SIMT launch and runs <code>MScatterScalarImpl</code> on the AIV vector core.</p>
+<h3 id="parameters-npu-forms">Parameters (NPU forms)<a class="headerlink" href="#parameters-npu-forms" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>src</code> is the source tile.</li>
-<li><code>indexes</code> is an index tile providing per-element indices into <code>dst</code>.</li>
-<li><code>dst</code> is the destination GlobalTensor.</li>
+<li><code>table</code> — destination GM <code>GlobalTensor</code>. <code>GlobalTensor::DType</code> must be <code>__gm__ T</code> matching the source element type.</li>
+<li><code>src</code> — UB source tile (<code>TileType::Vec</code>); shape <code>[R, C]</code>.</li>
+<li><code>idx</code> — UB index tile (<code>TileType::Vec</code>).</li>
+<li><code>CMode</code> / <code>Mode</code> — <code>Coalesce</code> value (<code>Row</code> or <code>Elem</code>). First template parameter, so the operating mode is always explicit at the call site.</li>
+<li><code>AtomOp</code> / <code>Atomic</code> — <code>ScatterAtomicOp</code> value. <code>Max</code> / <code>Min</code> are not supported on A2/A3.</li>
+<li><code>Oob</code> — <code>ScatterOOB</code> value for out-of-bounds handling.</li>
+<li><code>Conflict</code> (<strong>A5 only</strong>) — <code>ScatterConflict</code> value. Consulted only when <code>Atomic == None</code>.</li>
 </ul>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p>Elements from <code>src</code> are scattered to positions in <code>dst</code> specified by <code>indexes</code>.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>This operation writes to global memory. Concurrent writes to the same location produce undefined behavior on A2/A3 and A5 (MSCATTER concurrent aliases are illegal and must not occur in correct programs); on the CPU simulator, the last writer wins.</p>
+<h3 id="enums">Enums<a class="headerlink" href="#enums" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">enum class Coalesce : uint8_t {
+    Row  = 0,  // table[idx[r], :] = src[r, :]   (1-D index of length R)
+    Elem = 1   // table[idx[i, j]] = src[i, j]   (idx shape == src shape)
+};
+
+enum class ScatterAtomicOp : uint8_t {
+    None = 0,  // Plain store (collision-resolved by ScatterConflict on A5)
+    Add  = 1,  // Atomic addition
+    Max  = 2,  // Atomic maximum (A5 only)
+    Min  = 3   // Atomic minimum (A5 only)
+};
+
+enum class ScatterOOB : uint8_t {
+    Undefined = 0,
+    Skip      = 1,
+    Clamp     = 2,
+    Wrap      = 3
+};
+
+enum class ScatterConflict : uint8_t {  // A5 only
+    Last    = 0,  // Deterministic: largest source index wins
+    Default = 1   // Warp-scheduler dependent
+};</code></pre>
+<h3 id="atomic-type-support">Atomic Type Support<a class="headerlink" href="#atomic-type-support" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Atomic</th>
+<th>CPU (ABI contract / simulator behavior)</th>
+<th>A2/A3</th>
+<th>A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>None</code></td>
+<td>all dtypes</td>
+<td>all dtypes</td>
+<td>all dtypes</td>
+</tr>
+<tr>
+<td><code>Add</code></td>
+<td>ABI contract: <code>int32_t</code>, <code>uint32_t</code>, <code>float</code>, <code>half</code> (simulator ignores the template parameter and runs plain replace with last-writer-wins)</td>
+<td><code>int8_t</code>, <code>int16_t</code>, <code>int32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code> (signed integers only — no <code>uint*</code>; MTE3 atomic-add unit in Row, scalar read-modify-write in Elem)</td>
+<td><code>int32_t</code>, <code>uint32_t</code>, <code>float</code>, <code>half</code>, <code>bfloat16_t</code> (SIMT <code>atomicAdd</code>)</td>
+</tr>
+<tr>
+<td><code>Max</code></td>
+<td>ABI contract: <code>int32_t</code> or <code>float</code> (simulator runs plain replace)</td>
+<td>unsupported (rejected at compile time by <code>MScatterCheck</code>)</td>
+<td><code>int32_t</code>, <code>uint32_t</code>, <code>float</code> (SIMT <code>atomicMax</code>)</td>
+</tr>
+<tr>
+<td><code>Min</code></td>
+<td>ABI contract: <code>int32_t</code> or <code>float</code> (simulator runs plain replace)</td>
+<td>unsupported (rejected at compile time by <code>MScatterCheck</code>)</td>
+<td><code>int32_t</code>, <code>uint32_t</code>, <code>float</code> (SIMT <code>atomicMin</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>A2/A3 <code>Max</code> / <code>Min</code> would need a hardware atomic-max/min unit on the MTE3 path that the SoC does not provide; <code>MScatterCheck</code> static-asserts reject them. The CPU simulator's <code>MSCATTER</code> does not template on <code>ScatterAtomicOp</code> — the contract column above is what callers must honor at the source level so the same kernel still compiles and behaves correctly when the same source is built against A2/A3 or A5.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
+<p>The constraints below are split into target-specific sections so each backend lists exactly what its implementation enforces. Symbols that are common across targets (<code>T = TileSrc::DType</code>, <code>TIdx = TileIdx::DType</code>) are reused.</p>
+<h3 id="tile-constraints-cpu">Tile Constraints (CPU)<a class="headerlink" href="#tile-constraints-cpu" title="Permanent link">&para;</a></h3>
+<p><strong>Supported data types:</strong></p>
 <ul>
-<li>
-<p><strong>Supported data types</strong>:</p>
-<ul>
-<li><code>src</code>/<code>dst</code> element type must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
-<li>On AICore targets, <code>float8_e4m3_t</code> and <code>float8_e5m2_t</code> are also supported.</li>
+<li><code>src</code> / <code>dst</code> element type must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
+<li>On AICore targets (CPU simulator compiled with <code>__CCE_AICORE__</code>), <code>float8_e4m3_t</code> and <code>float8_e5m2_t</code> are also supported.</li>
 <li><code>indexes</code> element type must be <code>int32_t</code> or <code>uint32_t</code>.</li>
 </ul>
-</li>
-<li>
-<p><strong>Tile and memory types</strong>:</p>
+<p><strong>Tile and memory types:</strong></p>
 <ul>
 <li><code>src</code> must be a vector tile (<code>TileType::Vec</code>).</li>
 <li><code>indexes</code> must be a vector tile (<code>TileType::Vec</code>).</li>
-<li><code>src</code> and <code>indexes</code> must use row-major layout.</li>
+<li><code>src</code> and <code>indexes</code> must use row-major layout (<code>BLayout::RowMajor + SLayout::NoneBox</code>).</li>
 <li><code>dst</code> must be a <code>GlobalTensor</code> in GM memory.</li>
-<li><code>dst</code> must use <code>ND</code> layout.</li>
+<li><code>dst</code> must use <code>Layout::ND</code>.</li>
 </ul>
-</li>
-<li>
-<p><strong>Atomic operation constraints</strong>:</p>
+<p><strong>Atomic operation constraints:</strong></p>
 <ul>
 <li>Non-atomic scatter is supported for all supported element types.</li>
-<li><code>Add</code> atomic mode requires <code>int32_t</code>, <code>uint32_t</code>, <code>float</code>, or <code>half</code>.</li>
-<li><code>Max</code>/<code>Min</code> atomic mode requires <code>int32_t</code> or <code>float</code>.</li>
+<li><code>ScatterAtomicOp::Add</code> mode requires <code>int32_t</code>, <code>uint32_t</code>, <code>float</code>, or <code>half</code>.</li>
+<li><code>ScatterAtomicOp::Max</code> / <code>Min</code> mode requires <code>int32_t</code> or <code>float</code>.</li>
 </ul>
-</li>
-<li>
-<p><strong>Shape constraints</strong>:</p>
+<p><strong>Shape constraints:</strong></p>
 <ul>
-<li><code>src.Rows == indexes.Rows</code>.</li>
+<li><code>src.Rows == indexes.Rows</code> (the index tile and source tile share the row count).</li>
 <li><code>indexes</code> must be shaped as <code>[N, 1]</code> for row-indexed scatter or <code>[N, M]</code> for element-indexed scatter.</li>
-<li><code>src</code> row width must be 32-byte aligned, that is, <code>src.Cols * sizeof(DType)</code> must be a multiple of 32.</li>
+<li><code>src</code> row width must be 32-byte aligned, that is, <code>src.Cols * sizeof(TileSrc::DType)</code> must be a multiple of 32.</li>
 <li><code>dst</code> static shape must satisfy <code>Shape&lt;1, 1, 1, TableRows, RowWidth&gt;</code>.</li>
 </ul>
-</li>
-<li>
-<p><strong>Index interpretation</strong>:</p>
+<p><strong>Index interpretation:</strong></p>
 <ul>
-<li>Index interpretation is target-defined. The CPU simulator treats indices as linear element indices into <code>dst.data()</code>.</li>
-<li>The CPU simulator does not enforce bounds checks on <code>indexes</code>.</li>
+<li>Index interpretation is target-defined. The CPU simulator treats indices as <strong>linear element indices into <code>dst.data()</code></strong> and writes <code>dst.data()[idx] = src.data()[srcOff]</code> for every <code>(r, c)</code> in the source valid region — equivalent to <code>Coalesce::Elem</code> semantics, regardless of the index tile shape.</li>
+<li>The CPU simulator does not enforce bounds checks on <code>indexes</code>. Out-of-range indices write to whatever GM address <code>dst.data() + idx</code> resolves to and are target-defined.</li>
+<li>The simulator does <strong>not</strong> model <code>ScatterAtomicOp</code>, <code>ScatterOOB</code>, or <code>ScatterConflict</code> template parameters; the implementation always does plain replace, with "last writer in row-major iteration order wins" as the conflict policy.</li>
 </ul>
-</li>
-</ul>
-</div>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">Exceptions</p>
+<p><strong>Header-level enforcement.</strong> The CPU header (<code>include/pto/cpu/MGatherScatter.hpp</code>) static-asserts only the minimum closure rules: <code>std::is_integral_v&lt;TileInd::DType&gt;</code> for the index dtype and <code>sizeof(TileSrc::DType) == sizeof(GlobalData::DType)</code> for byte-wise compatibility. The dtype / shape / atomic / layout constraints above are the <strong>PTO ABI contract</strong> — callers are expected to honor them so the same kernel source compiles and runs unmodified against the A2/A3 and A5 backends.</p>
+<h3 id="tile-constraints-a2a3">Tile Constraints (A2/A3)<a class="headerlink" href="#tile-constraints-a2a3" title="Permanent link">&para;</a></h3>
+<p><strong>Supported data types:</strong></p>
 <ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
+<li><code>src</code> / <code>dst</code> element type must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>. No <code>float8_e4m3_t</code> / <code>float8_e5m2_t</code> / <code>hifloat8_t</code> on the A2/A3 vec-core.</li>
+<li><code>indexes</code> element type must be <code>int32_t</code> or <code>uint32_t</code>.</li>
 </ul>
-</div>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>Target-Profile Restrictions</summary>
+<p><strong>Tile and memory types:</strong></p>
 <ul>
-<li>
-<p><code>pto.mscatter</code> preserves PTO-visible semantics across CPU simulation, A2/A3-class targets, and A5-class targets, but concrete support subsets may differ by profile.</p>
-</li>
-<li>
-<p>Portable code must rely only on the documented type, layout, shape, and mode combinations that the selected target profile guarantees.</p>
+<li><code>src</code> must be a vector tile (<code>TileSrc::Loc == TileType::Vec</code>).</li>
+<li><code>indexes</code> must be a vector tile (<code>TileIdx::Loc == TileType::Vec</code>).</li>
+<li>The index tile is <strong>always</strong> <code>BLayout::RowMajor + SLayout::NoneBox</code> (ND), regardless of the table layout.</li>
+<li><code>dst</code> must be a <code>GlobalTensor</code> in GM memory; <code>GlobalTable::DType == __gm__ T</code>.</li>
+<li>The source tile's bulk + sub layout must be paired with the table layout exactly:<ul>
+<li><code>GlobalTable::layout == Layout::ND</code> ⇒ <code>TileSrc</code> is <code>BLayout::RowMajor + SLayout::NoneBox</code>.</li>
+<li><code>GlobalTable::layout == Layout::NZ</code> ⇒ <code>TileSrc</code> is <code>BLayout::ColMajor + SLayout::RowMajor + SFractalSize == TileConfig::fractalABSize</code> (= 512 B).</li>
+</ul>
 </li>
 </ul>
-</details>
+<p><strong>Atomic operation constraints:</strong></p>
+<ul>
+<li><code>ScatterAtomicOp::None</code> is supported for all of the dtypes above.</li>
+<li><code>ScatterAtomicOp::Add</code> requires <code>int8_t</code>, <code>int16_t</code>, <code>int32_t</code>, <code>half</code>, <code>bfloat16_t</code>, or <code>float</code>. Unsigned-integer atomic-add is not supported on A2/A3 (no <code>uint8_t</code> / <code>uint16_t</code> / <code>uint32_t</code>).</li>
+<li><code>ScatterAtomicOp::Max</code> and <code>Min</code> are <strong>not supported on A2/A3</strong> — <code>MScatterCheck</code> rejects them at compile time.</li>
+</ul>
+<p><strong>Shape constraints:</strong></p>
+<ul>
+<li>Padded <code>TileSrc::Cols * sizeof(T)</code> must be 32-byte aligned in both layouts (the same DMA-burst rule that <code>TLOAD</code> / <code>TSTORE</code> enforce). <code>ValidRow</code> / <code>ValidCol</code> are not constrained by this rule.</li>
+<li>For <code>Coalesce::Row</code>: <code>TileIdx::ValidRow == 1</code> and <code>TileIdx::ValidCol == TileSrc::ValidRow</code>.</li>
+<li>For <code>Coalesce::Elem</code>: <code>TileIdx::ValidRow == TileSrc::ValidRow</code> and <code>TileIdx::ValidCol == TileSrc::ValidCol</code>.</li>
+<li>Both modes require <code>TileSrc::ValidRow &gt;= 1</code> and <code>TileSrc::ValidCol &gt;= 1</code>.</li>
+<li>NZ tables additionally require <code>GlobalTable::staticShape[3] == FRACTAL_NZ_ROW</code> (= 16), <code>GlobalTable::staticShape[4] == C0_SIZE_BYTE / sizeof(T)</code> (= 32 B / element width), <code>TileSrc::Cols % (C0_SIZE_BYTE / sizeof(T)) == 0</code>, and <code>TileSrc::Rows % FRACTAL_NZ_ROW == 0</code>.</li>
+</ul>
+<p><strong>Index interpretation:</strong></p>
+<ul>
+<li>For <code>Coalesce::Row</code>, each index is treated as a <strong>logical row index</strong> into the <code>[TableRows, RowWidth]</code> ND table (or as a logical row across <code>gShape2 * FRACTAL_NZ_ROW</code> for NZ).</li>
+<li>For <code>Coalesce::Elem</code>, each index is treated as a <strong>linear element index</strong> into the flat 5-D table (<code>tableSize = ∏ shape[0..4]</code>). For NZ the kernel splits the linear index into <code>(logicalRow = idx / nLogicalCols, logicalCol = idx % nLogicalCols)</code> and applies the NZ block-stride translation.</li>
+<li>OOB handling follows the <code>ScatterOOB</code> template parameter (<code>Undefined</code> / <code>Skip</code> / <code>Clamp</code> / <code>Wrap</code>); see the Out-of-Bounds subsection above.</li>
+</ul>
+<h3 id="tile-constraints-a5">Tile Constraints (A5)<a class="headerlink" href="#tile-constraints-a5" title="Permanent link">&para;</a></h3>
+<p><strong>Supported data types:</strong></p>
+<ul>
+<li><code>src</code> / <code>dst</code> element type must be one of: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>. On <code>__CCE_AICORE__</code> builds the list also includes <code>hifloat8_t</code>, <code>float8_e4m3_t</code>, <code>float8_e5m2_t</code>.</li>
+<li><code>indexes</code> element type must be <code>int32_t</code> or <code>uint32_t</code>.</li>
+</ul>
+<p><strong>Tile and memory types:</strong></p>
+<ul>
+<li><code>src</code> must be a vector tile (<code>TileSrc::Loc == TileType::Vec</code>).</li>
+<li><code>indexes</code> must be a vector tile (<code>TileIdx::Loc == TileType::Vec</code>).</li>
+<li>The SIMT kernel is layout-agnostic for UB tiles: every UB read/write goes through <code>tile_offset_2d&lt;TileX&gt;(r, c)</code>, so <code>TileSrc</code> may be <code>BLayout::RowMajor</code> or <code>BLayout::ColMajor</code> (with <code>SLayout::NoneBox</code>).</li>
+<li><code>dst</code> must be a <code>GlobalTensor</code> in GM memory; <code>GlobalTable::DType == __gm__ T</code>.</li>
+<li><strong>GM table layout: <code>Layout::ND</code> only.</strong> A5 SIMT kernels address GM as a flat row-major buffer with row stride hard-wired to <code>validCols</code> (<code>dstRow = table + safeIdx * validCols</code>); <code>MScatterCheck</code> enforces <code>GlobalTable::staticShape[4] == TileSrc::ValidCol</code> so the table cannot have any inter-row padding. The kernel does not honor any other <code>GlobalTensor::layout</code> value — <code>MScatterCheck</code> does not static-assert the GM <code>layout</code> field, but using <code>Layout::NZ</code> (or anything other than packed ND with row width = <code>validCols</code>) produces wrong output because the kernel never performs block-stride translation. Callers that need NZ data must pre-stage into ND.</li>
+</ul>
+<p><strong>Atomic operation constraints:</strong></p>
+<ul>
+<li><code>ScatterAtomicOp::None</code> is supported for all of the dtypes above.</li>
+<li><code>ScatterAtomicOp::Add</code> requires <code>int32_t</code>, <code>uint32_t</code>, <code>float</code>, <code>half</code>, or <code>bfloat16_t</code> (uses SIMT <code>atomicAdd</code>).</li>
+<li><code>ScatterAtomicOp::Max</code> requires <code>int32_t</code>, <code>uint32_t</code>, or <code>float</code> (uses SIMT <code>atomicMax</code>).</li>
+<li><code>ScatterAtomicOp::Min</code> requires <code>int32_t</code>, <code>uint32_t</code>, or <code>float</code> (uses SIMT <code>atomicMin</code>).</li>
+<li><code>IsValidScatterAtomic&lt;T, Atomic&gt;::value</code> rejects unsupported combinations at compile time.</li>
+</ul>
+<p><strong>Shape constraints:</strong></p>
+<ul>
+<li>Padded <code>TileSrc::Cols * sizeof(T)</code> (RowMajor) or <code>TileSrc::Rows * sizeof(T)</code> (ColMajor) must be 32-byte aligned — this is an upstream <code>TLOAD</code> / <code>TSTORE</code> requirement, not a <code>MSCATTER</code> constraint per se. <code>ValidRow</code> / <code>ValidCol</code> are not constrained by this rule.</li>
+<li>For <code>Coalesce::Row</code>: the index tile's valid shape is <code>[1, R]</code> (<code>BLayout::RowMajor</code>) <strong>or</strong> <code>[R, 1]</code> (<code>BLayout::ColMajor</code>). Both forms produce a linear R-element layout in UB and the kernel reads <code>idx[row]</code> directly. The choice of <code>BLayout</code> for the index tile is independent of the GM table layout — <code>MScatterCheck</code> does not constrain the GM <code>layout</code> field for the table.</li>
+<li>For <code>Coalesce::Elem</code>: <code>TileIdx::ValidRow == TileSrc::ValidRow</code> and <code>TileIdx::ValidCol == TileSrc::ValidCol</code>. The <code>BLayout</code> of <code>TileIdx</code> is independent of <code>TileSrc</code>'s — the kernel walks both through per-tile <code>tile_offset_2d</code>.</li>
+<li>Both modes require <code>TileSrc::ValidRow &gt;= 1</code> and <code>TileSrc::ValidCol &gt;= 1</code>. The degenerate <code>(1, 1)</code> shape in Elem mode bypasses the SIMT launch and runs <code>MScatterScalarImpl</code> on the AIV vector core.</li>
+</ul>
+<p><strong>Index interpretation:</strong></p>
+<ul>
+<li>For <code>Coalesce::Row</code>, each index is treated as a <strong>logical row index</strong> into the <code>[TableRows, validCols]</code> ND table; the kernel computes <code>dstRow = table + safeIdx * validCols</code>.</li>
+<li>For <code>Coalesce::Elem</code>, each index is treated as a <strong>linear element index</strong> into the flat 5-D table (<code>tableSize = ∏ shape[0..4]</code>); the kernel writes <code>table[safeIdx] = src[srcOff]</code>.</li>
+<li>OOB handling follows the <code>ScatterOOB</code> template parameter (<code>Undefined</code> / <code>Skip</code> / <code>Clamp</code> / <code>Wrap</code>); see the Out-of-Bounds subsection above.</li>
+<li>Conflict handling follows the <code>ScatterConflict</code> template parameter (<code>Last</code> / <code>Default</code>) when <code>Atomic == None</code>; see the Conflict Resolution subsection above.</li>
+</ul>
+<h3 id="dynamic-runtime-shapes-a2a3-and-a5">Dynamic Runtime Shapes (A2/A3 and A5)<a class="headerlink" href="#dynamic-runtime-shapes-a2a3-and-a5" title="Permanent link">&para;</a></h3>
+<p><code>MSCATTER</code> accepts both compile-time and runtime-dynamic shapes:</p>
+<ul>
+<li><code>Tile&lt;…, RowMask, ColMask&gt;</code> with <code>RowMask == -1</code> and/or <code>ColMask == -1</code> stores the runtime valid extents in the tile object; the implementation reads them through <code>src.GetValidRow()</code> / <code>src.GetValidCol()</code>.</li>
+<li><code>Shape&lt;S0, S1, S2, S3, S4&gt;</code> / <code>Stride&lt;…&gt;</code> with one or more <code>-1</code> entries are constructed with the runtime sizes; the implementation reads them through <code>table.GetShape(GlobalTensorDim::DIM_*)</code> and folds them into <code>tableRows</code> (Row mode) or <code>tableSize = ∏ shape[0..4]</code> (Elem mode).</li>
+</ul>
+<p>Static-asserts in <code>MScatterCheck</code> are gated on <code>if constexpr (DIM &gt; 0)</code>, so they fire only for compile-time-known dimensions. Padded <code>Tile::Rows / Cols</code> are always compile-time — they govern the UB DMA-burst alignment and the SIMT lane addressing.</p>
+<p>Example (mirrors <code>case_elem2d_dyn_user_float_1x9_in_1x16_3x10</code>):</p>
+<pre class="highlight"><code class="language-cpp">constexpr auto kPadCols = 16;
+using SrcTileT    = Tile&lt;TileType::Vec, float,   1, kPadCols, BLayout::RowMajor, -1, -1&gt;;
+using IdxTileT    = Tile&lt;TileType::Vec, int32_t, 1, kPadCols, BLayout::RowMajor, -1, -1&gt;;
+using TableShape  = Shape&lt;1, 1, 1, -1, -1&gt;;
+using TableStride = Stride&lt;1, 1, 1, -1, -1&gt;;
+
+int64_t validCols = 9, tableR = 3, tableC = 10;
+TableShape  tableShape(tableR, tableC);
+TableStride tableStride(tableC, (int64_t)1);
+GlobalTensor&lt;float, TableShape, TableStride&gt; tableGM(dstGm, tableShape, tableStride);
+
+SrcTileT srcTile(1, validCols);
+IdxTileT idxTile(1, validCols);
+TASSIGN(srcTile, srcUbOffsetBytes);
+TASSIGN(idxTile, idxUbOffsetBytes);
+
+MSCATTER&lt;Coalesce::Elem, ScatterAtomicOp::None, ScatterOOB::Skip&gt;(tableGM, srcTile, idxTile);</code></pre>
+<h2 id="mode-resolution">Mode Resolution<a class="headerlink" href="#mode-resolution" title="Permanent link">&para;</a></h2>
+<p>Mode is <strong>explicit</strong> on A2/A3 and A5, never auto-detected. Static asserts in <code>MScatterCheck</code> validate the supplied tile shapes against the chosen <code>Coalesce</code> value:</p>
+<pre class="highlight"><code class="language-text">A2/A3:
+  Coalesce::Row  : Idx.ValidRow == 1 &amp;&amp; Idx.ValidCol == Src.ValidRow
+  Coalesce::Elem : Idx.ValidRow == Src.ValidRow &amp;&amp; Idx.ValidCol == Src.ValidCol
+
+A5:
+  Coalesce::Row  : (Idx.ValidRow == 1 &amp;&amp; Idx.ValidCol == Src.ValidRow) ||
+                   (Idx.ValidRow == Src.ValidRow &amp;&amp; Idx.ValidCol == 1)
+  Coalesce::Elem : (Idx.ValidRow == Src.ValidRow) &amp;&amp; (Idx.ValidCol == Src.ValidCol)</code></pre>
+<p>On the CPU reference path, no mode parameter exists; the implementation always walks element-wise.</p>
+<h2 id="layout-support">Layout Support<a class="headerlink" href="#layout-support" title="Permanent link">&para;</a></h2>
+<p>UB addressing is computed from each tile's <code>Rows</code> / <code>Cols</code> plus (on A2/A3 NZ) an optional fractal block-col stride; GM addressing is driven from <code>GlobalTensor::GetStride(DIM_*)</code>. The matrix below summarises what each backend accepts.</p>
+<table>
+<thead>
+<tr>
+<th>Tile / Tensor</th>
+<th>CPU</th>
+<th>A2/A3</th>
+<th>A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TileSrc</code> (UB) — ND</td>
+<td><code>BLayout::RowMajor + SLayout::NoneBox</code> only</td>
+<td><code>BLayout::RowMajor + SLayout::NoneBox</code></td>
+<td><code>BLayout::RowMajor</code> or <code>ColMajor</code>, <code>SLayout::NoneBox</code> (Elem mode walks both via <code>tile_offset_2d</code>)</td>
+</tr>
+<tr>
+<td><code>TileSrc</code> (UB) — NZ</td>
+<td>not supported</td>
+<td><code>BLayout::ColMajor + SLayout::RowMajor + SFractalSize == 512</code> (paired with NZ GM table)</td>
+<td><strong>not supported</strong></td>
+</tr>
+<tr>
+<td><code>TileIdx</code> (UB) — Row</td>
+<td>row-major (Cols must equal 1 to match CPU's elementwise indexing)</td>
+<td><code>[1, R]</code> <code>BLayout::RowMajor + SLayout::NoneBox</code> (always ND, regardless of table layout)</td>
+<td><code>[1, R]</code> <code>RowMajor</code> <strong>or</strong> <code>[R, 1]</code> <code>ColMajor</code> (independent of GM table layout)</td>
+</tr>
+<tr>
+<td><code>TileIdx</code> (UB) — Elem</td>
+<td><code>BLayout::RowMajor + SLayout::NoneBox</code></td>
+<td><code>[R, C]</code> <code>BLayout::RowMajor + SLayout::NoneBox</code></td>
+<td>any <code>BLayout</code>, independent of <code>TileSrc</code> (kernel reads through <code>tile_offset_2d&lt;TileIdx&gt;</code>)</td>
+</tr>
+<tr>
+<td><code>GlobalTable</code> (GM) — ND</td>
+<td><code>Layout::ND</code> only</td>
+<td><code>Layout::ND</code> (linear contiguous addressing); 5-D <code>Shape&lt;…, R, C&gt;</code>; kernel uses <code>tableRowStride = GetStride(DIM_3)</code>, so stride-padded ND tables are supported</td>
+<td><code>Layout::ND</code> only; Row mode hard-wires <code>tableRowStride = validCols</code> and requires <code>Shape[4] == validCols</code></td>
+</tr>
+<tr>
+<td><code>GlobalTable</code> (GM) — NZ</td>
+<td>not supported</td>
+<td><code>Layout::NZ</code>; 5-D <code>Shape&lt;B, BCols, BRows, 16, C0&gt;</code> with <code>staticShape[3] == 16</code> and <code>staticShape[4] == 32 / sizeof(T)</code> (<code>B</code> may be &gt; 1; the kernel loops <code>for i in 0..gShape0</code>)</td>
+<td><strong>not supported</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="nz-layout-a2a3">NZ Layout (A2/A3)<a class="headerlink" href="#nz-layout-a2a3" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p><strong>NZ paths exist only on A2/A3.</strong> The A5 SIMT kernel addresses GM as a flat ND buffer and has no NZ block-stride translation — there is no "inherent SIMT NZ support" to be enabled. Callers that need NZ data on A5 must transpose / repack into ND first.</p>
+</blockquote>
+<p>When <code>GlobalTable::layout == Layout::NZ</code> and <code>TileSrc</code> is the matching <code>BLayout::ColMajor + SLayout::RowMajor + SFractalSize = 512</code> tile, <code>MSCATTER</code> (A2/A3) runs the dedicated NZ paths (<code>MScatterRowNzImpl</code>, <code>MScatterElemNzImpl</code>).</p>
+<ul>
+<li><strong>Constants.</strong> <code>kC0 = C0_SIZE_BYTE / sizeof(T) = 32 / sizeof(T)</code>; <code>kFRow = FRACTAL_NZ_ROW = 16</code>. Each fractal block is <code>kFRow × kC0</code> elements (= 32 B × 16 = 512 B).</li>
+<li><strong>Logical shape.</strong> Logical rows = <code>gShape2 * kFRow</code>. Logical cols = <code>gShape0 * gShape1 * kC0</code>. Row-mode <code>mscatter_remap</code> clamps / wraps / skips against the logical row count; Elem-mode against the total element count.</li>
+<li><strong>Row mode.</strong> For each logical source row <code>r</code>, the kernel maps <code>idx[r]</code> to <code>(dstBlockRow, dstRowInBlock)</code> and <code>r</code> to <code>(srcBlockRow, srcRowInBlock)</code>, then issues <strong>one multi-burst MTE3 transfer per outer batch</strong> (<code>nBurst = gShape1</code>, <code>lenBurst = kC0 * sizeof(T) = 32 B</code>, <code>ubGap = TileSrc::Rows - 1</code> blocks, <code>gmGap = (gStride1 - kC0) * sizeof(T)</code>). Atomic-add wraps the loop the same way as the ND path.</li>
+<li><strong>Elem mode.</strong> For each <code>(r, c)</code> the kernel maps <code>idx</code> to <code>(logicalRow, logicalCol)</code> and through <code>MScatterNZGmOffset</code> to the NZ block-stride GM offset; the source UB offset is <code>(c / kC0) * (TileSrc::Rows * kC0) + r * kC0 + (c % kC0)</code>. The walk order is <strong>block-col → row → col-in-block</strong> so consecutive scalar reads always come from consecutive 32 B UB blocks. Atomic-add is implemented through scalar read-modify-write on the GM destination.</li>
+<li><strong>Stride vs. valid-shape.</strong> <code>MScatter*NzImpl</code> reads strides from the <code>GlobalTensor</code> runtime, so packed and stride-padded NZ tensors both work without any caller-side adjustment.</li>
+</ul>
+<h3 id="why-elem-mode-uses-scalar-gm-writes-a2a3">Why Elem Mode Uses Scalar GM Writes (A2/A3)<a class="headerlink" href="#why-elem-mode-uses-scalar-gm-writes-a2a3" title="Permanent link">&para;</a></h3>
+<p><code>copy_ubuf_to_gm_align_b8/b16/b32</code> requires the <strong>UB source address</strong> to be 32-byte aligned, and the source must be a whole number of 32-byte burst chunks. A per-element MTE3 burst of <code>lenBurst = sizeof(T)</code> from <code>srcPtr + r * RowStride + c</code> does not satisfy that rule whenever <code>(c * sizeof(T)) % 32 != 0</code>, which covers almost every elem-mode lane. Row mode does not hit this problem because each row read starts at <code>r * RowStride</code>, and <code>RowStride * sizeof(T)</code> is always a multiple of 32 bytes.</p>
+<p>A2/A3 Elem mode therefore uses scalar UB→GM stores, which have element-level addressing granularity and place no alignment requirement on the source. Atomic add is implemented through scalar read-modify-write (<code>tableGm[idx] = tableGm[idx] + srcUb[r, c]</code>), which preserves the "last write wins" / "all writes accumulate" semantics on a single AICORE.</p>
+<p>A5 does not face this constraint: the SIMT lane issues per-thread stores instead of a UB-source-aligned DMA burst, so Elem mode on A5 is naturally per-element with no extra alignment workaround.</p>
+<h2 id="aligned-vs-unaligned-tile-shapes">Aligned vs Unaligned Tile Shapes<a class="headerlink" href="#aligned-vs-unaligned-tile-shapes" title="Permanent link">&para;</a></h2>
+<p>The kernel does <strong>not</strong> care whether the tile's logical shape is "aligned" — it walks all <code>ValidRow * ValidCol</code> positions. The 32-byte alignment of the contiguous dim is enforced upstream by the <code>Tile</code> system because every <code>TLOAD</code> / <code>TSTORE</code> issues 32 B GM↔UB bursts.</p>
+<ul>
+<li><strong>Row mode (A2/A3 ND).</strong> per-row DMA <code>lenBurst = validCol * sizeof(T)</code>; <code>Tile::RowStride * sizeof(T)</code> is forced 32-byte aligned by the <code>Tile</code> system, so subsequent rows always start on a 32 B burst boundary.</li>
+<li><strong>Row mode (A2/A3 NZ).</strong> one multi-burst transfer per logical row × outer-batch; <code>lenBurst = kC0 * sizeof(T) = 32 B</code> is fixed by the fractal layout, so per-row alignment is automatic. <code>validRow</code> does not have to be a multiple of <code>kFRow</code>.</li>
+<li><strong>Elem mode (A2/A3).</strong> one scalar UB→GM copy per element (replace) or scalar read-modify-write (atomic add). The scalar pipe has element-level addressing granularity, so any <code>(ValidRow, ValidCol)</code> inside the padded tile works.</li>
+<li><strong>Row + Elem mode (A5).</strong> the SIMT kernel walks through <code>tile_offset_2d&lt;TileX&gt;(r, c)</code> so any <code>(ValidRow, ValidCol)</code> with <code>1 ≤ Valid ≤ Padded</code> is accepted, including the degenerate <code>(1, 1)</code> which routes to <code>MScatterScalarImpl</code>.</li>
+</ul>
+<p>Callers handle "unaligned valid region" by padding the tile up to the nearest 32-byte alignment (for example valid <code>[3, 3]</code> int32 → tile <code>[3, 8]</code>), and either zero-initializing the padding or only inspecting the valid region after the scatter.</p>
+<h3 id="minimum-tile-shape">Minimum Tile Shape<a class="headerlink" href="#minimum-tile-shape" title="Permanent link">&para;</a></h3>
+<p>The minimum padded inner dim is set by the upstream <code>TLOAD</code> / <code>TSTORE</code> burst-alignment rule; <code>MSCATTER</code> itself accepts any <code>(ValidRow, ValidCol) &gt;= (1, 1)</code>.</p>
+<p><strong>A2/A3</strong> — row-major tile only (NZ paths use fractal <code>[16, kC0]</code> blocks instead):</p>
+<table>
+<thead>
+<tr>
+<th><code>T</code></th>
+<th>Min <code>Cols</code> (<code>BLayout::RowMajor</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int8</code> / <code>uint8</code></td>
+<td>32</td>
+</tr>
+<tr>
+<td><code>int16</code> / <code>uint16</code> / <code>half</code> / <code>bfloat16</code></td>
+<td>16</td>
+</tr>
+<tr>
+<td><code>int32</code> / <code>uint32</code> / <code>float</code></td>
+<td>8</td>
+</tr>
+</tbody>
+</table>
+<p><strong>A5</strong> — row-major or column-major tile (the contiguous dim must satisfy the 32 B rule):</p>
+<table>
+<thead>
+<tr>
+<th><code>T</code></th>
+<th>Min <code>Cols</code> (<code>RowMajor</code>)</th>
+<th>Min <code>Rows</code> (<code>ColMajor</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int8</code> / <code>uint8</code> / <code>float8_e4m3</code> / <code>float8_e5m2</code> / <code>hifloat8</code></td>
+<td>32</td>
+<td>32</td>
+</tr>
+<tr>
+<td><code>int16</code> / <code>uint16</code> / <code>half</code> / <code>bfloat16</code></td>
+<td>16</td>
+<td>16</td>
+</tr>
+<tr>
+<td><code>int32</code> / <code>uint32</code> / <code>float</code></td>
+<td>8</td>
+<td>8</td>
+</tr>
+</tbody>
+</table>
+<p><strong>CPU</strong> — same row-major min rule as A2/A3 (any <code>Cols * sizeof(T)</code> that the test's <code>TLOAD</code> path requires).</p>
+<h2 id="pipe-synchronisation-model">Pipe / Synchronisation Model<a class="headerlink" href="#pipe-synchronisation-model" title="Permanent link">&para;</a></h2>
+<p>The two NPU targets use very different mechanisms; the CPU reference path has no pipes to synchronise.</p>
+<h3 id="a2a3-explicit-pipe-handshakes">A2/A3 — explicit pipe handshakes<a class="headerlink" href="#a2a3-explicit-pipe-handshakes" title="Permanent link">&para;</a></h3>
+<p>The implementation centralises every pipe handshake the kernel needs. <strong>Callers do not need to insert any extra barriers</strong> beyond the standard <code>TLOAD</code> post-load <code>set_flag(PIPE_MTE2, PIPE_V)</code> / <code>wait_flag(PIPE_MTE2, PIPE_V)</code> pair that brings the source and index tiles into a clean state on the vector pipe before <code>MSCATTER</code>. The kernel never uses <code>pipe_barrier(PIPE_ALL)</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Pipe transition</th>
+<th>What it guards</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pre-amble (Row, ND + NZ)</td>
+<td><code>V→S</code>, <code>MTE2→S</code>; if <code>Atomic == Add</code>, then <code>MScatterAtomicAddSet&lt;T&gt;()</code> (which calls one of <code>set_atomic_f32 / f16 / bf16 / s32 / s16 / s8()</code> followed by <code>set_atomic_add()</code>); finally <code>S→MTE3</code></td>
+<td>Make the source and index tiles visible to scalar reads; for atomic-add, switch the MTE3 unit into per-dtype atomic-add mode before any DMA is issued; the trailing <code>S→MTE3</code> makes the new atomic mode visible to the first MTE3 burst.</td>
+</tr>
+<tr>
+<td>Pre-amble (Elem, ND + NZ)</td>
+<td><code>V→S</code>, <code>MTE3→S</code>, <code>MTE2→S</code> flag chain</td>
+<td>Make the source and index tiles visible to scalar reads; the <code>MTE3→S</code> flush also makes any prior MTE3 writes visible before the scalar loop starts the per-element UB→GM (or read-modify-write) stores.</td>
+</tr>
+<tr>
+<td>Body (Row, ND)</td>
+<td><code>copy_ubuf_to_gm_align_b*</code> per row</td>
+<td>One DMA per row through <code>tablePtr + safeIdx * tableRowStride</code>, <code>lenBurst = validCol * sizeof(T)</code>; trip count = <code>validRow</code>. For non-atomic mode, a per-iteration <code>MTE3→S</code> flag is interleaved after each DMA so the next iteration sees the burst completion.</td>
+</tr>
+<tr>
+<td>Body (Row, NZ)</td>
+<td><code>copy_ubuf_to_gm_align_b*</code> multi-burst per logical row × batch</td>
+<td><code>nBurst = gShape1</code>, <code>lenBurst = C0 * sizeof(T) = 32 B</code>, <code>ubGap = Tile::Rows - 1</code> blocks, <code>gmGap = (gStride1 - C0) * sizeof(T)</code>; trip count = <code>validRow * gShape0</code>. Same per-iteration <code>MTE3→S</code> flag for non-atomic mode.</td>
+</tr>
+<tr>
+<td>Body (Elem, ND and NZ)</td>
+<td>Scalar <code>tableGm[gmOff] = srcUb[r, c]</code> (or <code>+=</code>) per element</td>
+<td>Per-element scalar UB→GM copy or read-modify-write; trip count = <code>validRow * validCol</code>. NZ walks block-col-major to keep each 32 B UB block read contiguously in time.</td>
+</tr>
+<tr>
+<td>Atomic-add reset (Row, <code>Add</code> only)</td>
+<td><code>MTE3→S</code>, then <code>set_atomic_none()</code>, then <code>S→V</code>, <code>S→MTE2</code></td>
+<td>After the final atomic-add MTE3 burst drains, restore normal store semantics for downstream operators and publish the clean atomic state to V and MTE2.</td>
+</tr>
+<tr>
+<td>Row post-amble (ND + NZ, all atomic modes)</td>
+<td><code>MTE3→V</code>, <code>MTE3→MTE2</code> flag chain</td>
+<td>Drain the MTE3 DMAs before V or MTE2 consumers touch GM.</td>
+</tr>
+<tr>
+<td>Elem post-amble (ND + NZ)</td>
+<td><code>S→V</code>, <code>S→MTE2</code>, <code>S→MTE3</code> flag chain</td>
+<td>Make scalar GM writes visible to V (for downstream vector ops), MTE2 (for follow-up loads from the same table), and MTE3 (for follow-up stores or row-mode scatters).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a5-simt-launch-with-vs-handshake">A5 — SIMT launch with V↔S handshake<a class="headerlink" href="#a5-simt-launch-with-vs-handshake" title="Permanent link">&para;</a></h3>
+<p>The A5 implementation hides almost the entire pipe model behind <code>cce::async_invoke</code>, which establishes the warp-scheduler context and orchestrates per-lane GM and UB accesses. The only explicit kernel-side handshake is in the scalar fallback path (<code>MScatterScalarImpl</code>, used for Elem <code>(1, 1)</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Pipe transition</th>
+<th>What it guards</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pre-amble (scalar fallback)</td>
+<td><code>set_flag(PIPE_V, PIPE_S)</code> / <code>wait_flag(PIPE_V, PIPE_S)</code></td>
+<td>Make the source and index tiles visible to the scalar pipe before the single-element scatter.</td>
+</tr>
+<tr>
+<td>Body (SIMT Row / Elem)</td>
+<td><code>cce::async_invoke&lt;simt_mscatter_*_kernel&gt;(dim3{32, kLaunchWarps}, …)</code></td>
+<td>The SIMT launch handles all per-lane GM stores (and <code>atomicAdd / atomicMax / atomicMin</code> for atomic modes) internally; no caller-visible flags.</td>
+</tr>
+<tr>
+<td>Post-amble (scalar fallback)</td>
+<td><code>set_flag(PIPE_S, PIPE_V)</code> / <code>wait_flag(PIPE_S, PIPE_V)</code></td>
+<td>Release the scalar pipe back to vector ops.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Caller responsibility on A5.</strong> The same <code>TLOAD</code> post-load <code>set_flag(PIPE_MTE2, PIPE_V)</code> / <code>wait_flag(PIPE_MTE2, PIPE_V)</code> pair is required before <code>MSCATTER</code> so the source and index tiles are observable on the vector pipe by the time the SIMT launch begins.</p>
+<h3 id="cache-coherence-flush-pattern-a5-wrappers">Cache-Coherence Flush Pattern (A5 wrappers)<a class="headerlink" href="#cache-coherence-flush-pattern-a5-wrappers" title="Permanent link">&para;</a></h3>
+<p><code>MSCATTER</code> does not insert a GM cache flush. Test wrappers in the A5 ST suite end their per-call function with:</p>
+<pre class="highlight"><code class="language-cpp">AICORE PTO_INLINE void FlushScatterOutput()
+{
+    dcci(static_cast&lt;__gm__ void *&gt;(0), ENTIRE_DATA_CACHE);
+    dsb(DSB_DDR);
+}</code></pre>
+<p><code>dcci(0, ENTIRE_DATA_CACHE)</code> invalidates the AIV scalar D-cache so any buffered GM writes are pushed to HBM; <code>dsb(DSB_DDR)</code> blocks until the writes are observable at the DDR boundary. This is a <strong>wrapper-level pattern</strong> (not part of the <code>MSCATTER</code> intrinsic) — kernel authors should append it to their scatter wrapper when the host code reads back the GM table immediately after the kernel returns.</p>
+<h2 id="ub-memory-budget">UB Memory Budget<a class="headerlink" href="#ub-memory-budget" title="Permanent link">&para;</a></h2>
+<p>The unified buffer is shared between user tiles, the runtime reserved region, and the Data Cache. Budget rules differ per target.</p>
+<h3 id="cpu-simulator">CPU simulator<a class="headerlink" href="#cpu-simulator" title="Permanent link">&para;</a></h3>
+<p>No UB — the implementation runs in host memory. Tile sizes are bounded by the test harness only.</p>
+<h3 id="a2a3">A2/A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p>The AIV vector core has the standard CANN 192 KB UB layout. <code>MSCATTER</code> does not allocate any UB scratch from inside the kernel — the only UB consumers are the caller-allocated source tile (<code>R * C * sizeof(T)</code>, padded up to the 32-byte burst alignment) and index tile (<code>R * C * sizeof(TIdx)</code>, same padding rule). A2/A3 has no <code>dynUBufSize</code> knob; the working set must fit in the caller's static UB budget.</p>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p>A5 SIMT kernels run on the AIV vector core. All user tiles must fit inside the AIV's 256 KB Unified Buffer alongside two fixed runtime reservations: an 8 KB reserved region (AscendC / TBE bookkeeping) and the Data Cache (32 KB minimum, sized at launch time). The UB layout is:</p>
+<pre class="highlight"><code class="language-text">+---------------------------+
+| Static memory             |  Compile-time tile allocations
++---------------------------+
+| Dynamic memory            |  Sized at launch through dynUBufSize
++---------------------------+
+| Reserved (8 KB)           |  Fixed compiler / AscendC reservation
++---------------------------+
+| Data Cache (&gt;= 32 KB)     |  Min 32 KB; grows when dynUBufSize is small
++---------------------------+</code></pre>
+<p>The configurable maximum is therefore:</p>
+<pre class="highlight"><code class="language-text">max dynUBufSize = 256 KB - 8 KB (reserved) - 32 KB (min DCache) - static_memory
+                = 216 KB - static_memory</code></pre>
+<p>When tiles are placed manually with <code>TASSIGN</code> (as in the A5 ST suite), the compiler sees <code>static_memory ≈ 0</code> and the full <strong>216 KB</strong> is available as <code>dynUBufSize</code>.</p>
+<h4 id="default-per-call-budget-no-dynubufsize">Default Per-Call Budget (No <code>dynUBufSize</code>)<a class="headerlink" href="#default-per-call-budget-no-dynubufsize" title="Permanent link">&para;</a></h4>
+<p>When the kernel is launched without an explicit <code>dynUBufSize</code> (<code>&lt;&lt;&lt;numBlocks, nullptr, stream&gt;&gt;&gt;</code>), the runtime keeps the default DCache size and reserves only a small default dynamic region. In practice the safe <code>src + idx</code> working set is <strong>≤ 128 KB</strong>; beyond that, on-board execution may silently corrupt or zero out the result while still passing the CPU simulator (which does not model these reservations).</p>
+<h4 id="extending-per-call-ub-beyond-128-kb">Extending Per-Call UB Beyond 128 KB<a class="headerlink" href="#extending-per-call-ub-beyond-128-kb" title="Permanent link">&para;</a></h4>
+<p>Callers that need a single-shot <code>src + idx</code> footprint larger than 128 KB must declare the dynamic-UB request explicitly through the second argument of the kernel launch:</p>
+<pre class="highlight"><code class="language-cpp">kernel_name&lt;&lt;&lt;numBlocks, dynUBufSize, stream&gt;&gt;&gt;(args...);</code></pre>
+<p><code>dynUBufSize</code> is the byte size of the dynamic-UB region the kernel will use. The bisheng/CCE compiler routes such launches through <code>__cce_rtKernelLaunchWithFlagV2</code>, setting <code>rtTaskCfgInfo_t::localMemorySize = dynUBufSize</code>. The runtime then shrinks the DCache toward its 32 KB minimum and hands the remaining space back to the kernel.</p>
+<p>Key points:</p>
+<ul>
+<li><strong>The simulator does not enforce this.</strong> Passing <code>nullptr</code> (or <code>0</code>) still runs to completion in sim regardless of the actual UB footprint. Always set <code>dynUBufSize</code> explicitly when the workload exceeds 128 KB so the binary stays correct on real hardware.</li>
+<li><strong>Exceeding the ceiling is silent.</strong> The compiler does not error and the simulator does not flag it. On-board, the first overflow byte corrupts the reserved region or DCache and the kernel returns undefined output.</li>
+<li><strong>Size to actual usage.</strong> For Elem coalesce with <code>R × C × sizeof(T)</code> source and <code>R × C × sizeof(int32_t)</code> index, the working set is <code>R * C * (sizeof(T) + 4)</code>. Round up to a comfortable margin when passing <code>dynUBufSize</code>. In the extended-UB ST cases (<code>float</code> source + <code>int32_t</code> index, <code>C = 8</code>) the per-element footprint is <code>8 + 4 = 12 B</code>; the suite rounds up and passes <code>R * 8 * 8 = R * 64</code> as <code>dynUBufSize</code> to keep the math simple.</li>
+</ul>
+<h4 id="tiled-iteration-pattern-legacy-20488-cases">Tiled-Iteration Pattern (Legacy 2048×8 Cases)<a class="headerlink" href="#tiled-iteration-pattern-legacy-20488-cases" title="Permanent link">&para;</a></h4>
+<p>The <code>case_elem2d_float_2048x8_*</code> ST cases predate the <code>dynUBufSize</code> path and use a chunked approach instead: a <code>2048 × 8</code> <code>float</code> source is split into 16 chunks of <code>128 × 8</code> (8 KB src + 8 KB idx per iteration), and <code>MSCATTER</code> is reissued per chunk into the same destination GM tensor. Semantics are preserved:</p>
+<ul>
+<li><code>Conflict::Last</code> — each chunk writes its in-chunk last-writer to GM; later chunks overwrite earlier ones for any shared slot, so the surviving value is the global largest-index writer.</li>
+<li><code>Conflict::Default</code> / atomic modes — writes from later chunks compose with earlier ones (overwrite, add, max, min) on the same GM table.</li>
+</ul>
+<p>New large-shape cases (<code>2304×8</code> and above) use the <code>dynUBufSize</code> single-shot path instead of chunking.</p>
+<h2 id="runtime-dispatch-requirement-a5">Runtime Dispatch Requirement (A5)<a class="headerlink" href="#runtime-dispatch-requirement-a5" title="Permanent link">&para;</a></h2>
+<p><code>MSCATTER</code> on A5 uses <code>cce::async_invoke&lt;simt_mscatter_*_kernel&gt;(cce::dim3{32, kLaunchWarps}, …)</code> internally to fan a per-warp / per-lane workload out across up to 1024 threads. <code>async_invoke</code> consumes runtime state (TID registers, warp / lane configuration, vector-pipe scheduling) that the <strong>launch path</strong> must install before the kernel function is entered. The standard CANN launch (<code>rtKernelLaunchWithHandleV2</code>, used by the <code>&lt;&lt;&lt;numBlocks, dynUBufSize, stream&gt;&gt;&gt;</code> syntax) installs this state correctly.</p>
+<p>A runtime variant that dispatches kernels as a direct C function-pointer call is fine for SPMD ops (<code>TLOAD</code>, <code>TSTORE</code>, <code>TADD</code>, …) but skips the SIMT context init, so the first <code>async_invoke</code> inside <code>MSCATTER</code> has no warp scheduler to dispatch into and hangs. Use the standard launch syntax for any SIMT kernel.</p>
+<h2 id="performance-considerations">Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3_1">A2/A3<a class="headerlink" href="#a2a3_1" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Row vs. Elem.</strong> Row coalesce achieves the best aggregate bandwidth — one wide DMA per logical row (ND) or one multi-burst DMA per logical row × batch (NZ). Elem coalesce issues one scalar UB read + GM write per active lane (plus an extra GM read for atomic add): no DMA-engine pipelining, throughput bound by scalar GM access latency. Prefer Row whenever the indexing structure permits.</li>
+<li><strong>Sequential scalar loop (Elem).</strong> A2/A3 dispatches <code>MSCATTER</code> as a single-thread sequential walk of the <code>validRow * validCol</code> lanes. The block-col-major walk used for NZ keeps consecutive reads spatially-local in UB.</li>
+<li><strong>Why not per-element MTE3 in Elem mode.</strong> See "Why Elem mode uses scalar GM writes" above — the UB-source 32 B alignment rule rules out per-element DMA bursts.</li>
+<li><strong>DMA cost (Row).</strong> ND: each row is one <code>copy_ubuf_to_gm_align_b*</code> call with <code>nBurst = 1</code>, <code>lenBurst = validCol * sizeof(T)</code>. NZ: each (logical row, batch) pair is one call with <code>nBurst = gShape1</code>, <code>lenBurst = C0 * sizeof(T) = 32 B</code>, <code>ubGap = Tile::Rows - 1</code> blocks, <code>gmGap = (gStride1 - C0) * sizeof(T)</code>. Back-pressure is bounded by <code>MAX_OUTSTANDING_MTE3</code>; no row chunking.</li>
+<li><strong>OOB cost.</strong> <code>Undefined</code> is free; <code>Skip</code> adds one branch per row / element; <code>Clamp</code> / <code>Wrap</code> add a single arithmetic remap per row / element.</li>
+<li><strong>Atomic-add cost (Row).</strong> One <code>set_atomic_add()</code> / <code>set_atomic_none()</code> pair per kernel invocation (~ 2 cycles each); the MTE3 atomic-add unit handles the accumulation on every burst. The atomic-add unit serialises same-address bursts across cores, so heavy hashing collisions degrade throughput predictably.</li>
+<li><strong>Atomic-add cost (Elem).</strong> One scalar <code>+=</code> per active lane (read GM → add → write GM). Same-core semantics match the MTE3 atomic-add unit on a single AICORE.</li>
+<li><strong>Single-pass dispatch.</strong> <code>MSCATTER</code> is a regular AIV function call from the kernel (no async-launch or cross-core orchestration). Concurrency comes from the DMA engine pipelining row DMAs behind the scalar issue loop, not from multiple worker threads.</li>
+</ol>
+<h3 id="a5_1">A5<a class="headerlink" href="#a5_1" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Shape-adaptive launch.</strong> The SIMT grid is sized as <code>dim3{32, kLaunchWarps}</code> from the resolved <code>validRows</code> / <code>validCols</code> / <code>tableSize</code>. Small tiles do not pay the cost of 1024 idle threads.<ul>
+<li><strong>Row, non-<code>Last</code>.</strong> <code>kRowWarps = min(validRows, 32)</code> warps own rows; <code>kWarpsPerRow = min(32 / kRowWarps, ceil(validCols / 32))</code> cooperate on each row's column chunks. When consecutive lanes in a warp write consecutive <code>col</code> values to the same <code>dstRow</code>, the SIMT hardware coalesces them into a 128 B GM burst.</li>
+<li><strong>Elem, non-<code>Last</code>.</strong> <code>kLaunchWarps = min(ceil(validRows*validCols / 32), 32)</code>.</li>
+<li><strong><code>Conflict::Last</code>.</strong> Launch is sized by the destination instead of the source: for Row, by <code>tableRows</code>; for Elem, by <code>tableSize</code>. Each lane owns one slot and runs a reverse scan over the index tile (<code>last_owner_find_row</code> / <code>last_owner_find_elem</code>) to find the largest-flat-index writer for that slot.</li>
+</ul>
+</li>
+<li><strong>Conflict policy cost.</strong><ul>
+<li><code>Last</code>: per-lane in-register reverse scan with early termination. No GM read-back, no atomic, no UB scratch. Worst-case <code>O(N)</code> per warp; uniformly random workloads average <code>O(tableSize / 32)</code>.</li>
+<li><code>Default</code>: zero extra work — the surviving lane is whatever the warp scheduler picked.</li>
+<li>Atomic modes: serialised by the GM atomic R-M-W itself; no <code>cur</code> preload, no conflict gate.</li>
+</ul>
+</li>
+<li><strong>No thread divergence for mode / policy.</strong> All policy decisions are <code>if constexpr</code>. In Row coalesce the <code>doWrite</code> predicate is warp-uniform (row-indexed) and hoisted out of the inner column loop. The slot-centric <code>Last</code> kernels compile their <code>found</code> predicate to a predicated store.</li>
+<li><strong>Unrolled inner loops.</strong> Inner column loop carries <code>#pragma unroll(4)</code>; outer scatter and reverse-scan loops use <code>#pragma unroll(1)</code> to keep code size bounded for large N.</li>
+<li><strong>Row vs. Elem bandwidth.</strong> Row coalesce achieves the best GM write bandwidth (per-warp 32 consecutive lanes per coalesced store). Elem coalesce is a per-lane scalar GM store, non-coalesced for random indices; UB reads remain coalesced because consecutive <code>tid</code> map to consecutive UB offsets.</li>
+<li><strong>Register pressure.</strong> Kernels carry <code>LAUNCH_BOUND(1024)</code> (32 regs/thread) and use ≤ 16 live registers in the hot path. No spills are produced.</li>
+</ol>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<p>See related examples in <code>docs/isa/</code> and <code>docs/coding/tutorials/</code>.</p>
+<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using IdxT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
+  SrcT src;
+  IdxT idx;
+  // dst is a GlobalTensor in GM
+  MSCATTER(dst, src, idx);
+}</code></pre>
+<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using IdxT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
+  SrcT src;
+  IdxT idx;
+  TASSIGN(src, 0x1000);
+  TASSIGN(idx, 0x2000);
+  MSCATTER(dst, src, idx);
+}</code></pre>
+<h3 id="row-coalesce-embedding-scatter-a2a3-or-a5">Row Coalesce — Embedding Scatter (A2/A3 or A5)<a class="headerlink" href="#row-coalesce-embedding-scatter-a2a3-or-a5" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+template &lt;typename T, int R, int C, int TableRows&gt;
+AICORE void example_embedding_scatter(__gm__ T* tablePtr, __gm__ T* srcPtr, __gm__ int32_t* idxPtr)
+{
+    using SrcTile     = Tile&lt;TileType::Vec, T,       R, C, BLayout::RowMajor, R, C&gt;;
+    using IdxTile     = Tile&lt;TileType::Vec, int32_t, 1, R, BLayout::RowMajor, 1, R&gt;;
+    using TableShape  = Shape&lt;1, 1, 1, TableRows, C&gt;;
+    using TableStride = Stride&lt;1, 1, 1, C, 1&gt;;
+    using TableTensor = GlobalTensor&lt;T, TableShape, TableStride&gt;;
+
+    TableTensor tableGM(tablePtr);
+    SrcTile src; TASSIGN(src, 0x0000);
+    IdxTile idx; TASSIGN(idx, 0x1000);
+
+    // ... TLOAD src and idx, then handshake ...
+    MSCATTER&lt;Coalesce::Row, ScatterAtomicOp::None, ScatterOOB::Clamp&gt;(tableGM, src, idx);
+}</code></pre>
+<h3 id="row-coalesce-atomic-add-aggregation">Row Coalesce — Atomic-Add Aggregation<a class="headerlink" href="#row-coalesce-atomic-add-aggregation" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">template &lt;typename T, int R, int C, int TableRows&gt;
+AICORE void example_row_atomic_add(__gm__ T* tablePtr, __gm__ T* srcPtr, __gm__ int32_t* idxPtr)
+{
+    using SrcTile     = Tile&lt;TileType::Vec, T,       R, C, BLayout::RowMajor, R, C&gt;;
+    using IdxTile     = Tile&lt;TileType::Vec, int32_t, 1, R, BLayout::RowMajor, 1, R&gt;;
+    using TableShape  = Shape&lt;1, 1, 1, TableRows, C&gt;;
+    using TableStride = Stride&lt;1, 1, 1, C, 1&gt;;
+    using TableTensor = GlobalTensor&lt;T, TableShape, TableStride&gt;;
+
+    TableTensor tableGM(tablePtr);
+    SrcTile src; TASSIGN(src, 0x0000);
+    IdxTile idx; TASSIGN(idx, 0x1000);
+
+    MSCATTER&lt;Coalesce::Row, ScatterAtomicOp::Add, ScatterOOB::Wrap&gt;(tableGM, src, idx);
+}</code></pre>
+<h3 id="element-coalesce-sparse-update">Element Coalesce — Sparse Update<a class="headerlink" href="#element-coalesce-sparse-update" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">AICORE void example_elem_sparse(__gm__ float* tablePtr, __gm__ float* srcPtr, __gm__ int32_t* idxPtr)
+{
+    constexpr int R = 8, C = 32, TableSize = 256;
+
+    using SrcTile     = Tile&lt;TileType::Vec, float,   R, C, BLayout::RowMajor, R, C&gt;;
+    using IdxTile     = Tile&lt;TileType::Vec, int32_t, R, C, BLayout::RowMajor, R, C&gt;;
+    using TableShape  = Shape&lt;1, 1, 1, 1, TableSize&gt;;
+    using TableStride = Stride&lt;1, 1, 1, TableSize, 1&gt;;
+    using TableTensor = GlobalTensor&lt;float, TableShape, TableStride&gt;;
+
+    TableTensor tableGM(tablePtr);
+    SrcTile src; TASSIGN(src, 0x0000);
+    IdxTile idx; TASSIGN(idx, 0x0800);
+
+    MSCATTER&lt;Coalesce::Elem, ScatterAtomicOp::None, ScatterOOB::Skip&gt;(tableGM, src, idx);
+}</code></pre>
+<h3 id="deterministic-last-write-wins-a5-only">Deterministic Last-Write-Wins (A5 only)<a class="headerlink" href="#deterministic-last-write-wins-a5-only" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">AICORE void example_last_deterministic(__gm__ half* tablePtr)
+{
+    constexpr int R = 8, C = 64, TableRows = 65536;
+
+    using SrcTile     = Tile&lt;TileType::Vec, half,    R, C, BLayout::RowMajor, R, C&gt;;
+    using IdxTile     = Tile&lt;TileType::Vec, int32_t, R, 1, BLayout::ColMajor, R, 1&gt;;
+    using TableShape  = Shape&lt;1, 1, 1, TableRows, C&gt;;
+    using TableStride = Stride&lt;1, 1, 1, C, 1&gt;;
+    using TableTensor = GlobalTensor&lt;half, TableShape, TableStride&gt;;
+
+    TableTensor tableGM(tablePtr);
+    SrcTile src; TASSIGN(src, 0x0000);
+    IdxTile idx; TASSIGN(idx, 0x1000);
+
+    MSCATTER&lt;Coalesce::Row, ScatterAtomicOp::None, ScatterOOB::Clamp, ScatterConflict::Last&gt;(
+        tableGM, src, idx);
+}</code></pre>
+<h3 id="element-coalesce-1-1-degenerate-case">Element Coalesce — <code>(1, 1)</code> Degenerate Case<a class="headerlink" href="#element-coalesce-1-1-degenerate-case" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">AICORE void example_scalar(__gm__ float* tablePtr, __gm__ float* srcPtr, __gm__ int32_t* idxPtr)
+{
+    constexpr int TableSize = 32;
+
+    using SrcTile     = Tile&lt;TileType::Vec, float,   1, 8, BLayout::RowMajor, 1, 1&gt;;
+    using IdxTile     = Tile&lt;TileType::Vec, int32_t, 1, 8, BLayout::RowMajor, 1, 1&gt;;
+    using TableShape  = Shape&lt;1, 1, 1, 1, TableSize&gt;;
+    using TableStride = Stride&lt;1, 1, 1, TableSize, 1&gt;;
+    using TableTensor = GlobalTensor&lt;float, TableShape, TableStride&gt;;
+
+    TableTensor tableGM(tablePtr);
+    SrcTile src; TASSIGN(src, 0x0000);
+    IdxTile idx; TASSIGN(idx, 0x0080);
+
+    MSCATTER&lt;Coalesce::Elem&gt;(tableGM, src, idx);
+}</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
 pto.mscatter %src, %idx, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
 # Optional for tile operands:
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
@@ -1092,10 +1811,11 @@ pto.mscatter %src, %idx, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pt
 <pre class="highlight"><code class="language-text">mscatter %src, %mem, %idx : !pto.memref&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
 pto.mscatter ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
+<h2 id="related-instructions">Related Instructions<a class="headerlink" href="#related-instructions" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Instruction set overview: <a href="../../../memory-and-data-movement/">Memory And Data Movement</a></li>
-<li>Previous op in instruction set: <a href="../mgather/">pto.mgather</a></li>
+<li><a href="TSTORE.md"><code>TSTORE</code></a>: contiguous block transfer Tile → GM.</li>
+<li><a href="../mgather/"><code>MGATHER</code></a>: indexed gather GM → Tile (inverse operation).</li>
+<li><a href="TSCATTER.md"><code>TSCATTER</code></a>: index-based scatter within tiles (UB-to-UB on the same vec-core).</li>
 </ul>
               
             </div>

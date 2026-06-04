@@ -239,6 +239,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#supported-conversions">Supported Conversions</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
@@ -1153,6 +1155,114 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode
 <p><code>pto.tcvt</code> preserves PTO-visible semantics across CPU simulation, A2/A3-class targets, and A5-class targets, but the exact set of supported type pairs, scratch requirements, and saturation behavior is backend-specific.</p>
 <p>In this checkout, the fp16 → int8 non-saturating path is explicitly implemented through helper logic that may require temporary storage and row-aware sub-chunking.</p>
 </details>
+<h2 id="supported-conversions">Supported Conversions<a class="headerlink" href="#supported-conversions" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Source Type</th>
+<th>A2A3 Destinations</th>
+<th>A5 Destinations</th>
+<th>Difference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP32</td>
+<td>FP16, FP32 (round-only), BF16, I16, I32, I64</td>
+<td>FP32, FP16, BF16, I16, I32, I64, FP8_E4M3, FP8_E5M2, H8</td>
+<td>A5 adds FP8/H8 targets</td>
+</tr>
+<tr>
+<td>FP16</td>
+<td>FP32, I32, I16, I8, U8, S4 (int4b_t)</td>
+<td>FP32, I32, I16, I8, U8, H8</td>
+<td>A2A3 has S4 path; A5 has H8 path</td>
+</tr>
+<tr>
+<td>BF16</td>
+<td>FP32, I32</td>
+<td>FP32, I32, FP16, FP4_E1M2X2, FP4_E2M1X2</td>
+<td>A5 adds FP16/FP4 targets</td>
+</tr>
+<tr>
+<td>I16</td>
+<td>FP16, FP32</td>
+<td>U8, FP16, FP32, U32, I32</td>
+<td>A5 adds U8/U32/I32 targets</td>
+</tr>
+<tr>
+<td>I32</td>
+<td>FP32, I16, I64, FP16 (deq path)</td>
+<td>FP32, I16, U16, I64, U8</td>
+<td>A2A3 supports I32 -&gt; FP16 (half, deq); A5 does not</td>
+</tr>
+<tr>
+<td>I64</td>
+<td>FP32, I32</td>
+<td>FP32, I32</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>U8</td>
+<td>FP16</td>
+<td>FP16, U16</td>
+<td>A5 adds U16 target</td>
+</tr>
+<tr>
+<td>I8</td>
+<td>FP16</td>
+<td>FP16, I16, I32</td>
+<td>A5 adds I16/I32 targets</td>
+</tr>
+<tr>
+<td>S4 (int4b_t)</td>
+<td>FP16</td>
+<td>N/A</td>
+<td>A2A3-only</td>
+</tr>
+<tr>
+<td>U32</td>
+<td>N/A</td>
+<td>U8, U16, I16</td>
+<td>A5-only source type</td>
+</tr>
+<tr>
+<td>FP8_E4M3</td>
+<td>N/A</td>
+<td>FP32</td>
+<td>A5-only source type</td>
+</tr>
+<tr>
+<td>FP8_E5M2</td>
+<td>N/A</td>
+<td>FP32</td>
+<td>A5-only source type</td>
+</tr>
+<tr>
+<td>H8</td>
+<td>N/A</td>
+<td>FP32</td>
+<td>A5-only source type</td>
+</tr>
+<tr>
+<td>FP4_E1M2X2</td>
+<td>N/A</td>
+<td>BF16</td>
+<td>A5-only source type</td>
+</tr>
+<tr>
+<td>FP4_E2M1X2</td>
+<td>N/A</td>
+<td>BF16</td>
+<td>A5-only source type</td>
+</tr>
+</tbody>
+</table>
+<p>Notes:</p>
+<ul>
+<li>A2A3 supports I32 -&gt; FP16 through the half dequantization path; A5 does not support I32 -&gt; FP16.</li>
+<li>A5 does not support FP16 -&gt; FP8_E4M3 or FP16 -&gt; FP8_E5M2.</li>
+</ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;

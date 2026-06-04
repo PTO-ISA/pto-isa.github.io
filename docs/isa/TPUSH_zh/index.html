@@ -958,14 +958,14 @@ PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, TileProd &amp;tile, WaitEvents &amp;.
 template &lt;typename Pipe, typename GlobalData, TileSplitAxis Split,
           std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0, typename... WaitEvents&gt;
 PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, GlobalData &amp;gmTensor, WaitEvents &amp;... events);</code></pre>
-<p><code>Pipe</code> 通常是 <code>include/pto/npu/a2a3/TPush.hpp</code> 中声明的 A2A3 <code>TPipe</code>：</p>
+<p><code>Pipe</code> 通常是 <code>TPush.hpp</code> 中声明的  <code>TPipe</code>：</p>
 <pre class="highlight"><code class="language-cpp">template &lt;uint8_t FlagID, uint8_t DirType, uint32_t SlotSize, uint32_t SlotNum,
           uint32_t LocalSlotNum = 2, bool IsNoSplit = false, bool EN_UNIT_FLAG = false&gt;
 struct TPipe;</code></pre>
 <h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>A2A3 TileData 生产者</strong>：<ul>
-<li><code>TileProd::Loc</code> 必须是 <code>TileType::Acc</code> 或 <code>TileType::Vec</code>。</li>
+<li><strong>TileData 生产者</strong>：<ul>
+<li><code>TileProd::Loc</code> 必须是 <code>TileType::Acc</code>、<code>TileType::Vec</code> 或 <code>TileType::Ctrl</code>。</li>
 <li><code>Direction::DIR_C2V</code>：Cube 生产 accumulator tile，供 vector 消费。</li>
 <li><code>Direction::DIR_V2C</code>：Vector 生产 vector tile，供 cube 消费。</li>
 <li><code>Direction::DIR_BOTH</code>：同一个 pipe 类型同时支持 C2V 和 V2C 生产者。</li>
@@ -992,6 +992,15 @@ struct TPipe;</code></pre>
 <li><code>gmTensor</code> 必须是由 <code>TALLOC</code> 返回的 FIFO 槽位视图。</li>
 <li>调用 <code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 之前，数据必须已经写入 <code>gmTensor</code>。</li>
 <li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 忽略 tensor 内容，只将 FIFO 槽位提交给消费者。</li>
+</ul>
+</li>
+<li><strong>Tile 类型支持</strong>：<ul>
+<li><strong>TPUSH/TPOP 支持的 Tile 类型</strong>：<ul>
+<li><code>TileType::Acc</code>（累加器 Tile）：Cube 核心使用，用于 C2V 方向通信。</li>
+<li><code>TileType::Vec</code>（向量 Tile）：Vector 核心使用，用于 V2C 方向通信。</li>
+<li><code>TileType::Ctrl</code>（控制 Tile）：Vector 核心使用，用于 V2C_CTRL 方向的控制信号通信。</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
