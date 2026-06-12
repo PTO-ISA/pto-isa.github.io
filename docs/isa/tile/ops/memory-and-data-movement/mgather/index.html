@@ -1072,7 +1072,7 @@
 <p>Out-of-bounds handling is selected through the <code>GatherOOB</code> template parameter. <code>MGATHER</code> has no atomic or conflict policy: every destination slot has exactly one defined source index, so collisions cannot occur.</p>
 <p>Per-target dispatch summary:</p>
 <ul>
-<li><strong>CPU Simulator</strong> — pure C++ reference. The implementation walks <code>validRow * validCol</code> and reads <code>table[idx[i, j]]</code> (Elem semantics); the CPU sim does not have a separate Row coalesce path. Row iteration uses <code>pto::cpu::parallel_for_rows</code>, which by default runs sequentially in row-major order because <code>PTO_CPU_MAX_THREADS</code> defaults to <code>1u</code>. No destination collision is possible for gather, so the iteration order is observationally irrelevant.</li>
+<li><strong>CPU Simulator</strong> — pure C++ reference. Templates on the same <code>Coalesce</code> / <code>GatherOOB</code> parameters as A5, with the same <code>Coalesce::Row</code> default, so a non-templated <code>MGATHER(dst, src, idx)</code> means <code>Coalesce::Row</code> on sim exactly as on hardware. Row mode reads <code>table[idx[r], :]</code> into <code>dst[r, :]</code> (table row stride <code>Shape[4]</code>, <code>tableRows = Shape[3]</code>); Elem mode walks <code>validRow * validCol</code> and reads <code>table[idx[i, j]]</code>. <code>GatherOOB</code> is modeled (<code>Clamp</code> / <code>Wrap</code> remap the index, <code>Zero</code> writes a zero element on out-of-range; <code>Undefined</code> reads unchecked). Row iteration uses <code>pto::cpu::parallel_for_rows</code>, which by default runs sequentially because <code>PTO_CPU_MAX_THREADS</code> defaults to <code>1u</code>.</li>
 <li><strong>A2/A3 VEC-CORE</strong> — single-threaded scalar / MTE2 walk driven from the scalar pipe. Row mode issues one wide <code>copy_gm_to_ubuf_align_b*</code> DMA per row through <code>tablePtr + safeIdx * tableRowStride</code> (where <code>tableRowStride = table.GetStride(DIM_3)</code> and <code>tableRows = ∏ Shape[0..3]</code>); Elem mode performs a scalar GM→UB copy per element (DMA bursts cannot satisfy per-element UB-destination 32-byte alignment). Supports ND-GM with ND-UB <strong>and</strong> NZ-GM with NZ-UB tile pairs.</li>
 <li><strong>A5 SIMT</strong> — SIMT launch through <code>cce::async_invoke</code> with up to <code>dim3{32, 32}</code> (1024 threads). Row mode uses warp-parallel lane reads that the SIMT hardware coalesces into 128 B GM bursts when consecutive; Elem mode maps one lane to one element with per-lane scalar GM loads. The Row kernel computes <code>srcRow = table + safeIdx * validCols</code>, so the GM table is treated as <strong>packed ND with row stride = <code>validCols</code></strong> — <code>MGatherCheck</code> enforces <code>GlobalTable::staticShape[4] == TileDst::ValidCol</code> at compile time, and <code>tableRows = Shape[3]</code>. NZ block-stride layouts are not implemented on A5. The <code>(1, 1)</code> Elem case bypasses the SIMT launch and runs <code>MGatherScalarImpl</code> on the AIV vector core.</li>
 </ul>
@@ -1097,7 +1097,7 @@
 <li><code>Clamp</code>: <code>idx = min(idx, capacity - 1)</code> before access.</li>
 <li><code>Wrap</code>: <code>idx = idx % capacity</code> before access.</li>
 <li><code>Zero</code>: out-of-bounds destinations receive <code>static_cast&lt;T&gt;(0)</code>. In Row mode the OOB row is filled with <code>T(0)</code> (A2/A3 ND fills inline on the scalar pipe; A2/A3 NZ pre-zeros the whole tile once before the DMA loop; A5 SIMT does the substitution inline per lane). In Elem mode the OOB lane writes <code>T(0)</code> inline through the same store. All dtypes are supported under every <code>GatherOOB</code> value.</li>
-<li>CPU simulator: bounds are <strong>not</strong> enforced regardless of the <code>Oob</code> parameter — out-of-range indices read whatever <code>table.data()[idx]</code> returns and are target-defined.</li>
+<li>CPU simulator: models <code>GatherOOB</code> the same way as A5 — <code>Clamp</code>/<code>Wrap</code> remap the (uint32-cast) index, <code>Zero</code> writes <code>T(0)</code> for out-of-range, and only <code>Undefined</code> (the default) reads <code>table.data()[idx]</code> unchecked (target-defined).</li>
 </ul>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>PTO-AS form: see <a href="../../../../syntax-and-operands/assembly-model/">PTO-AS Specification</a>.</p>
@@ -1116,9 +1116,11 @@
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code> (the shared dispatcher) and the per-target implementation headers (<code>include/pto/cpu/MGatherScatter.hpp</code>, <code>include/pto/npu/a2a3/MGather.hpp</code>, <code>include/pto/npu/a5/MGather.hpp</code>).</p>
 <h3 id="cpu-reference-form">CPU Reference Form<a class="headerlink" href="#cpu-reference-form" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">template &lt;typename TileDst, typename GlobalData, typename TileInd, typename... WaitEvents&gt;
+<pre class="highlight"><code class="language-cpp">template &lt;Coalesce  Mode = Coalesce::Row,
+          GatherOOB Oob  = GatherOOB::Undefined,
+          typename TileDst, typename GlobalData, typename TileInd, typename... WaitEvents&gt;
 PTO_INST RecordEvent MGATHER(TileDst &amp;dst, GlobalData &amp;src, TileInd &amp;indexes, WaitEvents &amp;... events);</code></pre>
-<p>The CPU form has no <code>Coalesce</code> or <code>GatherOOB</code> template parameter. The implementation always walks <code>validRow × validCol</code> and reads <code>src.data()[indexes.data()[idxOff]]</code> — this matches <code>Coalesce::Elem</code> semantics regardless of the index tile shape. Bounds are not enforced. The signature exists so the same source builds without modification against the CPU simulator headers.</p>
+<p>The CPU form mirrors the A5 signature and defaults, so a non-templated <code>MGATHER(dst, src, idx)</code> resolves to <code>Coalesce::Row</code> on both sim and hardware and one kernel source validates against one golden. Row mode reads <code>src[idx[r], :]</code> into <code>dst[r, :]</code> with <code>tableRows = Shape[3]</code> and row stride <code>Shape[4]</code>; Elem mode walks <code>validRow × validCol</code> and reads <code>dst[i, j] = src[idx[i, j]]</code>. <code>GatherOOB</code> is modeled the same way as hardware: <code>Clamp</code>/<code>Wrap</code> remap the (uint32-cast) index, <code>Zero</code> writes a zero element for out-of-range, and <code>Undefined</code> reads unchecked.</p>
 <h3 id="a2a3-form">A2/A3 Form<a class="headerlink" href="#a2a3-form" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">template &lt;Coalesce  CMode = Coalesce::Row,
           GatherOOB Oob   = GatherOOB::Undefined,
@@ -1181,9 +1183,8 @@ enum class GatherOOB : uint8_t {
 </ul>
 <p><strong>Index interpretation:</strong></p>
 <ul>
-<li>Index interpretation is target-defined. The CPU simulator treats indices as <strong>linear element indices into <code>src.data()</code></strong> and writes <code>dst.data()[dstOff] = src.data()[idx]</code> for every <code>(r, c)</code> in the destination valid region — equivalent to <code>Coalesce::Elem</code> semantics, regardless of the index tile shape.</li>
-<li>The CPU simulator does not enforce bounds checks on <code>indexes</code>. Out-of-range indices read whatever <code>src.data() + idx</code> returns and are target-defined.</li>
-<li>The simulator does <strong>not</strong> model the <code>Coalesce</code> or <code>GatherOOB</code> template parameters at the CPU intrinsic surface; out-of-bounds handling is the caller's responsibility on CPU.</li>
+<li>Index interpretation follows the <code>Coalesce</code> mode, with the same <code>Coalesce::Row</code> default as hardware. <code>Row</code> treats <code>idx[r]</code> as a logical row index into a <code>[TableRows, Shape[4]]</code> table; <code>Elem</code> treats <code>idx[i, j]</code> as a <strong>linear element index into <code>src.data()</code></strong>.</li>
+<li>The CPU simulator models <code>GatherOOB</code>: <code>Clamp</code>/<code>Wrap</code> remap the index, <code>Zero</code> writes <code>T(0)</code> for out-of-range, and <code>Undefined</code> (the default) reads <code>src.data()[idx]</code> unchecked (target-defined). Indices are cast to <code>uint32_t</code> first, so negative indices resolve as large values.</li>
 </ul>
 <p><strong>Header-level enforcement.</strong> The CPU header (<code>include/pto/cpu/MGatherScatter.hpp</code>) static-asserts only the minimum closure rules: <code>std::is_integral_v&lt;TileInd::DType&gt;</code> for the index dtype and <code>sizeof(TileDst::DType) == sizeof(GlobalData::DType)</code> for byte-wise compatibility. The dtype / shape / layout constraints above are the <strong>PTO ABI contract</strong> — callers are expected to honor them so the same kernel source compiles and runs unmodified against the A2/A3 and A5 backends.</p>
 <h3 id="tile-constraints-a2a3">Tile Constraints (A2/A3)<a class="headerlink" href="#tile-constraints-a2a3" title="Permanent link">&para;</a></h3>
@@ -1281,7 +1282,7 @@ A5:
   Coalesce::Row  : (Idx.ValidRow == 1 &amp;&amp; Idx.ValidCol == Dst.ValidRow) ||
                    (Idx.ValidRow == Dst.ValidRow &amp;&amp; Idx.ValidCol == 1)
   Coalesce::Elem : (Idx.ValidRow == Dst.ValidRow) &amp;&amp; (Idx.ValidCol == Dst.ValidCol)</code></pre>
-<p>On the CPU reference path, no mode parameter exists; the implementation always walks element-wise.</p>
+<p>The CPU reference path enforces the same A5 Row rule (<code>[1, R]</code> or <code>[R, 1]</code> index valid shape) when valid shapes are statically known; Elem walks element-wise over the destination valid region.</p>
 <h2 id="layout-support">Layout Support<a class="headerlink" href="#layout-support" title="Permanent link">&para;</a></h2>
 <p>UB addressing is computed from each tile's <code>Rows</code> / <code>Cols</code> plus (on A2/A3 NZ) an optional fractal block-col stride; GM addressing is driven from <code>GlobalTensor::GetStride(DIM_*)</code>. The matrix below summarises what each backend accepts.</p>
 <table>
@@ -1308,7 +1309,7 @@ A5:
 </tr>
 <tr>
 <td><code>TileIdx</code> (UB) — Row</td>
-<td>row-major (Cols must equal 1 to match CPU's elementwise indexing)</td>
+<td><code>[1, R]</code> or <code>[R, 1]</code> row-major (same valid-shape rule as A5)</td>
 <td><code>[1, R]</code> <code>BLayout::RowMajor + SLayout::NoneBox</code> (always ND, regardless of table layout)</td>
 <td><code>[1, R]</code> <code>RowMajor</code> <strong>or</strong> <code>[R, 1]</code> <code>ColMajor</code> (independent of GM table layout)</td>
 </tr>
