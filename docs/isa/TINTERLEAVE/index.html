@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TPUSH/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TINTERLEAVE/" />
       <link rel="shortcut icon" href="../../../img/favicon.ico" />
-    <title>TPUSH - PTO ISA Manual</title>
+    <title>TINTERLEAVE - PTO ISA Manual</title>
     <link rel="stylesheet" href="../../../css/theme.css" />
     <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "TPUSH";
-        var mkdocs_page_input_path = "docs/isa/TPUSH.md";
-        var mkdocs_page_url = "/docs/isa/TPUSH/";
+        var mkdocs_page_name = "TINTERLEAVE";
+        var mkdocs_page_input_path = "docs/isa/TINTERLEAVE.md";
+        var mkdocs_page_url = "/docs/isa/TINTERLEAVE/";
       </script>
     
     <!--[if lt IE 9]>
@@ -925,7 +925,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">TPUSH</li>
+      <li class="breadcrumb-item active">TINTERLEAVE</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -934,157 +934,101 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/isa/TPUSH.md` -->
+                <!-- Generated from `docs/isa/TINTERLEAVE.md` -->
 
-<h1 id="tpush">TPUSH<a class="headerlink" href="#tpush" title="Permanent link">&para;</a></h1>
+<h1 id="tinterleave">TINTERLEAVE<a class="headerlink" href="#tinterleave" title="Permanent link">&para;</a></h1>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TINTERLEAVE" src="../../figures/isa/TINTERLEAVE.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Push a producer tile into a <code>TPipe</code> FIFO for Cube-Vector communication.</p>
-<p>This page describes both the TileData overload and the <code>GlobalTensor</code> overload for pushing data into a <code>TPipe</code> FIFO.</p>
-<h2 id="operation-semantics">Operation Semantics<a class="headerlink" href="#operation-semantics" title="Permanent link">&para;</a></h2>
-<p>For the TileData overload, <code>TPUSH</code> performs three steps:</p>
-<ol>
-<li>Wait for FIFO space when <code>Pipe::shouldWaitFree(pipe.prod.tileIndex)</code> is true.</li>
-<li>Store the producer tile into the current FIFO slot. In this step:</li>
-<li>For Cube-to-Vector data push, the <code>AccTile</code> is pushed into the <code>TPipe</code> FIFO.</li>
-<li>For Vector-to-Cube data push, the <code>VecTile</code> is pushed into the <code>TPipe</code> FIFO.</li>
-<li>Record data-ready synchronization for the consumer.</li>
-</ol>
-<p>The producer tile index is incremented after the FIFO slot address is computed.</p>
-<p>For the <code>GlobalData</code> overload, <code>TPUSH</code> only records data-ready synchronization for a slot that was already allocated by <code>TALLOC</code>. It does not store tile data by itself.</p>
+<p>Interleave two source tiles (<code>src0</code> and <code>src1</code>) into two destination tiles (<code>dst0</code> and <code>dst1</code>). The operation combines elements from <code>src0</code> and <code>src1</code> in an alternating pattern: even-positioned elements of the interleaved stream are placed into <code>dst0</code>, and odd-positioned elements into <code>dst1</code>. Each destination tile holds half the interleaved stream, split at the midpoint.</p>
+<p><code>TInterleave</code> is the inverse of <code>TDeInterleave</code>.</p>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
+<h3 id="two-source-form">Two-source form<a class="headerlink" href="#two-source-form" title="Permanent link">&para;</a></h3>
+<p>Given two source tiles <code>src0</code> and <code>src1</code> with the same valid shape <code>(validRows, validCols)</code>, construct an interleaved stream of length <code>2 × validCols</code> per row:</p>
+<div class="arithmatex">\[ \mathrm{interleaved}_{2k} = \mathrm{src0}_{i, k}, \quad \mathrm{interleaved}_{2k+1} = \mathrm{src1}_{i, k}, \quad 0 \le k &lt; \mathrm{validCols} \]</div>
+<p>Then split the interleaved stream into two halves:</p>
+<div class="arithmatex">\[ \mathrm{dst0}_{i, j} = \mathrm{interleaved}_{j}, \quad 0 \le j &lt; \mathrm{validCols} $$
+$$ \mathrm{dst1}_{i, j} = \mathrm{interleaved}_{\mathrm{validCols} + j}, \quad 0 \le j &lt; \mathrm{validCols} \]</div>
+<p>Where <code>validRows = dst0.GetValidRow()</code> and <code>validCols = dst0.GetValidCol()</code>.</p>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
+<p>PTO-AS form: see <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>Synchronous form:</p>
+<pre class="highlight"><code class="language-text">%dst0, %dst1 = tinterleave %src0, %src1 : !pto.tile&lt;...&gt;</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst0, %dst1 = pto.tinterleave %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tinterleave ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst0, %dst1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;typename Pipe, typename TileProd, TileSplitAxis Split,
-          std::enable_if_t&lt;is_tile_data_v&lt;TileProd&gt;, int&gt; = 0, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, TileProd &amp;tile, WaitEvents &amp;... events);
-
-template &lt;typename Pipe, typename GlobalData, TileSplitAxis Split,
-          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, GlobalData &amp;gmTensor, WaitEvents &amp;... events);</code></pre>
-<p><code>Pipe</code> is typically an <code>TPipe</code> declared in <code>TPush.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;uint8_t FlagID, uint8_t DirType, uint32_t SlotSize, uint32_t SlotNum,
-          uint32_t LocalSlotNum = 2, bool IsNoSplit = false, bool EN_UNIT_FLAG = false&gt;
-struct TPipe;</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
+PTO_INST RecordEvent TInterleave(TileDataDst &amp;dst1, TileDataDst &amp;dst0, TileDataSrc &amp;src1, TileDataSrc &amp;src0,
+                                 WaitEvents &amp;...events);</code></pre>
+<blockquote>
+<p><strong>Note</strong>: The parameter order is <code>(dst1, dst0, src1, src0)</code>. <code>dst0</code> receives the first half of the interleaved stream (positions <code>0 … validCols-1</code>), <code>dst1</code> receives the second half (positions <code>validCols … 2×validCols-1</code>).</p>
+</blockquote>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>TileData producer</strong>:<ul>
-<li><code>TileProd::Loc</code> must be <code>TileType::Acc</code>, <code>TileType::Vec</code>, or <code>TileType::Ctrl</code>.</li>
-<li><code>Direction::DIR_C2V</code>: Cube produces an accumulator tile for vector consumption.</li>
-<li><code>Direction::DIR_V2C</code>: Vector produces a vector tile for cube consumption.</li>
-<li><code>Direction::DIR_BOTH</code>: both C2V and V2C producers are supported by the same pipe type.</li>
+<li><strong>Implementation checks (A5)</strong>:<ul>
+<li><code>TileData::DType</code> must be one of: <code>int32_t</code>, <code>uint32_t</code>, <code>float</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>uint8_t</code>, <code>int8_t</code>.</li>
+<li>Tile layout must be row-major (<code>TileData::isRowMajor</code>).</li>
+<li>All tiles (<code>dst0</code>, <code>dst1</code>, <code>src0</code>, <code>src1</code>) must have the same <code>DType</code> and the same valid shape.</li>
+<li><code>validCol</code> of all tiles must be even (<code>dst0.GetValidCol() % 2 == 0</code>). Since all tiles share the same valid shape, this is equivalent to requiring <code>dst0.GetValidCol() % 2 == 0</code>.</li>
 </ul>
 </li>
-<li><strong>FIFO slot</strong>:<ul>
-<li><code>SlotSize</code> must be large enough for one logical FIFO entry.</li>
-<li><code>SlotNum &gt;= 1</code>.</li>
-</ul>
-</li>
-<li><strong>A2A3 split behavior</strong>:<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>: No sub-vector offset is applied. On A2A3, this mode requires AIV0 and AIV1 to participate in synchronization.</li>
-<li><code>TileSplitAxis::TILE_UP_DOWN</code>: Vector subblocks map to row halves.</li>
-<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>: Vector subblocks map to column halves.</li>
-</ul>
-</li>
-<li><strong>A5 split behavior</strong>:<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>: No sub-vector offset is applied.</li>
-<li><code>TileSplitAxis::TILE_UP_DOWN</code>: Data is split into row halves. For C2V direction (L0C→UB path), this mode only supports b32 data type, and <code>validRows</code> must be a power of 2; for V2C direction (UB→L1 path), <code>validCols</code> must be a multiple of 32 bytes.</li>
-<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>: Data is split into two column halves. For C2V direction (L0C→UB path), this mode only supports b32 data type, and <code>validCols</code> must be a multiple of 32; for V2C direction (UB→L1 path), <code>validCols</code> must be a multiple of 32 bytes.</li>
-</ul>
-</li>
-<li><strong>Synchronization</strong>:<ul>
-<li>Free-space waits are sparse and controlled by <code>Pipe::SyncPeriod</code>.</li>
-<li>Data-ready record is emitted for each <code>TPUSH</code>.</li>
-</ul>
-</li>
-<li><strong>GlobalData producer</strong>:<ul>
-<li><code>gmTensor</code> must be a FIFO slot view returned by <code>TALLOC</code>.</li>
-<li>Data must be written into <code>gmTensor</code> before calling <code>TPUSH(Pipe&amp;, GlobalData&amp;)</code>.</li>
-<li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> ignores the tensor contents and only commits the FIFO slot to the consumer.</li>
-</ul>
-</li>
-<li><strong>Tile Type Support</strong>:<ul>
-<li><strong>TPUSH/TPOP Supported Tile Types</strong>:<ul>
-<li><code>TileType::Acc</code> (Accumulator Tile): Used by Cube core for C2V direction communication.</li>
-<li><code>TileType::Vec</code> (Vector Tile): Used by Vector core for V2C direction communication.</li>
-<li><code>TileType::Ctrl</code> (Control Tile): Used by Vector core for V2C_CTRL direction control signal transmission.</li>
-</ul>
-</li>
+<li><strong>Valid region</strong>:<ul>
+<li>The op uses <code>dst0.GetValidRow()</code> / <code>dst0.GetValidCol()</code> as the iteration domain; <code>src0/src1/dst1</code> are assumed to be compatible.</li>
 </ul>
 </li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="c2v-accumulator-push">C2V Accumulator Push<a class="headerlink" href="#c2v-accumulator-push" title="Permanent link">&para;</a></h3>
+<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-template &lt;typename T&gt;
-AICORE void example_c2v(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
+void example_auto() {
+    using TileT = Tile&lt;TileType::Vec, float, 16, 64&gt;;
+    TileT src0(16, 64), src1(16, 64);
+    TileT dst0(16, 64), dst1(16, 64);
 
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(float), FifoDepth&gt;;
-    using AccTile = TileAcc&lt;float, M, N, M, N&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    AccTile acc;
-    TASSIGN(acc, 0x0);
-
-    // Fill acc with a cube computation before pushing.
-    TPUSH&lt;Pipe, AccTile, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, acc);
+    TInterleave(dst1, dst0, src1, src0);
 }</code></pre>
-<h3 id="v2c-vector-push">V2C Vector Push<a class="headerlink" href="#v2c-vector-push" title="Permanent link">&para;</a></h3>
+<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-template &lt;typename T&gt;
-AICORE void example_v2c(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
+void example_manual() {
+    using TileT = Tile&lt;TileType::Vec, half, 16, 256, BLayout::RowMajor, 16, 256&gt;;
+    TileT src0, src1, dst0, dst1;
 
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_V2C, M * N * sizeof(T), FifoDepth&gt;;
-    using VecTile = Tile&lt;TileType::Vec, T, M, N, BLayout::RowMajor, M, N&gt;;
+    TASSIGN(src0, 0x1000);
+    TASSIGN(src1, 0x2000);
+    TASSIGN(dst0, 0x3000);
+    TASSIGN(dst1, 0x4000);
 
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    VecTile tile;
-    TASSIGN(tile, 0x0);
-
-    TPUSH&lt;Pipe, VecTile, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, tile);
-}</code></pre>
-<h3 id="globaldata-slot-commit">GlobalData Slot Commit<a class="headerlink" href="#globaldata-slot-commit" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T&gt;
-AICORE void example_globaldata(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
-
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(T), FifoDepth&gt;;
-    using SlotGlobal = GlobalTensor&lt;T, Shape&lt;1, 1, 1, M, N&gt;, Stride&lt;1, 1, 1, N, 1&gt;&gt;;
-    using VecTile = Tile&lt;TileType::Vec, T, M, N, BLayout::RowMajor, M, N&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    SlotGlobal slot;
-    VecTile tile;
-    TASSIGN(tile, 0x0);
-
-    TALLOC&lt;Pipe, SlotGlobal, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, slot);
-    TSTORE(slot, tile);
-    TPUSH&lt;Pipe, SlotGlobal, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, slot);
+    TInterleave(dst1, dst0, src1, src0);
 }</code></pre>
 <h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
-<p>The current public assembly reference does not define a stable PTO-AS spelling for <code>TPUSH</code>. Use the C++ intrinsic form for manual CV FIFO programming.</p>
+<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
+%dst0, %dst1 = pto.tinterleave %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
+<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
+# Optional for tile operands:
+# pto.tassign %src0, @tile(0x1000)
+# pto.tassign %src1, @tile(0x2000)
+# pto.tassign %dst0, @tile(0x3000)
+# pto.tassign %dst1, @tile(0x4000)
+%dst0, %dst1 = pto.tinterleave %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst0, %dst1 = tinterleave %src0, %src1 : !pto.tile&lt;...&gt;
+# AS Level 2 (DPS)
+pto.tinterleave ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst0, %dst1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
+<h2 id="related-instructions">Related Instructions<a class="headerlink" href="#related-instructions" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../TDEINTERLEAVE/">TDeInterleave</a> - De-interleave two tiles back into the original even/odd streams (inverse of TInterleave).</li>
+</ul>
               
             </div>
           </div><footer>

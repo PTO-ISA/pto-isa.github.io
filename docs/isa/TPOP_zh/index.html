@@ -939,12 +939,14 @@
 <h1 id="tpop">TPOP<a class="headerlink" href="#tpop" title="Permanent link">&para;</a></h1>
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>从 <code>TPipe</code> FIFO 中弹出消费者 tile，用于 Cube-Vector 通信。</p>
-<p>本文同时描述 TileData 重载和 <code>GlobalData</code> 槽位视图重载。在 TileData 流程中，<code>TPOP</code> 同时执行数据就绪等待和空闲空间通知；同一个 tile 不需要再单独调用 <code>TFREE</code>。在 <code>GlobalData</code> 流程中，<code>TPOP</code> 返回 FIFO 槽位视图，调用者必须使用 <code>TFREE(Pipe&amp;, GlobalData&amp;)</code> 释放该槽位。</p>
+<p>本指令支持两类数据的弹出，分别为Tile类型的数据和GlobalTensor类型的数据。所以分别设计了基于<code>Tile</code> 重载和 <code>GlobalTensor</code> 重载。</p>
 <h2 id="_2">操作语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>对于 TileData 重载，<code>TPOP</code> 执行三个步骤：</p>
 <ol>
 <li>等待生产者的数据就绪同步。</li>
 <li>将当前 FIFO 槽位加载到消费者 tile 中。</li>
+<li>如果是Cube-&gt;Vector的数据弹出，AIV会将TPipe的FIFO中取出vecTile</li>
+<li>如果是Vector-&gt;Cube的数据弹出，AIC会将TPipe的FIFO中取出matTile</li>
 <li>当 <code>Pipe::shouldNotifyFree(tileIndex)</code> 为 true 时，通知空闲空间。</li>
 </ol>
 <p>消费者 tile 索引会在 FIFO 槽位地址计算完成后递增。空闲空间通知使用已经弹出的 tile 索引。</p>
@@ -976,10 +978,10 @@ struct TPipe;</code></pre>
 <li>对于 V2C matrix 消费者，<code>TPipe</code> 会将 tile 分配到 <code>V2C_CONSUMER_BUF</code>，并使用本地 FIFO 轮转。</li>
 </ul>
 </li>
-<li><strong>分裂行为</strong>：<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>：不应用子向量偏移。</li>
-<li><code>TileSplitAxis::TILE_UP_DOWN</code>：向量子块消费上下两个行半区。</li>
-<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>：向量子块消费左右两个列半区。</li>
+<li><strong>切分行为</strong>：<ul>
+<li><code>TileSplitAxis::TILE_NO_SPLIT</code>：不进行切分， A2A3上需要AIV0/AIV1陪跑核间同步操作。</li>
+<li><code>TileSplitAxis::TILE_UP_DOWN</code>：消费上下两个行半区。</li>
+<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>：消费左右两个列半区。</li>
 </ul>
 </li>
 <li><strong>同步</strong>：<ul>

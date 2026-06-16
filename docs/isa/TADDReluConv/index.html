@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TPUSH/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TADDReluConv/" />
       <link rel="shortcut icon" href="../../../img/favicon.ico" />
-    <title>TPUSH - PTO ISA Manual</title>
+    <title>TADDReluConv - PTO ISA Manual</title>
     <link rel="stylesheet" href="../../../css/theme.css" />
     <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "TPUSH";
-        var mkdocs_page_input_path = "docs/isa/TPUSH.md";
-        var mkdocs_page_url = "/docs/isa/TPUSH/";
+        var mkdocs_page_name = "TADDReluConv";
+        var mkdocs_page_input_path = "docs/isa/TADDReluConv.md";
+        var mkdocs_page_url = "/docs/isa/TADDReluConv/";
       </script>
     
     <!--[if lt IE 9]>
@@ -925,7 +925,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">TPUSH</li>
+      <li class="breadcrumb-item active">TADDReluConv</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -934,157 +934,87 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/isa/TPUSH.md` -->
+                <!-- Generated from `docs/isa/TADDReluConv.md` -->
 
-<h1 id="tpush">TPUSH<a class="headerlink" href="#tpush" title="Permanent link">&para;</a></h1>
+<h1 id="taddreluconv">TADDReluConv<a class="headerlink" href="#taddreluconv" title="Permanent link">&para;</a></h1>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TADDReluConv tile operation" src="../../figures/isa/TADDReluConv.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Push a producer tile into a <code>TPipe</code> FIFO for Cube-Vector communication.</p>
-<p>This page describes both the TileData overload and the <code>GlobalTensor</code> overload for pushing data into a <code>TPipe</code> FIFO.</p>
-<h2 id="operation-semantics">Operation Semantics<a class="headerlink" href="#operation-semantics" title="Permanent link">&para;</a></h2>
-<p>For the TileData overload, <code>TPUSH</code> performs three steps:</p>
-<ol>
-<li>Wait for FIFO space when <code>Pipe::shouldWaitFree(pipe.prod.tileIndex)</code> is true.</li>
-<li>Store the producer tile into the current FIFO slot. In this step:</li>
-<li>For Cube-to-Vector data push, the <code>AccTile</code> is pushed into the <code>TPipe</code> FIFO.</li>
-<li>For Vector-to-Cube data push, the <code>VecTile</code> is pushed into the <code>TPipe</code> FIFO.</li>
-<li>Record data-ready synchronization for the consumer.</li>
-</ol>
-<p>The producer tile index is incremented after the FIFO slot address is computed.</p>
-<p>For the <code>GlobalData</code> overload, <code>TPUSH</code> only records data-ready synchronization for a slot that was already allocated by <code>TALLOC</code>. It does not store tile data by itself.</p>
+<p>Fused elementwise add, ReLU clamp, and type conversion. Per element: <code>dst = convert(max(0, src0 + src1))</code>.</p>
+<p>At the ISA level, this is a single fused instruction (TADDRELUCONV): add + ReLU clamp + down-cast in one semantic step. Backend realization is architecture-dependent (for example, A2A3 can use a single fused intrinsic, while A5 lowers to an equivalent VF sequence), but user-visible semantics are identical.</p>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
+<p>For each element <code>(i, j)</code> in the valid region:</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{convert}\!\left(\max\!\left(0,\;\mathrm{src0}_{i,j} + \mathrm{src1}_{i,j}\right)\right) \]</div>
+<p>where <code>convert</code> narrows the result from the source type to the destination type with saturating behavior. For floating-point down-casts, rounding follows round-to-nearest-even.</p>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
+<p>PTO-AS form: see <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
+<p>Synchronous form:</p>
+<pre class="highlight"><code class="language-text">%dst = taddreluconv %src0, %src1 : !pto.tile&lt;...&gt;</code></pre>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = pto.taddreluconv %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.taddreluconv ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;typename Pipe, typename TileProd, TileSplitAxis Split,
-          std::enable_if_t&lt;is_tile_data_v&lt;TileProd&gt;, int&gt; = 0, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, TileProd &amp;tile, WaitEvents &amp;... events);
-
-template &lt;typename Pipe, typename GlobalData, TileSplitAxis Split,
-          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, GlobalData &amp;gmTensor, WaitEvents &amp;... events);</code></pre>
-<p><code>Pipe</code> is typically an <code>TPipe</code> declared in <code>TPush.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;uint8_t FlagID, uint8_t DirType, uint32_t SlotSize, uint32_t SlotNum,
-          uint32_t LocalSlotNum = 2, bool IsNoSplit = false, bool EN_UNIT_FLAG = false&gt;
-struct TPipe;</code></pre>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename... WaitEvents&gt;
+PTO_INST RecordEvent TADDRELUCONV(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, WaitEvents &amp;... events);</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>TileData producer</strong>:<ul>
-<li><code>TileProd::Loc</code> must be <code>TileType::Acc</code>, <code>TileType::Vec</code>, or <code>TileType::Ctrl</code>.</li>
-<li><code>Direction::DIR_C2V</code>: Cube produces an accumulator tile for vector consumption.</li>
-<li><code>Direction::DIR_V2C</code>: Vector produces a vector tile for cube consumption.</li>
-<li><code>Direction::DIR_BOTH</code>: both C2V and V2C producers are supported by the same pipe type.</li>
+<li><strong>Source type pair</strong>: <code>src0</code> and <code>src1</code> must have the same element type (<code>ST</code>).</li>
+<li><strong>Supported source -&gt; destination type pairs</strong>:<ul>
+<li><code>float</code> -&gt; <code>half</code></li>
+<li><code>half</code> -&gt; <code>int8_t</code></li>
+<li><code>int16_t</code> -&gt; <code>int8_t</code></li>
 </ul>
 </li>
-<li><strong>FIFO slot</strong>:<ul>
-<li><code>SlotSize</code> must be large enough for one logical FIFO entry.</li>
-<li><code>SlotNum &gt;= 1</code>.</li>
-</ul>
-</li>
-<li><strong>A2A3 split behavior</strong>:<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>: No sub-vector offset is applied. On A2A3, this mode requires AIV0 and AIV1 to participate in synchronization.</li>
-<li><code>TileSplitAxis::TILE_UP_DOWN</code>: Vector subblocks map to row halves.</li>
-<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>: Vector subblocks map to column halves.</li>
-</ul>
-</li>
-<li><strong>A5 split behavior</strong>:<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>: No sub-vector offset is applied.</li>
-<li><code>TileSplitAxis::TILE_UP_DOWN</code>: Data is split into row halves. For C2V direction (L0C→UB path), this mode only supports b32 data type, and <code>validRows</code> must be a power of 2; for V2C direction (UB→L1 path), <code>validCols</code> must be a multiple of 32 bytes.</li>
-<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>: Data is split into two column halves. For C2V direction (L0C→UB path), this mode only supports b32 data type, and <code>validCols</code> must be a multiple of 32; for V2C direction (UB→L1 path), <code>validCols</code> must be a multiple of 32 bytes.</li>
-</ul>
-</li>
-<li><strong>Synchronization</strong>:<ul>
-<li>Free-space waits are sparse and controlled by <code>Pipe::SyncPeriod</code>.</li>
-<li>Data-ready record is emitted for each <code>TPUSH</code>.</li>
-</ul>
-</li>
-<li><strong>GlobalData producer</strong>:<ul>
-<li><code>gmTensor</code> must be a FIFO slot view returned by <code>TALLOC</code>.</li>
-<li>Data must be written into <code>gmTensor</code> before calling <code>TPUSH(Pipe&amp;, GlobalData&amp;)</code>.</li>
-<li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> ignores the tensor contents and only commits the FIFO slot to the consumer.</li>
-</ul>
-</li>
-<li><strong>Tile Type Support</strong>:<ul>
-<li><strong>TPUSH/TPOP Supported Tile Types</strong>:<ul>
-<li><code>TileType::Acc</code> (Accumulator Tile): Used by Cube core for C2V direction communication.</li>
-<li><code>TileType::Vec</code> (Vector Tile): Used by Vector core for V2C direction communication.</li>
-<li><code>TileType::Ctrl</code> (Control Tile): Used by Vector core for V2C_CTRL direction control signal transmission.</li>
-</ul>
-</li>
-</ul>
-</li>
+<li><strong>Layout</strong>: All tiles must be row-major (<code>TileData::isRowMajor</code>).</li>
+<li><strong>Location</strong>: All tiles must live in <code>TileType::Vec</code>.</li>
+<li><strong>Valid region</strong>: <code>validRow &gt; 0</code> and <code>validCol &gt; 0</code>; <code>src0</code> and <code>src1</code> valid shapes must match <code>dst</code> valid shapes.</li>
+<li><strong>Implementation notes (A2A3)</strong>: Uses the single <code>vaddreluconv_*</code> hardware intrinsic (e.g. <code>vaddreluconv_f322f16</code>, <code>vaddreluconv_f162s8</code>, <code>vaddreluconv_s162s8</code>) for the fused add + relu + convert.</li>
+<li><strong>Implementation notes (A5)</strong>: No single <code>vaddreluconv_*</code> intrinsic; the fusion is expressed in the VF register-compute model: <code>vlds(src0); vlds(src1); -&gt; add -&gt; maxs(0) -&gt; vcvt -&gt; vsts</code>. For <code>int16_t -&gt; int8_t</code>, A5 has no s16-&gt;s8 vcvt, so the (already non-negative) sum is clamped to <code>[0, 127]</code> and narrowed via s16-&gt;u8 vcvt; for values in <code>[0, 127]</code> the <code>uint8_t</code> and <code>int8_t</code> byte patterns are equal.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="c2v-accumulator-push">C2V Accumulator Push<a class="headerlink" href="#c2v-accumulator-push" title="Permanent link">&para;</a></h3>
+<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-template &lt;typename T&gt;
-AICORE void example_c2v(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
-
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(float), FifoDepth&gt;;
-    using AccTile = TileAcc&lt;float, M, N, M, N&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    AccTile acc;
-    TASSIGN(acc, 0x0);
-
-    // Fill acc with a cube computation before pushing.
-    TPUSH&lt;Pipe, AccTile, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, acc);
+void example_auto() {
+  using SrcTileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstTileT = Tile&lt;TileType::Vec, half, 16, 16&gt;;
+  SrcTileT src0, src1;
+  DstTileT dst;
+  TADDRELUCONV(dst, src0, src1);
 }</code></pre>
-<h3 id="v2c-vector-push">V2C Vector Push<a class="headerlink" href="#v2c-vector-push" title="Permanent link">&para;</a></h3>
+<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-template &lt;typename T&gt;
-AICORE void example_v2c(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
-
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_V2C, M * N * sizeof(T), FifoDepth&gt;;
-    using VecTile = Tile&lt;TileType::Vec, T, M, N, BLayout::RowMajor, M, N&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    VecTile tile;
-    TASSIGN(tile, 0x0);
-
-    TPUSH&lt;Pipe, VecTile, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, tile);
-}</code></pre>
-<h3 id="globaldata-slot-commit">GlobalData Slot Commit<a class="headerlink" href="#globaldata-slot-commit" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T&gt;
-AICORE void example_globaldata(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
-
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(T), FifoDepth&gt;;
-    using SlotGlobal = GlobalTensor&lt;T, Shape&lt;1, 1, 1, M, N&gt;, Stride&lt;1, 1, 1, N, 1&gt;&gt;;
-    using VecTile = Tile&lt;TileType::Vec, T, M, N, BLayout::RowMajor, M, N&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    SlotGlobal slot;
-    VecTile tile;
-    TASSIGN(tile, 0x0);
-
-    TALLOC&lt;Pipe, SlotGlobal, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, slot);
-    TSTORE(slot, tile);
-    TPUSH&lt;Pipe, SlotGlobal, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, slot);
+void example_manual() {
+  using SrcTileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
+  using DstTileT = Tile&lt;TileType::Vec, half, 16, 16&gt;;
+  SrcTileT src0, src1;
+  DstTileT dst;
+  TASSIGN(src0, 0x1000);
+  TASSIGN(src1, 0x2000);
+  TASSIGN(dst,  0x3000);
+  TADDRELUCONV(dst, src0, src1);
 }</code></pre>
 <h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
-<p>The current public assembly reference does not define a stable PTO-AS spelling for <code>TPUSH</code>. Use the C++ intrinsic form for manual CV FIFO programming.</p>
+<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
+%dst = pto.taddreluconv %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
+# Optional for tile operands:
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+%dst = pto.taddreluconv %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = taddreluconv %src0, %src1 : !pto.tile&lt;...&gt;
+# AS Level 2 (DPS)
+pto.taddreluconv ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
               
             </div>
           </div><footer>

@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TPUSH/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TDEINTERLEAVE_zh/" />
       <link rel="shortcut icon" href="../../../img/favicon.ico" />
-    <title>TPUSH - PTO ISA Manual</title>
+    <title>TDEINTERLEAVE zh - PTO ISA Manual</title>
     <link rel="stylesheet" href="../../../css/theme.css" />
     <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "TPUSH";
-        var mkdocs_page_input_path = "docs/isa/TPUSH.md";
-        var mkdocs_page_url = "/docs/isa/TPUSH/";
+        var mkdocs_page_name = "TDEINTERLEAVE zh";
+        var mkdocs_page_input_path = "docs/isa/TDEINTERLEAVE_zh.md";
+        var mkdocs_page_url = "/docs/isa/TDEINTERLEAVE_zh/";
       </script>
     
     <!--[if lt IE 9]>
@@ -925,7 +925,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">TPUSH</li>
+      <li class="breadcrumb-item active">TDEINTERLEAVE zh</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -934,157 +934,171 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/isa/TPUSH.md` -->
+                <!-- Generated from `docs/isa/TDEINTERLEAVE_zh.md` -->
 
-<h1 id="tpush">TPUSH<a class="headerlink" href="#tpush" title="Permanent link">&para;</a></h1>
-<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Push a producer tile into a <code>TPipe</code> FIFO for Cube-Vector communication.</p>
-<p>This page describes both the TileData overload and the <code>GlobalTensor</code> overload for pushing data into a <code>TPipe</code> FIFO.</p>
-<h2 id="operation-semantics">Operation Semantics<a class="headerlink" href="#operation-semantics" title="Permanent link">&para;</a></h2>
-<p>For the TileData overload, <code>TPUSH</code> performs three steps:</p>
-<ol>
-<li>Wait for FIFO space when <code>Pipe::shouldWaitFree(pipe.prod.tileIndex)</code> is true.</li>
-<li>Store the producer tile into the current FIFO slot. In this step:</li>
-<li>For Cube-to-Vector data push, the <code>AccTile</code> is pushed into the <code>TPipe</code> FIFO.</li>
-<li>For Vector-to-Cube data push, the <code>VecTile</code> is pushed into the <code>TPipe</code> FIFO.</li>
-<li>Record data-ready synchronization for the consumer.</li>
-</ol>
-<p>The producer tile index is incremented after the FIFO slot address is computed.</p>
-<p>For the <code>GlobalData</code> overload, <code>TPUSH</code> only records data-ready synchronization for a slot that was already allocated by <code>TALLOC</code>. It does not store tile data by itself.</p>
-<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;typename Pipe, typename TileProd, TileSplitAxis Split,
-          std::enable_if_t&lt;is_tile_data_v&lt;TileProd&gt;, int&gt; = 0, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, TileProd &amp;tile, WaitEvents &amp;... events);
-
-template &lt;typename Pipe, typename GlobalData, TileSplitAxis Split,
-          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, GlobalData &amp;gmTensor, WaitEvents &amp;... events);</code></pre>
-<p><code>Pipe</code> is typically an <code>TPipe</code> declared in <code>TPush.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;uint8_t FlagID, uint8_t DirType, uint32_t SlotSize, uint32_t SlotNum,
-          uint32_t LocalSlotNum = 2, bool IsNoSplit = false, bool EN_UNIT_FLAG = false&gt;
-struct TPipe;</code></pre>
-<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<h1 id="tdeinterleave">TDEINTERLEAVE<a class="headerlink" href="#tdeinterleave" title="Permanent link">&para;</a></h1>
+<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><img alt="TDEINTERLEAVE" src="../../figures/isa/TDEINTERLEAVE.svg" /></p>
+<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>将源 Tile 反交织到两个目标 Tile（<code>dst0</code> 和 <code>dst1</code>）中。该操作逆转交织过程：<code>dst0</code> 接收交织流的偶数位置元素，<code>dst1</code> 接收奇数位置元素。</p>
+<p><code>TDeInterleave</code> 有两种重载形式：</p>
 <ul>
-<li><strong>TileData producer</strong>:<ul>
-<li><code>TileProd::Loc</code> must be <code>TileType::Acc</code>, <code>TileType::Vec</code>, or <code>TileType::Ctrl</code>.</li>
-<li><code>Direction::DIR_C2V</code>: Cube produces an accumulator tile for vector consumption.</li>
-<li><code>Direction::DIR_V2C</code>: Vector produces a vector tile for cube consumption.</li>
-<li><code>Direction::DIR_BOTH</code>: both C2V and V2C producers are supported by the same pipe type.</li>
+<li><strong>双源形式</strong>（<code>dst1, dst0, src1, src0</code>）：给定两个持有交织流前半部分和后半部分的源 Tile，反交织为原始的偶元素流和奇元素流。</li>
+<li><strong>单源形式</strong>（<code>dst1, dst0, src</code>）：给定一个包含完整交织数据的源 Tile，反交织为偶数位置和奇数位置的元素流。每个目标行持有 <code>src.GetValidCol() / 2</code> 个有效元素。</li>
+</ul>
+<p><code>TDeInterleave</code> 是 <code>TInterleave</code> 的逆操作。</p>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="_4">双源形式<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>给定两个源 Tile <code>src0</code>（前半部分）和 <code>src1</code>（后半部分），重构完整交织流并反交织：</p>
+<div class="arithmatex">\[ \mathrm{combined}_{j} = \begin{cases} \mathrm{src0}_{i, j} &amp; \text{若 } 0 \le j &lt; \mathrm{validCols} \\ \mathrm{src1}_{i, j - \mathrm{validCols}} &amp; \text{若 } \mathrm{validCols} \le j &lt; 2 \times \mathrm{validCols} \end{cases} \]</div>
+<div class="arithmatex">\[ \mathrm{dst0}_{i, k} = \mathrm{combined}_{2k}, \quad 0 \le k &lt; \mathrm{validCols} $$
+$$ \mathrm{dst1}_{i, k} = \mathrm{combined}_{2k+1}, \quad 0 \le k &lt; \mathrm{validCols} \]</div>
+<p>其中 <code>validRows = dst0.GetValidRow()</code> 且 <code>validCols = dst0.GetValidCol()</code>。</p>
+<h3 id="_5">单源形式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>给定一个包含逐行交织数据的源 Tile <code>src</code>：</p>
+<div class="arithmatex">\[ \mathrm{dst0}_{i, k} = \mathrm{src}_{i, 2k}, \quad 0 \le k &lt; \mathrm{halfValidCols} $$
+$$ \mathrm{dst1}_{i, k} = \mathrm{src}_{i, 2k+1}, \quad 0 \le k &lt; \mathrm{halfValidCols} \]</div>
+<p>其中 <code>halfValidCols = src.GetValidCol() / 2</code>。</p>
+<blockquote>
+<p><strong>注意</strong>：单源形式要求源 Tile 的行宽至少为 <code>2 × ElementsPerRepeat</code> 个元素（其中 <code>ElementsPerRepeat = 256 / sizeof(T)</code>，即 <code>2 × sregLower</code>），以确保每次重复中加载的两个相邻寄存器大小的数据块不会跨越行边界。</p>
+</blockquote>
+<h2 id="_6">汇编语法<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式：参见 <a href="../assembly/PTO-AS_zh.md">PTO-AS 规范</a>。</p>
+<p>同步形式（双源）：</p>
+<pre class="highlight"><code class="language-text">%dst0, %dst1 = tdeinterleave %src0, %src1 : !pto.tile&lt;...&gt;</code></pre>
+<p>同步形式（单源）：</p>
+<pre class="highlight"><code class="language-text">%dst0, %dst1 = tdeinterleave %src : !pto.tile&lt;...&gt;</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<p>双源形式：</p>
+<pre class="highlight"><code class="language-text">%dst0, %dst1 = pto.tdeinterleave %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
+<p>单源形式：</p>
+<pre class="highlight"><code class="language-text">%dst0, %dst1 = pto.tdeinterleave %src : (!pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<p>双源形式：</p>
+<pre class="highlight"><code class="language-text">pto.tdeinterleave ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst0, %dst1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
+<p>单源形式：</p>
+<pre class="highlight"><code class="language-text">pto.tdeinterleave ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst0, %dst1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
+<pre class="highlight"><code class="language-cpp">// 双源形式
+template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
+PTO_INST RecordEvent TDeInterleave(TileDataDst &amp;dst1, TileDataDst &amp;dst0, TileDataSrc &amp;src1, TileDataSrc &amp;src0,
+                                   WaitEvents &amp;...events);
+
+// 单源形式
+template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
+PTO_INST RecordEvent TDeInterleave(TileDataDst &amp;dst1, TileDataDst &amp;dst0, TileDataSrc &amp;src,
+                                   WaitEvents &amp;...events);</code></pre>
+<blockquote>
+<p><strong>注意</strong>：双源形式的参数顺序为 <code>(dst1, dst0, src1, src0)</code>。<code>dst0</code> 接收交织流的偶数位置元素，<code>dst1</code> 接收奇数位置元素。</p>
+</blockquote>
+<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>实现检查 (A5)</strong>:<ul>
+<li><code>TileData::DType</code> 必须是以下之一：<code>int32_t</code>、<code>uint32_t</code>、<code>float</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>uint8_t</code>、<code>int8_t</code>。</li>
+<li>Tile 布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
+<li>所有 Tile 必须具有相同的 <code>DType</code>。</li>
+<li>双源形式：<code>src0</code>、<code>src1</code>、<code>dst0</code>、<code>dst1</code> 必须具有相同的有效形状, 且他们的validCols必须为偶数。</li>
+<li>单源形式：<code>src</code>、<code>dst0</code>、<code>dst1</code> 必须具有相同的有效形状；<code>src</code>的validCols必须为偶数</li>
+<li><code>dst0</code>/<code>dst1</code> 的 <code>validCols</code> 必须为 <code>src</code> 的 <code>validCols</code> 的一半。</li>
 </ul>
 </li>
-<li><strong>FIFO slot</strong>:<ul>
-<li><code>SlotSize</code> must be large enough for one logical FIFO entry.</li>
-<li><code>SlotNum &gt;= 1</code>.</li>
-</ul>
-</li>
-<li><strong>A2A3 split behavior</strong>:<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>: No sub-vector offset is applied. On A2A3, this mode requires AIV0 and AIV1 to participate in synchronization.</li>
-<li><code>TileSplitAxis::TILE_UP_DOWN</code>: Vector subblocks map to row halves.</li>
-<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>: Vector subblocks map to column halves.</li>
-</ul>
-</li>
-<li><strong>A5 split behavior</strong>:<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>: No sub-vector offset is applied.</li>
-<li><code>TileSplitAxis::TILE_UP_DOWN</code>: Data is split into row halves. For C2V direction (L0C→UB path), this mode only supports b32 data type, and <code>validRows</code> must be a power of 2; for V2C direction (UB→L1 path), <code>validCols</code> must be a multiple of 32 bytes.</li>
-<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>: Data is split into two column halves. For C2V direction (L0C→UB path), this mode only supports b32 data type, and <code>validCols</code> must be a multiple of 32; for V2C direction (UB→L1 path), <code>validCols</code> must be a multiple of 32 bytes.</li>
-</ul>
-</li>
-<li><strong>Synchronization</strong>:<ul>
-<li>Free-space waits are sparse and controlled by <code>Pipe::SyncPeriod</code>.</li>
-<li>Data-ready record is emitted for each <code>TPUSH</code>.</li>
-</ul>
-</li>
-<li><strong>GlobalData producer</strong>:<ul>
-<li><code>gmTensor</code> must be a FIFO slot view returned by <code>TALLOC</code>.</li>
-<li>Data must be written into <code>gmTensor</code> before calling <code>TPUSH(Pipe&amp;, GlobalData&amp;)</code>.</li>
-<li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> ignores the tensor contents and only commits the FIFO slot to the consumer.</li>
-</ul>
-</li>
-<li><strong>Tile Type Support</strong>:<ul>
-<li><strong>TPUSH/TPOP Supported Tile Types</strong>:<ul>
-<li><code>TileType::Acc</code> (Accumulator Tile): Used by Cube core for C2V direction communication.</li>
-<li><code>TileType::Vec</code> (Vector Tile): Used by Vector core for V2C direction communication.</li>
-<li><code>TileType::Ctrl</code> (Control Tile): Used by Vector core for V2C_CTRL direction control signal transmission.</li>
+<li><strong>有效区域</strong>:<ul>
+<li>双源形式：该操作使用 <code>dst0.GetValidRow()</code> / <code>dst0.GetValidCol()</code> 作为迭代域。<code>dst0/dst1</code> 每行持有 <code>validCols</code> 个元素。</li>
+<li>单源形式：<code>dst0/dst1</code> 每行持有 <code>validCols / 2</code> 个有效元素。每行中超出 <code>halfValidCols</code> 的元素是<strong>未指定的</strong>。</li>
 </ul>
 </li>
 </ul>
-</li>
-</ul>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="c2v-accumulator-push">C2V Accumulator Push<a class="headerlink" href="#c2v-accumulator-push" title="Permanent link">&para;</a></h3>
+<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h3 id="auto">自动（Auto）— 双源形式<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-template &lt;typename T&gt;
-AICORE void example_c2v(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
+void example_auto_two_src() {
+    using TileT = Tile&lt;TileType::Vec, float, 16, 128&gt;;
+    TileT src0(16, 128), src1(16, 128);
+    TileT dst0(16, 128), dst1(16, 128);
 
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(float), FifoDepth&gt;;
-    using AccTile = TileAcc&lt;float, M, N, M, N&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    AccTile acc;
-    TASSIGN(acc, 0x0);
-
-    // Fill acc with a cube computation before pushing.
-    TPUSH&lt;Pipe, AccTile, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, acc);
+    TDeInterleave(dst1, dst0, src1, src0);
 }</code></pre>
-<h3 id="v2c-vector-push">V2C Vector Push<a class="headerlink" href="#v2c-vector-push" title="Permanent link">&para;</a></h3>
+<h3 id="auto_1">自动（Auto）— 单源形式<a class="headerlink" href="#auto_1" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-template &lt;typename T&gt;
-AICORE void example_v2c(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
+void example_auto_single_src() {
+    using TileT = Tile&lt;TileType::Vec, float, 16, 128&gt;;
+    TileT src(16, 128);
+    TileT dst0(16, 128), dst1(16, 128);
 
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_V2C, M * N * sizeof(T), FifoDepth&gt;;
-    using VecTile = Tile&lt;TileType::Vec, T, M, N, BLayout::RowMajor, M, N&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    VecTile tile;
-    TASSIGN(tile, 0x0);
-
-    TPUSH&lt;Pipe, VecTile, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, tile);
+    TDeInterleave(dst1, dst0, src);
 }</code></pre>
-<h3 id="globaldata-slot-commit">GlobalData Slot Commit<a class="headerlink" href="#globaldata-slot-commit" title="Permanent link">&para;</a></h3>
+<h3 id="manual">手动（Manual）— 双源形式<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-template &lt;typename T&gt;
-AICORE void example_globaldata(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
+void example_manual_two_src() {
+    using TileT = Tile&lt;TileType::Vec, half, 16, 256, BLayout::RowMajor, 16, 256&gt;;
+    TileT src0, src1, dst0, dst1;
 
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(T), FifoDepth&gt;;
-    using SlotGlobal = GlobalTensor&lt;T, Shape&lt;1, 1, 1, M, N&gt;, Stride&lt;1, 1, 1, N, 1&gt;&gt;;
-    using VecTile = Tile&lt;TileType::Vec, T, M, N, BLayout::RowMajor, M, N&gt;;
+    TASSIGN(src0, 0x1000);
+    TASSIGN(src1, 0x2000);
+    TASSIGN(dst0, 0x3000);
+    TASSIGN(dst1, 0x4000);
 
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    SlotGlobal slot;
-    VecTile tile;
-    TASSIGN(tile, 0x0);
-
-    TALLOC&lt;Pipe, SlotGlobal, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, slot);
-    TSTORE(slot, tile);
-    TPUSH&lt;Pipe, SlotGlobal, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, slot);
+    TDeInterleave(dst1, dst0, src1, src0);
 }</code></pre>
-<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
-<p>The current public assembly reference does not define a stable PTO-AS spelling for <code>TPUSH</code>. Use the C++ intrinsic form for manual CV FIFO programming.</p>
+<h3 id="manual_1">手动（Manual）— 单源形式<a class="headerlink" href="#manual_1" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual_single_src() {
+    using TileT = Tile&lt;TileType::Vec, half, 16, 256, BLayout::RowMajor, 16, 256&gt;;
+    TileT src, dst0, dst1;
+
+    TASSIGN(src,  0x1000);
+    TASSIGN(dst0, 0x2000);
+    TASSIGN(dst1, 0x3000);
+
+    TDeInterleave(dst1, dst0, src);
+}</code></pre>
+<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="_9">自动模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
+# 双源形式：
+%dst0, %dst1 = pto.tdeinterleave %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
+# 单源形式：
+%dst0, %dst1 = pto.tdeinterleave %src : (!pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
+<h3 id="_10">手动模式<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
+# 双源形式：
+# pto.tassign %src0, @tile(0x1000)
+# pto.tassign %src1, @tile(0x2000)
+# pto.tassign %dst0, @tile(0x3000)
+# pto.tassign %dst1, @tile(0x4000)
+%dst0, %dst1 = pto.tdeinterleave %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)
+# 单源形式：
+# pto.tassign %src,  @tile(0x1000)
+# pto.tassign %dst0, @tile(0x2000)
+# pto.tassign %dst1, @tile(0x3000)
+%dst0, %dst1 = pto.tdeinterleave %src : (!pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># 双源形式：
+%dst0, %dst1 = tdeinterleave %src0, %src1 : !pto.tile&lt;...&gt;
+# AS Level 2 (DPS)
+pto.tdeinterleave ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst0, %dst1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
+
+# 单源形式：
+%dst0, %dst1 = tdeinterleave %src : !pto.tile&lt;...&gt;
+# AS Level 2 (DPS)
+pto.tdeinterleave ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst0, %dst1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
+<h2 id="_11">相关指令<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../TINTERLEAVE_zh/">TInterleave</a> - 将两个 Tile 交织为交替的偶/奇流（TDeInterleave 的逆操作）。</li>
+</ul>
               
             </div>
           </div><footer>

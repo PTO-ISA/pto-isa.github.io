@@ -995,8 +995,9 @@ PTO_INST RecordEvent TEXTRACT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpT
 <li>对于 <code>ScaleLeft</code>：<code>(SFractal == RowMajor &amp;&amp; isRowMajor)</code></li>
 <li>对于 <code>ScaleRight</code>：<code>(SFractal == ColMajor &amp;&amp; !isRowMajor)</code></li>
 <li>在以 <code>Left</code> 为目标的 GEMV 场景中，已检查到的源布局还允许 <code>(SrcTileData::Rows == 1 &amp;&amp; SrcTileData::isRowMajor)</code>。</li>
-<li>目标支持 <code>TileType::Mat -&gt; TileType::Left/Right/Scale</code>、<code>TileType::Acc -&gt; TileType::Mat</code>（含 relu、标量量化、向量量化形式），以及特定的 <code>TileType::Vec -&gt; TileType::Mat</code> 提取路径。</li>
+<li>目标支持 <code>TileType::Mat -&gt; TileType::Left/Right/Scale</code>、<code>TileType::Acc -&gt; TileType::Mat</code>（含 relu、标量量化、向量量化形式）、<code>TileType::Acc -&gt; TileType::Vec</code>，以及特定的 <code>TileType::Vec -&gt; TileType::Mat</code> 提取路径。</li>
 <li>向量量化形式额外要求提供 <code>FpTileData</code> 缩放操作数，对应 <code>TEXTRACT_FP(...)</code> 接口。</li>
+<li>对于 <code>TileType::Acc -&gt; TileType::Vec</code>，当目标为 32 位类型（<code>float</code>/<code>int32_t</code>）且使用 <code>DualModeSplitN</code> 时，切分前的 <code>ValidCol</code> 必须是 <code>32</code> 的整数倍。</li>
 </ul>
 </div>
 <h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>

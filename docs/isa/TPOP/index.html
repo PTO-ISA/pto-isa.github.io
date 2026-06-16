@@ -939,12 +939,14 @@
 <h1 id="tpop">TPOP<a class="headerlink" href="#tpop" title="Permanent link">&para;</a></h1>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>Pop a consumer tile from a <code>TPipe</code> FIFO for Cube-Vector communication.</p>
-<p>This page describes both the TileData overload and the <code>GlobalData</code> slot-view overload. In the TileData flow, <code>TPOP</code> performs both the data-ready wait and the free-space notification; a separate <code>TFREE</code> is not required for the same tile. In the <code>GlobalData</code> flow, <code>TPOP</code> returns a FIFO slot view and the caller must release it with <code>TFREE(Pipe&amp;, GlobalData&amp;)</code>.</p>
+<p>This page describes both the TileData overload and the <code>GlobalData</code> overload for popping data from a <code>TPipe</code> FIFO.</p>
 <h2 id="operation-semantics">Operation Semantics<a class="headerlink" href="#operation-semantics" title="Permanent link">&para;</a></h2>
 <p>For the TileData overload, <code>TPOP</code> performs three steps:</p>
 <ol>
 <li>Wait for producer data-ready synchronization.</li>
 <li>Load the current FIFO slot into the consumer tile.</li>
+<li>For Cube-to-Vector data pop, AIV pops a <code>VecTile</code> from the <code>TPipe</code> FIFO.</li>
+<li>For Vector-to-Cube data pop, AIC pops a <code>MatTile</code> from the <code>TPipe</code> FIFO.</li>
 <li>Notify free space when <code>Pipe::shouldNotifyFree(tileIndex)</code> is true.</li>
 </ol>
 <p>The consumer tile index is incremented after the FIFO slot address is computed. The free-space notification uses the popped tile index.</p>
@@ -977,7 +979,7 @@ struct TPipe;</code></pre>
 </ul>
 </li>
 <li><strong>Split behavior</strong>:<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>: no sub-vector offset is applied.</li>
+<li><code>TileSplitAxis::TILE_NO_SPLIT</code>: No sub-vector offset is applied. On A2A3, this mode requires AIV0/AIV1 to participate in inter-core synchronization.</li>
 <li><code>TileSplitAxis::TILE_UP_DOWN</code>: vector subblocks consume row halves.</li>
 <li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>: vector subblocks consume column halves.</li>
 </ul>

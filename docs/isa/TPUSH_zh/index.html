@@ -938,17 +938,19 @@
 
 <h1 id="tpush">TPUSH<a class="headerlink" href="#tpush" title="Permanent link">&para;</a></h1>
 <h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>将生产者 tile 推入 <code>TPipe</code> FIFO，用于 Cube-Vector 通信。</p>
-<p>本文同时描述 TileData 重载和 <code>GlobalData</code> 提交重载。对于将 FIFO 条目暴露为 <code>GlobalTensor</code> 的 GM 槽位工作流，使用 <code>TALLOC</code> 分配槽位视图，通过普通内存指令写入槽位，然后使用 <code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 提交该槽位。</p>
+<p>将生产者 tile 推入FIFO中，用于 Cube-Vector之间的数据传输和核间同步。</p>
+<p>本指令支持两类数据的推送，分别为Tile类型的数据和GlobalTensor类型的数据。所以分别设计了基于<code>Tile</code> 重载和 <code>GlobalTensor</code> 重载。</p>
 <h2 id="_2">操作语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>对于 TileData 重载，<code>TPUSH</code> 执行三个步骤：</p>
+<p>对于 Tile类型接口，<code>TPUSH</code> 执行三个步骤：</p>
 <ol>
 <li>当 <code>Pipe::shouldWaitFree(pipe.prod.tileIndex)</code> 为 true 时，等待 FIFO 空间。</li>
-<li>将生产者 tile 存入当前 FIFO 槽位。</li>
+<li>将生产者 tile 存入当前 FIFO 槽位。该步骤中：</li>
+<li>如果是Cube-&gt;Vector的数据推送，会将AccTile推送到TPipe的FIFO中</li>
+<li>如果是Vector-&gt;Cube的数据推送，会将VecTile推送到TPipe的FIFO中</li>
 <li>为消费者记录数据就绪同步。</li>
 </ol>
 <p>生产者 tile 索引会在 FIFO 槽位地址计算完成后递增。</p>
-<p>对于 <code>GlobalData</code> 重载，<code>TPUSH</code> 只为已经由 <code>TALLOC</code> 分配的槽位记录数据就绪同步。它本身不会存储 tile 数据。</p>
+<p>对于 <code>GlobalData</code> 类型接口，<code>TPUSH</code> 只为已经由 <code>TALLOC</code> 分配的槽位记录数据就绪同步。它本身不会存储 tile 数据。</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>声明位置：<code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename Pipe, typename TileProd, TileSplitAxis Split,
@@ -958,7 +960,7 @@ PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, TileProd &amp;tile, WaitEvents &amp;.
 template &lt;typename Pipe, typename GlobalData, TileSplitAxis Split,
           std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0, typename... WaitEvents&gt;
 PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, GlobalData &amp;gmTensor, WaitEvents &amp;... events);</code></pre>
-<p><code>Pipe</code> 通常是 <code>TPush.hpp</code> 中声明的  <code>TPipe</code>：</p>
+<p><code>Pipe</code> 通常是 <code>TPush.hpp</code> 中声明的  <code>TPipe</code>类型：</p>
 <pre class="highlight"><code class="language-cpp">template &lt;uint8_t FlagID, uint8_t DirType, uint32_t SlotSize, uint32_t SlotNum,
           uint32_t LocalSlotNum = 2, bool IsNoSplit = false, bool EN_UNIT_FLAG = false&gt;
 struct TPipe;</code></pre>
@@ -974,13 +976,18 @@ struct TPipe;</code></pre>
 <li><strong>FIFO 槽位</strong>：<ul>
 <li><code>SlotSize</code> 必须足够容纳一个逻辑 FIFO 条目。</li>
 <li><code>SlotNum &gt;= 1</code>。</li>
-<li><code>Pipe::SyncPeriod</code> 由 <code>SlotNum</code> 派生：<code>(SlotNum &lt;= 2) ? SlotNum : SlotNum / 2</code>。</li>
 </ul>
 </li>
-<li><strong>分裂行为</strong>：<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>：不应用子向量偏移。</li>
-<li><code>TileSplitAxis::TILE_UP_DOWN</code>：向量子块映射到上下两个行半区。</li>
+<li><strong>A2A3切分行为</strong>：<ul>
+<li><code>TileSplitAxis::TILE_NO_SPLIT</code>：不做切分。在A2A3上要使能此切分模式，需要AIV0,AIV1陪跑同步操作。</li>
+<li><code>TileSplitAxis::TILE_UP_DOWN</code>：向量子块映射到上下两个行半区。 </li>
 <li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>：向量子块映射到左右两个列半区。</li>
+</ul>
+</li>
+<li><strong>A5切分行为</strong>：<ul>
+<li><code>TileSplitAxis::TILE_NO_SPLIT</code>：不做切分。</li>
+<li><code>TileSplitAxis::TILE_UP_DOWN</code>：将数据按照上下切分。当Cube-&gt;Vector方向且L0C-&gt;UB通路时，该切分模式仅支持数据类型为b32，且srcTile的validRows必须2的整数倍；当Vector-&gt;Cube方向且UB-&gt;L1通路时，该切分模式下validCols必须是32bytes的整数倍。</li>
+<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>：将数据按照左右切分成两个列半区。当Cube-&gt;Vector方向且L0C-&gt;UB通路时，该切分模式仅支持数据类型为b32，且srcTile的validCols必须为32的整数倍。当Vector-&gt;Cube方向且UB-&gt;L1通路时，该切分模式下validCols必须是32bytes的整数倍。</li>
 </ul>
 </li>
 <li><strong>同步</strong>：<ul>
@@ -988,7 +995,7 @@ struct TPipe;</code></pre>
 <li>每次 <code>TPUSH</code> 都会发出数据就绪记录。</li>
 </ul>
 </li>
-<li><strong>GlobalData 提交</strong>：<ul>
+<li><strong>GlobalData 类型生产者</strong>：<ul>
 <li><code>gmTensor</code> 必须是由 <code>TALLOC</code> 返回的 FIFO 槽位视图。</li>
 <li>调用 <code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 之前，数据必须已经写入 <code>gmTensor</code>。</li>
 <li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 忽略 tensor 内容，只将 FIFO 槽位提交给消费者。</li>
@@ -1050,7 +1057,7 @@ AICORE void example_v2c(__gm__ void *fifoMem)
 
     TPUSH&lt;Pipe, VecTile, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, tile);
 }</code></pre>
-<h3 id="globaldata">GlobalData 槽位提交<a class="headerlink" href="#globaldata" title="Permanent link">&para;</a></h3>
+<h3 id="globaldata">GlobalData 推送示例<a class="headerlink" href="#globaldata" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
