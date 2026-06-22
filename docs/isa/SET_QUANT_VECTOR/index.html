@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TPUSH_zh/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/SET_QUANT_VECTOR/" />
       <link rel="shortcut icon" href="../../../img/favicon.ico" />
-    <title>TPUSH zh - PTO ISA Manual</title>
+    <title>SET QUANT VECTOR - PTO ISA Manual</title>
     <link rel="stylesheet" href="../../../css/theme.css" />
     <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "TPUSH zh";
-        var mkdocs_page_input_path = "docs/isa/TPUSH_zh.md";
-        var mkdocs_page_url = "/docs/isa/TPUSH_zh/";
+        var mkdocs_page_name = "SET QUANT VECTOR";
+        var mkdocs_page_input_path = "docs/isa/SET_QUANT_VECTOR.md";
+        var mkdocs_page_url = "/docs/isa/SET_QUANT_VECTOR/";
       </script>
     
     <!--[if lt IE 9]>
@@ -925,7 +925,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">TPUSH zh</li>
+      <li class="breadcrumb-item active">SET QUANT VECTOR</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -934,269 +934,37 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/isa/TPUSH_zh.md` -->
+                <!-- Generated from `docs/isa/SET_QUANT_VECTOR.md` -->
 
-<h1 id="tpush">TPUSH<a class="headerlink" href="#tpush" title="Permanent link">&para;</a></h1>
-<h2 id="_1">简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>将生产者 tile 推入FIFO中，用于 Cube-Vector之间的数据传输和核间同步。</p>
-<p>本指令支持多类数据的推送，包括基于 <code>TileSplitAxis</code> 的 Tile 重载、简化版 Tile 重载（参数顺序相反、无需 Split）、GlobalTensor 重载以及基于 TConfig 的重载。</p>
-<h2 id="_2">操作语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>对于 Tile类型接口，<code>TPUSH</code> 执行三个步骤：</p>
-<ol>
-<li>当 <code>Pipe::shouldWaitFree(pipe.prod.tileIndex)</code> 为 true 时，等待 FIFO 空间。</li>
-<li>将生产者 tile 存入当前 FIFO 槽位。该步骤中：</li>
-<li>如果是Cube-&gt;Vector的数据推送，会将AccTile推送到TPipe的FIFO中</li>
-<li>如果是Vector-&gt;Cube的数据推送，会将VecTile推送到TPipe的FIFO中</li>
-<li>为消费者记录数据就绪同步。</li>
-</ol>
-<p>生产者 tile 索引会在 FIFO 槽位地址计算完成后递增。</p>
-<p>对于 <code>GlobalData</code> 类型接口，<code>TPUSH</code> 只为已经由 <code>TALLOC</code> 分配的槽位记录数据就绪同步。它本身不会存储 tile 数据。</p>
-<p>对于 <code>TConfig</code> 重载 <code>TPUSH(Pipe&amp;, TileProd&amp;, TConfig)</code>，<code>TConfig</code> 模板参数用于配置L0C-&gt;GM/UB的 fixpipe 参数。</p>
+<h1 id="set_quant_vector">SET_QUANT_VECTOR<a class="headerlink" href="#set_quant_vector" title="Permanent link">&para;</a></h1>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Set the vector quantization parameter for subsequent <code>TPUSH</code> operations by configuring the hardware FPC register from a Scaling-type tile's address. The tile address is converted to the quantization parameter address format and written to the hardware quantization configuration.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>声明位置：<code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre class="highlight"><code class="language-cpp">template &lt;typename Pipe, typename TileProd, TileSplitAxis Split,
-          std::enable_if_t&lt;is_tile_data_v&lt;TileProd&gt;, int&gt; = 0, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, TileProd &amp;tile, WaitEvents &amp;... events);
-
-template &lt;typename Pipe, typename GlobalData, TileSplitAxis Split,
-          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, GlobalData &amp;gmTensor, WaitEvents &amp;... events);
-
-template &lt;typename Pipe, typename TileProd, typename TConfig, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, TileProd &amp;tile, WaitEvents &amp;... events);</code></pre>
-<p><code>Pipe</code> 通常是 <code>TPush.hpp</code> 中声明的  <code>TPipe</code>类型：</p>
-<pre class="highlight"><code class="language-cpp">template &lt;uint8_t FlagID, uint8_t DirType, uint32_t SlotSize, uint32_t SlotNum,
-          uint32_t LocalSlotNum = 2, bool IsNoSplit = false, bool EN_UNIT_FLAG = false&gt;
-struct TPipe;</code></pre>
-<h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
+<pre class="highlight"><code class="language-cpp">template &lt;typename FpTileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent SET_QUANT_VECTOR(FpTileData &amp;fpTile, WaitEvents &amp;...events);</code></pre>
+<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>TileData 生产者</strong>：<ul>
-<li><code>TileProd::Loc</code> 必须是 <code>TileType::Acc</code>、<code>TileType::Vec</code> 或 <code>TileType::Ctrl</code>。</li>
-<li><code>Direction::DIR_C2V</code>：Cube 生产 accumulator tile，供 vector 消费。</li>
-<li><code>Direction::DIR_V2C</code>：Vector 生产 vector tile，供 cube 消费。</li>
-<li><code>Direction::DIR_BOTH</code>：同一个 pipe 类型同时支持 C2V 和 V2C 生产者。</li>
+<li><code>FpTileData::Loc</code> must be <code>TileType::Scaling</code>. Only Scaling-type tiles are supported as input.</li>
+<li>This instruction must be called before the <code>TPUSH</code> instruction that consumes this configuration.</li>
+<li>The tile address encoding into the hardware FPC register is implementation-defined.</li>
 </ul>
-</li>
-<li><strong>FIFO 槽位</strong>：<ul>
-<li><code>SlotSize</code> 必须足够容纳一个逻辑 FIFO 条目。</li>
-<li><code>SlotNum &gt;= 1</code>。</li>
-</ul>
-</li>
-<li><strong>A2A3切分行为</strong>：<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>：不做切分。在A2A3上要使能此切分模式，需要AIV0,AIV1陪跑同步操作。</li>
-<li><code>TileSplitAxis::TILE_UP_DOWN</code>：向量子块映射到上下两个行半区。 </li>
-<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>：向量子块映射到左右两个列半区。</li>
-</ul>
-</li>
-<li><strong>A5切分行为</strong>：<ul>
-<li><code>TileSplitAxis::TILE_NO_SPLIT</code>：不做切分。</li>
-<li><code>TileSplitAxis::TILE_UP_DOWN</code>：将数据按照上下切分。当Cube-&gt;Vector方向且L0C-&gt;UB通路时，该切分模式仅支持数据类型为b32，且srcTile的validRows必须2的整数倍；当Vector-&gt;Cube方向且UB-&gt;L1通路时，该切分模式下validCols必须是32bytes的整数倍。</li>
-<li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>：将数据按照左右切分成两个列半区。当Cube-&gt;Vector方向且L0C-&gt;UB通路时，该切分模式仅支持数据类型为b32，且srcTile的validCols必须为32的整数倍。当Vector-&gt;Cube方向且UB-&gt;L1通路时，该切分模式下validCols必须是32bytes的整数倍。</li>
-</ul>
-</li>
-<li><strong>简化版 TileData 接口</strong>：<ul>
-<li><code>TPUSH(TileData&amp;, Pipe&amp;)</code> 内部使用 <code>TileSplitAxis::TILE_NO_SPLIT</code> 语义。</li>
-<li><code>TileData::Loc</code> 必须为 <code>TileType::Acc</code> 或 <code>TileType::Vec</code>。</li>
-</ul>
-</li>
-<li><strong>TConfig 接口</strong>：<ul>
-<li><code>TConfig</code> 是决定推送行为的配置类型（实现定义）。</li>
-<li><code>TileProd::Loc</code> 必须为 <code>TileType::Acc</code>、<code>TileType::Vec</code> 或 <code>TileType::Ctrl</code>。</li>
-</ul>
-</li>
-<li><strong>同步</strong>：<ul>
-<li>空闲空间等待是稀疏的，并由 <code>Pipe::SyncPeriod</code> 控制。</li>
-<li>每次 <code>TPUSH</code> 都会发出数据就绪记录。</li>
-</ul>
-</li>
-<li><strong>GlobalData 类型生产者</strong>：<ul>
-<li><code>gmTensor</code> 必须是由 <code>TALLOC</code> 返回的 FIFO 槽位视图。</li>
-<li>调用 <code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 之前，数据必须已经写入 <code>gmTensor</code>。</li>
-<li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 忽略 tensor 内容，只将 FIFO 槽位提交给消费者。</li>
-</ul>
-</li>
-<li><strong>Tile 类型支持</strong>：<ul>
-<li><strong>TPUSH/TPOP 支持的 Tile 类型</strong>：<ul>
-<li><code>TileType::Acc</code>（累加器 Tile）：Cube 核心使用，用于 C2V 方向通信。</li>
-<li><code>TileType::Vec</code>（向量 Tile）：Vector 核心使用，用于 V2C 方向通信。</li>
-<li><code>TileType::Ctrl</code>（控制 Tile）：Vector 核心使用，用于 V2C_CTRL 方向的控制信号通信。</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<h2 id="tconfig">定义 TConfig<a class="headerlink" href="#tconfig" title="Permanent link">&para;</a></h2>
-<p><code>TPUSH(Pipe&amp;, TileProd&amp;, TConfig)</code> 重载中的 <code>TConfig</code> 模板参数是一个配置结构体，用于控制推送过程中的 fixpipe 行为。PTO 提供了 <code>FixpipeParams</code> 结构体来实现此功能。</p>
-<p>声明于 <code>include/pto/common/fixpipe.hpp</code>：</p>
-<pre class="highlight"><code class="language-cpp">template &lt;LayoutMode_t layoutMode = LayoutMode_t::NZ2ND,
-          QuantMode_t quantMode = QuantMode_t::NoQuant,
-          ReluPreMode reluMode = ReluPreMode::NoRelu,
-          STPhase phase = STPhase::Unspecified,
-          uint8_t subBlockId = 0,
-          AtomicType atomicT = AtomicType::AtomicNone,
-          ClipReluMode_t clipReluMode = ClipReluMode_t::NOCLIP_RELU,
-          bool isChannelSplit = false&gt;
-struct FixpipeParams {
-    static constexpr LayoutMode_t LayoutMode = layoutMode;
-    static constexpr QuantMode_t QuantPre = quantMode;
-    static constexpr ReluPreMode ReluMode = reluMode;
-    static constexpr STPhase Phase = phase;
-    static constexpr uint8_t SubBlockId = subBlockId;
-    static constexpr AtomicType AtomicT = atomicT;
-    static constexpr ClipReluMode_t ClipReluMode = clipReluMode;
-    static constexpr bool IsChannelSplit = isChannelSplit;
-};</code></pre>
-<h3 id="tconfig_1">TConfig 字段说明<a class="headerlink" href="#tconfig_1" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>字段</th>
-<th>类型</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>LayoutMode</code></td>
-<td><code>LayoutMode_t</code></td>
-<td>输出数据布局：<code>NZ2NZ</code>（NZ→NZ）、<code>NZ2ND</code>（NZ→行主序）、<code>NZ2DN</code>（NZ→列主序）。默认值：<code>NZ2ND</code>。</td>
-</tr>
-<tr>
-<td><code>QuantPre</code></td>
-<td><code>QuantMode_t</code></td>
-<td>量化/反量化模式（由 CANN 定义）。控制 fixpipe 推送过程中的数据类型转换。默认值：<code>NoQuant</code>。</td>
-</tr>
-<tr>
-<td><code>ReluMode</code></td>
-<td><code>ReluPreMode</code></td>
-<td>ReLU 激活模式：<code>NoRelu</code> 或 <code>NormalRelu</code>。默认值：<code>NoRelu</code>。</td>
-</tr>
-<tr>
-<td><code>Phase</code></td>
-<td><code>STPhase</code></td>
-<td>存储阶段（用于 unit-flag 路径）：<code>Unspecified</code>、<code>Partial</code> 或 <code>Final</code>。默认值：<code>Unspecified</code>。</td>
-</tr>
-<tr>
-<td><code>SubBlockId</code></td>
-<td><code>uint8_t</code></td>
-<td>子块标识符，用于累加器到向量搬运模式映射（仅 A5）。默认值：<code>0</code>。</td>
-</tr>
-<tr>
-<td><code>AtomicT</code></td>
-<td><code>AtomicType</code></td>
-<td>GM 写入的原子操作类型：<code>AtomicNone</code> 或 <code>AtomicAdd</code>。默认值：<code>AtomicNone</code>。</td>
-</tr>
-<tr>
-<td><code>ClipReluMode</code></td>
-<td><code>ClipReluMode_t</code></td>
-<td>Clip ReLU 模式：<code>NOCLIP_RELU</code> 或 <code>CLIP_RELU</code>。默认值：<code>NOCLIP_RELU</code>。</td>
-</tr>
-<tr>
-<td><code>IsChannelSplit</code></td>
-<td><code>bool</code></td>
-<td>是否启用通道切分。默认值：<code>false</code>。</td>
-</tr>
-</tbody>
-</table>
-<h3 id="tconfig_2">TConfig 使用示例<a class="headerlink" href="#tconfig_2" title="Permanent link">&para;</a></h3>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
 template &lt;typename T&gt;
-AICORE void example_tconfig_push(__gm__ void *fifoMem)
+AICORE void example_set_quant_vector()
 {
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
+    using ScalingTile = Tile&lt;TileType::Scaling, T, 1, 128, BLayout::RowMajor, 1, 128&gt;;
+    ScalingTile fpTile;
+    TASSIGN(fpTile, 0x0);
 
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(T), FifoDepth&gt;;
-    using AccTile = TileAcc&lt;float, M, N, M, N&gt;;
-
-    // 定义 TConfig：NZ→行主序布局，反量化到 half，启用 ReLU
-    using MyConfig = FixpipeParams&lt;LayoutMode_t::NZ2ND, QuantMode_t::DEQF16, ReluPreMode::NormalRelu&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    AccTile acc;
-    TASSIGN(acc, 0x0);
-
-    TPUSH&lt;Pipe, AccTile, MyConfig&gt;(pipe, acc);
+    SET_QUANT_VECTOR(fpTile);
 }</code></pre>
-<h2 id="_4">示例<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<h3 id="c2v-accumulator-push">C2V Accumulator Push<a class="headerlink" href="#c2v-accumulator-push" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T&gt;
-AICORE void example_c2v(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
-
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(float), FifoDepth&gt;;
-    using AccTile = TileAcc&lt;float, M, N, M, N&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    AccTile acc;
-    TASSIGN(acc, 0x0);
-
-    // Fill acc with a cube computation before pushing.
-    TPUSH&lt;Pipe, AccTile, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, acc);
-}</code></pre>
-<h3 id="v2c-vector-push">V2C Vector Push<a class="headerlink" href="#v2c-vector-push" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T&gt;
-AICORE void example_v2c(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
-
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_V2C, M * N * sizeof(T), FifoDepth&gt;;
-    using VecTile = Tile&lt;TileType::Vec, T, M, N, BLayout::RowMajor, M, N&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    VecTile tile;
-    TASSIGN(tile, 0x0);
-
-    TPUSH&lt;Pipe, VecTile, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, tile);
-}</code></pre>
-<h3 id="globaldata">GlobalData 推送示例<a class="headerlink" href="#globaldata" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-template &lt;typename T&gt;
-AICORE void example_globaldata(__gm__ void *fifoMem)
-{
-    constexpr uint32_t M = 128;
-    constexpr uint32_t N = 128;
-    constexpr uint32_t FlagID = 0;
-    constexpr uint32_t FifoDepth = 2;
-
-    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(T), FifoDepth&gt;;
-    using SlotGlobal = GlobalTensor&lt;T, Shape&lt;1, 1, 1, M, N&gt;, Stride&lt;1, 1, 1, N, 1&gt;&gt;;
-    using VecTile = Tile&lt;TileType::Vec, T, M, N, BLayout::RowMajor, M, N&gt;;
-
-    Pipe pipe(fifoMem, 0x0, 0x0);
-    SlotGlobal slot;
-    VecTile tile;
-    TASSIGN(tile, 0x0);
-
-    TALLOC&lt;Pipe, SlotGlobal, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, slot);
-    TSTORE(slot, tile);
-    TPUSH&lt;Pipe, SlotGlobal, TileSplitAxis::TILE_NO_SPLIT&gt;(pipe, slot);
-}</code></pre>
-<h2 id="asm">ASM 形式示例<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<p>当前公开的汇编参考尚未为 <code>TPUSH</code> 定义稳定的 PTO-AS 写法。手写 CV FIFO 程序时请使用 C++ intrinsic 形式。</p>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
+<p>The current public assembly reference does not define a stable PTO-AS spelling for <code>SET_QUANT_VECTOR</code>. Use the C++ intrinsic form for quantization configuration.</p>
               
             </div>
           </div><footer>

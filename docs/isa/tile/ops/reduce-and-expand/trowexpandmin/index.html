@@ -324,6 +324,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mode-1-scalar-per-row-colmajor-expanded-operand">Mode 1 — Scalar per row (ColMajor expanded operand)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mode-2-32-byte-block-per-row-rowmajor-expanded-operand">Mode 2 — 32-byte block per row (RowMajor expanded operand)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
         <ul>
@@ -987,11 +993,20 @@
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <p>Row-wise broadcast min with a per-row scalar vector.</p>
 <h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Row-wise broadcast min: take <code>min(src0, src1)</code> where <code>src1</code> provides one scalar per row.</p>
-<p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. Let <code>s_i</code> be the per-row scalar taken from <code>src1</code> (one value per row).</p>
+<p>Row-wise broadcast min: take the minimum of each <code>src0</code> row element and a per-row broadcast operand.</p>
+<h3 id="mode-1-scalar-per-row-colmajor-expanded-operand">Mode 1 — Scalar per row (ColMajor expanded operand)<a class="headerlink" href="#mode-1-scalar-per-row-colmajor-expanded-operand" title="Permanent link">&para;</a></h3>
+<p><img alt="TROWEXPANDMIN Mode 1 tile operation" src="../../../../../figures/isa/TROWEXPANDMIN.svg" /></p>
+<p>Let <code>R = dst.GetValidRow()</code> and <code>C = dst.GetValidCol()</code>. Let <code>s_i</code> be the per-row scalar taken from the expanded operand.</p>
 <p>For <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
 <div class="arithmatex">\[
 \mathrm{dst}_{i,j} = \min(\mathrm{src0}_{i,j}, s_i)
+\]</div>
+<h3 id="mode-2-32-byte-block-per-row-rowmajor-expanded-operand">Mode 2 — 32-byte block per row (RowMajor expanded operand)<a class="headerlink" href="#mode-2-32-byte-block-per-row-rowmajor-expanded-operand" title="Permanent link">&para;</a></h3>
+<p><img alt="TROWEXPANDMIN Mode 2 tile operation" src="../../../../../figures/isa/TROWEXPANDMIN_mode2.svg" /></p>
+<p>Let <code>b_i</code> be the 32-byte block for row <code>i</code> taken from the expanded operand. The block contains <code>32 / sizeof(T)</code> values and repeats across the row.</p>
+<p>For <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
+<div class="arithmatex">\[
+\mathrm{dst}_{i,j} = \min(\mathrm{src0}_{i,j}, b_i[\,j \bmod (32 / \mathit{sizeof}(T))\,])
 \]</div>
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
@@ -1025,22 +1040,28 @@ PTO_INST RecordEvent TROWEXPANDMIN(TileDataDst &amp;dst, TileDataSrc0 &amp;src0,
 <p class="admonition-title">Constraints</p>
 <ul>
 <li>
-<p><code>TileDataDst::DType == TileDataSrc0::DType == TileDataSrc1::DType</code></p>
+<p><code>TileDataDst::DType == TileDataSrc0::DType == TileDataSrc1::DType</code>.</p>
 </li>
 <li>
-<p><code>TileDataDst::DType</code>, <code>TileDataSrc0::DType</code>, <code>TileDataSrc1::DType</code> must be one of: <code>half</code>, <code>float</code>.</p>
+<p><code>TileDataDst::DType</code>, <code>TileDataSrc0::DType</code>, and <code>TileDataSrc1::DType</code> must be one of: <code>half</code>, <code>float</code>, <code>int16</code>, <code>int32</code>, <code>uint16</code>, or <code>uint32</code>.</p>
 </li>
 <li>
-<p>Tile shape/layout constraint (compile-time): <code>TileDataDst::isRowMajor</code>.</p>
+<p><code>TileDataDst</code> must be RowMajor.</p>
 </li>
 <li>
-<p>Mode 1: <code>src1</code> is expected to provide <strong>one scalar per row</strong> (i.e., its valid shape must cover <code>R</code> values).</p>
+<p>Exactly one of <code>src0</code> or <code>src1</code> must have the same valid shape as <code>dst</code>. That operand is the full-sized operand; the other operand is the expanded row-broadcast operand.</p>
 </li>
 <li>
-<p>Mode 2: <code>src1</code> is expected to provide <strong>32 bytes data per row</strong>.</p>
+<p>The full-sized operand must be RowMajor.</p>
 </li>
 <li>
-<p>Exact layout/fractal constraints are target-specific; see backend headers under <code>include/pto/npu/*/TRowExpand*.hpp</code>.</p>
+<p>Mode 1: the expanded operand is ColMajor, has valid column count 1, and has valid row count equal to <code>dst.GetValidRow()</code>.</p>
+</li>
+<li>
+<p>Mode 2: the expanded operand is RowMajor, has valid row count equal to <code>dst.GetValidRow()</code>, and has valid column count <code>32 / sizeof(T)</code>: 16 for 16-bit types and 8 for 32-bit types.</p>
+</li>
+<li>
+<p>Exact layout, fractal, and alignment constraints are target-specific; see backend headers under <code>include/pto/npu/*/TRowExpand*.hpp</code>.</p>
 </li>
 </ul>
 </div>

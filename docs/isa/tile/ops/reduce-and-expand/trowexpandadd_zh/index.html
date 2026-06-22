@@ -941,9 +941,21 @@
 <h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>把“每行一个标量”的向量广播到整行，再与 <code>src0</code> 做逐元素加法。</p>
 <h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>设 <code>R = dst.GetValidRow()</code>、<code>C = dst.GetValidCol()</code>。记 <code>s_i</code> 为第 <code>i</code> 行对应的广播标量。则：</p>
-<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src0}_{i,j} + s_i \]</div>
-<p>这里的 <code>src1</code> 在语义上表示“每行一个标量”。它的物理布局在不同 backend 上可以有不止一种，但可见结果始终等价于“先行广播，再逐元素加”。</p>
+<p>逐行广播加法：将逐行广播操作数加到 <code>src0</code> 的每一行元素上。</p>
+<h3 id="mode-1-colmajor">Mode 1 — 每行一个标量（ColMajor 扩展操作数）<a class="headerlink" href="#mode-1-colmajor" title="Permanent link">&para;</a></h3>
+<p><img alt="TROWEXPANDADD Mode 1 tile operation" src="../../../../../figures/isa/TROWEXPANDADD.svg" /></p>
+<p>令 <code>R = dst.GetValidRow()</code>，<code>C = dst.GetValidCol()</code>。令 <code>s_i</code> 为扩展操作数中第 <code>i</code> 行对应的标量。</p>
+<p>对 <code>0 &lt;= i &lt; R</code> 且 <code>0 &lt;= j &lt; C</code>：</p>
+<div class="arithmatex">\[
+\mathrm{dst}_{i,j} = \mathrm{src0}_{i,j} + s_i
+\]</div>
+<h3 id="mode-2-32-rowmajor">Mode 2 — 每行 32 字节块（RowMajor 扩展操作数）<a class="headerlink" href="#mode-2-32-rowmajor" title="Permanent link">&para;</a></h3>
+<p><img alt="TROWEXPANDADD Mode 2 tile operation" src="../../../../../figures/isa/TROWEXPANDADD_mode2.svg" /></p>
+<p>令 <code>b_i</code> 为扩展操作数中第 <code>i</code> 行对应的 32 字节数据块。该数据块包含 <code>32 / sizeof(T)</code> 个元素，并在行内重复使用。</p>
+<p>对 <code>0 &lt;= i &lt; R</code> 且 <code>0 &lt;= j &lt; C</code>：</p>
+<div class="arithmatex">\[
+\mathrm{dst}_{i,j} = \mathrm{src0}_{i,j} + b_i[\,j \bmod (32 / \mathit{sizeof}(T))\,]
+\]</div>
 <h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
 <pre class="highlight"><code class="language-text">%dst = trowexpandadd %src0, %src1 : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
@@ -976,27 +988,42 @@ PTO_INST RecordEvent TROWEXPANDADD(TileDataDst &amp;dst, TileDataSrc0 &amp;src0,
 <div class="admonition warning">
 <p class="admonition-title">约束</p>
 <ul>
-<li><code>dst/src0/src1</code> 的元素类型必须一致，当前实现只支持 <code>half</code> 或 <code>float</code></li>
-<li><code>dst</code> 必须是 row-major</li>
-<li><code>src1</code> 需要表达“每行一个标量”这一角色</li>
+<li>
+<p><code>TileDataDst::DType == TileDataSrc0::DType == TileDataSrc1::DType</code>。</p>
+</li>
+<li>
+<p><code>TileDataDst::DType</code>、<code>TileDataSrc0::DType</code> 和 <code>TileDataSrc1::DType</code> 必须是以下类型之一：<code>half</code>、<code>float</code>、<code>int16</code>、<code>int32</code>、<code>uint16</code> 或 <code>uint32</code>。</p>
+</li>
+<li>
+<p><code>TileDataDst</code> 必须是 RowMajor。</p>
+</li>
+<li>
+<p><code>src0</code> 和 <code>src1</code> 中必须恰好有一个操作数的有效形状与 <code>dst</code> 相同。该操作数是完整尺寸操作数；另一个操作数是逐行广播的扩展操作数。</p>
+</li>
+<li>
+<p>完整尺寸操作数必须是 RowMajor。</p>
+</li>
+<li>
+<p>Mode 1：扩展操作数为 ColMajor，有效列数为 1，有效行数等于 <code>dst.GetValidRow()</code>。</p>
+</li>
+<li>
+<p>Mode 2：扩展操作数为 RowMajor，有效行数等于 <code>dst.GetValidRow()</code>，有效列数为 <code>32 / sizeof(T)</code>：16 位类型为 16，32 位类型为 8。</p>
+</li>
+<li>
+<p>精确的布局、fractal 和对齐约束与目标后端有关；请参见 <code>include/pto/npu/*/TRowExpand*.hpp</code> 下的后端头文件。</p>
+</li>
 </ul>
-<h3 id="_8">广播侧常见形态<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<ul>
-<li>单列广播向量</li>
-<li>或者每行一段固定 32B 数据的打包形式</li>
-</ul>
-<p>具体支持哪种物理布局，取决于目标 backend。</p>
 </div>
-<h2 id="_9">异常与非法情形<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <div class="admonition danger">
 <p class="admonition-title">异常与非法情形</p>
 <ul>
 <li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
 </ul>
 </div>
-<h2 id="_10">性能<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>当前仓内没有把 <code>trowexpandadd</code> 单列成公开 cost table，应视为目标 profile 相关的广播组合路径。</p>
-<h2 id="_11">示例<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 using namespace pto;
 
@@ -1009,7 +1036,7 @@ void example() {
   RowVecT src1;
   TROWEXPANDADD(dst, src0, src1);
 }</code></pre>
-<h2 id="_12">相关页面<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <ul>
 <li>指令集总览：<a href="../../../reduce-and-expand_zh/">归约与扩展</a></li>
 <li>上一条指令：<a href="../trowexpandsub_zh/">pto.trowexpandsub</a></li>

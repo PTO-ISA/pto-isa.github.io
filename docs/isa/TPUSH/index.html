@@ -939,7 +939,7 @@
 <h1 id="tpush">TPUSH<a class="headerlink" href="#tpush" title="Permanent link">&para;</a></h1>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>Push a producer tile into a <code>TPipe</code> FIFO for Cube-Vector communication.</p>
-<p>This page describes both the TileData overload and the <code>GlobalTensor</code> overload for pushing data into a <code>TPipe</code> FIFO.</p>
+<p>This page describes all <code>TPUSH</code> overloads for pushing data into a <code>TPipe</code> FIFO: the TileData overload with explicit <code>TileSplitAxis</code>, the simplified TileData overload (reversed parameters, no Split), the GlobalTensor overload, and the TConfig-based overload.</p>
 <h2 id="operation-semantics">Operation Semantics<a class="headerlink" href="#operation-semantics" title="Permanent link">&para;</a></h2>
 <p>For the TileData overload, <code>TPUSH</code> performs three steps:</p>
 <ol>
@@ -951,6 +951,7 @@
 </ol>
 <p>The producer tile index is incremented after the FIFO slot address is computed.</p>
 <p>For the <code>GlobalData</code> overload, <code>TPUSH</code> only records data-ready synchronization for a slot that was already allocated by <code>TALLOC</code>. It does not store tile data by itself.</p>
+<p>For the <code>TConfig</code> overload <code>TPUSH(Pipe&amp;, TileProd&amp;, TConfig)</code>, the <code>TConfig</code> template parameters is used to configure fixpipe parameters from L0C-&gt;GM/UB.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename Pipe, typename TileProd, TileSplitAxis Split,
@@ -959,7 +960,10 @@ PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, TileProd &amp;tile, WaitEvents &amp;.
 
 template &lt;typename Pipe, typename GlobalData, TileSplitAxis Split,
           std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0, typename... WaitEvents&gt;
-PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, GlobalData &amp;gmTensor, WaitEvents &amp;... events);</code></pre>
+PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, GlobalData &amp;gmTensor, WaitEvents &amp;... events);
+
+template &lt;typename Pipe, typename TileProd, typename TConfig, typename... WaitEvents&gt;
+PTO_INST RecordEvent TPUSH(Pipe &amp;pipe, TileProd &amp;tile, WaitEvents &amp;... events);</code></pre>
 <p><code>Pipe</code> is typically an <code>TPipe</code> declared in <code>TPush.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;uint8_t FlagID, uint8_t DirType, uint32_t SlotSize, uint32_t SlotNum,
           uint32_t LocalSlotNum = 2, bool IsNoSplit = false, bool EN_UNIT_FLAG = false&gt;
@@ -990,6 +994,16 @@ struct TPipe;</code></pre>
 <li><code>TileSplitAxis::TILE_LEFT_RIGHT</code>: Data is split into two column halves. For C2V direction (L0C→UB path), this mode only supports b32 data type, and <code>validCols</code> must be a multiple of 32; for V2C direction (UB→L1 path), <code>validCols</code> must be a multiple of 32 bytes.</li>
 </ul>
 </li>
+<li><strong>Simplified TileData overload</strong>:<ul>
+<li><code>TPUSH(TileData&amp;, Pipe&amp;)</code> uses <code>TileSplitAxis::TILE_NO_SPLIT</code> semantics internally.</li>
+<li><code>TileData::Loc</code> must be <code>TileType::Acc</code> or <code>TileType::Vec</code>.</li>
+</ul>
+</li>
+<li><strong>TConfig overload</strong>:<ul>
+<li><code>TConfig</code> is a configuration type that determines push behavior (implementation-defined).</li>
+<li><code>TileProd::Loc</code> must be <code>TileType::Acc</code>, <code>TileType::Vec</code>, or <code>TileType::Ctrl</code>.</li>
+</ul>
+</li>
 <li><strong>Synchronization</strong>:<ul>
 <li>Free-space waits are sparse and controlled by <code>Pipe::SyncPeriod</code>.</li>
 <li>Data-ready record is emitted for each <code>TPUSH</code>.</li>
@@ -1011,6 +1025,104 @@ struct TPipe;</code></pre>
 </ul>
 </li>
 </ul>
+<h2 id="defining-tconfig">Defining TConfig<a class="headerlink" href="#defining-tconfig" title="Permanent link">&para;</a></h2>
+<p>The <code>TConfig</code> template parameter for the <code>TPUSH(Pipe&amp;, TileProd&amp;, TConfig)</code> overload is a configuration struct that controls fixpipe behavior during push. PTO provides the <code>FixpipeParams</code> struct for this purpose.</p>
+<p>Declared in <code>include/pto/common/fixpipe.hpp</code>:</p>
+<pre class="highlight"><code class="language-cpp">template &lt;LayoutMode_t layoutMode = LayoutMode_t::NZ2ND,
+          QuantMode_t quantMode = QuantMode_t::NoQuant,
+          ReluPreMode reluMode = ReluPreMode::NoRelu,
+          STPhase phase = STPhase::Unspecified,
+          uint8_t subBlockId = 0,
+          AtomicType atomicT = AtomicType::AtomicNone,
+          ClipReluMode_t clipReluMode = ClipReluMode_t::NOCLIP_RELU,
+          bool isChannelSplit = false&gt;
+struct FixpipeParams {
+    static constexpr LayoutMode_t LayoutMode = layoutMode;
+    static constexpr QuantMode_t QuantPre = quantMode;
+    static constexpr ReluPreMode ReluMode = reluMode;
+    static constexpr STPhase Phase = phase;
+    static constexpr uint8_t SubBlockId = subBlockId;
+    static constexpr AtomicType AtomicT = atomicT;
+    static constexpr ClipReluMode_t ClipReluMode = clipReluMode;
+    static constexpr bool IsChannelSplit = isChannelSplit;
+};</code></pre>
+<h3 id="tconfig-fields">TConfig Fields<a class="headerlink" href="#tconfig-fields" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LayoutMode</code></td>
+<td><code>LayoutMode_t</code></td>
+<td>Output data layout: <code>NZ2NZ</code> (NZ→NZ), <code>NZ2ND</code> (NZ→row-major), <code>NZ2DN</code> (NZ→column-major). Default: <code>NZ2ND</code>.</td>
+</tr>
+<tr>
+<td><code>QuantPre</code></td>
+<td><code>QuantMode_t</code></td>
+<td>Quantization/dequantization mode (defined in CANN). Controls the data type conversion during fixpipe push. Default: <code>NoQuant</code>.</td>
+</tr>
+<tr>
+<td><code>ReluMode</code></td>
+<td><code>ReluPreMode</code></td>
+<td>ReLU activation mode: <code>NoRelu</code> or <code>NormalRelu</code>. Default: <code>NoRelu</code>.</td>
+</tr>
+<tr>
+<td><code>Phase</code></td>
+<td><code>STPhase</code></td>
+<td>Store phase for unit-flag aware paths: <code>Unspecified</code>, <code>Partial</code>, or <code>Final</code>. Default: <code>Unspecified</code>.</td>
+</tr>
+<tr>
+<td><code>SubBlockId</code></td>
+<td><code>uint8_t</code></td>
+<td>Sub-block identifier for accumulator-to-vector move mode mapping (A5 only). Default: <code>0</code>.</td>
+</tr>
+<tr>
+<td><code>AtomicT</code></td>
+<td><code>AtomicType</code></td>
+<td>Atomic operation type for GM store: <code>AtomicNone</code> or <code>AtomicAdd</code>. Default: <code>AtomicNone</code>.</td>
+</tr>
+<tr>
+<td><code>ClipReluMode</code></td>
+<td><code>ClipReluMode_t</code></td>
+<td>Clip ReLU mode: <code>NOCLIP_RELU</code> or <code>CLIP_RELU</code>. Default: <code>NOCLIP_RELU</code>.</td>
+</tr>
+<tr>
+<td><code>IsChannelSplit</code></td>
+<td><code>bool</code></td>
+<td>Whether channel split is enabled. Default: <code>false</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tconfig-usage-example">TConfig Usage Example<a class="headerlink" href="#tconfig-usage-example" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+template &lt;typename T&gt;
+AICORE void example_tconfig_push(__gm__ void *fifoMem)
+{
+    constexpr uint32_t M = 128;
+    constexpr uint32_t N = 128;
+    constexpr uint32_t FlagID = 0;
+    constexpr uint32_t FifoDepth = 2;
+
+    using Pipe = TPipe&lt;FlagID, Direction::DIR_C2V, M * N * sizeof(T), FifoDepth&gt;;
+    using AccTile = TileAcc&lt;float, M, N, M, N&gt;;
+
+    // Define TConfig: NZ→row-major layout, dequantize to half, with ReLU
+    using MyConfig = FixpipeParams&lt;LayoutMode_t::NZ2ND, QuantMode_t::DEQF16, ReluPreMode::NormalRelu&gt;;
+
+    Pipe pipe(fifoMem, 0x0, 0x0);
+    AccTile acc;
+    TASSIGN(acc, 0x0);
+
+    TPUSH&lt;Pipe, AccTile, MyConfig&gt;(pipe, acc);
+}</code></pre>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="c2v-accumulator-push">C2V Accumulator Push<a class="headerlink" href="#c2v-accumulator-push" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
