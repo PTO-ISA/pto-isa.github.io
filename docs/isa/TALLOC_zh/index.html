@@ -941,6 +941,13 @@
 <p>从 <code>TPipe</code> 中分配一个生产者 FIFO 槽位，并将其暴露为 <code>GlobalTensor</code> 视图。</p>
 <p><code>TALLOC</code> 用于 <code>GlobalData</code> 分裂接口。它允许生产者获取当前 FIFO 槽位地址，使用 <code>TSTORE</code> 等普通内存指令向该槽位写入数据，然后通过 <code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 提交该槽位。</p>
 <h2 id="_2">操作语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>对于 GlobalData 流程:</p>
+<ol>
+<li><code>TALLOC(Pipe&amp;, GlobalData&amp;)</code> 从 <code>TPipe</code> 中分配一个生产者 FIFO 槽位，并将其暴露为 <code>GlobalTensor</code> 视图。生产者可通过 <code>TSTORE</code> 等指令向该槽位写入数据。</li>
+<li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 为已经由 <code>TALLOC</code> 分配的槽位记录数据就绪同步，将 FIFO 槽位提交给消费者。它本身不会存储 tile 数据。</li>
+<li><code>TPOP(Pipe&amp;, GlobalData&amp;)</code> 等待数据就绪，将 <code>gmTensor</code> 赋值为当前 FIFO 槽位地址，并递增消费者 tile 索引。它不会将数据加载到本地 tile，也不会释放槽位。消费者可通过 <code>TLOAD</code> 等指令从槽位中读取数据。</li>
+<li><code>TFREE(Pipe&amp;, GlobalData&amp;)</code> 释放由 <code>TPOP(Pipe&amp;, GlobalData&amp;)</code> 返回的 FIFO 槽位视图，通知生产者该槽位空间已空闲。</li>
+</ol>
 <p><code>TALLOC</code> 执行三个步骤：</p>
 <ol>
 <li>当 <code>pipe.prod.getAllocateStatus()</code> 和 <code>Pipe::shouldWaitFree(pipe.prod.tileIndex)</code> 同时为 true 时，等待 FIFO 空闲空间。</li>

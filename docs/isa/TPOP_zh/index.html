@@ -941,16 +941,19 @@
 <p>从 <code>TPipe</code> FIFO 中弹出消费者 tile，用于 Cube-Vector 通信。</p>
 <p>本指令支持两类数据的弹出，分别为Tile类型的数据和GlobalTensor类型的数据。所以分别设计了基于<code>Tile</code> 重载和 <code>GlobalTensor</code> 重载。</p>
 <h2 id="_2">操作语义<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>对于 TileData 重载，<code>TPOP</code> 执行三个步骤：</p>
+<p>对于 TileData 流程：</p>
 <ol>
-<li>等待生产者的数据就绪同步。</li>
-<li>将当前 FIFO 槽位加载到消费者 tile 中。</li>
-<li>如果是Cube-&gt;Vector的数据弹出，AIV会将TPipe的FIFO中取出vecTile</li>
-<li>如果是Vector-&gt;Cube的数据弹出，AIC会将TPipe的FIFO中取出matTile</li>
-<li>当 <code>Pipe::shouldNotifyFree(tileIndex)</code> 为 true 时，通知空闲空间。</li>
+<li><code>TPUSH(Pipe&amp;, TileData&amp;, Split)</code> 将生产者 tile 存入当前 FIFO 槽位，并为消费者记录数据就绪同步。生产者 tile 索引在槽位地址计算完成后递增。</li>
+<li><code>TPOP(Pipe&amp;, TileData&amp;, Split)</code> 等待生产者的数据就绪同步，将当前 FIFO 槽位加载到消费者 tile 中。消费者 tile 索引在槽位地址计算完成后递增。</li>
+<li><code>TFREE(Pipe&amp;, Split)</code> 释放 FIFO 中的槽位空间。A2A3 平台上此接口为空操作（<code>TPOP</code> 已在内部执行空闲空间通知），A5 平台上会释放 <code>TPOP</code> 使用的 FIFO 槽位空间。</li>
 </ol>
-<p>消费者 tile 索引会在 FIFO 槽位地址计算完成后递增。空闲空间通知使用已经弹出的 tile 索引。</p>
-<p>对于 <code>GlobalData</code> 重载，<code>TPOP</code> 会等待数据就绪，将 <code>gmTensor</code> 赋值为当前 FIFO 槽位地址，并递增消费者 tile 索引。它不会把数据加载到本地 tile，也不会释放槽位。</p>
+<p>对于 GlobalData 流程:</p>
+<ol>
+<li><code>TALLOC(Pipe&amp;, GlobalData&amp;)</code> 从 <code>TPipe</code> 中分配一个生产者 FIFO 槽位，并将其暴露为 <code>GlobalTensor</code> 视图。生产者可通过 <code>TSTORE</code> 等指令向该槽位写入数据。</li>
+<li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 为已经由 <code>TALLOC</code> 分配的槽位记录数据就绪同步，将 FIFO 槽位提交给消费者。它本身不会存储 tile 数据。</li>
+<li><code>TPOP(Pipe&amp;, GlobalData&amp;)</code> 等待数据就绪，将 <code>gmTensor</code> 赋值为当前 FIFO 槽位地址，并递增消费者 tile 索引。它不会将数据加载到本地 tile，也不会释放槽位。消费者可通过 <code>TLOAD</code> 等指令从槽位中读取数据。</li>
+<li><code>TFREE(Pipe&amp;, GlobalData&amp;)</code> 释放由 <code>TPOP(Pipe&amp;, GlobalData&amp;)</code> 返回的 FIFO 槽位视图，通知生产者该槽位空间已空闲。</li>
+</ol>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>声明位置：<code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename Pipe, typename TileCons, TileSplitAxis Split,

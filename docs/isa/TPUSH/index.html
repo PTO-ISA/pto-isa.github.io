@@ -941,17 +941,20 @@
 <p>Push a producer tile into a <code>TPipe</code> FIFO for Cube-Vector communication.</p>
 <p>This page describes all <code>TPUSH</code> overloads for pushing data into a <code>TPipe</code> FIFO: the TileData overload with explicit <code>TileSplitAxis</code>, the simplified TileData overload (reversed parameters, no Split), the GlobalTensor overload, and the TConfig-based overload.</p>
 <h2 id="operation-semantics">Operation Semantics<a class="headerlink" href="#operation-semantics" title="Permanent link">&para;</a></h2>
-<p>For the TileData overload, <code>TPUSH</code> performs three steps:</p>
+<p>For the TileData flow:</p>
 <ol>
-<li>Wait for FIFO space when <code>Pipe::shouldWaitFree(pipe.prod.tileIndex)</code> is true.</li>
-<li>Store the producer tile into the current FIFO slot. In this step:</li>
-<li>For Cube-to-Vector data push, the <code>AccTile</code> is pushed into the <code>TPipe</code> FIFO.</li>
-<li>For Vector-to-Cube data push, the <code>VecTile</code> is pushed into the <code>TPipe</code> FIFO.</li>
-<li>Record data-ready synchronization for the consumer.</li>
+<li><code>TPUSH(Pipe&amp;, TileData&amp;, Split)</code> stores the producer tile into the current FIFO slot and records data-ready synchronization for the consumer. The producer tile index is incremented after the slot address is computed.</li>
+<li><code>TPOP(Pipe&amp;, TileData&amp;, Split)</code> waits for the producer's data-ready synchronization and loads the current FIFO slot into the consumer tile. The consumer tile index is incremented after the slot address is computed.</li>
+<li><code>TFREE(Pipe&amp;, Split)</code> releases FIFO slot space. On the A2A3 platform this interface is a no-op (<code>TPOP</code> already performs free-space notification internally), while on the A5 platform it releases the FIFO slot space used by <code>TPOP</code>.</li>
 </ol>
-<p>The producer tile index is incremented after the FIFO slot address is computed.</p>
-<p>For the <code>GlobalData</code> overload, <code>TPUSH</code> only records data-ready synchronization for a slot that was already allocated by <code>TALLOC</code>. It does not store tile data by itself.</p>
-<p>For the <code>TConfig</code> overload <code>TPUSH(Pipe&amp;, TileProd&amp;, TConfig)</code>, the <code>TConfig</code> template parameters is used to configure fixpipe parameters from L0C-&gt;GM/UB.</p>
+<p>For the GlobalData flow:</p>
+<ol>
+<li><code>TALLOC(Pipe&amp;, GlobalData&amp;)</code> allocates a producer FIFO slot from <code>TPipe</code> and exposes it as a <code>GlobalTensor</code> view. The producer can write data to the slot using instructions such as <code>TSTORE</code>.</li>
+<li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> records data-ready synchronization for a slot already allocated by <code>TALLOC</code>, committing the FIFO slot to the consumer. It does not store tile data by itself.</li>
+<li><code>TPOP(Pipe&amp;, GlobalData&amp;)</code> waits for data-ready, assigns <code>gmTensor</code> to the current FIFO slot address, and increments the consumer tile index. It does not load data into a local tile and does not release the slot. The consumer can read data from the slot using instructions such as <code>TLOAD</code>.</li>
+<li><code>TFREE(Pipe&amp;, GlobalData&amp;)</code> releases the FIFO slot view returned by <code>TPOP(Pipe&amp;, GlobalData&amp;)</code>, notifying the producer that the slot space is free.</li>
+</ol>
+<p>For the <code>TConfig</code> overload <code>TPUSH(Pipe&amp;, TileProd&amp;, TConfig)</code>, the <code>TConfig</code> template parameter is used to configure fixpipe parameters for L0C→GM/UB.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename Pipe, typename TileProd, TileSplitAxis Split,

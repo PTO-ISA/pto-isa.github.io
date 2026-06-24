@@ -982,12 +982,12 @@ $$ \mathrm{dst1}_{i, k} = \mathrm{src}_{i, 2k+1}, \quad 0 \le k &lt; \mathrm{hal
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">// Two-source form
 template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TDeInterleave(TileDataDst &amp;dst1, TileDataDst &amp;dst0, TileDataSrc &amp;src1, TileDataSrc &amp;src0,
+PTO_INST RecordEvent TDEINTERLEAVE(TileDataDst &amp;dst1, TileDataDst &amp;dst0, TileDataSrc &amp;src1, TileDataSrc &amp;src0,
                                    WaitEvents &amp;...events);
 
 // Single-source form
 template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TDeInterleave(TileDataDst &amp;dst1, TileDataDst &amp;dst0, TileDataSrc &amp;src,
+PTO_INST RecordEvent TDEINTERLEAVE(TileDataDst &amp;dst1, TileDataDst &amp;dst0, TileDataSrc &amp;src,
                                    WaitEvents &amp;...events);</code></pre>
 <blockquote>
 <p><strong>Note</strong>: The parameter order is <code>(dst1, dst0, src1, src0)</code> for the two-source form. <code>dst0</code> receives even-position elements of the interleaved stream, <code>dst1</code> receives odd-position elements.</p>
@@ -1020,7 +1020,7 @@ void example_auto_two_src() {
     TileT src0(16, 128), src1(16, 128);
     TileT dst0(16, 128), dst1(16, 128);
 
-    TDeInterleave(dst1, dst0, src1, src0);
+    TDEINTERLEAVE(dst1, dst0, src1, src0);
 }</code></pre>
 <h3 id="auto-single-source-form">Auto — Single-source form<a class="headerlink" href="#auto-single-source-form" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -1032,7 +1032,7 @@ void example_auto_single_src() {
     TileT src(16, 128);
     TileT dst0(16, 128), dst1(16, 128);
 
-    TDeInterleave(dst1, dst0, src);
+    TDEINTERLEAVE(dst1, dst0, src);
 }</code></pre>
 <h3 id="manual-two-source-form">Manual — Two-source form<a class="headerlink" href="#manual-two-source-form" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -1048,7 +1048,7 @@ void example_manual_two_src() {
     TASSIGN(dst0, 0x3000);
     TASSIGN(dst1, 0x4000);
 
-    TDeInterleave(dst1, dst0, src1, src0);
+    TDEINTERLEAVE(dst1, dst0, src1, src0);
 }</code></pre>
 <h3 id="manual-single-source-form">Manual — Single-source form<a class="headerlink" href="#manual-single-source-form" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -1063,7 +1063,7 @@ void example_manual_single_src() {
     TASSIGN(dst0, 0x2000);
     TASSIGN(dst1, 0x3000);
 
-    TDeInterleave(dst1, dst0, src);
+    TDEINTERLEAVE(dst1, dst0, src);
 }</code></pre>
 <h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>

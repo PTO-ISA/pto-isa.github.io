@@ -961,7 +961,7 @@ $$ \mathrm{dst1}_{i, j} = \mathrm{interleaved}_{\mathrm{validCols} + j}, \quad 0
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename... WaitEvents&gt;
-PTO_INST RecordEvent TInterleave(TileDataDst &amp;dst1, TileDataDst &amp;dst0, TileDataSrc &amp;src1, TileDataSrc &amp;src0,
+PTO_INST RecordEvent TINTERLEAVE(TileDataDst &amp;dst1, TileDataDst &amp;dst0, TileDataSrc &amp;src1, TileDataSrc &amp;src0,
                                  WaitEvents &amp;...events);</code></pre>
 <blockquote>
 <p><strong>注意</strong>：参数顺序为 <code>(dst1, dst0, src1, src0)</code>。<code>dst0</code> 接收交织流的前半部分（位置 <code>0 … validCols-1</code>），<code>dst1</code> 接收后半部分（位置 <code>validCols … 2×validCols-1</code>）。</p>
@@ -991,7 +991,7 @@ void example_auto() {
     TileT src0(16, 64), src1(16, 64);
     TileT dst0(16, 64), dst1(16, 64);
 
-    TInterleave(dst1, dst0, src1, src0);
+    TINTERLEAVE(dst1, dst0, src1, src0);
 }</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -1007,7 +1007,7 @@ void example_manual() {
     TASSIGN(dst0, 0x3000);
     TASSIGN(dst1, 0x4000);
 
-    TInterleave(dst1, dst0, src1, src0);
+    TINTERLEAVE(dst1, dst0, src1, src0);
 }</code></pre>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
 <h3 id="_8">自动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>

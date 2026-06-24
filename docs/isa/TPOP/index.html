@@ -941,16 +941,19 @@
 <p>Pop a consumer tile from a <code>TPipe</code> FIFO for Cube-Vector communication.</p>
 <p>This page describes both the TileData overload and the <code>GlobalData</code> overload for popping data from a <code>TPipe</code> FIFO.</p>
 <h2 id="operation-semantics">Operation Semantics<a class="headerlink" href="#operation-semantics" title="Permanent link">&para;</a></h2>
-<p>For the TileData overload, <code>TPOP</code> performs three steps:</p>
+<p>For the TileData flow:</p>
 <ol>
-<li>Wait for producer data-ready synchronization.</li>
-<li>Load the current FIFO slot into the consumer tile.</li>
-<li>For Cube-to-Vector data pop, AIV pops a <code>VecTile</code> from the <code>TPipe</code> FIFO.</li>
-<li>For Vector-to-Cube data pop, AIC pops a <code>MatTile</code> from the <code>TPipe</code> FIFO.</li>
-<li>Notify free space when <code>Pipe::shouldNotifyFree(tileIndex)</code> is true.</li>
+<li><code>TPUSH(Pipe&amp;, TileData&amp;, Split)</code> stores the producer tile into the current FIFO slot and records data-ready synchronization for the consumer. The producer tile index is incremented after the slot address is computed.</li>
+<li><code>TPOP(Pipe&amp;, TileData&amp;, Split)</code> waits for the producer's data-ready synchronization and loads the current FIFO slot into the consumer tile. The consumer tile index is incremented after the slot address is computed.</li>
+<li><code>TFREE(Pipe&amp;, Split)</code> releases FIFO slot space. On the A2A3 platform this interface is a no-op (<code>TPOP</code> already performs free-space notification internally), while on the A5 platform it releases the FIFO slot space used by <code>TPOP</code>.</li>
 </ol>
-<p>The consumer tile index is incremented after the FIFO slot address is computed. The free-space notification uses the popped tile index.</p>
-<p>For the <code>GlobalData</code> overload, <code>TPOP</code> waits for data-ready, assigns <code>gmTensor</code> to the current FIFO slot address, and increments the consumer tile index. It does not load data into a local tile and does not release the slot.</p>
+<p>For the GlobalData flow:</p>
+<ol>
+<li><code>TALLOC(Pipe&amp;, GlobalData&amp;)</code> allocates a producer FIFO slot from <code>TPipe</code> and exposes it as a <code>GlobalTensor</code> view. The producer can write data to the slot using instructions such as <code>TSTORE</code>.</li>
+<li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> records data-ready synchronization for a slot already allocated by <code>TALLOC</code>, committing the FIFO slot to the consumer. It does not store tile data by itself.</li>
+<li><code>TPOP(Pipe&amp;, GlobalData&amp;)</code> waits for data-ready, assigns <code>gmTensor</code> to the current FIFO slot address, and increments the consumer tile index. It does not load data into a local tile and does not release the slot. The consumer can read data from the slot using instructions such as <code>TLOAD</code>.</li>
+<li><code>TFREE(Pipe&amp;, GlobalData&amp;)</code> releases the FIFO slot view returned by <code>TPOP(Pipe&amp;, GlobalData&amp;)</code>, notifying the producer that the slot space is free.</li>
+</ol>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename Pipe, typename TileCons, TileSplitAxis Split,
