@@ -999,8 +999,43 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileDat
 <li>对 <code>TileType::Acc</code>：</li>
 <li>目标布局必须为 ND 或 NZ</li>
 <li>源 dtype 必须为 <code>int32_t</code> 或 <code>float</code></li>
-<li>不量化时，目标 dtype 必须为 <code>__gm__ int32_t/float/half/bfloat16_t</code></li>
-<li>shape 受 <code>Cols &lt;= 4095</code>、<code>Rows</code> 上限等约束</li>
+<li>不量化时，目标 dtype 必须为 <code>int32_t/float/half/bfloat16_t</code></li>
+<li>
+<p>ACC 到 GM 的数据类型支持取决于调用形式：</p>
+<table>
+<thead>
+<tr>
+<th>调用形式</th>
+<th>源数据类型</th>
+<th>支持的目标数据类型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TSTORE(dst, acc)</code></td>
+<td><code>float</code></td>
+<td><code>float</code>、<code>half</code>、<code>bfloat16_t</code></td>
+</tr>
+<tr>
+<td><code>TSTORE(dst, acc)</code></td>
+<td><code>int32_t</code></td>
+<td><code>int32_t</code></td>
+</tr>
+<tr>
+<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
+<td><code>float</code></td>
+<td><code>int8_t</code>、<code>uint8_t</code></td>
+</tr>
+<tr>
+<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
+<td><code>int32_t</code></td>
+<td><code>int8_t</code>、<code>uint8_t</code>、<code>half</code></td>
+</tr>
+</tbody>
+</table>
+<p>其它未列出的跨类型组合不属于支持范围。
+  - shape 受 <code>Cols &lt;= 4095</code>、<code>Rows</code> 上限等约束</p>
+</li>
 </ul>
 <h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1009,7 +1044,40 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileDat
 <li><code>Vec</code> 路径要求 <code>sizeof(TileData::DType) == sizeof(GlobalData::DType)</code></li>
 <li>布局需匹配 ND / DN / NZ，且额外存在行宽 / 列高字节对齐约束</li>
 <li><code>Acc</code> 路径与 A2A3 类似，但 <code>AtomicAdd</code> 还会进一步限制目标 dtype</li>
+<li>ACC 到 GM 的数据类型支持取决于调用形式：</li>
 </ul>
+<table>
+<thead>
+<tr>
+<th>调用形式</th>
+<th>源数据类型</th>
+<th>支持的目标数据类型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TSTORE(dst, acc)</code></td>
+<td><code>float</code></td>
+<td><code>float</code>、<code>half</code>、<code>bfloat16_t</code></td>
+</tr>
+<tr>
+<td><code>TSTORE(dst, acc)</code></td>
+<td><code>int32_t</code></td>
+<td><code>int32_t</code></td>
+</tr>
+<tr>
+<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
+<td><code>float</code></td>
+<td><code>int8_t</code>、<code>uint8_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>hifloat8_t</code>、<code>float8_e4m3_t</code>、<code>float</code></td>
+</tr>
+<tr>
+<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
+<td><code>int32_t</code></td>
+<td><code>int8_t</code>、<code>uint8_t</code>、<code>half</code>、<code>bfloat16_t</code></td>
+</tr>
+</tbody>
+</table>
+<p>其它未列出的跨类型组合不属于支持范围。</p>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <div class="admonition danger">
 <p class="admonition-title">异常与非法情形</p>
