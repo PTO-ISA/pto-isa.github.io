@@ -1053,7 +1053,8 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 </table>
 <h3 id="urma-construction-npu_arch-3510-only">URMA Construction (NPU_ARCH 3510 only)<a class="headerlink" href="#urma-construction-npu_arch-3510-only" title="Permanent link">&para;</a></h3>
 <blockquote>
-<p>URMA (User-level RDMA Memory Access) is a hardware-accelerated RDMA transport available on Ascend950 (NPU_ARCH 3510).</p>
+<p>URMA (User-level RDMA Memory Access) is a hardware-accelerated RDMA transport available on Ascend950 (NPU_ARCH 3510).
+URMA requires CANN Toolkit <strong>&gt;= 9.1.0</strong>.</p>
 </blockquote>
 <pre class="highlight"><code class="language-cpp">#ifdef PTO_URMA_SUPPORTED
 template &lt;DmaEngine engine&gt;
@@ -1094,6 +1095,7 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 <li>SDMA workspace must be a valid GM pointer allocated by host-side <code>SdmaWorkspaceManager</code></li>
 <li>URMA workspace must be a valid GM pointer allocated by host-side <code>UrmaWorkspaceManager</code></li>
 <li>URMA is only available on NPU_ARCH 3510 (Ascend950)</li>
+<li>URMA requires CANN Toolkit <strong>&gt;= 9.1.0</strong></li>
 <li>The symmetric data buffer passed to <code>UrmaWorkspaceManager::Init()</code> must be backed by huge-page memory (allocate with <code>ACL_MEM_MALLOC_HUGE_ONLY</code>). The underlying MR registration requires huge-page backing; <code>ACL_MEM_MALLOC_HUGE_FIRST</code> may silently fall back to 4KB pages for small allocations, causing registration to fail</li>
 </ul>
 <p>If the 1D contiguous requirement is not met, current implementation returns an invalid async event (<code>handle == 0</code>).</p>

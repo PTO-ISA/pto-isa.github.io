@@ -1015,7 +1015,8 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 </table>
 <h3 id="urma-npu_arch-3510">URMA 构建（仅 NPU_ARCH 3510）<a class="headerlink" href="#urma-npu_arch-3510" title="Permanent link">&para;</a></h3>
 <blockquote>
-<p>URMA（User-level RDMA Memory Access）是 Ascend950（NPU_ARCH 3510）上的硬件加速 RDMA 传输引擎。</p>
+<p>URMA（User-level RDMA Memory Access）是 Ascend950（NPU_ARCH 3510）上的硬件加速 RDMA 传输引擎。
+URMA 要求 CANN Toolkit <strong>&gt;= 9.1.0</strong>。</p>
 </blockquote>
 <pre class="highlight"><code class="language-cpp">#ifdef PTO_URMA_SUPPORTED
 template &lt;DmaEngine engine&gt;
@@ -1056,6 +1057,7 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 <li>SDMA workspace 必须是由主机侧 <code>SdmaWorkspaceManager</code> 分配的有效 GM 指针</li>
 <li>URMA workspace 必须是由主机侧 <code>UrmaWorkspaceManager</code> 分配的有效 GM 指针</li>
 <li>URMA 仅在 NPU_ARCH 3510（Ascend950）上可用</li>
+<li>URMA 要求 CANN Toolkit <strong>&gt;= 9.1.0</strong></li>
 <li>传给 <code>UrmaWorkspaceManager::Init()</code> 的对称数据缓冲区必须由大页内存支撑（使用 <code>ACL_MEM_MALLOC_HUGE_ONLY</code> 分配）。底层 MR 注册要求大页背景；<code>ACL_MEM_MALLOC_HUGE_FIRST</code> 在小尺寸分配时可能静默回退到 4KB 小页，导致注册失败</li>
 </ul>
 <p>若不满足一维连续要求，当前实现返回无效 async event（<code>handle == 0</code>）。</p>
