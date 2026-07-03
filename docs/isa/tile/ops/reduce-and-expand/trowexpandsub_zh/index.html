@@ -1013,6 +1013,21 @@ PTO_INST RecordEvent TROWEXPANDSUB(TileDataDst &amp;dst, TileDataSrc0 &amp;src0,
 </li>
 </ul>
 </div>
+<h3 id="tile">临时 Tile<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h3>
+<p>C++ API 提供显式传入 <code>TileDataTmp &amp;tmp</code> 的重载。该重载仅支持<strong>模式 1</strong>（ColMajor 扩展操作数，每行标量）。</p>
+<ul>
+<li><strong>A2A3</strong>：tmp Tile 作为广播缓冲区使用。ColMajor 扩展操作数的每行标量值通过 <code>vbrcb</code> 指令广播到 tmp 缓冲区，为每行创建一个 32 字节块，然后在二元运算中作为扩展操作数使用。<code>vbrcb</code> 指令的 repeat stride 为 8 个块（256 字节），每个 repeat 处理 8 行。最小 tmp 大小计算：<ul>
+<li>公共参数：<code>R = dst.GetValidRow()</code>，<code>T = TileDataDst::DType</code>。</li>
+<li>当 <code>R &lt; 256</code> 时：
+  $$ \text{tmpSize} = \left\lceil\frac{R}{8}\right\rceil \times 256 \text{ 字节} $$</li>
+<li>当 <code>R &gt;= 256</code> 时，操作采用循环方式，每次循环最多 30 个 repeat（240 行）。tmp 缓冲区在各循环间复用，每次循环需要：
+  $$ \text{tmpSize} = 30 \times 256 = 7680 \text{ 字节} $$</li>
+<li>对于任何模式 1 调用，一个紧凑的形状无关上界为 <strong>8 KB</strong>（8192 字节）。</li>
+<li>不带 <code>tmp</code> 的 3 参数重载支持模式 1 和模式 2。对于模式 1，使用内部 8 KB 缓冲区（<code>TMP_UB_OFFSET</code>）。对于模式 2，不需要广播缓冲区。</li>
+</ul>
+</li>
+<li><strong>A5</strong>：<code>tmp</code> Tile 被接受但不使用（<code>[[maybe_unused]]</code>）。A5 硬件通过 <code>vlds</code> 指令的广播模式原生支持行广播，因此不需要临时缓冲区。</li>
+</ul>
 <h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <div class="admonition danger">
 <p class="admonition-title">异常与非法情形</p>

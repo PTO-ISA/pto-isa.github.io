@@ -963,7 +963,10 @@
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename T, int descending, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events);</code></pre>
+PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events);
+
+template &lt;typename TileData, typename TileDataTmp, typename T, int descending, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCI(TileData &amp;dst, T start, TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <div class="admonition warning">
 <p class="admonition-title">约束</p>
@@ -976,6 +979,24 @@ PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events)
 </li>
 <li><strong>有效区域</strong>:<ul>
 <li>The implementation uses <code>dst.GetValidCol()</code> as the sequence length and does not consult <code>dst.GetValidRow()</code>.</li>
+</ul>
+</li>
+<li><strong>临时 Tile</strong>:<ul>
+<li><strong>A2/A3</strong>：C++ API 提供带显式 <code>tmp</code> Tile 的重载，用于向量化实现路径。不带 <code>tmp</code> 的重载使用标量循环。
+  <code>TileDataTmp::DType</code> 必须为 4 字节类型（<code>float</code>、<code>int32_t</code> 或 <code>uint32_t</code>）。实现将 <code>tmp</code> 转换为
+  <code>float *</code> 使用；应按字节数来规划 tmp Tile 大小，而不是按 <code>TileDataTmp::DType</code> 的类型理解。</li>
+<li><strong>b32 元素类型</strong>（<code>int32_t</code>、<code>uint32_t</code>）：最小 tmp 大小 = 768 字节（192 个 float 元素）。
+  向量化路径在 <code>tmp</code> 内使用两个 float 子缓冲区：<code>tmp0</code> 位于偏移 0，<code>tmp1</code> 位于偏移 +128 floats。
+  <code>tmp0</code> 最多持有 64 个 float 元素（256 字节）用于初始分数序列，<code>tmp1</code> 最多持有 64 个 float 元素
+  （256 字节）用于累积结果。最高访问的字节偏移为 128 x 4 + 64 x 4 = <strong>768 字节</strong>（192 个 float 元素）。</li>
+<li><strong>b16 元素类型</strong>（<code>int16_t</code>、<code>uint16_t</code>）：最小 tmp 大小 = 1792 字节（448 个 float 元素）。
+  向量化路径在 <code>tmp</code> 内使用四个子缓冲区：<code>tmp0/tmp1</code>（float）位于偏移 0 和 +128，<code>tmp2/tmp3</code>（half）
+  位于偏移 +256 和 +384（以 float 索引单位计）。<code>tmp0/tmp1</code> 各最多持有 64 个 float（256 字节）
+  用于分数序列生成。<code>tmp2</code> 最多持有 16 个 half 元素（32 字节）用于 float 到 half 的转换。<code>tmp3</code>
+  最多持有 128 个 half 元素（256 字节）用于最终的 half 精度累积。最高访问的字节偏移为
+  384 x 4 + 128 x 2 = <strong>1792 字节</strong>（448 个 float 元素）。</li>
+<li>一个方便的形状无关分配大小为 2048 字节（2 KiB），例如 <code>Tile&lt;TileType::Vec, float, 1, 512&gt;</code>。</li>
+<li><strong>A5</strong>：<code>tmp</code> Tile 被接受但不使用。A5 硬件直接使用 <code>vci</code> 向量指令，无需临时缓冲区。</li>
 </ul>
 </li>
 </ul>
@@ -991,6 +1012,18 @@ void example_auto() {
   TileT dst;
   TCI&lt;TileT, int32_t, /*descending=*/0&gt;(dst, /*S=*/0);
 }</code></pre>
+<h3 id="tmp">自动（带 tmp）<a class="headerlink" href="#tmp" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto_tmp() {
+  using TileT = Tile&lt;TileType::Vec, int32_t, 1, 16&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 1, 512&gt;;
+  TileT dst;
+  TmpT tmp;
+  TCI&lt;TileT, TmpT, int32_t, /*descending=*/0&gt;(dst, /*S=*/0, tmp);
+}</code></pre>
 <h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1001,6 +1034,20 @@ void example_manual() {
   TileT dst;
   TASSIGN(dst, 0x1000);
   TCI&lt;TileT, int32_t, /*descending=*/1&gt;(dst, /*S=*/100);
+}</code></pre>
+<h3 id="tmp_1">手动（带 tmp）<a class="headerlink" href="#tmp_1" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual_tmp() {
+  using TileT = Tile&lt;TileType::Vec, int32_t, 1, 16&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 1, 512&gt;;
+  TileT dst;
+  TmpT tmp;
+  TASSIGN(dst, 0x1000);
+  TASSIGN(tmp, 0x2000);
+  TCI&lt;TileT, TmpT, int32_t, /*descending=*/1&gt;(dst, /*S=*/100, tmp);
 }</code></pre>
               
             </div>

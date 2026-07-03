@@ -940,11 +940,11 @@
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
 <p><img alt="TQUANT tile operation" src="../../figures/isa/TQUANT.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p><strong>DN</strong> (Down-column Normal) denotes MX quantization with groups of 32 along <strong>axis 0</strong>
-(rows), as opposed to the default <strong>ND</strong> (Normal) which groups along <strong>axis 1</strong> (columns).
-Both modes produce RowMajor tiles — "DN" refers only to the <em>grouping direction</em>, not
-the storage layout. DN is used in FlashAttention where the softmax output (P matrix)
-has its natural grouping along the M (row) dimension.</p>
+<p><strong>ND</strong> ("normal direction") is the default MX grouping: groups of 32 along <strong>axis 1</strong>
+(columns). <strong>DN</strong> denotes the transposed-style grouping along <strong>axis 0</strong> (rows) — groups
+of 32 consecutive rows. Both modes produce RowMajor tiles; "DN"/"ND" refers only to the
+<em>grouping axis</em>, not the storage layout. DN is used in FlashAttention where the softmax
+output (P matrix) has its natural grouping along the M (row) dimension.</p>
 <p>After DN quantization, the FP8 data is converted to NZ via the stock <code>TMOV(ND→NZ)</code> and
 the E8M0 exponents are converted to ZZ via the new <code>TMOV&lt;grp_axis=0&gt;(DN→ZZ)</code>.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
@@ -1068,6 +1068,12 @@ order the ZZ fractal requires. Hence DN→ZZ is cheaper than ND→ZZ (contiguous
 mathematically identical to the transpose step of this recipe. It cannot generalize
 (requires <code>M̂≤4</code> to fit a B32 word, and <code>N≤64</code> for single-VL). <code>TMovDnTo2Zz</code> is the
 general replacement.</p>
+<h3 id="implementation-notes">Implementation notes<a class="headerlink" href="#implementation-notes" title="Permanent link">&para;</a></h3>
+<p><code>TMovDnTo2Zz</code> uses <code>vlds + vintlv + vsstb</code> (block-strided scatter, <code>blockStride = numPairs</code>)
+with <code>CreatePredicate</code> auto-decrement for the tail — no scalar computation, no branching, no
+static predicates. The <code>vsstb</code> <strong>5-arg POST_UPDATE</strong> form is required; the 4-arg form
+interprets <code>offset</code> as a source-register offset, not the stride config. See
+<code>include/pto/npu/a5/TMov.hpp</code> (<code>GenerateB8IndicesDN2ZZToUB</code>).</p>
 <h2 id="tmov-interface">TMOV Interface<a class="headerlink" href="#tmov-interface" title="Permanent link">&para;</a></h2>
 <h3 id="dnzz-new">DN→ZZ (new)<a class="headerlink" href="#dnzz-new" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">template &lt;int grp_axis, typename DstTileData, typename SrcTileData, typename TmpTileData, typename... WaitEvents&gt;

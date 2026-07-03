@@ -1035,8 +1035,26 @@ PTO_INST RecordEvent TGATHER(TileDataD &amp;dst, TileDataS &amp;src0, TileDataS1
 <div class="admonition warning">
 <p class="admonition-title">Constraints</p>
 <ul>
-<li><strong>Bounds / validity</strong>:<ul>
+<li>
+<p><strong>Bounds / validity</strong>:</p>
+<ul>
 <li>Index bounds are not validated by explicit runtime assertions; on A2/A3 and A5, out-of-range indices produce undefined results; on the CPU simulator, out-of-range indices are clamped to the valid range.</li>
+</ul>
+</li>
+<li>
+<p><strong>Temporary tile</strong>:</p>
+<ul>
+<li><strong>Index-based gather (A2/A3)</strong>: The C++ API requires an explicit <code>tmp</code> tile. <code>TileDataTmp::DType</code> must be the same type as <code>TileDataS1::DType</code> (<code>int32_t</code> or <code>uint32_t</code>). <code>src1.GetValidRow() == TileDataTmp::Rows</code> and <code>src1.GetValidCol() == TileDataTmp::Cols</code>. The tmp tile holds intermediate <code>vmuls</code> results used by <code>vgather</code> for b16 source types; for b32 source types, the result is written directly to <code>dst</code> but the API still requires <code>tmp</code>.</li>
+<li><strong>Index-based gather (A5)</strong>: The <code>tmp</code> tile is accepted and ignored. A5 hardware handles index-based gather without a scratch buffer.</li>
+<li><strong>Comparison-based gather (A2/A3)</strong>: The C++ API requires an explicit <code>tmp</code> tile that serves as a combined scratch buffer for three internal regions:<ol>
+<li><strong>cmpsTmp</strong> (comparison result bitmap): offset 0, stored as <code>uint8_t</code>, size = <code>TileDataTmp::Rows × TileDataTmp::Cols</code> bytes.</li>
+<li><strong>indexTmp</strong> (index array): offset = <code>TileDataTmp::Rows × TileDataTmp::Cols × sizeof(uint8_t)</code>, stored as <code>TileDataD::DType</code>, size = <code>TileDataS::Rows × TileDataS::Cols × sizeof(TileDataD::DType)</code> bytes.</li>
+<li><strong>cvtTmp</strong> (converted k-value array): offset = <code>TileDataTmp::Rows × TileDataTmp::Cols × sizeof(uint8_t)</code> + <code>TileDataS::Rows × TileDataS::Cols × sizeof(TileDataD::DType)</code>, stored as <code>TileDataS::DType</code>, size = <code>TileDataS::Rows × sizeof(TileDataS::DType)</code> bytes.
+The minimum tmp size in bytes must satisfy:
+$$ \text{tmpSize} \ge \text{Rows}<em>\text{tmp} \times \text{Cols}</em>\text{tmp} + \text{Rows}<em>\text{src} \times \text{Cols}</em>\text{src} \times \text{sizeof(DType}<em>\text{dst}\text{)} + \text{Rows}</em>\text{src} \times \text{sizeof(DType}_\text{src}\text{)} $$</li>
+</ol>
+</li>
+<li><strong>Comparison-based gather (A5)</strong>: The <code>tmp</code> tile is accepted and ignored. A5 hardware handles comparison-based gather without a scratch buffer.</li>
 </ul>
 </li>
 </ul>

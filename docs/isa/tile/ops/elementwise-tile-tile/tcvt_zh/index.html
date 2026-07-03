@@ -1085,7 +1085,77 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode
 <li>源 / 目标类型对必须属于目标 profile 支持的集合。</li>
 <li>给定类型对必须支持所选 rounding mode。</li>
 <li>对于需要显式 scratch 的路径，调用方必须使用 <code>tmp</code> 版本。</li>
-<li>关闭饱和可能改变某些低精度整数转换路径的溢出语义。</li>
+<li>
+<p>关闭饱和可能改变某些低精度整数转换路径的溢出语义。</p>
+</li>
+<li>
+<p><strong>临时 Tile</strong>:</p>
+<ul>
+<li>C++ API 提供显式传入 <code>tmp</code> Tile 的重载。在 A2/A3 上，当 <code>SaturationMode::OFF</code> 用于
+  <code>float -&gt; int16</code>、<code>half -&gt; int16</code> 或 <code>half -&gt; int8</code> 时，PyTorch 兼容的非饱和窄化路径会使用该临时 Tile。
+  其他转换不需要 tmp 空间。</li>
+<li>实现会将 <code>tmp</code> 转换为 <code>int32_t *</code> 使用；因此应按字节数来规划 tmp Tile 大小，而不是按
+  <code>TmpTileData::DType</code> 的类型理解。</li>
+<li>下列公式给出按实现使用的 32 字节向量块粒度向上取整后的最小分配大小。若 <code>C = 0</code>，不会发起需要
+  tmp 的转换，所需 tmp 大小为 <code>0</code>。</li>
+<li>公共参数:<ul>
+<li><code>R = dst.GetValidRow()</code>。</li>
+<li><code>C = dst.GetValidCol()</code>。</li>
+<li><code>SS = TileDataS::RowStride</code>，单位为源元素个数。</li>
+<li><code>REPEAT_MAX = 255</code>，<code>REPEAT_BYTE = 256</code>，<code>BLOCK_BYTE_SIZE = 32</code>。</li>
+</ul>
+</li>
+<li><code>float -&gt; int16</code>，非饱和 (<code>SaturationMode::OFF</code>):<ul>
+<li>临时结果是第一步 <code>float -&gt; int32</code> 转换产生的 <code>int32_t</code> Tile。</li>
+<li>由于 <code>float</code> 源行受 Tile 约束保证 32 字节对齐，<code>SS / 8</code> 是以 32 字节块为单位的源 repeat
+  stride。</li>
+<li>对齐的主区域中，一次调用处理一行，最多处理 <code>REPEAT_MAX</code> 个 repeat，每个 repeat 为 <code>64</code> 个元素：
+  $$ \text{tmpHeadBytes} = 4 \times 64 \times \min\left(\left\lfloor\frac{C}{64}\right\rfloor, 255\right) $$</li>
+<li>尾部区域中，一次调用最多处理 <code>REPEAT_MAX</code> 行，并使用源行 stride。由于向量 repeat stride
+  以块为单位，空间范围按 32 字节块计算：
+  $$ \text{tmpTailBytes} =
+  \begin{cases}
+  32 \times \left((\min(R, 255) - 1) \times \frac{SS}{8} + \left\lceil\frac{C \bmod 64}{8}\right\rceil\right), &amp; C \bmod 64 &gt; 0 \
+  0, &amp; C \bmod 64 = 0
+  \end{cases} $$</li>
+<li>该路径所需的最小 tmp 大小为：
+  $$ \text{tmpFloatToInt16Bytes} = \max(\text{tmpHeadBytes}, \text{tmpTailBytes}) $$</li>
+<li>对主区域而言，一个紧凑的完整 repeat 上界是 <code>REPEAT_MAX * REPEAT_BYTE = 65280</code> 字节；但当 <code>SS</code>
+  较大时，尾部会按源行 stride 写入，所需空间可能更大。</li>
+</ul>
+</li>
+<li><code>half -&gt; int16</code>，非饱和 (<code>SaturationMode::OFF</code>):<ul>
+<li>实现按行处理，每行拆分为不超过 <code>64</code> 个元素的子块，并在每个子块之间复用同一段临时缓冲区。
+  对于 <code>C &gt; 0</code>，令：
+  $$ H = \min(C, 64) $$</li>
+<li>该路径所需的最小 tmp 大小为：
+  $$ \text{tmpHalfToInt16Bytes} = 32 \times \left\lceil\frac{H}{8}\right\rceil $$</li>
+<li>对任意非空 Tile，该路径的形状无关上界为 <code>256</code> 字节。</li>
+</ul>
+</li>
+<li><code>half -&gt; int8</code>，非饱和 (<code>SaturationMode::OFF</code>):<ul>
+<li>实现同样按不超过 <code>64</code> 个元素的子块处理，并复用同一段 256 字节临时区域。第一步最多将 <code>64</code>
+  个 <code>int32_t</code> 写入字节 <code>[0, 255]</code>；完成 <code>int32 -&gt; int16</code> 窄化后，字节 <code>[0, 127]</code> 保存
+  <code>int16_t</code> 值，字节 <code>[128, 255]</code> 被复用为 scratch。</li>
+<li><code>tempMaskBuf = tempAndBuf + 64</code> 会前进 <code>64 * sizeof(int16_t) = 128</code> 字节，因此它指向同一
+  256 字节临时区域的上半部分，不需要额外再分配 256 字节。</li>
+<li>该路径所需的最小 tmp 大小为：
+  $$ \text{tmpHalfToInt8Bytes} = \max\left(32 \times \left\lceil\frac{H}{8}\right\rceil,\ 128 + 32 \times \left\lceil\frac{H}{16}\right\rceil\right) $$</li>
+<li>对任意非空 Tile，该路径的形状无关上界为 <code>256</code> 字节。</li>
+</ul>
+</li>
+<li>覆盖所有 tmp-backed TCVT 转换的总体最小值:<ul>
+<li>由于 <code>tmpHalfToInt8Bytes &gt;= tmpHalfToInt16Bytes</code>，对于同一形状，能覆盖所有会使用 tmp 的 TCVT
+  转换路径的最小 tmp 大小为：
+  $$ \text{tmpSizeAllBytes} = \max(\text{tmpFloatToInt16Bytes},\ \text{tmpHalfToInt8Bytes}) $$</li>
+<li>如果 Tile 非空，并且 half 路径使用形状无关的紧凑上界即可，也可写为：
+  $$ \text{tmpSizeAllBytes} = \max(\text{tmpFloatToInt16Bytes},\ 256) $$</li>
+</ul>
+</li>
+<li>对于不需要 PyTorch 兼容 tmp-backed 路径的转换，或者原生饱和行为已经满足需求时，可以继续使用不带
+  <code>tmp</code> 的重载。</li>
+</ul>
+</li>
 </ul>
 </div>
 <h2 id="_10">不允许的情形<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>

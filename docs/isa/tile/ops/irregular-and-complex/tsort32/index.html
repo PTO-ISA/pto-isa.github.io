@@ -419,11 +419,25 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.tsort32</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+    <li class="toctree-l3"><a class="reference internal" href="#hardware-vbs32-vbitsort">Hardware: VBS32 (vbitsort)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-sizes-data-types">Tile Sizes &amp; Data Types</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#4-arg-tail-handling">4-arg tail handling</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
@@ -431,26 +445,10 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
-    </li>
     <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
@@ -984,137 +982,179 @@
 
 <h1 id="ptotsort32">pto.tsort32<a class="headerlink" href="#ptotsort32" title="Permanent link">&para;</a></h1>
 <p><code>pto.tsort32</code> is part of the <a href="../../../irregular-and-complex/">Irregular And Complex</a> instruction set.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Sort a fixed-size 32-element block and produce an index mapping.</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Sort each 32-element block of <code>src</code> together with the corresponding indices from <code>idx</code>, and write the sorted value-index pairs into <code>dst</code>. It belongs to the tile instructions and carries architecture-visible behavior that is not reducible to a plain elementwise compute pattern.</p>
-<p>For each row, <code>TSORT32</code> processes <code>src</code> in independent 32-element blocks. Let block <code>b</code> cover columns <code>32b ... 32b+31</code>, and let <code>n_b = min(32, C - 32b)</code> be the valid element count of that block.</p>
-<p>For each valid element in the block, form a pair</p>
-<div class="arithmatex">\[
-(v_k, i_k) = (\mathrm{src}_{r,32b+k}, \mathrm{idx}_{r,32b+k}), \quad 0 \le k &lt; n_b
-\]</div>
-<p>Then sort the pairs by value and write the sorted value-index pairs to <code>dst</code>. The exact packing layout in <code>dst</code> is target-defined, but semantically the output of each block is the reordered sequence</p>
-<div class="arithmatex">\[
-[(v_{\pi(0)}, i_{\pi(0)}), (v_{\pi(1)}, i_{\pi(1)}), \ldots, (v_{\pi(n_b-1)}, i_{\pi(n_b-1)})]
-\]</div>
-<p>where <code>π</code> is the permutation produced by the implementation for that 32-element block.</p>
-<p>Notes:</p>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TSORT32 tile operation" src="../../../figures/isa/TSORT32.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Sort each 32-element block of <code>src</code> together with the corresponding indices from <code>idx</code>, and write the sorted value-index pairs into <code>dst</code>. The underlying SFU instruction is <strong>VBS32</strong> (<code>vbitsort</code>), which sorts one or more independent 32-element lists in a single call.</p>
+<h2 id="hardware-vbs32-vbitsort">Hardware: VBS32 (<code>vbitsort</code>)<a class="headerlink" href="#hardware-vbs32-vbitsort" title="Permanent link">&para;</a></h2>
+<p>VBS32 runs on the <strong>SFU</strong> (not the vector pipeline). One invocation sorts <code>repeat</code> consecutive 32-element blocks, each consisting of 32 values + 32 indices packed as value-index pairs:</p>
+<pre class="highlight"><code class="language-cpp">void vbitsort(__ubuf__ T *dst,        // sorted value-index pairs out
+              __ubuf__ T *src0,        // 32 values per block × repeat
+              __ubuf__ uint32_t *src1, // 32 indices per block × repeat
+              uint8_t repeat);         // number of 32-element blocks (1..255)</code></pre>
 <ul>
-<li><code>idx</code> is an input tile, not an output tile.</li>
-<li><code>dst</code> stores sorted value-index pairs, not just sorted values.</li>
-<li>The CPU simulation sorts in descending order by value, and for equal values keeps smaller indices first.</li>
+<li><code>repeat</code> (cap <code>REPEAT_MAX = 255</code>) is packed into <code>config[63:56]</code>.</li>
+<li>Blocks are <strong>contiguous, strided by 32 elements</strong>: block <code>b</code> reads <code>src0[b*32 : b*32+32]</code> and <code>src1[b*32 : b*32+32]</code>, writes <code>dst[b*32*coef : ...]</code> where <code>coef</code> = 2 (float) or 4 (half) — the value-index pair expansion factor.</li>
+<li>Sort order: <strong>descending</strong> by value; ties broken by smaller index first.</li>
 </ul>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
-<p>Synchronous form:</p>
-<pre class="highlight"><code class="language-text">%dst = tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
+<p>For each row <code>r</code>, <code>src</code> is processed in independent 32-element blocks. Let block <code>b</code> cover columns <code>32b … 32b+31</code>, and <code>n_b = min(32, C - 32b)</code> be its valid count.</p>
+<div class="arithmatex">\[
+(v_k, i_k) = (\mathrm{src}_{r,32b+k},\; \mathrm{idx}_{r,32b+k}), \quad 0 \le k &lt; n_b
+\]</div>
+<p>Sort the pairs by value (descending); output the reordered sequence:</p>
+<div class="arithmatex">\[
+[(v_{\pi(0)}, i_{\pi(0)}),\; (v_{\pi(1)}, i_{\pi(1)}),\; \ldots]
+\]</div>
+<p>where <code>π</code> is the sort permutation for that block.</p>
+<p>Notes:
+- <code>idx</code> is an input tile (indices permuted with values), not an output.
+- <code>dst</code> stores sorted value-index pairs, not just sorted values.</p>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData&gt;
+<pre class="highlight"><code class="language-cpp">// 3-arg: src must be 32-aligned (validCol % 32 == 0)
+template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData&gt;
 PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx);
 
+// 4-arg: supports non-32-aligned tails (validCol % 32 != 0) via tmp padding
 template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData, typename TmpTileData&gt;
 PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx, TmpTileData &amp;tmp);</code></pre>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src</code> is the source tile containing values to sort.</li>
-<li><code>idx</code> is the index tile providing initial indices.</li>
-<li><code>tmp</code> (optional): temporary tile for non-32-aligned tails.</li>
-<li><code>dst</code> names the destination tile. The operation iterates over dst's valid region.</li>
-</ul>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds sorted value-index pairs from <code>src</code> according to <code>idx</code> order.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
+<h2 id="tile-sizes-data-types">Tile Sizes &amp; Data Types<a class="headerlink" href="#tile-sizes-data-types" title="Permanent link">&para;</a></h2>
+<p>For <code>src</code> of shape <span class="arithmatex">\(R \times C\)</span> (valid region), block size 32:</p>
+<table>
+<thead>
+<tr>
+<th>Tile</th>
+<th>dtype</th>
+<th>Size (elements)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src</code></td>
+<td><code>half</code> or <code>float</code> (<span class="arithmatex">\(T\)</span>)</td>
+<td><span class="arithmatex">\(R \times C\)</span></td>
+<td>values to sort</td>
+</tr>
+<tr>
+<td><code>idx</code></td>
+<td><code>uint32_t</code></td>
+<td><span class="arithmatex">\(R \times C\)</span> (or <span class="arithmatex">\(1 \times C\)</span> broadcast)</td>
+<td>indices permuted with values</td>
+</tr>
+<tr>
+<td><code>dst</code></td>
+<td><span class="arithmatex">\(T\)</span></td>
+<td><span class="arithmatex">\(R \times (2C)\)</span> float, <span class="arithmatex">\(R \times (4C)\)</span> half</td>
+<td>sorted value-index pairs (expansion below)</td>
+</tr>
+<tr>
+<td><code>tmp</code> (4-arg only)</td>
+<td><span class="arithmatex">\(T\)</span></td>
+<td><span class="arithmatex">\(\ge \mathrm{ceil}_{32}(C)\)</span> per row</td>
+<td>tail-padding scratch; ≤ <span class="arithmatex">\(32 \times 255\)</span> elements</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>dst</code> expansion factor</strong> (<code>typeCoef</code>): each input element becomes a value-index pair.</p>
+<table>
+<thead>
+<tr>
+<th>dtype</th>
+<th><code>dst</code> cols per <code>src</code> col</th>
+<th>pair layout</th>
+<th>bytes/pair</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td>×2</td>
+<td><code>[value_f32, index_u32]</code></td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>half</code></td>
+<td>×4</td>
+<td>half-pair packing</td>
+<td>8</td>
+</tr>
+</tbody>
+</table>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
-<ul>
-<li>
-<p><code>TSORT32</code> does not take <code>WaitEvents&amp;...</code> and does not call <code>TSYNC(...)</code> internally; synchronize explicitly if needed.</p>
-</li>
-<li>
-<p><code>idx</code> is a required input operand in both overloads; it provides the indices that are permuted together with <code>src</code>.</p>
-</li>
-<li>
-<p><strong>Valid region</strong>:</p>
-<ul>
-<li>The implementation uses <code>dst.GetValidRow()</code> as the row count.</li>
-<li>The implementation uses <code>src.GetValidCol()</code> to determine how many elements participate in sorting in each row.</li>
-<li>Sorting is performed independently per 32-element block; the 4-argument overload additionally supports non-32-aligned tails with <code>tmp</code>.</li>
-</ul>
-</li>
-</ul>
-</div>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">Exceptions</p>
-<ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
-</ul>
-</div>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>Target-Profile Restrictions</summary>
-<ul>
-<li><strong>Implementation checks (A2A3/A5)</strong>:<ul>
-<li><code>DstTileData::DType</code> must be <code>half</code> or <code>float</code>.</li>
-<li><code>SrcTileData::DType</code> must match <code>DstTileData::DType</code>.</li>
-<li><code>IdxTileData::DType</code> must be <code>uint32_t</code>.</li>
-<li><code>dst/src/idx</code> tile location must be <code>TileType::Vec</code>, and all must be row-major (<code>isRowMajor</code>).</li>
-</ul>
-</li>
-</ul>
-</details>
+<table>
+<thead>
+<tr>
+<th>Constraint</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dst</code>/<code>src</code> dtype = <code>half</code> or <code>float</code> (must match); <code>idx</code> = <code>uint32_t</code></td>
+<td>VBS32 type dispatch</td>
+</tr>
+<tr>
+<td>All tiles <code>TileType::Vec</code>, <code>BLayout::RowMajor</code></td>
+<td>SFU addressing</td>
+</tr>
+<tr>
+<td><code>validCol % 32 == 0</code> (3-arg)</td>
+<td>each block exactly 32 elements</td>
+</tr>
+<tr>
+<td><code>validCol</code> arbitrary (4-arg)</td>
+<td>tail block padded to 32 with <span class="arithmatex">\(-\infty\)</span> via <code>tmp</code></td>
+</tr>
+<tr>
+<td><code>repeat = validCol/32</code> (3-arg) or <code>ceil(validCol/32)</code> (4-arg)</td>
+<td>VBS32 repeat count, ≤ 255 per call; larger <code>validCol</code> splits into multiple <code>vbitsort</code> calls</td>
+</tr>
+<tr>
+<td><code>tmp</code> (4-arg) ≥ <code>ceil32(C)</code> elements/row</td>
+<td>holds the padded copy of the tail block</td>
+</tr>
+<tr>
+<td>No <code>WaitEvents&amp;...</code> / no internal <code>TSYNC</code></td>
+<td>synchronize explicitly if needed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="4-arg-tail-handling">4-arg tail handling<a class="headerlink" href="#4-arg-tail-handling" title="Permanent link">&para;</a></h3>
+<p>When <code>validCol % 32 != 0</code>, the last partial block is copied to <code>tmp</code>, padded with <span class="arithmatex">\(-\infty\)</span> (<code>-(0.0/0.0)</code>) up to 32 elements via <code>vdup</code>, then sorted from <code>tmp</code> (padding values land at the bottom of the descending order). If <code>validCol &gt; 32 × 255</code>, the row is chunked into <code>REPEAT_MAX</code>-sized groups, each sorted separately.</p>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
+<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = pto.tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
-void example_auto() {
-  using SrcT = Tile&lt;TileType::Vec, float, 1, 32&gt;;
-  using IdxT = Tile&lt;TileType::Vec, uint32_t, 1, 32&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 1, 64&gt;;
-  SrcT src;
-  IdxT idx;
-  DstT dst;
-  TSORT32(dst, src, idx);
-}</code></pre>
-<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+// 32-aligned: single block per row
+using SrcT = Tile&lt;TileType::Vec, float, 1, 32&gt;;
+using IdxT = Tile&lt;TileType::Vec, uint32_t, 1, 32&gt;;
+using DstT = Tile&lt;TileType::Vec, float, 1, 64&gt;;   // 2× src cols (float)
+SrcT src; IdxT idx; DstT dst;
+TSORT32(dst, src, idx);
 
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 1, 32&gt;;
-  using IdxT = Tile&lt;TileType::Vec, uint32_t, 1, 32&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 1, 64&gt;;
-  SrcT src;
-  IdxT idx;
-  DstT dst;
-  TASSIGN(src, 0x1000);
-  TASSIGN(idx, 0x2000);
-  TASSIGN(dst, 0x3000);
-  TSORT32(dst, src, idx);
-}</code></pre>
+// Non-32-aligned tail: 4-arg with tmp
+using SrcT2 = Tile&lt;TileType::Vec, half, 1, 100&gt;;
+using IdxT2 = Tile&lt;TileType::Vec, uint32_t, 1, 100&gt;;
+using DstT2 = Tile&lt;TileType::Vec, half, 1, 400&gt;;  // 4× src cols (half)
+using TmpT  = Tile&lt;TileType::Vec, half, 1, 128&gt;;  // ≥ ceil32(100)=128
+TSORT32(dst2, src2, idx2, tmp);</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
+<pre class="highlight"><code class="language-text">%dst = pto.tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
-# Optional for tile operands:
-# pto.tassign %arg0, @tile(0x1000)
+<pre class="highlight"><code class="language-text"># pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
 # pto.tassign %arg2, @tile(0x3000)
-%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
+%dst = pto.tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+<pre class="highlight"><code class="language-text">%dst = tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
 pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>

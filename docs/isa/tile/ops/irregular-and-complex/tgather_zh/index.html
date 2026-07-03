@@ -1027,6 +1027,20 @@ PTO_INST RecordEvent TGATHER(TileDataD &amp;dst, TileDataS &amp;src0, TileDataS1
 <li>索引边界不通过显式运行时断言进行验证；超出范围的索引行为由目标定义。</li>
 </ul>
 </li>
+<li><strong>临时 Tile</strong>:<ul>
+<li><strong>基于索引的 Gather (A2/A3)</strong>：C++ API 需要显式传入 <code>tmp</code> Tile。<code>TileDataTmp::DType</code> 必须与 <code>TileDataS1::DType</code> 类型相同（<code>int32_t</code> 或 <code>uint32_t</code>）。<code>src1.GetValidRow() == TileDataTmp::Rows</code> 且 <code>src1.GetValidCol() == TileDataTmp::Cols</code>。tmp Tile 用于存放 b16 源类型的 <code>vmuls</code> 中间结果供 <code>vgather</code> 使用；对于 b32 源类型，结果直接写入 <code>dst</code>，但 API 仍需要 <code>tmp</code>。</li>
+<li><strong>基于索引的 Gather (A5)</strong>：<code>tmp</code> Tile 被接受但不使用。A5 硬件无需临时缓冲区即可处理基于索引的 Gather。</li>
+<li><strong>基于比较的 Gather (A2/A3)</strong>：C++ API 需要显式传入 <code>tmp</code> Tile，该 Tile 作为三个内部区域的合并暂存缓冲区：<ol>
+<li><strong>cmpsTmp</strong>（比较结果位图）：偏移量 0，以 <code>uint8_t</code> 存储，大小 = <code>TileDataTmp::Rows × TileDataTmp::Cols</code> 字节。</li>
+<li><strong>indexTmp</strong>（索引数组）：偏移量 = <code>TileDataTmp::Rows × TileDataTmp::Cols × sizeof(uint8_t)</code>，以 <code>TileDataD::DType</code> 存储，大小 = <code>TileDataS::Rows × TileDataS::Cols × sizeof(TileDataD::DType)</code> 字节。</li>
+<li><strong>cvtTmp</strong>（转换后的 k 值数组）：偏移量 = <code>TileDataTmp::Rows × TileDataTmp::Cols × sizeof(uint8_t)</code> + <code>TileDataS::Rows × TileDataS::Cols × sizeof(TileDataD::DType)</code>，以 <code>TileDataS::DType</code> 存储，大小 = <code>TileDataS::Rows × sizeof(TileDataS::DType)</code> 字节。
+最小 tmp 大小（字节）必须满足：
+$$ \text{tmpSize} \ge \text{Rows}<em>\text{tmp} \times \text{Cols}</em>\text{tmp} + \text{Rows}<em>\text{src} \times \text{Cols}</em>\text{src} \times \text{sizeof(DType}<em>\text{dst}\text{)} + \text{Rows}</em>\text{src} \times \text{sizeof(DType}_\text{src}\text{)} $$</li>
+</ol>
+</li>
+<li><strong>基于比较的 Gather (A5)</strong>：<code>tmp</code> Tile 被接受但不使用。A5 硬件无需临时缓冲区即可处理基于比较的 Gather。</li>
+</ul>
+</li>
 </ul>
 </div>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>

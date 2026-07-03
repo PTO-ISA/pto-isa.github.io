@@ -1137,7 +1137,80 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, RoundMode mode
 <li>The source/destination type pair MUST be supported by the selected target profile.</li>
 <li>The rounding mode MUST be supported for the given type pair.</li>
 <li>When a conversion path requires explicit scratch storage, callers MUST use one of the <code>tmp</code>-tile overloads.</li>
-<li>Disabling saturation may change overflow behavior for some backend/type paths, especially low-precision integer conversions.</li>
+<li>
+<p>Disabling saturation may change overflow behavior for some backend/type paths, especially low-precision integer conversions.</p>
+</li>
+<li>
+<p><strong>Temporary tile</strong>:</p>
+<ul>
+<li>The C++ API provides overloads with an explicit <code>tmp</code> tile. On A2/A3 this tmp tile is consumed by
+  PyTorch-compatible non-saturating narrowing paths when <code>SaturationMode::OFF</code> is used for <code>float -&gt; int16</code>,
+  <code>half -&gt; int16</code>, or <code>half -&gt; int8</code>. Other conversions do not require tmp space.</li>
+<li>The implementation casts <code>tmp</code> to <code>int32_t *</code>; size the tile by bytes, independent of the declared
+  <code>TmpTileData::DType</code>.</li>
+<li>The formulas below give the minimum allocation size rounded to the 32-byte vector block granularity used by
+  the implementation. If <code>C = 0</code>, no tmp-backed conversion is issued and the required tmp size is <code>0</code>.</li>
+<li>Common parameters:<ul>
+<li><code>R = dst.GetValidRow()</code>.</li>
+<li><code>C = dst.GetValidCol()</code>.</li>
+<li><code>SS = TileDataS::RowStride</code>, in source elements.</li>
+<li><code>REPEAT_MAX = 255</code>, <code>REPEAT_BYTE = 256</code>, <code>BLOCK_BYTE_SIZE = 32</code>.</li>
+</ul>
+</li>
+<li><code>float -&gt; int16</code>, non-saturating (<code>SaturationMode::OFF</code>):<ul>
+<li>The temporary result is an <code>int32_t</code> tile produced by the first <code>float -&gt; int32</code> conversion step.</li>
+<li><code>float</code> source rows are 32-byte aligned by the tile constraints, so <code>SS / 8</code> is the source repeat stride
+  in 32-byte blocks.</li>
+<li>For the aligned main region, one call processes one row and up to <code>REPEAT_MAX</code> repeats, with <code>64</code>
+  elements per repeat:
+  $$ \text{tmpHeadBytes} = 4 \times 64 \times \min\left(\left\lfloor\frac{C}{64}\right\rfloor, 255\right) $$</li>
+<li>For the tail region, one call processes up to <code>REPEAT_MAX</code> rows using the source row stride. The extent is
+  computed in 32-byte blocks because the vector repeat stride is block-based:
+  $$ \text{tmpTailBytes} =
+  \begin{cases}
+  32 \times \left((\min(R, 255) - 1) \times \frac{SS}{8} + \left\lceil\frac{C \bmod 64}{8}\right\rceil\right), &amp; C \bmod 64 &gt; 0 \
+  0, &amp; C \bmod 64 = 0
+  \end{cases} $$</li>
+<li>Minimum required tmp size for this path:
+  $$ \text{tmpFloatToInt16Bytes} = \max(\text{tmpHeadBytes}, \text{tmpTailBytes}) $$</li>
+<li>A compact full-repeat upper bound for the main region is <code>REPEAT_MAX * REPEAT_BYTE = 65280</code> bytes, but
+  tail sizing can be larger when <code>SS</code> is large because tail rows are written with source-row stride.</li>
+</ul>
+</li>
+<li><code>half -&gt; int16</code>, non-saturating (<code>SaturationMode::OFF</code>):<ul>
+<li>The implementation processes each row in sub-chunks of at most <code>64</code> elements and reuses the same temp
+  buffer for every sub-chunk. For <code>C &gt; 0</code>, let:
+  $$ H = \min(C, 64) $$</li>
+<li>Minimum required tmp size for this path:
+  $$ \text{tmpHalfToInt16Bytes} = 32 \times \left\lceil\frac{H}{8}\right\rceil $$</li>
+<li>A shape-independent upper bound for any non-empty tile is <code>256</code> bytes.</li>
+</ul>
+</li>
+<li><code>half -&gt; int8</code>, non-saturating (<code>SaturationMode::OFF</code>):<ul>
+<li>The implementation also processes sub-chunks of at most <code>64</code> elements and reuses the same 256-byte temp
+  region. The first step can write up to <code>64</code> <code>int32_t</code> values into bytes <code>[0, 255]</code>; after the
+  <code>int32 -&gt; int16</code> narrow, bytes <code>[0, 127]</code> hold the <code>int16_t</code> values and bytes <code>[128, 255]</code> are reused as
+  scratch.</li>
+<li><code>tempMaskBuf = tempAndBuf + 64</code> advances by <code>64 * sizeof(int16_t) = 128</code> bytes, so it points at the upper
+  half of the same 256-byte temp region. It does not require an additional 256-byte allocation.</li>
+<li>Minimum required tmp size for this path:
+  $$ \text{tmpHalfToInt8Bytes} = \max\left(32 \times \left\lceil\frac{H}{8}\right\rceil,\ 128 + 32 \times \left\lceil\frac{H}{16}\right\rceil\right) $$</li>
+<li>A shape-independent upper bound for any non-empty tile is <code>256</code> bytes.</li>
+</ul>
+</li>
+<li>Overall minimum for all tmp-backed TCVT conversions:<ul>
+<li>Since <code>tmpHalfToInt8Bytes &gt;= tmpHalfToInt16Bytes</code>, the minimum tmp size that fits all tmp-backed TCVT
+  conversion paths for the same shape is:
+  $$ \text{tmpSizeAllBytes} = \max(\text{tmpFloatToInt16Bytes},\ \text{tmpHalfToInt8Bytes}) $$</li>
+<li>Equivalently, if the tile is non-empty and a compact shape-independent bound for the half paths is
+  acceptable:
+  $$ \text{tmpSizeAllBytes} = \max(\text{tmpFloatToInt16Bytes},\ 256) $$</li>
+</ul>
+</li>
+<li>The no-<code>tmp</code> overload remains valid for conversions that do not need the PyTorch-compatible tmp-backed path,
+  or when native saturation behavior is sufficient.</li>
+</ul>
+</li>
 </ul>
 </div>
 <h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>

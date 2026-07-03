@@ -439,37 +439,55 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.tquant</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+    <li class="toctree-l3"><a class="reference internal" href="#quantization-process">Quantization Process</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mx-formats-3-stages-group-size-g-32">MX formats (3 stages, group size G = 32)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#integer-int8-affine-5-stage-cast">Integer INT8 (affine, 5-stage cast)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsics">C++ Intrinsics</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mx-grouped-grp_axis-mxquantalg-recommended">MX — grouped (grp_axis + MxQuantAlg) — recommended</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mx-nd-legacy-quanttype-quantscalealg">MX — ND legacy (QuantType + QuantScaleAlg)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#integer-int8">Integer INT8</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-sizes-data-types">Tile Sizes &amp; Data Types</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mxfp8-e4m3">MXFP8 (e4m3)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mxfp4-e2m1">MXFP4 (e2m1)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int8">INT8</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#output-layout-layout-conversion">Output Layout &amp; Layout Conversion</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#supported-input-dtypes">Supported Input Dtypes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
     </li>
@@ -479,7 +497,7 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
+    <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
     </li>
     </ul>
                 </li>
@@ -984,85 +1002,397 @@
 
 <h1 id="ptotquant">pto.tquant<a class="headerlink" href="#ptotquant" title="Permanent link">&para;</a></h1>
 <p><code>pto.tquant</code> is part of the <a href="../../../irregular-and-complex/">Irregular and Complex</a> tile instruction family.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Quantize a tile (e.g. FP32 to FP8) producing exponent/scaling/max outputs.</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Quantize an FP32 tile into a lower-precision format (e.g. FP8), producing auxiliary exponent/scaling/max tiles. The quantization mode is a compile-time template parameter (<code>mode</code>). It belongs to the tile instructions and carries architecture-visible behavior that is not reducible to a plain elementwise compute pattern.</p>
-<p>Unless otherwise specified, semantics are defined over the valid region. On A2/A3 and A5, the quantizer operates on the full valid region with target-specific quantization modes; the CPU simulator emulates the nearest available mode.</p>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TQUANT tile operation" src="../../../figures/isa/TQUANT.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Quantize a higher-precision tile (<code>FP32</code> / <code>BF16</code> / <code>FP16</code>) into a lower-precision format, producing the quantized data tile plus auxiliary per-group exponent / max / scaling tiles. The destination format, scale algorithm, and group axis are compile-time template parameters.</p>
+<table>
+<thead>
+<tr>
+<th>Destination family</th>
+<th>Formats</th>
+<th>Grouping</th>
+<th>Scale algorithm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Microscaling (MX)</strong></td>
+<td>MXFP8 (e4m3), MXFP4 (e2m1)</td>
+<td>32 elements per shared-exponent group</td>
+<td>OCP, NV</td>
+</tr>
+<tr>
+<td><strong>Integer</strong></td>
+<td>INT8 (symmetric / asymmetric)</td>
+<td>per-tile scale (+ optional offset)</td>
+<td>affine</td>
+</tr>
+</tbody>
+</table>
+<h2 id="quantization-process">Quantization Process<a class="headerlink" href="#quantization-process" title="Permanent link">&para;</a></h2>
+<h3 id="mx-formats-3-stages-group-size-g-32">MX formats (3 stages, group size G = 32)<a class="headerlink" href="#mx-formats-3-stages-group-size-g-32" title="Permanent link">&para;</a></h3>
+<p>For a tile <span class="arithmatex">\(x \in \mathbb{R}^{M \times N}\)</span> grouped along axis <code>grp_axis</code> (ND: axis-1/columns, DN: axis-0/rows):</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Operation</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. Group max</strong></td>
+<td><span class="arithmatex">\(m_g = \max_{i \in g} \|x_i\|\)</span></td>
+<td><code>max</code> (scratch, FP)</td>
+</tr>
+<tr>
+<td><strong>2. Exponent + scale</strong></td>
+<td><span class="arithmatex">\(s_g = \mathrm{biasedExp}(m_g) - e_{\max}\)</span>; <span class="arithmatex">\(\alpha_g = 2^{254 - s_g}\)</span></td>
+<td><code>exp</code> (E8M0, 1 B/group), <code>scaling</code> (scratch, FP)</td>
+</tr>
+<tr>
+<td><strong>3. Scale + cast</strong></td>
+<td><span class="arithmatex">\(q_i = \mathrm{clip}_{[-V_{\max},V_{\max}]}(x_i \cdot \alpha_g) \to\)</span> dest format</td>
+<td><code>dst</code> (FP8 / packed FP4)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><span class="arithmatex">\(e_{\max}\)</span> = max destination exponent (8 for e4m3, 1 for e2m1).</li>
+<li><span class="arithmatex">\(V_{\max}\)</span> = destination MAX_NORM (448 for e4m3, 6 for e2m1).</li>
+<li>Stages 1–2 use exact IEEE-754 bit manipulation (no FP <code>log</code>/<code>floor</code>); stage 3 uses hardware cast with stochastic rounding (<code>SPR.CTRL[50]=1</code>).</li>
+<li><strong>ND</strong> ("normal direction", <code>grp_axis=1</code>): groups of 32 consecutive <strong>columns</strong> — the default/standard grouping. <strong>DN</strong> (<code>grp_axis=0</code>): groups of 32 consecutive <strong>rows</strong> — a transposed-style grouping along axis-0; exponent tile shape <code>M̂×N</code>, <code>M̂ = M/32</code>.</li>
+</ul>
+<h3 id="integer-int8-affine-5-stage-cast">Integer INT8 (affine, 5-stage cast)<a class="headerlink" href="#integer-int8-affine-5-stage-cast" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[q_i = \mathrm{round}\!\left(\frac{x_i}{\mathrm{scale}}\right) + \mathrm{offset}, \qquad q_i \in [-128, 127]\]</div>
+<p>No group structure; <code>scale</code> (and asymmetric <code>offset</code>) are per-tile FP32 scalars/vectors. To avoid double-rounding on A2/A3, the cast chain is <code>FP32 → S32 → FP32 → FP16 → INT8</code> (5 stages, via a <code>tmp</code> tile = src size); A5 uses native broadcast + cast (no <code>tmp</code>). Input must be <strong>FP32</strong>.</p>
+<h2 id="c-intrinsics">C++ Intrinsics<a class="headerlink" href="#c-intrinsics" title="Permanent link">&para;</a></h2>
+<p>Declared in <code>include/pto/common/pto_instr.hpp</code>.</p>
+<h3 id="mx-grouped-grp_axis-mxquantalg-recommended">MX — grouped (<code>grp_axis</code> + <code>MxQuantAlg</code>) — recommended<a class="headerlink" href="#mx-grouped-grp_axis-mxquantalg-recommended" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">template &lt;int grp_axis, auto mx_alg, typename TileDataOut, typename TileDataSrc,
+          typename TileDataExp, typename TileDataMax, typename TileDataScaling, typename... WaitEvents&gt;
+PTO_INST RecordEvent TQuant(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
+                            TileDataScaling *scaling, WaitEvents &amp;...events);</code></pre>
+<table>
+<thead>
+<tr>
+<th>Template param</th>
+<th>Values</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>grp_axis</code></td>
+<td><code>0</code> = DN (axis-0 groups), <code>1</code> = ND (axis-1 groups)</td>
+<td>Quantization group axis</td>
+</tr>
+<tr>
+<td><code>mx_alg</code></td>
+<td><code>MxQuantAlg::OcpMxFp8E4M3</code>, <code>NvMxFp8E4M3</code>, <code>OcpMxFp4E2M1</code>, <code>NvMxFp4E2M1</code></td>
+<td>Format + scale algorithm</td>
+</tr>
+</tbody>
+</table>
+<h3 id="mx-nd-legacy-quanttype-quantscalealg">MX — ND legacy (<code>QuantType</code> + <code>QuantScaleAlg</code>)<a class="headerlink" href="#mx-nd-legacy-quanttype-quantscalealg" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">template &lt;auto quant_type, typename ...Tiles, auto scale_alg = QuantScaleAlg::OCP, typename... WaitEvents&gt;
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
+                            TileDataScaling *scaling, WaitEvents &amp;...events);
+
+// with explicit ZZ exponent store-mode
+template &lt;auto quant_type, auto store_mode, typename ...Tiles, typename... WaitEvents&gt;
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
+                            TileDataScaling *scaling, TileDataExp *exp_zz, WaitEvents &amp;...events);</code></pre>
+<table>
+<thead>
+<tr>
+<th><code>quant_type</code></th>
+<th>Format</th>
+<th><code>scale_alg</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>QuantType::MXFP8</code></td>
+<td>e4m3 + E8M0</td>
+<td>OCP / NV</td>
+</tr>
+<tr>
+<td><code>QuantType::MXFP4_E2M1</code></td>
+<td>e2m1 + E8M0</td>
+<td>OCP / NV</td>
+</tr>
+</tbody>
+</table>
+<h3 id="integer-int8">Integer INT8<a class="headerlink" href="#integer-int8" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">// symmetric
+template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataPara, typename... WaitEvents&gt;
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataPara &amp;scale,
+                            TileDataPara *offset = nullptr, WaitEvents &amp;...events);
+// with explicit scratch (A2/A3)
+template &lt;auto quant_type, typename ...Tiles, typename TileDataTmp, typename... WaitEvents&gt;
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataPara &amp;scale, TileDataTmp &amp;tmp,
+                            TileDataPara *offset = nullptr, WaitEvents &amp;...events);</code></pre>
+<table>
+<thead>
+<tr>
+<th><code>quant_type</code></th>
+<th><code>offset</code></th>
+<th><code>dst</code> dtype</th>
+<th>Mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>QuantType::INT8_SYM</code></td>
+<td><code>nullptr</code></td>
+<td><code>int8_t</code></td>
+<td>symmetric (<span class="arithmatex">\(q = \mathrm{round}(x/\mathrm{scale})\)</span>)</td>
+</tr>
+<tr>
+<td><code>QuantType::INT8_ASYM</code></td>
+<td>provided</td>
+<td><code>uint8_t</code></td>
+<td>asymmetric (<span class="arithmatex">\(q = \mathrm{round}(x/\mathrm{scale}) + \mathrm{offset}\)</span>)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>The <code>tmp</code>-aware overload (<code>dst, src, scale, tmp, offset</code>) exists for A2/A3 interface parity. On A5 <code>tmp</code> is unused; on A2/A3 it must be <code>M×N</code> FP32 (the S32 cast intermediate).</p>
+</blockquote>
+<h2 id="tile-sizes-data-types">Tile Sizes &amp; Data Types<a class="headerlink" href="#tile-sizes-data-types" title="Permanent link">&para;</a></h2>
+<p>For an input tile of shape <span class="arithmatex">\(M \times N\)</span> elements (dtype <span class="arithmatex">\(T \in \{\mathrm{FP32}, \mathrm{BF16}, \mathrm{FP16}\}\)</span>), group size <span class="arithmatex">\(G = 32\)</span>:</p>
+<h3 id="mxfp8-e4m3">MXFP8 (e4m3)<a class="headerlink" href="#mxfp8-e4m3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Tile</th>
+<th>dtype</th>
+<th>Shape (ND)</th>
+<th>Shape (DN)</th>
+<th>Bytes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src</code></td>
+<td><span class="arithmatex">\(T\)</span></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N \cdot \mathrm{sizeof}(T)\)</span></td>
+</tr>
+<tr>
+<td><code>dst</code></td>
+<td><code>int8_t</code> (e4m3 alias)</td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N\)</span></td>
+</tr>
+<tr>
+<td><code>exp</code></td>
+<td><code>uint8_t</code> (E8M0)</td>
+<td><span class="arithmatex">\(M \times N/32\)</span></td>
+<td><span class="arithmatex">\(M/32 \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N / 32\)</span></td>
+</tr>
+<tr>
+<td><code>max</code> (scratch)</td>
+<td><span class="arithmatex">\(T\)</span></td>
+<td><span class="arithmatex">\(M \times N/32\)</span></td>
+<td><span class="arithmatex">\(M/32 \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N / 32 \cdot \mathrm{sizeof}(T)\)</span></td>
+</tr>
+<tr>
+<td><code>scaling</code> (scratch)</td>
+<td><span class="arithmatex">\(T\)</span></td>
+<td><span class="arithmatex">\(M \times N/32\)</span></td>
+<td><span class="arithmatex">\(M/32 \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N / 32 \cdot \mathrm{sizeof}(T)\)</span></td>
+</tr>
+</tbody>
+</table>
+<h3 id="mxfp4-e2m1">MXFP4 (e2m1)<a class="headerlink" href="#mxfp4-e2m1" title="Permanent link">&para;</a></h3>
+<p>Same as MXFP8 except:
+| Tile | dtype | Bytes |
+|------|-------|-------|
+| <code>dst</code> | <code>float4_e2m1x2_t</code> (2 e2m1 codes packed per byte) | <span class="arithmatex">\(M \cdot N / 2\)</span> |</p>
+<blockquote>
+<p><strong>Input restriction:</strong> MXFP4 accepts <strong>FP16/BF16 only</strong> (not FP32).</p>
+</blockquote>
+<h3 id="int8">INT8<a class="headerlink" href="#int8" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Tile</th>
+<th>dtype</th>
+<th>Shape</th>
+<th>Bytes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src</code></td>
+<td><code>float32_t</code></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N \cdot 4\)</span></td>
+</tr>
+<tr>
+<td><code>dst</code> (SYM)</td>
+<td><code>int8_t</code></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N\)</span></td>
+</tr>
+<tr>
+<td><code>dst</code> (ASYM)</td>
+<td><code>uint8_t</code></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N\)</span></td>
+</tr>
+<tr>
+<td><code>scale</code></td>
+<td>FP32 scalar/vector</td>
+<td>per-tile</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>offset</code> (ASYM)</td>
+<td>FP32 scalar/vector</td>
+<td>per-tile</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>tmp</code> (A2/A3 only)</td>
+<td>FP32</td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N \cdot 4\)</span></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong><code>tmp</code> tile (A2/A3 only):</strong> must be the <strong>same size as <code>src</code></strong> (<span class="arithmatex">\(M \times N\)</span> FP32 = <span class="arithmatex">\(4MN\)</span> bytes). It holds the FP32→S32 intermediate (A3 has no in-place <code>tcvt</code>). A5 accepts the same <code>tmp</code> argument for interface parity but <strong>does not use it</strong> (A5 broadcasts scale/offset natively via <code>vlds BRC_B32</code>).</p>
+</blockquote>
+<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Constraint</th>
+<th>Applies to</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(M \bmod 16 = 0\)</span></td>
+<td>ND MX (ZZ layout)</td>
+<td>16-row ZZ blocks</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(M \bmod 32 = 0\)</span></td>
+<td>DN MX</td>
+<td>axis-0 group divisibility</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(M \bmod 64 = 0\)</span></td>
+<td>DN MX + ZZ conversion</td>
+<td>δ-pairing (<span class="arithmatex">\(\hat M / 2\)</span> integer)</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(N \bmod 32 = 0\)</span></td>
+<td>all MX</td>
+<td>group size <span class="arithmatex">\(G = 32\)</span></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(N \bmod 64 = 0\)</span></td>
+<td>ND MX + ZZ conversion</td>
+<td>even number of exponent groups</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(R \cdot C \le 59461\)</span></td>
+<td>MX (UB 256 KB)</td>
+<td>buffer budget with reuse</td>
+</tr>
+<tr>
+<td>BF16/FP16: <code>validCols % 32 != 0</code> → zero-padded to <code>StaticCols</code></td>
+<td>MX B16 path</td>
+<td>group alignment</td>
+</tr>
+</tbody>
+</table>
+<h2 id="output-layout-layout-conversion">Output Layout &amp; Layout Conversion<a class="headerlink" href="#output-layout-layout-conversion" title="Permanent link">&para;</a></h2>
+<p>TQuant writes <strong>ND</strong> (row-major) output by default. The Cube Unit consumes two fractal layouts, produced by separate <code>TMOV</code> instructions:</p>
+<table>
+<thead>
+<tr>
+<th>Output</th>
+<th>Native (TQuant)</th>
+<th>Cube layout</th>
+<th>Conversion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP8 / FP4 data</td>
+<td>ND</td>
+<td>NZ (ColMajor+RowMajor fractal)</td>
+<td><code>TMOV(dstNZ, dst)</code> (2-arg)</td>
+</tr>
+<tr>
+<td>E8M0 exponents (ND groups)</td>
+<td>ND</td>
+<td>ZZ (zigzag, <code>[16,2]</code> boxes)</td>
+<td><code>TMOV(e8Zz, e8, tmp)</code> (3-arg)</td>
+</tr>
+<tr>
+<td>E8M0 exponents (DN groups)</td>
+<td>DN</td>
+<td>ZZ</td>
+<td><code>TMOV&lt;0&gt;(e8Zz, e8Dn, tmp)</code> (3-arg, <code>grp_axis=0</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>DN data FP8 mantissas share the same physical addresses as ND (the <code>(r,c)</code> element is identical), so the 2-arg <code>TMOV</code> ND→NZ is correct for DN data unchanged. Only the <strong>exponent</strong> path differs (DN→ZZ via <code>TMOV&lt;0&gt;</code>). See <a href="../../../../TQUANT_DN/"><code>TQUANT_DN.md</code></a> for the DN→ZZ transform.</p>
+<h2 id="supported-input-dtypes">Supported Input Dtypes<a class="headerlink" href="#supported-input-dtypes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Accepted input dtypes</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MXFP8</td>
+<td>FP32, BF16, FP16</td>
+<td>FP32: in-place FP8 output (4:1). BF16/FP16: source zero-padded to <code>StaticCols</code>; upcast to FP32 before cast (no direct b16→e4m3).</td>
+</tr>
+<tr>
+<td>MXFP4 (e2m1)</td>
+<td><strong>FP16, BF16 only</strong> (not FP32)</td>
+<td>output <code>float4_e2m1x2_t</code> (packed).</td>
+</tr>
+<tr>
+<td>INT8 (sym/asym)</td>
+<td><strong>FP32 only</strong></td>
+<td>SYM→<code>int8_t</code>, ASYM→<code>uint8_t</code>. A2/A3 need <code>tmp</code> = src size.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
+<p>Unless otherwise specified, semantics are defined over the valid region and target-dependent behavior is marked as implementation-defined.</p>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.tquant ins(%src, %qp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">pto.tquant ins(%src, %qp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataExp, typename TileDataMax,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max, TileDataSrc *scaling, WaitEvents &amp;... events);
-
-template &lt;auto quant_type, auto store_mode, typename TileDataOut, typename TileDataSrc, typename TileDataExp,
-          typename TileDataMax, typename TileDataIdx, typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max, TileDataSrc *scaling, TileDataExp *exp_zz, TileDataIdx *vgather_idx, WaitEvents &amp;... events);
-
-template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataPara, typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataPara &amp;scale, TileDataPara *offset = nullptr, WaitEvents &amp;... events);</code></pre>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src</code> is the source tile to quantize.</li>
-<li><code>qp</code> is the quantization parameter tile.</li>
-<li><code>exp</code> (output): exponent tile.</li>
-<li><code>max</code> (output): max tile.</li>
-<li><code>scaling</code> (output): scaling tile.</li>
-<li><code>dst</code> names the destination tile. The operation iterates over src's valid region.</li>
-</ul>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the quantized output. <code>exp</code>, <code>max</code>, <code>scaling</code> hold quantization metadata.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
-<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
-<ul>
-<li>
-<p>This instruction is currently implemented for specific targets (see <code>include/pto/npu/*/TQuant.hpp</code>).</p>
-</li>
-<li>
-<p>Input type requirements and output tile types are mode/target-dependent.</p>
-</li>
-</ul>
-</div>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">Exceptions</p>
-<ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
-</ul>
-</div>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>Target-Profile Restrictions</summary>
-<ul>
-<li>
-<p><code>pto.tquant</code> preserves PTO-visible semantics across CPU simulation, A2/A3-class targets, and A5-class targets, but concrete support subsets may differ by profile.</p>
-</li>
-<li>
-<p>Portable code must rely only on the documented type, layout, shape, and mode combinations that the selected target profile guarantees.</p>
-</li>
-</ul>
-</details>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<p>See related examples in <code>docs/isa/</code> and <code>docs/coding/tutorials/</code>.</p>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
 %dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
 # Optional for tile operands:
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
@@ -1071,10 +1401,24 @@ PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileData
 <pre class="highlight"><code class="language-text">%dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
 pto.tquant ins(%src, %qp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Instruction set overview: <a href="../../../irregular-and-complex/">Irregular And Complex</a></li>
-</ul>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<pre class="highlight"><code class="language-cpp">// MXFP8, DN grouping (axis-0 groups), OCP scale
+TQuant&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
+
+// MXFP8, ND grouping (legacy)
+TQUANT&lt;QuantType::MXFP8&gt;(fp8Tile, srcTile, &amp;e8NdTile, &amp;maxTile, &amp;scalingTile);
+
+// MXFP4 E2M1, DN, NV scale
+TQuant&lt;0, MxQuantAlg::NvMxFp4E2M1&gt;(fp4Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
+
+// INT8 symmetric
+TQUANT&lt;QuantType::INT8_SYM&gt;(int8Tile, srcTile, scale);
+
+// Full MXFP8 DN pipeline: quantize + layout convert for cube
+TQuant&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
+TMOV(fp8NZTile, fp8Tile);                  // data  ND→NZ
+TMOV&lt;0&gt;(e8ZzTile, e8DnTile, tmpTile);      // exp   DN→ZZ</code></pre>
+<p>See <a href="../../../../TQUANT_DN/"><code>TQUANT_DN.md</code></a> for the DN→ZZ transform details and <code>tests/npu/a5/src/st/testcase/tquant_dn/</code> for a complete ST example.</p>
               
             </div>
           </div><footer>

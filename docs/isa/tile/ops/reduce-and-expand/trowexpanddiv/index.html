@@ -338,6 +338,10 @@
     <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#temporary-tile">Temporary tile</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
     </li>
@@ -1065,6 +1069,21 @@ PTO_INST RecordEvent TROWEXPANDDIV(TileDataDst &amp;dst, TileDataSrc0 &amp;src0,
 </li>
 </ul>
 </div>
+<h3 id="temporary-tile">Temporary tile<a class="headerlink" href="#temporary-tile" title="Permanent link">&para;</a></h3>
+<p>The C++ API provides an overload with an explicit <code>TileDataTmp &amp;tmp</code>. This overload only supports <strong>Mode 1</strong> (ColMajor expanded operand, scalar per row).</p>
+<ul>
+<li><strong>A2A3</strong>: The tmp tile is used as a broadcast buffer. The per-row scalar values from the ColMajor expanded operand are broadcast via the <code>vbrcb</code> instruction into the tmp buffer, creating a 32-byte block per row, which is then used as the expanded operand in the binary operation. The <code>vbrcb</code> instruction uses a repeat stride of 8 blocks (256 bytes) between repeat groups, processing 8 rows per repeat. Minimum tmp size calculation:<ul>
+<li>Common parameters: <code>R = dst.GetValidRow()</code>, <code>T = TileDataDst::DType</code>.</li>
+<li>For <code>R &lt; 256</code>:
+  $$ \text{tmpSize} = \left\lceil\frac{R}{8}\right\rceil \times 256 \text{ bytes} $$</li>
+<li>For <code>R &gt;= 256</code>, the operation is looped with at most 30 repeats (240 rows) per loop iteration. The tmp buffer is reused across loops, so the per-loop requirement is:
+  $$ \text{tmpSize} = 30 \times 256 = 7680 \text{ bytes} $$</li>
+<li>A compact shape-independent upper bound for any Mode 1 invocation is <strong>8 KB</strong> (8192 bytes).</li>
+<li>The 3-arg overload without <code>tmp</code> supports both Mode 1 and Mode 2. For Mode 1, it uses an internal 8 KB buffer (<code>TMP_UB_OFFSET</code>). For Mode 2, no broadcast buffer is needed.</li>
+</ul>
+</li>
+<li><strong>A5</strong>: The <code>tmp</code> tile is accepted and ignored (<code>[[maybe_unused]]</code>). A5 hardware supports row-broadcast natively via the <code>vlds</code> instruction's broadcast modes, so no scratch buffer is required.</li>
+</ul>
 <h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
 <div class="admonition danger">
 <p class="admonition-title">Exceptions</p>

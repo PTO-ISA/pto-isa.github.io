@@ -461,7 +461,11 @@
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#auto-with-tmp">Auto With Tmp</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual-with-tmp">Manual With Tmp</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
     </li>
@@ -1017,7 +1021,10 @@
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename T, int descending, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events);</code></pre>
+PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events);
+
+template &lt;typename TileData, typename TileDataTmp, typename T, int descending, typename... WaitEvents&gt;
+PTO_INST RecordEvent TCI(TileData &amp;dst, T start, TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
 <h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>start</code> is the starting integer value for the sequence.</li>
@@ -1034,6 +1041,28 @@ PTO_INST RecordEvent TCI(TileData &amp;dst, T start, WaitEvents &amp;... events)
 <ul>
 <li><strong>Valid region</strong>:<ul>
 <li>The implementation uses <code>dst.GetValidCol()</code> as the sequence length and does not consult <code>dst.GetValidRow()</code>.</li>
+</ul>
+</li>
+<li><strong>Temporary tile</strong>:<ul>
+<li><strong>A2/A3</strong>: The C++ API provides an overload with an explicit <code>tmp</code> tile for the vectorized implementation
+  path. The no-<code>tmp</code> overload uses a scalar loop. <code>TileDataTmp::DType</code> must be a 4-byte type (<code>float</code>,
+  <code>int32_t</code>, or <code>uint32_t</code>). The implementation casts <code>tmp</code> to <code>float *</code>; size the tile by bytes,
+  independent of the declared <code>TileDataTmp::DType</code>.</li>
+<li><strong>b32 element types</strong> (<code>int32_t</code>, <code>uint32_t</code>): minimum tmp size = 768 bytes (192 float elements).
+  The vectorized path uses two float sub-buffers within <code>tmp</code>: <code>tmp0</code> at offset 0 and <code>tmp1</code> at offset +128
+  floats. <code>tmp0</code> holds up to 64 float elements (256 bytes) for the initial fractional sequence, and <code>tmp1</code>
+  holds up to 64 float elements (256 bytes) for the accumulated result. The highest accessed byte is offset
+  128 x 4 + 64 x 4 = <strong>768 bytes</strong> (192 float elements).</li>
+<li><strong>b16 element types</strong> (<code>int16_t</code>, <code>uint16_t</code>): minimum tmp size = 1792 bytes (448 float elements).
+  The vectorized path uses four sub-buffers within <code>tmp</code>: <code>tmp0/tmp1</code> (float) at offsets 0 and +128, and
+  <code>tmp2/tmp3</code> (half) at offsets +256 and +384 (in float-index units). <code>tmp0/tmp1</code> each hold up to 64 floats
+  (256 bytes) for the fractional sequence generation. <code>tmp2</code> holds up to 16 half elements (32 bytes) for the
+  float-to-half conversion. <code>tmp3</code> holds up to 128 half elements (256 bytes) for the final half-precision
+  accumulation. The highest accessed byte is offset 384 x 4 + 128 x 2 = <strong>1792 bytes</strong> (448 float elements).</li>
+<li>A convenient shape-independent allocation is 2048 bytes (2 KiB), for example
+  <code>Tile&lt;TileType::Vec, float, 1, 512&gt;</code>.</li>
+<li><strong>A5</strong>: The <code>tmp</code> tile is accepted and ignored. A5 hardware uses the <code>vci</code> vector instruction directly
+  without requiring a scratch buffer.</li>
 </ul>
 </li>
 </ul>
@@ -1069,6 +1098,18 @@ void example_auto() {
   TileT dst;
   TCI&lt;TileT, int32_t, /*descending=*/0&gt;(dst, /*S=*/0);
 }</code></pre>
+<h3 id="auto-with-tmp">Auto With Tmp<a class="headerlink" href="#auto-with-tmp" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto_tmp() {
+  using TileT = Tile&lt;TileType::Vec, int32_t, 1, 16&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 1, 512&gt;;
+  TileT dst;
+  TmpT tmp;
+  TCI&lt;TileT, TmpT, int32_t, /*descending=*/0&gt;(dst, /*S=*/0, tmp);
+}</code></pre>
 <h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1079,6 +1120,20 @@ void example_manual() {
   TileT dst;
   TASSIGN(dst, 0x1000);
   TCI&lt;TileT, int32_t, /*descending=*/1&gt;(dst, /*S=*/100);
+}</code></pre>
+<h3 id="manual-with-tmp">Manual With Tmp<a class="headerlink" href="#manual-with-tmp" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_manual_tmp() {
+  using TileT = Tile&lt;TileType::Vec, int32_t, 1, 16&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 1, 512&gt;;
+  TileT dst;
+  TmpT tmp;
+  TASSIGN(dst, 0x1000);
+  TASSIGN(tmp, 0x2000);
+  TCI&lt;TileT, TmpT, int32_t, /*descending=*/1&gt;(dst, /*S=*/100, tmp);
 }</code></pre>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
