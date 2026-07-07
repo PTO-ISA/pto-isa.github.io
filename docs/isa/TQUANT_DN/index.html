@@ -952,7 +952,7 @@ the E8M0 exponents are converted to ZZ via the new <code>TMOV&lt;grp_axis=0&gt;(
 <pre class="highlight"><code class="language-cpp">template &lt;int grp_axis, auto mx_alg, typename TileDataOut = void, typename TileDataSrc = void,
           typename TileDataExp = void, typename TileDataMax = void, typename TileDataScaling = void,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TQuant(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
                             TileDataScaling *scaling, WaitEvents &amp;... events);</code></pre>
 <h3 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h3>
 <table>
@@ -1084,13 +1084,13 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileDat
 <pre class="highlight"><code class="language-cpp">TMOV(fp8NZTile, fp8Tile);   // stock 2-arg ND→NZ; correct for DN data (RowMajor, identical addresses)</code></pre>
 <h2 id="pipeline-full-dn-flow">Pipeline (full DN flow)<a class="headerlink" href="#pipeline-full-dn-flow" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code>src[M×N] (fp32)
-  ──TQuant&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;──▶ fp8[M×N] + e8[M̂×N] (DN exponent)
+  ──TQUANT&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;──▶ fp8[M×N] + e8[M̂×N] (DN exponent)
   ──TMOV(ND→NZ)──────────────────────────▶ fp8NZ
   ──TMOV&lt;0&gt;(DN→ZZ)───────────────────────▶ e8ZZ
   ──feed to cube MMAD_MX──────────────────▶ C[M×N]</code></pre>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">// DN quantize (groups on axis 0)
-TQuant&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
+TQUANT&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
 // Data ND→NZ (stock)
 TMOV(fp8NZTile, fp8Tile);
 // Exponent DN→ZZ (new)

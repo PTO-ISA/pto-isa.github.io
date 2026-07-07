@@ -417,42 +417,74 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.tmrgsort</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+    <li class="toctree-l3"><a class="reference internal" href="#data-format-value-index-pair">Data Format: Value-Index Pair</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#two-variants">Two Variants</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#variant-a-single-list-sort-tmrgsortdst-src-blocklen">Variant A: Single-list sort — TMRGSORT(dst, src, blockLen)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#variant-b-multi-list-merge-tmrgsort-exhausteddst-executednumlist-tmp-src0-src1-src2-src3">Variant B: Multi-list merge — TMRGSORT&lt;..., exhausted&gt;(dst, executedNumList, tmp, src0, src1, [src2], [src3])</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
-    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#single-list-variant">Single-list variant</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
+    <li class="toctree-l4"><a class="reference internal" href="#multi-list-variants-234-lists">Multi-list variants (2/3/4 lists)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#general-constraints-a2a3-and-a5">General constraints (A2A3 and A5)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
+    <li class="toctree-l4"><a class="reference internal" href="#ub-memory-constraints-by-variant">UB memory constraints by variant</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
+    <li class="toctree-l4"><a class="reference internal" href="#single-list-constraints">Single-list constraints</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#temporary-space">Temporary Space</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#multi-list-variants-234-lists_1">Multi-list variants (2/3/4 lists)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#single-list-variant_1">Single-list variant</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#typical-usage-topk">Typical Usage: TopK</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#a2a3-vs-a5-differences">A2A3 vs A5 Differences</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
+    <li class="toctree-l4"><a class="reference internal" href="#single-list-sort-auto">Single-list sort (Auto)</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
+    <li class="toctree-l4"><a class="reference internal" href="#multi-list-merge-4-lists-non-exhausted">Multi-list merge (4 lists, non-exhausted)</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#multi-list-merge-2-lists-exhausted">Multi-list merge (2 lists, exhausted)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual-single-list">Manual (single-list)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
+        <ul>
     <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
@@ -460,8 +492,6 @@
     <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
     </ul>
                 </li>
@@ -986,16 +1016,148 @@
               
                 <!-- Generated from `docs/isa/tile/ops/irregular-and-complex/tmrgsort.md` -->
 
-<h1 id="ptotmrgsort">pto.tmrgsort<a class="headerlink" href="#ptotmrgsort" title="Permanent link">&para;</a></h1>
-<p><code>pto.tmrgsort</code> is part of the <a href="../../../irregular-and-complex/">Irregular And Complex</a> instruction set.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Merge sort for multiple sorted lists. On A2/A3 and A5, elements are stored in row-major order with a single row (Rows == 1); on the CPU simulator, elements are stored in the natural tile row-major order.</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Merge sort for multiple sorted lists. On A2/A3 and A5, elements are stored in row-major order with a single row (Rows == 1); on the CPU simulator, elements are stored in the natural tile row-major order. It belongs to the tile instructions and carries architecture-visible behavior that is not reducible to a plain elementwise compute pattern.</p>
-<p>Merges sorted input lists into <code>dst</code>. On A2/A3 and A5, the merge produces a single sorted list in row-major order; the CPU simulator follows the natural tile row-major ordering.</p>
-<div class="arithmatex">\[ \mathrm{dst} = \mathrm{merge}(\mathrm{src}_0, \mathrm{src}_1, \ldots) \]</div>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<h1 id="tmrgsort">TMRGSORT<a class="headerlink" href="#tmrgsort" title="Permanent link">&para;</a></h1>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TMRGSORT tile operation" src="../../../../../figures/isa/TMRGSORT.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Hardware-accelerated multi-way merge sort (<code>vmrgsort4</code>). Merges up to 4 pre-sorted lists into a single sorted output in <strong>descending</strong> order. Each element is a fixed 8-byte <strong>value-index pair</strong> structure.</p>
+<h2 id="data-format-value-index-pair">Data Format: Value-Index Pair<a class="headerlink" href="#data-format-value-index-pair" title="Permanent link">&para;</a></h2>
+<p>TMRGSORT operates on 8-byte structures where each element in the tile represents part of a value-index pair:</p>
+<table>
+<thead>
+<tr>
+<th>Data type</th>
+<th>Value field</th>
+<th>Padding</th>
+<th>Index field</th>
+<th>Struct size</th>
+<th>Tile elements per struct</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td>4 bytes</td>
+<td>0</td>
+<td>4 bytes (<code>uint32_t</code>)</td>
+<td>8 bytes</td>
+<td><strong>2 elements</strong></td>
+</tr>
+<tr>
+<td><code>half</code></td>
+<td>2 bytes</td>
+<td>2 bytes</td>
+<td>4 bytes (<code>uint32_t</code>)</td>
+<td>8 bytes</td>
+<td><strong>4 elements</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The number of sorted pairs in a tile is therefore:</p>
+<ul>
+<li><code>float</code>: <code>numPairs = ValidCol / 2</code></li>
+<li><code>half</code>: <code>numPairs = ValidCol / 4</code></li>
+</ul>
+<p>The implementation converts <code>ValidCol</code> to pair count using <code>ELE_NUM_SHIFT</code>:</p>
+<pre class="highlight"><code class="language-cpp">// float: ELE_NUM_SHIFT = 1  →  numPairs = ValidCol &gt;&gt; 1
+// half:  ELE_NUM_SHIFT = 2  →  numPairs = ValidCol &gt;&gt; 2</code></pre>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
+<p>Merges pre-sorted input lists into <code>dst</code> in descending order:</p>
+<div class="arithmatex">\[ \mathrm{dst} = \mathrm{merge\_desc}(\mathrm{src}_0, \mathrm{src}_1, \ldots) \]</div>
+<h2 id="two-variants">Two Variants<a class="headerlink" href="#two-variants" title="Permanent link">&para;</a></h2>
+<h3 id="variant-a-single-list-sort-tmrgsortdst-src-blocklen">Variant A: Single-list sort — <code>TMRGSORT(dst, src, blockLen)</code><a class="headerlink" href="#variant-a-single-list-sort-tmrgsortdst-src-blocklen" title="Permanent link">&para;</a></h3>
+<p>Treats <code>src</code> as <strong>4 consecutive equal-length pre-sorted blocks</strong> and performs a 4-way merge within a single tile.</p>
+<pre class="highlight"><code>src Tile (1 row):
+┌── blockLen ──┬── blockLen ──┬── blockLen ──┬── blockLen ──┐
+│   Block 0    │   Block 1    │   Block 2    │   Block 3    │
+│ (pre-sorted) │ (pre-sorted) │ (pre-sorted) │ (pre-sorted) │
+└──────────────┴──────────────┴──────────────┴──────────────┘
+                        ↓ vmrgsort4
+dst Tile (1 row):
+┌──────────── merged result (descending) ────────────┐
+└────────────────────────────────────────────────────┘</code></pre>
+<p><strong>Constraints:</strong></p>
+<ul>
+<li><code>blockLen</code> must be a multiple of <strong>64</strong>.</li>
+<li><code>src.GetValidCol()</code> must be an integer multiple of <code>blockLen * 4</code>.</li>
+<li><code>repeatTimes = src.GetValidCol() / (blockLen * 4)</code> must be in <code>[1, 255]</code>.</li>
+<li><strong>No <code>tmp</code> required</strong> — result is written directly to <code>dst</code>.</li>
+<li>No <code>exhausted</code> parameter (fixed to non-suspending mode).</li>
+</ul>
+<p><strong><code>blockLen</code> meaning in terms of sorted pairs:</strong></p>
+<table>
+<thead>
+<tr>
+<th>blockLen</th>
+<th>float pairs per block</th>
+<th>half pairs per block</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>64</td>
+<td>32</td>
+<td>16</td>
+</tr>
+<tr>
+<td>128</td>
+<td>64</td>
+<td>32</td>
+</tr>
+<tr>
+<td>256</td>
+<td>128</td>
+<td>64</td>
+</tr>
+</tbody>
+</table>
+<h3 id="variant-b-multi-list-merge-tmrgsort-exhausteddst-executednumlist-tmp-src0-src1-src2-src3">Variant B: Multi-list merge — <code>TMRGSORT&lt;..., exhausted&gt;(dst, executedNumList, tmp, src0, src1, [src2], [src3])</code><a class="headerlink" href="#variant-b-multi-list-merge-tmrgsort-exhausteddst-executednumlist-tmp-src0-src1-src2-src3" title="Permanent link">&para;</a></h3>
+<p>Merges 2–4 <strong>independent pre-sorted lists</strong> into a single sorted output.</p>
+<pre class="highlight"><code>src0 Tile ──┐
+src1 Tile ──┤
+src2 Tile ──┼──→ vmrgsort4 ──→ tmp ──→ dst
+src3 Tile ──┘</code></pre>
+<p><strong>Template parameter <code>exhausted</code>:</strong></p>
+<ul>
+<li><code>exhausted = false</code>: Normal merge — processes all input data.</li>
+<li><code>exhausted = true</code>: When any input list is exhausted, the hardware suspends and reports the number of elements processed from each list via <code>executedNumList</code>.</li>
+</ul>
+<p><strong><code>MrgSortExecutedNumList</code>:</strong></p>
+<pre class="highlight"><code class="language-cpp">struct MrgSortExecutedNumList {
+    uint16_t mrgSortList0;  // elements processed from list 0
+    uint16_t mrgSortList1;  // elements processed from list 1
+    uint16_t mrgSortList2;  // elements processed from list 2
+    uint16_t mrgSortList3;  // elements processed from list 3
+};</code></pre>
+<p>Only meaningful when <code>exhausted = true</code>. Data is read from hardware register <code>VMS4_SR</code>.</p>
+<p><strong>Mask configuration by list count:</strong></p>
+<table>
+<thead>
+<tr>
+<th>List count</th>
+<th>Xt[11:8] mask</th>
+<th>Unused lists</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2 lists</td>
+<td><code>0b0011</code></td>
+<td>src2, src3 (size=0)</td>
+</tr>
+<tr>
+<td>3 lists</td>
+<td><code>0b0111</code></td>
+<td>src3 (size=0)</td>
+</tr>
+<tr>
+<td>4 lists</td>
+<td><code>0b1111</code></td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>Synchronous form (conceptual):</p>
 <pre class="highlight"><code class="language-text">%dst, %executed = tmrgsort %src0, %src1 {exhausted = false}
     : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; (!pto.tile&lt;...&gt;, vector&lt;4xi16&gt;)</code></pre>
@@ -1007,96 +1169,206 @@
 <pre class="highlight"><code class="language-text">pto.tmrgsort ins(%src, %blockLen : !pto.tile_buf&lt;...&gt;, dtype)  outs(%dst : !pto.tile_buf&lt;...&gt;)
 pto.tmrgsort ins(%src0, %src1, %src2, %src3 {exhausted = false} : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
 outs(%dst, %executed : !pto.tile_buf&lt;...&gt;, vector&lt;4xi16&gt;)</code></pre>
-<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = pto.tmrgsort %src, %blockLen : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
-%dst, %executed = pto.tmrgsort %src0, %src1, %src2, %src3 {exhausted = false}
- : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, vector&lt;4xi16&gt;)</code></pre>
-<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">pto.tmrgsort ins(%src, %blockLen : !pto.tile_buf&lt;...&gt;, dtype)  outs(%dst : !pto.tile_buf&lt;...&gt;)
-pto.tmrgsort ins(%src0, %src1, %src2, %src3 {exhausted = false} : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)
-outs(%dst, %executed : !pto.tile_buf&lt;...&gt;, vector&lt;4xi16&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData,
+<h3 id="single-list-variant">Single-list variant<a class="headerlink" href="#single-list-variant" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, SrcTileData &amp;src, uint32_t blockLen, WaitEvents &amp;... events);</code></pre>
+<h3 id="multi-list-variants-234-lists">Multi-list variants (2/3/4 lists)<a class="headerlink" href="#multi-list-variants-234-lists" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">// 4 lists
+template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData,
           typename Src2TileData, typename Src3TileData, bool exhausted, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, Src2TileData &amp;src2, Src3TileData &amp;src3, WaitEvents &amp;... events);
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp,
+                              Src0TileData &amp;src0, Src1TileData &amp;src1, Src2TileData &amp;src2, Src3TileData &amp;src3,
+                              WaitEvents &amp;... events);
 
+// 3 lists
 template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData,
           typename Src2TileData, bool exhausted, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, Src2TileData &amp;src2, WaitEvents &amp;... events);
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp,
+                              Src0TileData &amp;src0, Src1TileData &amp;src1, Src2TileData &amp;src2,
+                              WaitEvents &amp;... events);
 
-template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData, bool exhausted,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp, Src0TileData &amp;src0, Src1TileData &amp;src1, WaitEvents &amp;... events);
-
-template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, SrcTileData &amp;src, uint32_t blockLen, WaitEvents &amp;... events);</code></pre>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src0...src3</code> are source tiles (sorted lists to merge).</li>
-<li><code>tmp</code> is a temporary tile used during merge.</li>
-<li><code>executedNumList</code> outputs the number of consumed elements from each source.</li>
-<li><code>blockLen</code> (single-list variant): length of each sorted block.</li>
-<li><code>dst</code> names the destination tile. The operation iterates over dst's valid region.</li>
-</ul>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the merged sorted output. <code>executedNumList</code> reports consumed counts.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
+// 2 lists
+template &lt;typename DstTileData, typename TmpTileData, typename Src0TileData, typename Src1TileData,
+          bool exhausted, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMRGSORT(DstTileData &amp;dst, MrgSortExecutedNumList &amp;executedNumList, TmpTileData &amp;tmp,
+                              Src0TileData &amp;src0, Src1TileData &amp;src1, WaitEvents &amp;... events);</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
+<h3 id="general-constraints-a2a3-and-a5">General constraints (A2A3 and A5)<a class="headerlink" href="#general-constraints-a2a3-and-a5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Constraint</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tile type</td>
+<td>All tiles must be <code>TileType::Vec</code></td>
+</tr>
+<tr>
+<td>Rows</td>
+<td>All tiles must have <code>Rows == 1</code></td>
+</tr>
+<tr>
+<td>Layout</td>
+<td>All tiles must be row-major (<code>BLayout::RowMajor</code>)</td>
+</tr>
+<tr>
+<td>Data type</td>
+<td><code>half</code> or <code>float</code>, consistent across all tiles</td>
+</tr>
+<tr>
+<td>UB memory</td>
+<td>Total must not exceed 192 KiB (<code>UB_SIZE</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ub-memory-constraints-by-variant">UB memory constraints by variant<a class="headerlink" href="#ub-memory-constraints-by-variant" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Constraint</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Single-list</td>
+<td><code>(src.Cols + dst.Cols) * sizeof(T) &lt; UB_SIZE</code></td>
+</tr>
+<tr>
+<td>2-list</td>
+<td><code>(src0.Cols + src1.Cols + tmp.Cols) * sizeof(T) &lt; UB_SIZE</code>, and <code>tmp.Cols + src0.Cols &lt;= UB_SIZE / sizeof(T)</code></td>
+</tr>
+<tr>
+<td>3-list</td>
+<td><code>(src0.Cols + src1.Cols + src2.Cols + tmp.Cols) * sizeof(T) &lt; UB_SIZE</code></td>
+</tr>
+<tr>
+<td>4-list</td>
+<td><code>(src0.Cols + src1.Cols + src2.Cols + src3.Cols + tmp.Cols) * sizeof(T) &lt; UB_SIZE</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="single-list-constraints">Single-list constraints<a class="headerlink" href="#single-list-constraints" title="Permanent link">&para;</a></h3>
 <ul>
-<li>
-<p><strong>Single-list variant (<code>TMRGSORT(dst, src, blockLen)</code>)</strong>:</p>
-<ul>
-<li><code>blockLen</code> must be a multiple of 64 (as checked by the implementation).</li>
+<li><code>blockLen</code> must be a multiple of 64.</li>
 <li><code>src.GetValidCol()</code> must be an integer multiple of <code>blockLen * 4</code>.</li>
 <li><code>repeatTimes = src.GetValidCol() / (blockLen * 4)</code> must be in <code>[1, 255]</code>.</li>
 </ul>
-</li>
-<li>
-<p><strong>Multi-list variants</strong>:</p>
+<h2 id="temporary-space">Temporary Space<a class="headerlink" href="#temporary-space" title="Permanent link">&para;</a></h2>
+<h3 id="multi-list-variants-234-lists_1">Multi-list variants (2/3/4 lists)<a class="headerlink" href="#multi-list-variants-234-lists_1" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> <strong>is used</strong> as intermediate output buffer for the <code>vmrgsort4</code> hardware instruction. The merge-sort result is first written to <code>tmp</code>, then copied to <code>dst</code> via <code>MovUb2Ub</code> (UB-to-UB memcpy).</p>
 <ul>
-<li><code>tmp</code> is required and <code>executedNumList</code> is written by the implementation; supported list counts and exact semantics are target-defined.</li>
-</ul>
-</li>
-</ul>
-</div>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">Exceptions</p>
-<ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
-</ul>
-</div>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>Target-Profile Restrictions</summary>
-<ul>
-<li><strong>Implementation checks (A2A3/A5)</strong>:<ul>
-<li>Element type must be <code>half</code> or <code>float</code> and must match across <code>dst/tmp/src*</code> tiles.</li>
-<li>All tiles must be <code>TileType::Vec</code>, row-major, and have <code>Rows == 1</code> (list stored in a single row).</li>
-<li>UB memory usage is checked (compile-time and runtime) against target limits (single <code>Cols</code> across inputs plus <code>tmp</code>/<code>dst</code>).</li>
+<li><code>tmp</code> must have the same element type as <code>dst</code> and all <code>src</code> tiles (<code>half</code> or <code>float</code>).</li>
+<li><code>tmp</code> must have <code>Rows == 1</code> and be row-major.</li>
+<li><code>tmp</code> Cols must be at least the sum of all input source Cols:<ul>
+<li>2-list: <code>tmp.Cols &gt;= src0.Cols + src1.Cols</code></li>
+<li>3-list: <code>tmp.Cols &gt;= src0.Cols + src1.Cols + src2.Cols</code></li>
+<li>4-list: <code>tmp.Cols &gt;= src0.Cols + src1.Cols + src2.Cols + src3.Cols</code></li>
 </ul>
 </li>
+<li>The helper function <code>GETMRGSORTTMPSIZE&lt;...&gt;()</code> returns the required <code>tmp</code> Cols:</li>
 </ul>
-</details>
+<pre class="highlight"><code class="language-cpp">// 2 lists
+GETMRGSORTTMPSIZE&lt;Src0Tile, Src1Tile&gt;() = Src0Tile::Cols + Src1Tile::Cols
+
+// 3 lists
+GETMRGSORTTMPSIZE&lt;Src0Tile, Src1Tile, Src2Tile&gt;() = Src0Tile::Cols + Src1Tile::Cols + Src2Tile::Cols
+
+// 4 lists
+GETMRGSORTTMPSIZE&lt;Src0Tile, Src1Tile, Src2Tile, Src3Tile&gt;() = sum of all 4 Cols</code></pre>
+<h3 id="single-list-variant_1">Single-list variant<a class="headerlink" href="#single-list-variant_1" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> is <strong>not required</strong>. The single-list variant writes directly to <code>dst</code>.</p>
+<h2 id="typical-usage-topk">Typical Usage: TopK<a class="headerlink" href="#typical-usage-topk" title="Permanent link">&para;</a></h2>
+<p>TMRGSORT is commonly used to implement TopK selection via iterative merge sort:</p>
+<pre class="highlight"><code>Phase 1: Single-list sort (progressively increasing blockLen)
+  blockLen=64:  every 256 elements → 4-way merge → 256 sorted elements
+  blockLen=256: every 1024 elements → 4-way merge → 1024 sorted elements
+  ... until blockLen * 4 &gt; totalCols
+
+Phase 2: Tail merge (SortTailBlock)
+  Use 2-list variant to merge remaining blocks, keeping top K elements</code></pre>
+<h2 id="a2a3-vs-a5-differences">A2A3 vs A5 Differences<a class="headerlink" href="#a2a3-vs-a5-differences" title="Permanent link">&para;</a></h2>
+<p>Both implementations are nearly identical, both calling the <code>vmrgsort4</code> hardware instruction. Minor differences:</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>A2A3</th>
+<th>A5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UB_SIZE</code> constant</td>
+<td>Hardcoded <code>196608</code> (192×1024)</td>
+<td>Uses <code>PTO_UBUF_SIZE_BYTES</code></td>
+</tr>
+<tr>
+<td><code>TMRGSORT_BLOCK_LEN</code></td>
+<td>Defined as constant <code>64</code></td>
+<td>Not defined (uses literal)</td>
+</tr>
+<tr>
+<td>Core logic</td>
+<td>Identical</td>
+<td>Identical</td>
+</tr>
+</tbody>
+</table>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h3 id="single-list-sort-auto">Single-list sort (Auto)<a class="headerlink" href="#single-list-sort-auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-void example_auto() {
+void example_single() {
   using SrcT = Tile&lt;TileType::Vec, float, 1, 256&gt;;
   using DstT = Tile&lt;TileType::Vec, float, 1, 256&gt;;
   SrcT src;
   DstT dst;
   TMRGSORT(dst, src, /*blockLen=*/64);
 }</code></pre>
-<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<h3 id="multi-list-merge-4-lists-non-exhausted">Multi-list merge (4 lists, non-exhausted)<a class="headerlink" href="#multi-list-merge-4-lists-non-exhausted" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_multi4() {
+  using SrcT = Tile&lt;TileType::Vec, float, 1, 128&gt;;
+  using DstT = Tile&lt;TileType::Vec, float, 1, 512&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 1, 512&gt;;
+  SrcT src0, src1, src2, src3;
+  DstT dst;
+  TmpT tmp;
+  MrgSortExecutedNumList executedNumList;
+  TMRGSORT&lt;DstT, TmpT, SrcT, SrcT, SrcT, SrcT, /*exhausted=*/false&gt;(
+      dst, executedNumList, tmp, src0, src1, src2, src3);
+}</code></pre>
+<h3 id="multi-list-merge-2-lists-exhausted">Multi-list merge (2 lists, exhausted)<a class="headerlink" href="#multi-list-merge-2-lists-exhausted" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_exhausted() {
+  using SrcT = Tile&lt;TileType::Vec, float, 1, 64&gt;;
+  using DstT = Tile&lt;TileType::Vec, float, 1, 128&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 1, 128&gt;;
+  SrcT src0, src1;
+  DstT dst;
+  TmpT tmp;
+  MrgSortExecutedNumList executedNumList;
+  TMRGSORT&lt;DstT, TmpT, SrcT, SrcT, /*exhausted=*/true&gt;(
+      dst, executedNumList, tmp, src0, src1);
+  // After execution:
+  // executedNumList.mrgSortList0 = elements processed from src0
+  // executedNumList.mrgSortList1 = elements processed from src1
+}</code></pre>
+<h3 id="manual-single-list">Manual (single-list)<a class="headerlink" href="#manual-single-list" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -1110,11 +1382,12 @@ void example_manual() {
   TASSIGN(dst, 0x2000);
   TMRGSORT(dst, src, /*blockLen=*/64);
 }</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
 %dst = pto.tmrgsort %src, %blockLen : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
 # Optional for tile operands:
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
@@ -1123,12 +1396,6 @@ void example_manual() {
 <pre class="highlight"><code class="language-text">%dst = pto.tmrgsort %src, %blockLen : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
 pto.tmrgsort ins(%src, %blockLen : !pto.tile_buf&lt;...&gt;, dtype)  outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Instruction set overview: <a href="../../../irregular-and-complex/">Irregular And Complex</a></li>
-<li>Previous op in instruction set: <a href="../tprint/">pto.tprint</a></li>
-<li>Next op in instruction set: <a href="../tsort32/">pto.tsort32</a></li>
-</ul>
               
             </div>
           </div><footer>

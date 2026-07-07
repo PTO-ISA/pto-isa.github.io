@@ -433,6 +433,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
         <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#tmp-size-equation-4-arg">tmp size equation (4-arg)</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#4-arg-tail-handling">4-arg tail handling</a>
     </li>
         </ul>
@@ -456,8 +458,6 @@
     <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
     </ul>
                 </li>
@@ -983,7 +983,7 @@
 <h1 id="ptotsort32">pto.tsort32<a class="headerlink" href="#ptotsort32" title="Permanent link">&para;</a></h1>
 <p><code>pto.tsort32</code> is part of the <a href="../../../irregular-and-complex/">Irregular And Complex</a> instruction set.</p>
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
-<p><img alt="TSORT32 tile operation" src="../../../figures/isa/TSORT32.svg" /></p>
+<p><img alt="TSort32 tile operation" src="../../../../figures/isa/TSort32.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>Sort each 32-element block of <code>src</code> together with the corresponding indices from <code>idx</code>, and write the sorted value-index pairs into <code>dst</code>. The underlying SFU instruction is <strong>VBS32</strong> (<code>vbitsort</code>), which sorts one or more independent 32-element lists in a single call.</p>
 <h2 id="hardware-vbs32-vbitsort">Hardware: VBS32 (<code>vbitsort</code>)<a class="headerlink" href="#hardware-vbs32-vbitsort" title="Permanent link">&para;</a></h2>
@@ -1014,11 +1014,11 @@
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">// 3-arg: src must be 32-aligned (validCol % 32 == 0)
 template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData&gt;
-PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx);
+PTO_INST RecordEvent TSort32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx);
 
 // 4-arg: supports non-32-aligned tails (validCol % 32 != 0) via tmp padding
 template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData, typename TmpTileData&gt;
-PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx, TmpTileData &amp;tmp);</code></pre>
+PTO_INST RecordEvent TSort32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx, TmpTileData &amp;tmp);</code></pre>
 <h2 id="tile-sizes-data-types">Tile Sizes &amp; Data Types<a class="headerlink" href="#tile-sizes-data-types" title="Permanent link">&para;</a></h2>
 <p>For <code>src</code> of shape <span class="arithmatex">\(R \times C\)</span> (valid region), block size 32:</p>
 <table>
@@ -1052,32 +1052,32 @@ PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTile
 <tr>
 <td><code>tmp</code> (4-arg only)</td>
 <td><span class="arithmatex">\(T\)</span></td>
-<td><span class="arithmatex">\(\ge \mathrm{ceil}_{32}(C)\)</span> per row</td>
-<td>tail-padding scratch; ≤ <span class="arithmatex">\(32 \times 255\)</span> elements</td>
+<td>see tmp-size equation below</td>
+<td>tail-padding scratch</td>
 </tr>
 </tbody>
 </table>
-<p><strong><code>dst</code> expansion factor</strong> (<code>typeCoef</code>): each input element becomes a value-index pair.</p>
+<p><strong><code>dst</code> expansion factor</strong> (<code>typeCoef</code>): each input element becomes an 8-byte tuple <code>[value (4 B), index (4 B)]</code> — for <code>float</code> the value fills 4 B; for <code>half</code> the 2-B value is zero-padded to 4 B. So <code>dst</code> is always <code>C × 8</code> bytes.</p>
 <table>
 <thead>
 <tr>
 <th>dtype</th>
-<th><code>dst</code> cols per <code>src</code> col</th>
-<th>pair layout</th>
-<th>bytes/pair</th>
+<th><code>dst</code> cols per <code>src</code> col (in dtype units)</th>
+<th>tuple layout</th>
+<th>bytes/tuple</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>float</code></td>
-<td>×2</td>
+<td>×2 (2 float slots)</td>
 <td><code>[value_f32, index_u32]</code></td>
 <td>8</td>
 </tr>
 <tr>
 <td><code>half</code></td>
-<td>×4</td>
-<td>half-pair packing</td>
+<td>×4 (4 half slots)</td>
+<td><code>[value_f16, 0x0000, index_u32]</code></td>
 <td>8</td>
 </tr>
 </tbody>
@@ -1112,8 +1112,8 @@ PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTile
 <td>VBS32 repeat count, ≤ 255 per call; larger <code>validCol</code> splits into multiple <code>vbitsort</code> calls</td>
 </tr>
 <tr>
-<td><code>tmp</code> (4-arg) ≥ <code>ceil32(C)</code> elements/row</td>
-<td>holds the padded copy of the tail block</td>
+<td><code>tmp</code> (4-arg) ≥ <code>tmpSize</code> elements (equation below)</td>
+<td>holds the padded copy of the tail/row</td>
 </tr>
 <tr>
 <td>No <code>WaitEvents&amp;...</code> / no internal <code>TSYNC</code></td>
@@ -1121,8 +1121,31 @@ PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTile
 </tr>
 </tbody>
 </table>
+<h3 id="tmp-size-equation-4-arg"><code>tmp</code> size equation (4-arg)<a class="headerlink" href="#tmp-size-equation-4-arg" title="Permanent link">&para;</a></h3>
+<p>Let <span class="arithmatex">\(C\)</span> = <code>validCol</code>, <span class="arithmatex">\(b\)</span> = <code>sizeof(T)</code> bytes, <span class="arithmatex">\(G\)</span> = 32 (block size). The implementation branches on whether the whole row (in bytes) fits <code>MAX_UB_TMP = 8160</code>:</p>
+<div class="arithmatex">\[
+\mathrm{tmpSize} =
+\begin{cases}
+\mathrm{ceil}_{G}(C) &amp; \text{if } C \cdot b \le 8160 \quad \text{(whole row copied to tmp + last block padded)} \\
+G = 32 &amp; \text{if } C \cdot b &gt; 8160 \quad \text{(only the tail block copied + padded)}
+\end{cases}
+\]</div>
+<ul>
+<li><code>ceil_G(C)</code> = <span class="arithmatex">\(C\)</span> rounded up to the next multiple of 32.</li>
+<li>The <code>8160</code> threshold is in <strong>bytes</strong>: it is the <code>pto_copy_ubuf_to_ubuf</code> (MOV_UB_TO_UB) repeat cap = 255 blocks × 32 B. Path A copies the whole row in one such call, so the row must be ≤ 8160 B (float → <span class="arithmatex">\(C \le 2040\)</span>, half → <span class="arithmatex">\(C \le 4080\)</span>). This is independent of the VBS32 <code>repeat</code> cap (which is in elements, ≤ 8160).</li>
+<li>Tail block = <span class="arithmatex">\(t = C \bmod G\)</span> elements (the trailing partial block), extended to <span class="arithmatex">\(G\)</span> with <span class="arithmatex">\(-\infty\)</span>.</li>
+<li>Path A (<span class="arithmatex">\(C \cdot b \le 8160\)</span>) copies the <strong>entire row</strong> from its start into tmp, then pads the last 32 elements in place.</li>
+<li>Path B (<span class="arithmatex">\(C \cdot b &gt; 8160\)</span>) copies <strong>only the tail block</strong> into tmp; full blocks are sorted directly from <code>src</code>.</li>
+<li>VBS32 hard cap: <code>repeat ≤ REPEAT_MAX = 255</code> blocks per call (≤ 8160 elements); rows longer than 255 blocks are split across multiple <code>vbitsort</code> calls.</li>
+<li><strong>UB placement:</strong> <code>tmp</code> should be placed right after <code>dst</code> (32-B aligned), sized <code>ceil(ALIGN_C·b, 32)</code> bytes — not at a fixed 8 KB offset, since Path A needs up to ~32 KB for float near the threshold.</li>
+</ul>
 <h3 id="4-arg-tail-handling">4-arg tail handling<a class="headerlink" href="#4-arg-tail-handling" title="Permanent link">&para;</a></h3>
-<p>When <code>validCol % 32 != 0</code>, the last partial block is copied to <code>tmp</code>, padded with <span class="arithmatex">\(-\infty\)</span> (<code>-(0.0/0.0)</code>) up to 32 elements via <code>vdup</code>, then sorted from <code>tmp</code> (padding values land at the bottom of the descending order). If <code>validCol &gt; 32 × 255</code>, the row is chunked into <code>REPEAT_MAX</code>-sized groups, each sorted separately.</p>
+<p>When <code>validCol % 32 != 0</code>, the trailing partial block (<span class="arithmatex">\(t = C \bmod 32\)</span> elements) must be padded to a full 32-element block before <code>vbitsort</code>. Two paths:</p>
+<ul>
+<li><strong><span class="arithmatex">\(C \cdot b \le 8160\)</span></strong> (small row): the <strong>entire row</strong> is copied to <code>tmp</code>, then the last 32 elements are overwritten in place with <span class="arithmatex">\(-\infty\)</span> padding via <code>vdup</code>; the row is sorted from <code>tmp</code>.</li>
+<li><strong><span class="arithmatex">\(C \cdot b &gt; 8160\)</span></strong> (large row): only the <strong>tail block</strong> is copied to <code>tmp</code> and padded; full blocks are sorted directly from <code>src</code>, only the tail is sorted from <code>tmp</code>.</li>
+</ul>
+<p>Padding values (<span class="arithmatex">\(-\infty\)</span> = <code>-(0.0/0.0)</code>) land at the bottom of the descending order. If <code>validCol &gt; 32 × 255</code>, the row is chunked into <code>REPEAT_MAX</code>-sized groups, each sorted via a separate <code>vbitsort</code> call.</p>
 <h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = pto.tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
@@ -1137,14 +1160,14 @@ using SrcT = Tile&lt;TileType::Vec, float, 1, 32&gt;;
 using IdxT = Tile&lt;TileType::Vec, uint32_t, 1, 32&gt;;
 using DstT = Tile&lt;TileType::Vec, float, 1, 64&gt;;   // 2× src cols (float)
 SrcT src; IdxT idx; DstT dst;
-TSORT32(dst, src, idx);
+TSort32(dst, src, idx);
 
 // Non-32-aligned tail: 4-arg with tmp
 using SrcT2 = Tile&lt;TileType::Vec, half, 1, 100&gt;;
 using IdxT2 = Tile&lt;TileType::Vec, uint32_t, 1, 100&gt;;
 using DstT2 = Tile&lt;TileType::Vec, half, 1, 400&gt;;  // 4× src cols (half)
 using TmpT  = Tile&lt;TileType::Vec, half, 1, 128&gt;;  // ≥ ceil32(100)=128
-TSORT32(dst2, src2, idx2, tmp);</code></pre>
+TSort32(dst2, src2, idx2, tmp);</code></pre>
 <h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = pto.tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
@@ -1157,12 +1180,6 @@ TSORT32(dst2, src2, idx2, tmp);</code></pre>
 <pre class="highlight"><code class="language-text">%dst = tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
 pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Instruction set overview: <a href="../../../irregular-and-complex/">Irregular And Complex</a></li>
-<li>Previous op in instruction set: <a href="../tmrgsort/">pto.tmrgsort</a></li>
-<li>Next op in instruction set: <a href="../tgather/">pto.tgather</a></li>
-</ul>
               
             </div>
           </div><footer>

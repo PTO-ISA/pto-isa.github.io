@@ -211,11 +211,13 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.tsel</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
@@ -225,21 +227,13 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#cases-that-are-not-allowed">Cases That Are Not Allowed</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
+    <li class="toctree-l3"><a class="reference internal" href="#temporary-space">Temporary Space</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#a2a3-throughput">A2/A3 Throughput</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3">A2A3</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5">A5</a>
     </li>
         </ul>
     </li>
@@ -249,11 +243,17 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
     </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
     </ul>
                 </li>
@@ -984,22 +984,21 @@
               
                 <!-- Generated from `docs/isa/tile/ops/elementwise-tile-tile/tsel.md` -->
 
-<h1 id="ptotsel">pto.tsel<a class="headerlink" href="#ptotsel" title="Permanent link">&para;</a></h1>
-<p><code>pto.tsel</code> is part of the <a href="../../../elementwise-tile-tile/">Elementwise Tile Tile</a> instruction set.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Per-element conditional selection between two tiles using a predicate mask.</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>For each element <code>(i, j)</code> in the destination's valid region:</p>
+<h1 id="tsel">TSEL<a class="headerlink" href="#tsel" title="Permanent link">&para;</a></h1>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TSEL tile operation" src="../../../../../figures/isa/TSEL.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Select between two tiles using a mask tile (per-element selection).</p>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
+<p>For each element <code>(i, j)</code> in the valid region:</p>
 <div class="arithmatex">\[
 \mathrm{dst}_{i,j} =
 \begin{cases}
-\mathrm{src0}_{i,j} &amp; \text{if } \mathrm{mask}_{i,j}\ \text{is true (non-zero)} \\
+\mathrm{src0}_{i,j} &amp; \text{if } \mathrm{mask}_{i,j}\ \text{is true} \\
 \mathrm{src1}_{i,j} &amp; \text{otherwise}
 \end{cases}
 \]</div>
-<p>The predicate mask tile uses a target-defined packed encoding. A temporary tile (<code>tmp</code>) is required as a working buffer for predicate unpacking.</p>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>Synchronous form:</p>
 <pre class="highlight"><code class="language-text">%dst = tsel %mask, %src0, %src1 : !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
@@ -1009,171 +1008,40 @@
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename MaskTile, typename TmpTile, typename... WaitEvents&gt;
-PTO_INST RecordEvent TSEL(TileData &amp;dst, MaskTile &amp;selMask, TileData &amp;src0,
-                          TileData &amp;src1, TmpTile &amp;tmp, WaitEvents &amp;... events);</code></pre>
-<p><strong>Parameters:</strong>
-- <code>dst</code>: destination tile receiving the selected values.
-- <code>selMask</code>: predicate mask tile. Lane <code>(i,j)</code> is true if non-zero; selects <code>src0[i,j]</code>.
-- <code>src0</code>: source tile selected when mask lane is true.
-- <code>src1</code>: source tile selected when mask lane is false.
-- <code>tmp</code>: required temporary working tile for predicate unpacking. Must have compatible shape.</p>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Operand</th>
-<th>Role</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>%dst</code></td>
-<td>Destination tile</td>
-<td>Destination tile receiving the selected values</td>
-</tr>
-<tr>
-<td><code>%mask</code></td>
-<td>Predicate mask tile</td>
-<td>Predicate mask; lane <code>(i,j)</code> selects from <code>src0</code> if non-zero, otherwise from <code>src1</code></td>
-</tr>
-<tr>
-<td><code>%src0</code></td>
-<td>True-value source tile</td>
-<td>Source tile selected for mask-true lanes; read at <code>(i, j)</code> for each <code>(i, j)</code> in <code>dst</code> valid region</td>
-</tr>
-<tr>
-<td><code>%src1</code></td>
-<td>False-value source tile</td>
-<td>Source tile selected for mask-false lanes; read at <code>(i, j)</code> for each <code>(i, j)</code> in <code>dst</code> valid region</td>
-</tr>
-<tr>
-<td><code>%tmp</code></td>
-<td>Temporary tile</td>
-<td>Required temporary working tile for predicate unpacking</td>
-</tr>
-<tr>
-<td><code>WaitEvents...</code></td>
-<td>Optional synchronisation</td>
-<td><code>RecordEvent</code> tokens to wait on before issuing the operation</td>
-</tr>
-</tbody>
-</table>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Result</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>%dst</code></td>
-<td><code>!pto.tile&lt;...&gt;</code></td>
-<td>Destination tile; all <code>(i, j)</code> in its valid region contain <code>src0[i,j]</code> where mask is true, otherwise <code>src1[i,j]</code> after the operation</td>
-</tr>
-</tbody>
-</table>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
+PTO_INST RecordEvent TSEL(TileData &amp;dst, MaskTile &amp;selMask, TileData &amp;src0, TileData &amp;src1, TmpTile &amp;tmp, WaitEvents &amp;... events);</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
 <ul>
-<li><code>sizeof(TileData::DType)</code> MUST be <code>2</code> or <code>4</code> bytes.</li>
-<li><code>dst</code>, <code>src0</code>, and <code>src1</code> MUST use the <strong>same element type</strong>.</li>
-<li><code>dst</code>, <code>src0</code>, and <code>src1</code> MUST be row-major layout.</li>
-<li><code>dst</code>, <code>src0</code>, and <code>src1</code> MUST have the same declared shape.</li>
-<li><code>selMask</code> layout MUST be compatible with the target's predicate unpacking format.</li>
-<li>The iteration domain is <code>dst.GetValidRow()</code> × <code>dst.GetValidCol()</code>.</li>
-<li><code>tmp</code> MUST have sufficient capacity to hold intermediate predicate bits; its exact requirements are target-defined.</li>
+<li><strong>Implementation checks (A2A3)</strong>:<ul>
+<li><code>sizeof(TileData::DType)</code> must be <code>2</code> or <code>4</code> bytes.</li>
+<li><code>TileData::DType</code> must be <code>int16_t</code> or <code>uint16_t</code> or <code>int32_t</code> or <code>uint32_t</code> or <code>half</code> or <code>bfloat16_t</code> or <code>float</code>.</li>
+<li><code>dst</code>, <code>src0</code>, and <code>src1</code> must use the same element type.</li>
+<li><code>dst</code>, <code>src0</code>, and <code>src1</code> must be row-major.</li>
+<li>The selection domain is <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code>.</li>
 </ul>
-</div>
-<h2 id="cases-that-are-not-allowed">Cases That Are Not Allowed<a class="headerlink" href="#cases-that-are-not-allowed" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">Cases That Are Not Allowed</p>
+</li>
+<li><strong>Implementation checks (A5)</strong>:<ul>
+<li><code>sizeof(TileData::DType)</code> must be <code>2</code> or <code>4</code> bytes.</li>
+<li><code>TileData::DType</code> must be <code>int16_t</code> or <code>uint16_t</code> or <code>int32_t</code> or <code>uint32_t</code> or <code>half</code> or <code>bfloat16_t</code> or <code>float</code>.</li>
+<li><code>dst</code>, <code>src0</code>, and <code>src1</code> must use the same element type.</li>
+<li><code>dst</code>, <code>src0</code>, and <code>src1</code> must be row-major.</li>
+<li>The selection domain is <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code>.</li>
+</ul>
+</li>
+<li><strong>Mask encoding</strong>:<ul>
+<li>The mask tile is interpreted as packed predicate bits in a target-defined layout.</li>
+</ul>
+</li>
+</ul>
+<h2 id="temporary-space">Temporary Space<a class="headerlink" href="#temporary-space" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> <strong>is used</strong> as a small buffer to hold the comparison mask (<code>cmpmask</code>) copied from the mask tile for each row. The A2A3 implementation uses <code>set_cmpmask</code> which requires the mask data to be in a specific UB location.</p>
 <ul>
-<li><strong>MUST NOT</strong> use non-row-major <code>dst</code>/<code>src0</code>/<code>src1</code> tiles.</li>
-<li><strong>MUST NOT</strong> use <code>dst</code>/<code>src0</code>/<code>src1</code> with different declared shapes.</li>
+<li><code>tmp</code> element type must be <code>uint32_t</code>.</li>
+<li><code>tmp</code> size requirement: at least <code>cmpmaskLen</code> elements per row, where <code>cmpmaskLen = 4</code> for 16-bit data types (<code>half</code>, <code>bfloat16_t</code>) and <code>cmpmaskLen = 2</code> for 32-bit data types (<code>float</code>, <code>int32_t</code>, <code>uint32_t</code>). In bytes, this is always 128 bits (16 bytes).</li>
+<li>A typical <code>tmp</code> tile declaration: <code>Tile&lt;TileType::Vec, uint32_t, 1, 16&gt;</code> suffices for most use cases.</li>
 </ul>
-</div>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>Target-Profile Restrictions</summary>
-<table>
-<thead>
-<tr>
-<th>Check</th>
-<th style="text-align: center;">A2/A3</th>
-<th style="text-align: center;">A5</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Supported dtypes</td>
-<td style="text-align: center;"><code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code></td>
-<td style="text-align: center;">Same</td>
-</tr>
-<tr>
-<td>sizeof(dtype)</td>
-<td style="text-align: center;">2 or 4 bytes</td>
-<td style="text-align: center;">Same</td>
-</tr>
-<tr>
-<td>Row-major layout</td>
-<td style="text-align: center;">Required</td>
-<td style="text-align: center;">Required</td>
-</tr>
-<tr>
-<td>Same shape (dst/src0/src1)</td>
-<td style="text-align: center;">Required</td>
-<td style="text-align: center;">Required</td>
-</tr>
-<tr>
-<td><code>tmp</code> tile required</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-</tbody>
-</table>
-</details>
-<h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<h3 id="a2a3-throughput">A2/A3 Throughput<a class="headerlink" href="#a2a3-throughput" title="Permanent link">&para;</a></h3>
-<p><code>TSEL</code> compiles to CCE vector instructions via the <code>TBinOp.hpp</code> performance model. The throughput is identical to <code>TADD</code> (binary arithmetic):</p>
-<table>
-<thead>
-<tr>
-<th>Metric</th>
-<th>Value (FP)</th>
-<th>Value (INT)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Startup latency</td>
-<td>14</td>
-<td>14</td>
-</tr>
-<tr>
-<td>Completion latency</td>
-<td>19</td>
-<td>17</td>
-</tr>
-<tr>
-<td>Per-repeat throughput</td>
-<td>2</td>
-<td>2</td>
-</tr>
-<tr>
-<td>Pipeline interval</td>
-<td>18</td>
-<td>18</td>
-</tr>
-</tbody>
-</table>
-<hr />
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> is accepted by the interface but <strong>not used</strong> by the A5 implementation. The A5 backend uses vector register-based mask operations (<code>plds</code>, <code>vsel</code>) and does not require scratch tile storage. <code>tmp</code> is retained in the C++ intrinsic signature solely for API compatibility with A2A3.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -1208,15 +1076,20 @@ void example_manual() {
   TASSIGN(tmp,  0x5000);
   TSEL(dst, mask, src0, src1, tmp);
 }</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
+<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
+%dst = pto.tsel %mask, %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
+# Optional for tile operands:
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+%dst = pto.tsel %mask, %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = tsel %mask, %src0, %src1 : !pto.tile&lt;...&gt;
+# AS Level 2 (DPS)
 pto.tsel ins(%mask, %src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Instruction set overview: <a href="../../../elementwise-tile-tile/">Elementwise Tile Tile</a></li>
-<li>Previous op in instruction set: <a href="../tcvt/">pto.tcvt</a></li>
-<li>Next op in instruction set: <a href="../trsqrt/">pto.trsqrt</a></li>
-</ul>
               
             </div>
           </div><footer>

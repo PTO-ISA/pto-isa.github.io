@@ -936,101 +936,59 @@
               
                 <!-- Generated from `docs/isa/tile/ops/elementwise-tile-tile/tprelu_zh.md` -->
 
-<h1 id="ptotprelu">pto.tprelu<a class="headerlink" href="#ptotprelu" title="Permanent link">&para;</a></h1>
-<p><code>pto.tprelu</code> 属于<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a>指令集。</p>
-<h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>带逐元素斜率 tile 的参数化 ReLU。</p>
-<h2 id="_2">机制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>对目标 tile 的 valid region 中每个 <code>(i, j)</code>：</p>
+<h1 id="tprelu">TPRELU<a class="headerlink" href="#tprelu" title="Permanent link">&para;</a></h1>
+<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><img alt="TPRELU tile operation" src="../../../../../figures/isa/TPRELU.svg" /></p>
+<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>带逐元素斜率 Tile 的逐元素参数化 ReLU (PReLU)。</p>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>对每个元素 <code>(i, j)</code> 在有效区域内：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = (\mathrm{src0}_{i,j} &gt; 0) ? \mathrm{src0}_{i,j} : (\mathrm{src0}_{i,j} \cdot \mathrm{src1}_{i,j}) \]</div>
-<p>这里 <code>src0</code> 是值 tile，<code>src1</code> 是每个元素自己的斜率 tile，因此它比 <code>tlrelu</code> 更细粒度。</p>
-<h2 id="_3">语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="pto-as">PTO-AS<a class="headerlink" href="#pto-as" title="Permanent link">&para;</a></h3>
+<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>同步形式：</p>
 <pre class="highlight"><code class="language-text">%dst = tprelu %src0, %src1 : !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = pto.tprelu %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.tprelu ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename TileDataTmp,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TPRELU(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
-<h2 id="_4">输入<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>%src0</code>：值 tile</li>
-<li><code>%src1</code>：逐元素斜率 tile</li>
-<li><code>%tmp</code>：A3 路径所需的临时 tile</li>
-<li><code>%dst</code>：目标 tile</li>
+<li>该操作在 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 上迭代。</li>
+<li><strong>实现检查 (A2A3)</strong>:<ul>
+<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 的元素类型必须一致。支持的类型：<code>half</code>、<code>float</code>。</li>
+<li><code>tmp</code> 的元素类型必须是 <code>uint8_t</code>（用作比较掩码缓冲区）。</li>
+<li>所有 Tile 必须是行主序。</li>
+<li><code>src0</code> 和 <code>src1</code> 的有效形状必须与 <code>dst</code> 一致。</li>
+<li><code>tmp.GetValidRow() &gt; dst.GetValidRow()</code>（tmp 需要额外行用于掩码存储）。</li>
+<li>在手动模式下，<code>src0</code>、<code>src1</code>、<code>dst</code> 和 <code>tmp</code> 的内存区域不得重叠。</li>
 </ul>
-<h2 id="_5">预期输出<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>%dst</code>：逐元素 PReLU 结果 tile</li>
+</li>
+<li><strong>实现检查 (A5)</strong>:<ul>
+<li><code>dst</code>、<code>src0</code> 和 <code>src1</code> 的元素类型必须一致。支持的类型：<code>half</code>、<code>float</code>。</li>
+<li>所有 Tile 必须是行主序。</li>
+<li><code>src0</code> 和 <code>src1</code> 的有效形状必须与 <code>dst</code> 一致。</li>
 </ul>
-<h2 id="_6">副作用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>除产生目标 tile 外，没有额外架构副作用。</p>
-<h2 id="_7">约束<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">约束</p>
-<ul>
-<li>迭代域由 <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> 决定。</li>
-<li>A3 需要临时空间，而 A5 不使用 <code>tmp</code>。</li>
-<li>A3 上，两个源 tile、目标 tile 和临时空间不能互相重叠。</li>
-<li>A3 上，<code>tmp.GetValidRow()</code> 必须大于等于 <code>dst.GetValidCol() + 1</code>。</li>
+</li>
 </ul>
-</div>
-<h2 id="_8">异常与非法情形<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">异常与非法情形</p>
-<ul>
-<li>非法操作数组合、不支持的数据类型、不合法布局或不支持的 target-profile 模式，会被 verifier 或后端实现拒绝。</li>
-</ul>
-</div>
-<h2 id="profile">目标 Profile 限制<a class="headerlink" href="#profile" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>目标 Profile 限制</summary>
-<ul>
-<li>A3 需要 <code>tmp</code> 参与实现。</li>
-<li>A5 保留相同的 PTO 可见语义，但不要求 <code>tmp</code> 真正参与硬件路径。</li>
-</ul>
-</details>
-<h2 id="_9">性能<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h2 id="_6">临时空间<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
-<p>英文页当前把 <code>TPRELU</code> 归到与二元算术同一类模型：</p>
-<table>
-<thead>
-<tr>
-<th>指标</th>
-<th>FP</th>
-<th>INT</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>启动时延</td>
-<td>14</td>
-<td>14</td>
-</tr>
-<tr>
-<td>完成时延</td>
-<td>19</td>
-<td>17</td>
-</tr>
-<tr>
-<td>每次 repeat 吞吐</td>
-<td>2</td>
-<td>2</td>
-</tr>
-<tr>
-<td>流水间隔</td>
-<td>18</td>
-<td>18</td>
-</tr>
-</tbody>
-</table>
+<p><code>tmp</code> <strong>被使用</strong>作为比较掩码存储。A2A3 实现将 PReLU 分解为：<code>dst = src0 &gt; 0 ? src0 : src0 * src1</code>，使用 <code>TCMPS</code> 将比较掩码写入 <code>tmp</code>，然后使用 <code>TSEL</code> 在 <code>src0</code> 和 <code>dst</code>（= <code>src0 * src1</code>）之间进行选择。</p>
+<ul>
+<li><code>tmp</code> 的元素类型必须是 <code>uint8_t</code>。</li>
+<li><code>tmp.GetValidRow() &gt; dst.GetValidRow()</code>（有效行之后的额外行区域通过 <code>TSUBVIEW</code> 用于 <code>TSEL</code> 掩码）。</li>
+<li><code>tmp</code> 必须是行主序。</li>
+<li>在手动模式下，<code>tmp</code> 的内存区域不得与 <code>dst</code>、<code>src0</code> 或 <code>src1</code> 重叠。</li>
+</ul>
 <h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
-<p>当前手册未单列 <code>tprelu</code> 的独立周期表，应视为目标 profile 相关。</p>
-<h2 id="_10">示例<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p><code>tmp</code> 被接口接受但 A5 实现<strong>不使用</strong>。A5 后端直接使用 <code>vprelu</code> 向量指令，不需要暂存 Tile 存储。<code>tmp</code> 仅为了与 A2A3 的 API 兼容性而保留在 C++ 内建接口签名中。</p>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
 using namespace pto;
 
 void example() {
@@ -1038,12 +996,20 @@ void example() {
   TileT x, slope, out, tmp;
   TPRELU(out, x, slope, tmp);
 }</code></pre>
-<h2 id="_11">相关页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
-<ul>
-<li>指令集总览：<a href="../../../elementwise-tile-tile_zh/">逐元素 Tile-Tile</a></li>
-<li>上一条指令：<a href="../trecip_zh/">pto.trecip</a></li>
-<li>下一条指令：<a href="../taddc_zh/">pto.taddc</a></li>
-</ul>
+<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="_8">自动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
+%dst = pto.tprelu %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="_9">手动模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
+# 可选（当该指令包含 tile 操作数时）：
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+%dst = pto.tprelu %src0, %src1 : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = tprelu %src0, %src1 : !pto.tile&lt;...&gt;
+# AS Level 2 (DPS)
+pto.tprelu ins(%src0, %src1 : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
               
             </div>
           </div><footer>

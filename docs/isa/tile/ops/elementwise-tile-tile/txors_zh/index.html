@@ -978,7 +978,12 @@ PTO_INST RecordEvent TXORS(TileDataDst &amp;dst, TileDataSrc &amp;src0, typename
 </li>
 </ul>
 </div>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_6">临时空间<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> <strong>被使用</strong>作为标量 XOR 分解的中间暂存存储。<code>tmp</code> 必须与 <code>dst</code> 具有相同的元素类型和有效形状。</p>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> 被接口接受但 A5 实现<strong>不使用</strong>。A5 后端使用 <code>vxor</code> 向量指令配合广播标量寄存器，不需要暂存 Tile 存储。<code>tmp</code> 仅为了与 A2A3 的 API 兼容性而保留在 C++ 内建接口签名中。</p>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
@@ -993,10 +998,10 @@ void example() {
   TXORS(dst, src, 0x1u, tmp);
 }</code></pre>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<h3 id="_8">自动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
 %dst = pto.txors %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<h3 id="_9">手动模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
 # 可选（当该指令包含 tile 操作数时）：
 # pto.tassign %arg0, @tile(0x1000)

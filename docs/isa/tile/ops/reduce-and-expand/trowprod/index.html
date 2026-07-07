@@ -289,11 +289,13 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.trowprod</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
@@ -303,21 +305,21 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#a5-implementation-checks">A5 implementation checks</a>
+    </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
+    <li class="toctree-l3"><a class="reference internal" href="#temporary-space">Temporary Space</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3">A2A3</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a5">A5</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
@@ -325,6 +327,10 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
     </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
+        <ul>
     <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
@@ -332,8 +338,6 @@
     <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
     </ul>
                 </li>
@@ -986,19 +990,18 @@
               
                 <!-- Generated from `docs/isa/tile/ops/reduce-and-expand/trowprod.md` -->
 
-<h1 id="ptotrowprod">pto.trowprod<a class="headerlink" href="#ptotrowprod" title="Permanent link">&para;</a></h1>
-<p><code>pto.trowprod</code> is part of the <a href="../../../reduce-and-expand/">Reduce And Expand Instruction Set</a> instruction set.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Reduce each row by computing the product across columns.</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Reduce each row by computing the product across columns.</p>
+<h1 id="trowprod">TROWPROD<a class="headerlink" href="#trowprod" title="Permanent link">&para;</a></h1>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TROWPROD tile operation" src="../../../../../figures/isa/TROWPROD.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Reduce each row by multiplying across columns.</p>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
 <p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,0} = \prod_{j=0}^{C-1} \mathrm{src}_{i,j} \]</div>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>Synchronous form:</p>
-<pre class="highlight"><code class="language-text">%dst = trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
-<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
+<p><pre class="highlight"><code class="language-text">%dst = trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
+Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = pto.trowprod %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
@@ -1007,71 +1010,41 @@
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWPROD(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src</code> is the source tile.</li>
-<li><code>tmp</code> is a temporary tile used for intermediate storage.</li>
-<li><code>dst</code> names the destination tile. The operation iterates over dst's valid region.</li>
-</ul>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the row-wise product: for each row <code>i</code>, <code>dst[i,0]</code> = product of all elements in row <code>i</code> of <code>src</code>.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
 <h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
-<li>
-<p><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code>.</p>
-</li>
-<li>
-<p><code>src</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</p>
-</li>
-<li>
-<p><code>dst</code> must use one of the following non-fractal layouts:</p>
-</li>
+<li><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code>.</li>
+<li><code>src</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</li>
+<li><code>dst</code> must use one of the following non-fractal layouts:<ul>
 <li>ND layout (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>), or</li>
-<li>
-<p>DN layout with exactly one column (<code>BLayout::ColMajor</code>, <code>SLayout::NoneBox</code>, <code>Cols == 1</code>).</p>
+<li>DN layout with exactly one column (<code>BLayout::ColMajor</code>, <code>SLayout::NoneBox</code>, <code>Cols == 1</code>).</li>
+</ul>
 </li>
-<li>
-<p><code>dst</code> and <code>src</code> must use the same element type.</p>
-</li>
-<li>
-<p>Runtime valid-region checks:</p>
-</li>
+<li><code>dst</code> and <code>src</code> must use the same element type.</li>
+<li>Runtime valid-region checks:<ul>
 <li><code>src.GetValidRow() != 0</code></li>
 <li><code>src.GetValidCol() != 0</code></li>
-<li>
-<p><code>src.GetValidRow() == dst.GetValidRow()</code></p>
-</li>
-<li>
-<p>Supported element types: <code>half</code>, <code>float</code>, <code>int32_t</code>, <code>int16_t</code>.</p>
-</li>
-<li>
-<p>The implementation accepts both ND output and DN output with <code>Cols == 1</code>; it is not limited to DN output.</p>
-</li>
-<li>
-<p>The current implementation path passes <code>tmp</code> into the backend call, but this document does not add extra <code>tmp</code> shape/layout constraints beyond what is explicitly enforced by the checked implementation.</p>
-</li>
+<li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
 </ul>
-</div>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">Exceptions</p>
-<ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
-</ul>
-</div>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>Target-Profile Restrictions</summary>
-<ul>
+</li>
 <li>The intrinsic signature requires an explicit <code>tmp</code> operand.</li>
 </ul>
-</details>
+<h3 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Supported element types: <code>half</code>, <code>float</code>, <code>int32_t</code>, <code>int16_t</code>.</li>
+<li>In the currently inspected implementation path, the enforced constraints are on <code>src</code> and <code>dst</code>.</li>
+<li>No extra shape/layout assertions on <code>tmp</code> are enforced in the current implementation path.</li>
+</ul>
+<h2 id="temporary-space">Temporary Space<a class="headerlink" href="#temporary-space" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> <strong>is used</strong> as a per-row accumulator buffer. For each row, the implementation initializes <code>tmp</code> with <code>1.0</code> and then multiplies blocks of <code>src</code> data into <code>tmp</code> using <code>vmul</code>. After all blocks are accumulated, the scalar-mode pipeline reads <code>tmp</code> elements and computes the final product.</p>
+<ul>
+<li><code>tmp</code> must have the same element type as <code>src</code>/<code>dst</code>.</li>
+<li><code>tmp</code> size: at least 1 row and <code>BLOCK_BYTE_SIZE / sizeof(T)</code> columns (i.e., 1 block: 8 elements for <code>float</code>/<code>int32_t</code>, 16 elements for <code>half</code>/<code>int16_t</code>).</li>
+<li>A safe default: set <code>tmp</code> to the same shape as <code>src</code>.</li>
+</ul>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> is accepted by the interface but <strong>not used</strong> by the A5 implementation. The A5 backend uses vector register-based reduction (<code>vmul</code> + <code>vintlv</code> for tree reduction) and does not require scratch tile storage. <code>tmp</code> is retained in the C++ intrinsic signature solely for API compatibility with A2A3.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -1104,11 +1077,12 @@ void example_manual() {
   TASSIGN(tmp, 0x3000);
   TROWPROD(dst, src, tmp);
 }</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
 %dst = pto.trowprod %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
 # Optional for tile operands:
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
@@ -1117,11 +1091,6 @@ void example_manual() {
 <pre class="highlight"><code class="language-text">%dst = trowprod %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
 pto.trowprod ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Instruction set overview: <a href="../../../reduce-and-expand/">Reduce And Expand Instruction Set</a></li>
-<li>Next op in instruction set: <a href="../tcolprod/">pto.tcolprod</a></li>
-</ul>
               
             </div>
           </div><footer>

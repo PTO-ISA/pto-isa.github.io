@@ -940,134 +940,419 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TQUANT tile operation" src="../../../../../figures/isa/TQUANT.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>TQUANT</code> 把高精度 Tile 量化成较低精度表示，并在需要时同时产出量化元数据。它不是一条单一模式的指令，而是一组按模板参数分化出来的量化接口。</p>
-<p>当前仓库里最重要的两类路径是：</p>
+<p>将高精度 Tile（<code>FP32</code> / <code>BF16</code> / <code>FP16</code>）量化为低精度格式，同时生成量化的数据 Tile 以及辅助的每组指数 / 最大值 / 缩放 Tile。目标格式、缩放算法和分组轴均为编译期模板参数。</p>
+<table>
+<thead>
+<tr>
+<th>目标格式族</th>
+<th>格式</th>
+<th>分组方式</th>
+<th>缩放算法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Microscaling (MX)</strong></td>
+<td>MXFP8 (e4m3)、MXFP4 (e2m1)</td>
+<td>每 32 个元素共享一个指数</td>
+<td>OCP、NV</td>
+</tr>
+<tr>
+<td><strong>Integer</strong></td>
+<td>INT8（对称 / 非对称）</td>
+<td>每 Tile 一个 scale（+ 可选 offset）</td>
+<td>仿射</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">量化流程<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="mx-3-g-32">MX 格式（3 阶段，组大小 G = 32）<a class="headerlink" href="#mx-3-g-32" title="Permanent link">&para;</a></h3>
+<p>对于 Tile <span class="arithmatex">\(x \in \mathbb{R}^{M \times N}\)</span>，沿 <code>grp_axis</code> 分组（ND：axis-1/列；DN：axis-0/行）：</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>操作</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. 组内最大值</strong></td>
+<td><span class="arithmatex">\(m_g = \max_{i \in g} \|x_i\|\)</span></td>
+<td><code>max</code>（scratch，FP）</td>
+</tr>
+<tr>
+<td><strong>2. 指数 + 缩放</strong></td>
+<td><span class="arithmatex">\(s_g = \mathrm{biasedExp}(m_g) - e_{\max}\)</span>；<span class="arithmatex">\(\alpha_g = 2^{254 - s_g}\)</span></td>
+<td><code>exp</code>（E8M0，1 B/组）、<code>scaling</code>（scratch，FP）</td>
+</tr>
+<tr>
+<td><strong>3. 缩放 + 类型转换</strong></td>
+<td><span class="arithmatex">\(q_i = \mathrm{clip}_{[-V_{\max},V_{\max}]}(x_i \cdot \alpha_g) \to\)</span> 目标格式</td>
+<td><code>dst</code>（FP8 / 打包 FP4）</td>
+</tr>
+</tbody>
+</table>
 <ul>
-<li><code>INT8_SYM / INT8_ASYM</code></li>
-<li><code>MXFP8</code></li>
+<li><span class="arithmatex">\(e_{\max}\)</span> = 目标格式最大指数（e4m3 为 8，e2m1 为 1）。</li>
+<li><span class="arithmatex">\(V_{\max}\)</span> = 目标格式 MAX_NORM（e4m3 为 448，e2m1 为 6）。</li>
+<li>阶段 1–2 使用精确的 IEEE-754 位操作（无 FP <code>log</code>/<code>floor</code>）；阶段 3 使用硬件类型转换 + 随机舍入（<code>SPR.CTRL[50]=1</code>）。</li>
+<li><strong>ND</strong>（"normal direction"，<code>grp_axis=1</code>）：每 32 个连续<strong>列</strong>为一组——默认/标准分组方式。<strong>DN</strong>（<code>grp_axis=0</code>）：每 32 个连续<strong>行</strong>为一组——转置式 axis-0 分组；指数 Tile 形状 <code>M̂×N</code>，<code>M̂ = M/32</code>。</li>
 </ul>
-<h2 id="_3">模式<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<h3 id="int8_sym">INT8_SYM<a class="headerlink" href="#int8_sym" title="Permanent link">&para;</a></h3>
-<p>对输入 <code>float32</code> Tile 做对称 INT8 量化：</p>
-<div class="arithmatex">\[ q = \mathrm{round}(x \cdot scale) \]</div>
-<p>结果写入 <code>int8_t</code> 目标 Tile。</p>
-<h3 id="int8_asym">INT8_ASYM<a class="headerlink" href="#int8_asym" title="Permanent link">&para;</a></h3>
-<p>对输入 <code>float32</code> Tile 做非对称 UINT8 量化：</p>
-<div class="arithmatex">\[ q = \mathrm{round}(x \cdot scale + offset) \]</div>
-<p>结果写入 <code>uint8_t</code> 目标 Tile。</p>
-<h3 id="mxfp8">MXFP8<a class="headerlink" href="#mxfp8" title="Permanent link">&para;</a></h3>
-<p>按组计算共享指数与缩放信息，再生成低精度输出，同时产出辅助元数据：</p>
-<ul>
-<li><code>exp</code></li>
-<li><code>max</code></li>
-<li><code>scaling</code></li>
-</ul>
-<p>在 CPU 模拟器里，<code>MXFP8</code> 还额外支持一条 NZ 辅助重排接口，用于生成 <code>exp_zz</code>。</p>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
+<h3 id="integer-int85">Integer INT8（仿射，5 阶段类型转换）<a class="headerlink" href="#integer-int85" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[q_i = \mathrm{round}\!\left(\frac{x_i}{\mathrm{scale}}\right) + \mathrm{offset}, \qquad q_i \in [-128, 127]\]</div>
+<p>无分组结构；<code>scale</code>（和非对称 <code>offset</code>）为每 Tile 的 FP32 标量/向量。为避免二次舍入，A2/A3 上的类型转换链为 <code>FP32 → S32 → FP32 → FP16 → INT8</code>（5 阶段，通过 <code>tmp</code> Tile）；A5 使用原生广播 + 类型转换（无需 <code>tmp</code>）。输入必须为 <strong>FP32</strong>。</p>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>。</p>
+<h3 id="mx-grp_axis-mxquantalg">MX — 分组式（<code>grp_axis</code> + <code>MxQuantAlg</code>）— 推荐<a class="headerlink" href="#mx-grp_axis-mxquantalg" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">template &lt;int grp_axis, auto mx_alg, typename TileDataOut, typename TileDataSrc,
+          typename TileDataExp, typename TileDataMax, typename TileDataScaling, typename... WaitEvents&gt;
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
+                            TileDataScaling *scaling, WaitEvents &amp;...events);</code></pre>
+<table>
+<thead>
+<tr>
+<th>模板参数</th>
+<th>取值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>grp_axis</code></td>
+<td><code>0</code> = DN（axis-0 分组）、<code>1</code> = ND（axis-1 分组）</td>
+<td>量化分组轴</td>
+</tr>
+<tr>
+<td><code>mx_alg</code></td>
+<td><code>MxQuantAlg::OcpMxFp8E4M3</code>、<code>NvMxFp8E4M3</code>、<code>OcpMxFp4E2M1</code>、<code>NvMxFp4E2M1</code></td>
+<td>格式 + 缩放算法</td>
+</tr>
+</tbody>
+</table>
+<h3 id="mx-nd-quanttype-quantscalealg">MX — ND 旧版（<code>QuantType</code> + <code>QuantScaleAlg</code>）<a class="headerlink" href="#mx-nd-quanttype-quantscalealg" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">template &lt;auto quant_type, typename ...Tiles, auto scale_alg = QuantScaleAlg::OCP, typename... WaitEvents&gt;
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
+                            TileDataScaling *scaling, WaitEvents &amp;...events);
+
+// 带显式 ZZ 指数存储模式
+template &lt;auto quant_type, auto store_mode, typename ...Tiles, typename... WaitEvents&gt;
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
+                            TileDataScaling *scaling, TileDataExp *exp_zz, WaitEvents &amp;...events);</code></pre>
+<table>
+<thead>
+<tr>
+<th><code>quant_type</code></th>
+<th>格式</th>
+<th><code>scale_alg</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>QuantType::MXFP8</code></td>
+<td>e4m3 + E8M0</td>
+<td>OCP / NV</td>
+</tr>
+<tr>
+<td><code>QuantType::MXFP4_E2M1</code></td>
+<td>e2m1 + E8M0</td>
+<td>OCP / NV</td>
+</tr>
+</tbody>
+</table>
+<h3 id="integer-int8">Integer INT8<a class="headerlink" href="#integer-int8" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">// 对称
+template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataPara, typename... WaitEvents&gt;
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataPara &amp;scale,
+                            TileDataPara *offset = nullptr, WaitEvents &amp;...events);
+// 带 scratch（A2/A3）
+template &lt;auto quant_type, typename ...Tiles, typename TileDataTmp, typename... WaitEvents&gt;
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataPara &amp;scale, TileDataTmp &amp;tmp,
+                            TileDataPara *offset = nullptr, WaitEvents &amp;...events);</code></pre>
+<table>
+<thead>
+<tr>
+<th><code>quant_type</code></th>
+<th><code>offset</code></th>
+<th><code>dst</code> dtype</th>
+<th>模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>QuantType::INT8_SYM</code></td>
+<td><code>nullptr</code></td>
+<td><code>int8_t</code></td>
+<td>对称（<span class="arithmatex">\(q = \mathrm{round}(x/\mathrm{scale})\)</span>）</td>
+</tr>
+<tr>
+<td><code>QuantType::INT8_ASYM</code></td>
+<td>提供</td>
+<td><code>uint8_t</code></td>
+<td>非对称（<span class="arithmatex">\(q = \mathrm{round}(x/\mathrm{scale}) + \mathrm{offset}\)</span>）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>带 <code>tmp</code> 的重载（<code>dst, src, scale, tmp, offset</code>）用于 A2/A3 接口对齐。A5 不使用 <code>tmp</code>；A2/A3 上 <code>tmp</code> 必须为 <span class="arithmatex">\(M \times N\)</span> FP32（S32 类型转换中间结果）。</p>
+</blockquote>
+<h2 id="tile">Tile 尺寸与数据类型<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h2>
+<p>对于输入 Tile 形状 <span class="arithmatex">\(M \times N\)</span>（dtype <span class="arithmatex">\(T \in \{\mathrm{FP32}, \mathrm{BF16}, \mathrm{FP16}\}\)</span>），组大小 <span class="arithmatex">\(G = 32\)</span>：</p>
+<h3 id="mxfp8e4m3">MXFP8（e4m3）<a class="headerlink" href="#mxfp8e4m3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Tile</th>
+<th>dtype</th>
+<th>形状（ND）</th>
+<th>形状（DN）</th>
+<th>字节数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src</code></td>
+<td><span class="arithmatex">\(T\)</span></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N \cdot \mathrm{sizeof}(T)\)</span></td>
+</tr>
+<tr>
+<td><code>dst</code></td>
+<td><code>int8_t</code>（e4m3 别名）</td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N\)</span></td>
+</tr>
+<tr>
+<td><code>exp</code></td>
+<td><code>uint8_t</code>（E8M0）</td>
+<td><span class="arithmatex">\(M \times N/32\)</span></td>
+<td><span class="arithmatex">\(M/32 \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N / 32\)</span></td>
+</tr>
+<tr>
+<td><code>max</code>（scratch）</td>
+<td><span class="arithmatex">\(T\)</span></td>
+<td><span class="arithmatex">\(M \times N/32\)</span></td>
+<td><span class="arithmatex">\(M/32 \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N / 32 \cdot \mathrm{sizeof}(T)\)</span></td>
+</tr>
+<tr>
+<td><code>scaling</code>（scratch）</td>
+<td><span class="arithmatex">\(T\)</span></td>
+<td><span class="arithmatex">\(M \times N/32\)</span></td>
+<td><span class="arithmatex">\(M/32 \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N / 32 \cdot \mathrm{sizeof}(T)\)</span></td>
+</tr>
+</tbody>
+</table>
+<h3 id="mxfp4e2m1">MXFP4（e2m1）<a class="headerlink" href="#mxfp4e2m1" title="Permanent link">&para;</a></h3>
+<p>同 MXFP8，但：
+| Tile | dtype | 字节数 |
+|------|-------|--------|
+| <code>dst</code> | <code>float4_e2m1x2_t</code>（每字节打包 2 个 e2m1） | <span class="arithmatex">\(M \cdot N / 2\)</span> |</p>
+<blockquote>
+<p><strong>输入限制：</strong> MXFP4 仅接受 <strong>FP16/BF16</strong>（不支持 FP32）。</p>
+</blockquote>
+<h3 id="int8">INT8<a class="headerlink" href="#int8" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Tile</th>
+<th>dtype</th>
+<th>形状</th>
+<th>字节数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src</code></td>
+<td><code>float32_t</code></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N \cdot 4\)</span></td>
+</tr>
+<tr>
+<td><code>dst</code>（SYM）</td>
+<td><code>int8_t</code></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N\)</span></td>
+</tr>
+<tr>
+<td><code>dst</code>（ASYM）</td>
+<td><code>uint8_t</code></td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N\)</span></td>
+</tr>
+<tr>
+<td><code>scale</code></td>
+<td>FP32 标量/向量</td>
+<td>每 Tile</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>offset</code>（ASYM）</td>
+<td>FP32 标量/向量</td>
+<td>每 Tile</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>tmp</code>（仅 A2/A3）</td>
+<td>FP32</td>
+<td><span class="arithmatex">\(M \times N\)</span></td>
+<td><span class="arithmatex">\(M \cdot N \cdot 4\)</span></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong><code>tmp</code> Tile（仅 A2/A3）：</strong> 必须与 <code>src</code> <strong>同尺寸</strong>（<span class="arithmatex">\(M \times N\)</span> FP32 = <span class="arithmatex">\(4MN\)</span> 字节），保存 FP32→S32 类型转换中间结果（A3 无原地 <code>tcvt</code>）。A5 接受同名 <code>tmp</code> 参数以保持接口一致，但<strong>不使用它</strong>（A5 原生 <code>vlds BRC_B32</code> 广播）。</p>
+</blockquote>
+<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>约束</th>
+<th>适用范围</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(M \bmod 16 = 0\)</span></td>
+<td>ND MX（ZZ 布局）</td>
+<td>16 行 ZZ 块</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(M \bmod 32 = 0\)</span></td>
+<td>DN MX</td>
+<td>axis-0 组整除</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(M \bmod 64 = 0\)</span></td>
+<td>DN MX + ZZ 转换</td>
+<td>δ 配对（<span class="arithmatex">\(\hat M / 2\)</span> 为整数）</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(N \bmod 32 = 0\)</span></td>
+<td>所有 MX</td>
+<td>组大小 <span class="arithmatex">\(G = 32\)</span></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(N \bmod 64 = 0\)</span></td>
+<td>ND MX + ZZ 转换</td>
+<td>指数组数为偶数</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(R \cdot C \le 59461\)</span></td>
+<td>MX（UB 256 KB）</td>
+<td>复用后的缓冲预算</td>
+</tr>
+<tr>
+<td>BF16/FP16：<code>validCols % 32 != 0</code> → 零填充至 <code>StaticCols</code></td>
+<td>MX B16 路径</td>
+<td>组对齐</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">输出布局与布局转换<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>TQUANT 默认输出 <strong>ND</strong>（行主序）。Cube Unit 消费两种 fractal 布局，由独立的 <code>TMOV</code> 指令生成：</p>
+<table>
+<thead>
+<tr>
+<th>输出</th>
+<th>原生（TQUANT）</th>
+<th>Cube 布局</th>
+<th>转换</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP8 / FP4 数据</td>
+<td>ND</td>
+<td>NZ（ColMajor+RowMajor fractal）</td>
+<td><code>TMOV(dstNZ, dst)</code>（2 参数）</td>
+</tr>
+<tr>
+<td>E8M0 指数（ND 分组）</td>
+<td>ND</td>
+<td>ZZ（zigzag，<code>[16,2]</code> 块）</td>
+<td><code>TMOV(e8Zz, e8, tmp)</code>（3 参数）</td>
+</tr>
+<tr>
+<td>E8M0 指数（DN 分组）</td>
+<td>DN</td>
+<td>ZZ</td>
+<td><code>TMOV&lt;0&gt;(e8Zz, e8Dn, tmp)</code>（3 参数，<code>grp_axis=0</code>）</td>
+</tr>
+</tbody>
+</table>
+<p>DN 数据的 FP8 mantissa 与 ND 共享相同的物理地址（<code>(r,c)</code> 元素完全相同），因此 2 参数 <code>TMOV</code> ND→NZ 对 DN 数据同样适用。仅<strong>指数</strong>路径不同（DN→ZZ 通过 <code>TMOV&lt;0&gt;</code>）。详见 <a href="../../../../TQUANT_DN/"><code>TQUANT_DN.md</code></a>。</p>
+<h2 id="dtype">支持的输入 dtype<a class="headerlink" href="#dtype" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>格式</th>
+<th>可接受输入 dtype</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MXFP8</td>
+<td>FP32、BF16、FP16</td>
+<td>FP32：原地 FP8 输出（4:1）。BF16/FP16：源零填充至 <code>StaticCols</code>；类型转换前先上转为 FP32（无直接 b16→e4m3）。</td>
+</tr>
+<tr>
+<td>MXFP4（e2m1）</td>
+<td><strong>仅 FP16、BF16</strong>（不支持 FP32）</td>
+<td>输出 <code>float4_e2m1x2_t</code>（打包）。</td>
+</tr>
+<tr>
+<td>INT8（sym/asym）</td>
+<td><strong>仅 FP32</strong></td>
+<td>SYM→<code>int8_t</code>，ASYM→<code>uint8_t</code>。A2/A3 需 <code>tmp</code> = src 尺寸。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">数学语义<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>除另有说明外，语义在有效区域内定义，目标相关行为标记为实现定义。</p>
+<h2 id="_7">汇编语法<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.tquant ins(%src, %qp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre class="highlight"><code class="language-cpp">template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataExp, typename TileDataMax,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
-                            TileDataSrc *scaling, WaitEvents &amp;... events);
+<h2 id="asm">ASM 形式示例<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="auto">Auto 模式<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Auto 模式：由编译器/运行时管理资源放置与调度。
+%dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="manual">Manual 模式<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Manual 模式：须先显式绑定资源再发射指令。
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+%dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = pto.tquant %src, %qp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+# AS Level 2（DPS）
+pto.tquant ins(%src, %qp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+<h2 id="_8">示例<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<pre class="highlight"><code class="language-cpp">// MXFP8，DN 分组（axis-0），OCP 缩放
+TQUANT&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
 
-template &lt;auto quant_type, auto store_mode, typename TileDataOut, typename TileDataSrc, typename TileDataExp,
-          typename TileDataMax, typename TileDataIdx, typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
-                            TileDataSrc *scaling, TileDataExp *exp_zz, TileDataIdx *vgather_idx,
-                            WaitEvents &amp;... events);
+// MXFP8，ND 分组（旧版）
+TQUANT&lt;QuantType::MXFP8&gt;(fp8Tile, srcTile, &amp;e8NdTile, &amp;maxTile, &amp;scalingTile);
 
-template &lt;auto quant_type, typename TileDataOut, typename TileDataSrc, typename TileDataPara, typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataPara &amp;scale,
-                            TileDataPara *offset = nullptr, WaitEvents &amp;... events);</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">约束</p>
-<h3 id="a2a3">A2/A3 实现<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
-<ul>
-<li>A2/A3 当前只实现：</li>
-<li><code>INT8_SYM</code></li>
-<li><code>INT8_ASYM</code></li>
-<li>输入类型必须是 <code>float32_t</code>。</li>
-<li><code>INT8_SYM</code> 输出必须是 <code>int8_t</code>。</li>
-<li><code>INT8_ASYM</code> 输出必须是 <code>uint8_t</code>。</li>
-<li>A2/A3 的实现会先对输入做按行扩展乘法/加法，再通过中间 <code>TRESHAPE/TCVT</code> 路径完成量化。</li>
-</ul>
-<h3 id="a5">A5 实现<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
-<ul>
-<li>A5 实现：</li>
-<li><code>INT8_SYM</code></li>
-<li><code>INT8_ASYM</code></li>
-<li><code>MXFP8</code></li>
-<li><code>INT8_*</code> 路径输入同样要求 <code>float32_t</code>。</li>
-<li><code>MXFP8</code> 路径会输出：</li>
-<li>量化后的低精度结果 <code>dst</code></li>
-<li>共享指数 <code>exp</code></li>
-<li>每组绝对值最大值 <code>max</code></li>
-<li>每元素缩放值 <code>scaling</code></li>
-<li>A5 源码里还明确写了：</li>
-<li><code>E8M0</code> 指数默认按 ND 形式输出</li>
-<li>如果需要 ZZ 形式指数，应再借助 <code>TMOV</code> 等路径做后续转换</li>
-</ul>
-<h3 id="cpu">CPU 模拟器<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
-<ul>
-<li>CPU 模拟器支持的模拟面比 NPU backend 更宽：</li>
-<li><code>INT8_SYM</code></li>
-<li><code>INT8_ASYM</code></li>
-<li><code>MXFP8</code></li>
-<li>以及 <code>MXFP8 + NZ</code> 辅助重排接口</li>
-<li>但 CPU 上能跑通，并不等于所有 NPU backend 都支持同一模式。</li>
-</ul>
-<h3 id="_6">使用建议<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<ul>
-<li>如果目标是 A2/A3，可把 <code>TQUANT</code> 理解为“INT8 量化指令族”。</li>
-<li>如果目标是 A5，才应把 <code>MXFP8</code> 当成主路径之一。</li>
-<li>如果你依赖 <code>exp_zz</code> 或 <code>vgather_idx</code> 这类接口，先确认目标 backend 是否真的实现了它，而不要只看通用 C++ 声明。</li>
-</ul>
-</div>
-<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<h3 id="int8">对称 INT8<a class="headerlink" href="#int8" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+// MXFP4 E2M1，DN，NV 缩放
+TQUANT&lt;0, MxQuantAlg::NvMxFp4E2M1&gt;(fp4Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
 
-using namespace pto;
+// INT8 对称
+TQUANT&lt;QuantType::INT8_SYM&gt;(int8Tile, srcTile, scale);
 
-void example_int8_sym() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, int8_t, 16, 16&gt;;
-  using ParaT = Tile&lt;TileType::Vec, float, 16, 1&gt;;
-
-  SrcT src;
-  DstT dst;
-  ParaT scale;
-  TQUANT&lt;QuantType::INT8_SYM&gt;(dst, src, scale);
-}</code></pre>
-<h3 id="mxfp8_1">MXFP8<a class="headerlink" href="#mxfp8_1" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
-void example_mxfp8() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 32&gt;;
-  using DstT = Tile&lt;TileType::Vec, int8_t, 16, 32&gt;;
-  using ExpT = Tile&lt;TileType::Vec, uint8_t, 1, 16&gt;;
-  using MaxT = Tile&lt;TileType::Vec, float, 1, 16&gt;;
-
-  SrcT src, scaling;
-  DstT dst;
-  ExpT exp;
-  MaxT max;
-  TQUANT&lt;QuantType::MXFP8&gt;(dst, src, &amp;exp, &amp;max, &amp;scaling);
-}</code></pre>
-<h2 id="_8">相关页面<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../../layout-and-rearrangement/tmov_zh/">TMOV</a></li>
-<li><a href="../../../irregular-and-complex_zh/">不规则与复杂指令集</a></li>
-</ul>
+// 完整 MXFP8 DN 流水线：量化 + 为 Cube 转换布局
+TQUANT&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
+TMOV(fp8NZTile, fp8Tile);                  // 数据 ND→NZ
+TMOV&lt;0&gt;(e8ZzTile, e8DnTile, tmpTile);      // 指数 DN→ZZ</code></pre>
+<p>详见 <a href="../../../../TQUANT_DN/"><code>TQUANT_DN.md</code></a>（DN→ZZ 转换）和 <code>tests/npu/a5/src/st/testcase/tquant_dn/</code>（完整 ST 示例）。</p>
               
             </div>
           </div><footer>

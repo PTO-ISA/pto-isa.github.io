@@ -297,55 +297,69 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.tcolargmax</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#pure-index-mode">Pure Index Mode</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
+    <li class="toctree-l4"><a class="reference internal" href="#value-index-mode">Value + Index Mode</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pure-index-mode_1">Pure Index Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#value-index-mode_1">Value + Index Mode</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pure-index-mode-3-argument">Pure Index Mode (3-argument)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
+    <li class="toctree-l4"><a class="reference internal" href="#value-index-mode-4-argument">Value + Index Mode (4-argument)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#valueindex-mode">Value+index mode</a>
+    <li class="toctree-l4"><a class="reference internal" href="#pure-index-mode-3-argument_1">Pure Index Mode (3-argument)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#value-index-mode-4-argument_1">Value + Index Mode (4-argument)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#about-temporary-tile-tmp-for-a2a3">About temporary tile tmp for A2A3</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#about-temporary-tile-tmp-for-a5">About temporary tile tmp for A5</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#auto">Auto</a>
+    <li class="toctree-l4"><a class="reference internal" href="#pure-index-mode_2">Pure Index Mode</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#auto-value-index">Auto Value + Index</a>
+    <li class="toctree-l4"><a class="reference internal" href="#value-index-mode_2">Value + Index Mode</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
+        </ul>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pure-index-auto-mode">Pure Index Auto Mode</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
+    <li class="toctree-l4"><a class="reference internal" href="#pure-index-manual-mode">Pure Index Manual Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#value-index-auto-mode">Value + Index Auto Mode</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#value-index-manual-mode">Value + Index Manual Mode</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
     </ul>
                 </li>
@@ -990,154 +1004,208 @@
               
                 <!-- Generated from `docs/isa/tile/ops/reduce-and-expand/tcolargmax.md` -->
 
-<h1 id="ptotcolargmax">pto.tcolargmax<a class="headerlink" href="#ptotcolargmax" title="Permanent link">&para;</a></h1>
-<p><code>pto.tcolargmax</code> is part of the <a href="../../../reduce-and-expand/">Reduce And Expand</a> instruction set.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Get the row index of the maximum element for each column. A value+index variant also returns the maximum
-value for each column.</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Get the row index of the maximum element for each column. The 4-operand overload returns both the maximum
-value and the row index for each column.</p>
+<h1 id="tcolargmax">TCOLARGMAX<a class="headerlink" href="#tcolargmax" title="Permanent link">&para;</a></h1>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TCOLARGMAX tile operation" src="../../../../../figures/isa/TCOLARGMAX.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Get the row index of the maximum element for each column.
+A value+index variant is also available that returns both the maximum value and its row index.</p>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
+<h3 id="pure-index-mode">Pure Index Mode<a class="headerlink" href="#pure-index-mode" title="Permanent link">&para;</a></h3>
 <p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= j &lt; C</code>:</p>
-<div class="arithmatex">\[ \mathrm{dst}_{0,j} = \underset{0 \le i &lt; R}{\operatorname{argmax}} \; \mathrm{src}_{i,j} \]</div>
-<p>For value+index mode:</p>
+<div class="arithmatex">\[ \mathrm{dstIdx}_{0,j} = \underset{0 \le i &lt; R}{\operatorname{argmax}} \; \mathrm{src}_{i,j} \]</div>
+<h3 id="value-index-mode">Value + Index Mode<a class="headerlink" href="#value-index-mode" title="Permanent link">&para;</a></h3>
 <div class="arithmatex">\[ \mathrm{dstVal}_{0,j} = \max_{0 \le i &lt; R} \mathrm{src}_{i,j} \]</div>
 <div class="arithmatex">\[ \mathrm{dstIdx}_{0,j} = \underset{0 \le i &lt; R}{\operatorname{argmax}} \; \mathrm{src}_{i,j} \]</div>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
+<h3 id="pure-index-mode_1">Pure Index Mode<a class="headerlink" href="#pure-index-mode_1" title="Permanent link">&para;</a></h3>
 <p>Synchronous form:</p>
-<pre class="highlight"><code class="language-text">%dst = tcolargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-%dstVal, %dstIdx = tcolargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;</code></pre>
-<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
-%dstVal, %dstIdx = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
-pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dstVal, %dstIdx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
+<pre class="highlight"><code class="language-text">%dstIdx = tcolargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
+<p>IR Level 1 (SSA):</p>
+<pre class="highlight"><code class="language-text">%dstIdx = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<p>IR Level 2 (DPS):</p>
+<pre class="highlight"><code class="language-text">pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dstIdx : !pto.tile_buf&lt;...&gt;)</code></pre>
+<h3 id="value-index-mode_1">Value + Index Mode<a class="headerlink" href="#value-index-mode_1" title="Permanent link">&para;</a></h3>
+<p>Synchronous form:</p>
+<pre class="highlight"><code class="language-text">%dstVal, %dstIdx = tcolargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;</code></pre>
+<p>IR Level 1 (SSA):</p>
+<pre class="highlight"><code class="language-text">%dstVal, %dstIdx = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
+<p>IR Level 2 (DPS):</p>
+<pre class="highlight"><code class="language-text">pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dstVal, %dstIdx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
+<h3 id="pure-index-mode-3-argument">Pure Index Mode (3-argument)<a class="headerlink" href="#pure-index-mode-3-argument" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
-PTO_INST RecordEvent TCOLARGMAX(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);
-
-template &lt;typename TileDataOutVal, typename TileDataOutIdx, typename TileDataIn, typename TileDataTmp,
+PTO_INST RecordEvent TCOLARGMAX(TileDataOut &amp;dst, TileDataIn &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;...events)</code></pre>
+<h3 id="value-index-mode-4-argument">Value + Index Mode (4-argument)<a class="headerlink" href="#value-index-mode-4-argument" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataOutVal, typename TileDataOutIdx, typename TileDataIn, typename TileDataTmp,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TCOLARGMAX(TileDataOutVal&amp; dstVal, TileDataOutIdx&amp; dstIdx, TileDataIn&amp; src, TileDataTmp&amp; tmp,
                                 WaitEvents&amp;... events);</code></pre>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src</code> is the source tile.</li>
-<li><code>tmp</code> is a temporary tile used for intermediate storage.</li>
-<li><code>dst</code> names the destination tile. The operation iterates over dst's valid region.</li>
-<li>In value+index mode, <code>dstVal</code> names the value output tile and <code>dstIdx</code> names the index output tile.</li>
-</ul>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the row index of the column-wise maximum: for each column <code>j</code>, <code>dst[0,j]</code> = argmax of all elements in column <code>j</code> of <code>src</code>.
-In value+index mode, <code>dstVal[0,j]</code> holds the maximum value and <code>dstIdx[0,j]</code> holds its row index.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
 <h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
-<li>
-<p><code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</p>
-</li>
-<li>
-<p>Supported source element types: <code>half</code>, <code>float</code>, <code>int32_t</code>, <code>int16_t</code>.</p>
-</li>
-<li>
-<p>Supported destination element types: <code>uint32_t</code>, <code>int32_t</code>.</p>
-</li>
-<li>
-<p><code>src</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</p>
-</li>
-<li>
-<p><code>dst</code> and <code>src</code> must satisfy the shared column-reduce-index check path used by <code>TColArgMax</code>.</p>
-</li>
-<li>
-<p>Temporary tile is not used when <code>srcValidRow &lt;= ElementPerRepeat</code>, used when <code>srcValidRow &gt; ElementPerRepeat</code>.</p>
-</li>
-<li>
-<p><code>tmp</code> tile's columns is the same as <code>src</code>.</p>
-</li>
-<li>
-<p>Simply set <code>tmp</code> tile size the same as <code>src</code> when <code>src</code> is small.</p>
-</li>
-<li>
-<p><code>tmp</code> tile's stride can be calculated out based on <code>src</code>'s <code>validRow</code> using the following formula:</p>
-</li>
-</ul>
-<pre class="highlight"><code class="language-text">repeats = ceil(validRow / elementPerRepeat)
-stride = ceil(repeats * 2 / elementPerBlock) * elementPerBlock + ceil(repeats / elementPerBlock) * elementPerBlock</code></pre>
-<h3 id="valueindex-mode">Value+index mode<a class="headerlink" href="#valueindex-mode" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>dstVal</code> must be a <code>TileType::Vec</code> tile with standard ND layout.</li>
-<li><code>dstVal</code> element type must match <code>src</code>.</li>
-<li>8-bit source element types are not supported by the value+index overload.</li>
-<li><code>dstVal.GetValidRow() == 1</code></li>
-<li><code>dstVal.GetValidCol() == dstIdx.GetValidCol()</code></li>
-<li><code>dstVal.GetValidCol() == src.GetValidCol()</code></li>
-<li>For 16-bit source element types, <code>dstIdx</code> must use <code>uint16_t</code> or <code>int16_t</code>.</li>
-<li>For 32-bit source element types, <code>dstIdx</code> must use <code>uint32_t</code> or <code>int32_t</code>.</li>
-</ul>
-</div>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">Exceptions</p>
-<ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
-</ul>
-</div>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>Target-Profile Restrictions</summary>
-<ul>
-<li>Runtime checks follow the shared column-reduce check path:</li>
+<li><code>dstIdx</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
+<li><code>src</code> may use ND or DN non-fractal layout (<code>SLayout::NoneBox</code>).</li>
+<li><code>dstIdx</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</li>
+<li>Supported destination index element types: <code>uint32_t</code>, <code>int32_t</code>.</li>
+<li>Runtime checks:<ul>
 <li><code>src.GetValidRow() != 0</code></li>
 <li><code>src.GetValidCol() != 0</code></li>
-<li><code>src.GetValidCol() == dst.GetValidCol()</code></li>
+<li><code>dstIdx.GetValidRow() == 1</code></li>
+<li><code>src.GetValidCol() == dstIdx.GetValidCol()</code></li>
 </ul>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">A2/A3</label><label for="__tabbed_1_2">A5</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
+</li>
+</ul>
+<h3 id="pure-index-mode-3-argument_1">Pure Index Mode (3-argument)<a class="headerlink" href="#pure-index-mode-3-argument_1" title="Permanent link">&para;</a></h3>
+<h4 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h4>
 <ul>
-<li><code>dst</code> is checked through the shared column-reduce-index path and may use either of these non-fractal layouts:</li>
-<li>ND layout with one row (<code>BLayout::RowMajor</code>, <code>Rows == 1</code>), or</li>
-<li>DN layout whose valid row count is 1.</li>
+<li>Supported source element types: <code>half</code>, <code>float</code>, <code>uint16_t</code>, <code>uint32_t</code>.</li>
+<li><code>tmp</code> must use the same element type as <code>src</code>.</li>
+<li><code>tmp</code> is used as scratch storage for index tracking and current comparison values.</li>
 </ul>
-</div>
-<div class="tabbed-block">
+<h4 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h4>
 <ul>
-<li>In the checked A5 implementation path, <code>tmp</code> is accepted by the interface but not used by <code>TCOLARGMAX_IMPL</code>.</li>
+<li>Supported source element sizes are 8-bit, 16-bit, or 32-bit; covers <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>float</code>.</li>
+<li><code>tmp</code> is accepted by the interface but not used by the implementation.</li>
 </ul>
-</div>
-</div>
-</div>
-</details>
+<h3 id="value-index-mode-4-argument_1">Value + Index Mode (4-argument)<a class="headerlink" href="#value-index-mode-4-argument_1" title="Permanent link">&para;</a></h3>
+<p>In addition to the general constraints:</p>
+<ul>
+<li><code>dstVal</code> must be <code>TileType::Vec</code> with standard ND layout (row-major, non-fractal).</li>
+<li><code>dstVal</code> element type must match the source element type <code>TileDataIn::DType</code>.</li>
+<li>8-bit source types are <strong>not</strong> supported.</li>
+<li>Runtime checks:<ul>
+<li><code>dstVal.GetValidRow() == 1</code></li>
+<li><code>dstVal.GetValidCol() != 0</code></li>
+<li><code>src.GetValidCol() == dstVal.GetValidCol()</code></li>
+<li><code>dstVal.GetValidRow() == dstIdx.GetValidRow()</code></li>
+<li><code>dstVal.GetValidCol() == dstIdx.GetValidCol()</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="a2a3-implementation-checks_1">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks_1" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Supported source element types: <code>half</code>, <code>float</code>, <code>uint16_t</code>, <code>uint32_t</code>.</li>
+<li>When source element size is 2 bytes (<code>half</code>, <code>uint16_t</code>): <code>dstIdx</code> element type must be <code>uint16_t</code> or <code>int16_t</code>.</li>
+<li>When source element size is 4 bytes (<code>float</code>, <code>uint32_t</code>): <code>dstIdx</code> element type must be <code>uint32_t</code> or <code>int32_t</code>.</li>
+<li><code>tmp</code> must use the same element type as <code>src</code>.</li>
+<li><code>tmp</code> is used as scratch storage; for half input types an internal s16-&gt;f16-&gt;s32 conversion path is used for the index.</li>
+</ul>
+<h4 id="a5-implementation-checks_1">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks_1" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Source element size must be 16-bit or 32-bit (<code>sizeof(T) != 1</code>).</li>
+<li>When source element size is 2 bytes (<code>half</code>, <code>int16_t</code>, <code>uint16_t</code>): <code>dstIdx</code> element type must be <code>uint16_t</code> or <code>int16_t</code>.</li>
+<li>When source element size is 4 bytes (<code>float</code>, <code>int32_t</code>, <code>uint32_t</code>): <code>dstIdx</code> element type must be <code>uint32_t</code> or <code>int32_t</code>.</li>
+<li><code>tmp</code> is accepted by the interface but not used by the implementation.</li>
+</ul>
+<h3 id="about-temporary-tile-tmp-for-a2a3">About temporary tile <code>tmp</code> for A2A3<a class="headerlink" href="#about-temporary-tile-tmp-for-a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>tmp</code> <strong>is always used</strong> in the A2A3 implementation, but the extent of usage depends on the source element type and mode:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Source type</th>
+<th>Mode</th>
+<th>Region 0 (row index)</th>
+<th>Region 1 (comparison values)</th>
+<th>Region 2 (argmax index)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>half</code></td>
+<td>Pure Index</td>
+<td><code>tmp</code></td>
+<td><code>tmp</code></td>
+<td><code>tmp</code></td>
+</tr>
+<tr>
+<td><code>half</code></td>
+<td>Value + Index</td>
+<td><code>tmp</code></td>
+<td><code>tmp</code></td>
+<td><code>dstIdx</code></td>
+</tr>
+<tr>
+<td><code>float</code></td>
+<td>Pure Index</td>
+<td><code>tmp</code></td>
+<td><code>dstIdx</code></td>
+<td><code>dstIdx</code></td>
+</tr>
+<tr>
+<td><code>float</code></td>
+<td>Value + Index</td>
+<td><code>tmp</code></td>
+<td><code>dstIdx</code></td>
+<td><code>dstIdx</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>tmp</code> tile's data type must be the same as <code>src</code>'s data type.</li>
+<li><code>tmp</code> tile is organized into up to three regions within a single row:</li>
+<li>Region 0 (<code>[0, tmpGapEles)</code>): current row index counter (incremented per row). Always stored in <code>tmp</code>.</li>
+<li>Region 1 (<code>[tmpGapEles, 2 * tmpGapEles)</code>): current maximum elements for comparison. Stored in <code>tmp</code> for <code>half</code> type; stored in <code>dstIdx</code> for <code>float</code> type.</li>
+<li>Region 2 (<code>[2 * tmpGapEles, 3 * tmpGapEles)</code>): argmax index result. Stored in <code>tmp</code> only for <code>half</code> + Pure Index mode; stored in <code>dstIdx</code> otherwise.</li>
+<li><code>tmpGapEles</code> is determined as follows:</li>
+<li>When <code>srcValidCol &gt;= elemPerRpt</code>: <code>tmpGapEles = elemPerRpt</code>.</li>
+<li>When <code>srcValidCol &lt; elemPerRpt</code>: <code>tmpGapEles = ceil(srcValidCol / elemPerBlock) * elemPerBlock</code>.</li>
+<li>For <code>half</code> + Pure Index mode (maximum <code>tmp</code> usage), simply set <code>tmp</code> tile size the same as <code>src</code> when <code>src</code> is small, or calculate the required <code>tmp</code> stride using:</li>
+</ul>
+<pre class="highlight"><code class="language-text">repeats = ceil(validCol / elementPerRepeat)
+stride = ceil(repeats * 2 / elementPerBlock) * elementPerBlock + ceil(repeats / elementPerBlock) * elementPerBlock</code></pre>
+<p>For other type/mode combinations, only Region 0 is required in <code>tmp</code>, so <code>tmp</code> stride of <code>tmpGapEles</code> suffices.</p>
+<ul>
+<li>In Pure Index mode with <code>half</code> input, <code>tmp</code> region 2 data undergoes s16-&gt;f16-&gt;s32 conversion before being stored to <code>dstIdx</code>.</li>
+</ul>
+<h3 id="about-temporary-tile-tmp-for-a5">About temporary tile <code>tmp</code> for A5<a class="headerlink" href="#about-temporary-tile-tmp-for-a5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>tmp</code> temporary tile is <strong>not used</strong> in the A5 implementation for either mode. The A5 uses vector register-based computation (<code>__VEC_SCOPE__</code>) and does not require scratch tile storage.</li>
+<li><code>tmp</code> is retained in the C++ intrinsic signature solely for API compatibility with A2A3.</li>
+</ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h3 id="pure-index-mode_2">Pure Index Mode<a class="headerlink" href="#pure-index-mode_2" title="Permanent link">&para;</a></h3>
+<h4 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h4>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
 void example_auto() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, uint32_t, 1, 16&gt;;
-  using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  SrcT src;
-  DstT dst;
-  TmpT tmp;
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 256, BLayout::RowMajor, -1, -1&gt;;
+  using DstT = Tile&lt;TileType::Vec, uint32_t, 1, 256, BLayout::RowMajor, -1, -1&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 1, 32, BLayout::RowMajor, -1, -1&gt;;
+  SrcT src(16, 255);
+  DstT dst(1, 255);
+  TmpT tmp(1, 32);
   TCOLARGMAX(dst, src, tmp);
 }</code></pre>
-<h3 id="auto-value-index">Auto Value + Index<a class="headerlink" href="#auto-value-index" title="Permanent link">&para;</a></h3>
+<h4 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h4>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-void example_auto_value_index() {
+void example_manual() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 256, BLayout::RowMajor, -1, -1&gt;;
+  using DstT = Tile&lt;TileType::Vec, uint32_t, 1, 256, BLayout::RowMajor, -1, -1&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 1, 32, BLayout::RowMajor, -1, -1&gt;;
+  SrcT src(16, 255);
+  DstT dst(1, 255);
+  TmpT tmp(1, 32);
+  TASSIGN(src, 0x0);
+  TASSIGN(dst, 0x1000);
+  TASSIGN(tmp, 0x2000);
+  TCOLARGMAX(dst, src, tmp);
+}</code></pre>
+<h3 id="value-index-mode_2">Value + Index Mode<a class="headerlink" href="#value-index-mode_2" title="Permanent link">&para;</a></h3>
+<h4 id="auto_1">Auto<a class="headerlink" href="#auto_1" title="Permanent link">&para;</a></h4>
+<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+
+using namespace pto;
+
+void example_auto_val_idx() {
   using SrcT = Tile&lt;TileType::Vec, float, 16, 256, BLayout::RowMajor, -1, -1&gt;;
   using DstValT = Tile&lt;TileType::Vec, float, 1, 256, BLayout::RowMajor, -1, -1&gt;;
   using DstIdxT = Tile&lt;TileType::Vec, int32_t, 1, 256, BLayout::RowMajor, -1, -1&gt;;
@@ -1148,44 +1216,55 @@ void example_auto_value_index() {
   TmpT tmp(1, 32);
   TCOLARGMAX(dstVal, dstIdx, src, tmp);
 }</code></pre>
-<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<h4 id="manual_1">Manual<a class="headerlink" href="#manual_1" title="Permanent link">&para;</a></h4>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  using DstT = Tile&lt;TileType::Vec, uint32_t, 1, 16&gt;;
-  using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  SrcT src;
-  DstT dst;
-  TmpT tmp;
-  TASSIGN(src, 0x1000);
-  TASSIGN(dst, 0x2000);
+void example_manual_val_idx() {
+  using SrcT = Tile&lt;TileType::Vec, float, 16, 256, BLayout::RowMajor, -1, -1&gt;;
+  using DstValT = Tile&lt;TileType::Vec, float, 1, 256, BLayout::RowMajor, -1, -1&gt;;
+  using DstIdxT = Tile&lt;TileType::Vec, int32_t, 1, 256, BLayout::RowMajor, -1, -1&gt;;
+  using TmpT = Tile&lt;TileType::Vec, float, 1, 32, BLayout::RowMajor, -1, -1&gt;;
+  SrcT src(16, 255);
+  DstValT dstVal(1, 255);
+  DstIdxT dstIdx(1, 255);
+  TmpT tmp(1, 32);
+  TASSIGN(src, 0x0);
+  TASSIGN(dstVal, 0x1000);
+  TASSIGN(dstIdx, 0x2000);
   TASSIGN(tmp, 0x3000);
-  TCOLARGMAX(dst, src, tmp);
+  TCOLARGMAX(dstVal, dstIdx, src, tmp);
 }</code></pre>
-<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
+<h3 id="pure-index-auto-mode">Pure Index Auto Mode<a class="headerlink" href="#pure-index-auto-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-%dst = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
-# Optional for tile operands:
+%dstIdx = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="pure-index-manual-mode">Pure Index Manual Mode<a class="headerlink" href="#pure-index-manual-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
-%dst = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+%dstIdx = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="value-index-auto-mode">Value + Index Auto Mode<a class="headerlink" href="#value-index-auto-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
+%dstVal, %dstIdx = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
+<h3 id="value-index-manual-mode">Value + Index Manual Mode<a class="headerlink" href="#value-index-manual-mode" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
+# pto.tassign %arg0, @tile(0x1000)
+# pto.tassign %arg1, @tile(0x2000)
+# pto.tassign %arg2, @tile(0x3000)
+%dstVal, %dstIdx = pto.tcolargmax %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;)</code></pre>
 <h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = tcolargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+<pre class="highlight"><code class="language-text"># Pure index
+%dstIdx = tcolargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+# Value + index
 %dstVal, %dstIdx = tcolargmax %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
-pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)
+
+# IR Level 2 (DPS) - pure index
+pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dstIdx : !pto.tile_buf&lt;...&gt;)
+
+# IR Level 2 (DPS) - value + index
 pto.tcolargmax ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dstVal, %dstIdx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Instruction set overview: <a href="../../../reduce-and-expand/">Reduce And Expand</a></li>
-<li>Previous op in instruction set: <a href="../tcolmin/">pto.tcolmin</a></li>
-<li>Next op in instruction set: <a href="../trowmax/">pto.trowmax</a></li>
-</ul>
               
             </div>
           </div><footer>

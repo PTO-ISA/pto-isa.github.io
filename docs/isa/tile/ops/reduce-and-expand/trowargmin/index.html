@@ -307,11 +307,13 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.trowargmin</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
     </li>
@@ -321,27 +323,11 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#general-constraints-checks">General constraints / checks</a>
     </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#a2a3-implementation-checks">A2A3 implementation checks</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#a5-implementation-checks">A5 implementation checks</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#about-temporary-tile-tmp-for-a3">About temporary tile tmp for A3</a>
+    <li class="toctree-l4"><a class="reference internal" href="#about-temporary-tile-tmp">About temporary tile tmp</a>
     </li>
         </ul>
     </li>
@@ -351,6 +337,10 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
     </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
+        <ul>
     <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
@@ -358,8 +348,6 @@
     <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
     </ul>
                 </li>
@@ -994,102 +982,108 @@
               
                 <!-- Generated from `docs/isa/tile/ops/reduce-and-expand/trowargmin.md` -->
 
-<h1 id="ptotrowargmin">pto.trowargmin<a class="headerlink" href="#ptotrowargmin" title="Permanent link">&para;</a></h1>
-<p><code>pto.trowargmin</code> is part of the <a href="../../../reduce-and-expand/">Reduce And Expand</a> instruction set.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Get the column index of the minimum element for each row.</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Get the column index of the minimum element for each row.</p>
+<h1 id="trowargmin">TROWARGMIN<a class="headerlink" href="#trowargmin" title="Permanent link">&para;</a></h1>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TROWARGMIN tile operation" src="../../../../../figures/isa/TROWARGMIN.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Get the column index of the minimum element, or both value and column index of the minimum element for each row.</p>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
 <p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. For <code>0 &lt;= i &lt; R</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,0} = \underset{0 \le j &lt; C}{\operatorname{argmin}} \; \mathrm{src}_{i,j} \]</div>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<div class="arithmatex">\[ \mathrm{dstval}_{i,0} = \min_{0 \le j &lt; C} \mathrm{src}_{i,j} \]</div>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>Synchronous form:</p>
-<pre class="highlight"><code class="language-text">%dst = trowargmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
-<p>Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
+<p><pre class="highlight"><code class="language-text">%dst = trowargmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
+Lowering may introduce internal scratch tiles; the C++ intrinsic requires an explicit <code>tmp</code> operand.</p>
 <h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = pto.trowargmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.trowargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
+<p>Output index only:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileDataOut, typename TileDataIn, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TROWARGMIN(TileDataOut&amp; dst, TileDataIn&amp; src, TileDataTmp&amp; tmp, WaitEvents&amp;... events);</code></pre>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src</code> is the source tile.</li>
-<li><code>tmp</code> is a temporary tile used for intermediate storage.</li>
-<li><code>dst</code> names the destination tile. The operation iterates over dst's valid region.</li>
-</ul>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> holds the column index of the row-wise minimum: for each row <code>i</code>, <code>dst[i,0]</code> = argmin of elements in row <code>i</code> of <code>src</code>.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
+<p>Output both value and index:</p>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataOutVal, typename TileDataOutIdx, typename TileDataIn, typename TileDataTmp,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TROWARGMIN(TileDataOutVal &amp;dstVal, TileDataOutIdx &amp;dstIdx, TileDataIn &amp;src, TileDataTmp &amp;tmp,
+                                WaitEvents &amp;... events)</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
 <h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
-<li>
-<p><code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</p>
-</li>
-<li>
-<p>Supported source element types: <code>half</code>, <code>float</code>.</p>
-</li>
-<li>
-<p>Supported destination element types: <code>uint32_t</code>, <code>int32_t</code>.</p>
-</li>
-<li>
-<p><code>src</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</p>
-</li>
-<li>
-<p><code>dst</code> and <code>src</code> must satisfy the shared row-reduce-index check path used by <code>TRowArgMin</code>.</p>
-</li>
-<li>
-<p>Temporary tile is not used when <code>srcValidCol &lt;= ElementPerRepeat</code>, used when <code>srcValidCol &gt; ElementPerRepeat</code>.</p>
-</li>
-<li>
-<p><code>tmp</code> tile's rows is the same as <code>src</code>.</p>
-</li>
-<li>
-<p>Simply set <code>tmp</code> tile size the same as <code>src</code> when <code>src</code> is small.</p>
-</li>
-<li>
-<p><code>tmp</code> tile's stride can be calculated out based on <code>src</code>'s <code>validCol</code> using the following formula:</p>
-</li>
-</ul>
-<pre class="highlight"><code class="language-text">repeats = ceil(validCol / elementPerRepeat)
-stride = ceil(repeats * 2 / elementPerBlock) * elementPerBlock + ceil(repeats / elementPerBlock) * elementPerBlock</code></pre>
-</div>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">Exceptions</p>
-<ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
-</ul>
-</div>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>Target-Profile Restrictions</summary>
-<ul>
-<li>Runtime checks follow the shared row-reduce check path:</li>
+<li>Supported source element types: <code>half</code>, <code>float</code>.</li>
+<li><code>src</code> must use standard ND layout: row-major and non-fractal (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>).</li>
+<li>When output index only:<ul>
+<li><code>dst</code> and <code>src</code> must be <code>TileType::Vec</code>.</li>
+<li>Supported destination element types: <code>uint32_t</code>, <code>int32_t</code>.</li>
+<li>Runtime checks follow the shared row-reduce check path:<ul>
 <li><code>src.GetValidRow() != 0</code></li>
 <li><code>src.GetValidCol() != 0</code></li>
 <li><code>src.GetValidRow() == dst.GetValidRow()</code></li>
 </ul>
-<h3 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>dst</code> is checked through the shared row-reduce-index path and may use either of these non-fractal layouts:</li>
+</li>
+<li><code>dst</code> is checked through the shared row-reduce-index path and may use either of these non-fractal layouts:<ul>
 <li>DN layout with one column (<code>BLayout::ColMajor</code>, <code>Cols == 1</code>), or</li>
 <li>ND layout whose valid column count is 1.</li>
 </ul>
-<h3 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
-<ul>
-<li>In the checked A5 implementation path, <code>tmp</code> is accepted by the interface but not used by <code>TROWARGMIN_IMPL</code>.</li>
+</li>
 </ul>
-<h3 id="about-temporary-tile-tmp-for-a3">About temporary tile <code>tmp</code> for A3<a class="headerlink" href="#about-temporary-tile-tmp-for-a3" title="Permanent link">&para;</a></h3>
-</details>
+</li>
+<li>When output both value and index:<ul>
+<li><code>dstVal</code>, <code>dstIdx</code>, <code>src</code> must be <code>TileType::Vec</code>.</li>
+<li>Supported destination element types: <code>uint32_t</code>, <code>int32_t</code>.</li>
+<li>Runtime checks follow the shared row-reduce check path:<ul>
+<li><code>src.GetValidRow() != 0</code></li>
+<li><code>src.GetValidCol() != 0</code></li>
+<li><code>src.GetValidRow() == dstIdx.GetValidRow()</code></li>
+<li><code>src.GetValidRow() == dstVal.GetValidRow()</code></li>
+</ul>
+</li>
+<li><code>dstVal</code>, <code>dstIdx</code> are checked through the shared row-reduce-index path and may use either of these non-fractal layouts:<ul>
+<li>DN layout with one column (<code>BLayout::ColMajor</code>, <code>Cols == 1</code>), or</li>
+<li>ND layout whose valid column count is 1.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="about-temporary-tile-tmp">About temporary tile <code>tmp</code><a class="headerlink" href="#about-temporary-tile-tmp" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Temporary tile is only used by A2A3, A5 accepts <code>tmp</code> tile but leaves it unused.</li>
+<li>The A2A3 implementation selects one of three code paths based on <code>srcValidCol</code> relative to <code>elementPerRepeat</code> (abbreviated <code>elemPerRpt</code> below):</li>
+</ul>
+<h4 id="case-1-srcvalidcol-elemperrpt">Case 1: <code>srcValidCol &lt;= elemPerRpt</code><a class="headerlink" href="#case-1-srcvalidcol-elemperrpt" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Index-only mode</strong>: <code>tmp</code> is <strong>not used</strong>. The hardware <code>vcmin</code> instruction writes directly to <code>dst</code>.</li>
+<li><strong>Value + Index mode</strong>: <code>tmp</code> is used as a small buffer (2 elements per row: one value + one index). <code>tmp</code> may use either of these non-fractal layouts:<ul>
+<li>DN layout with one column (<code>BLayout::ColMajor</code>, <code>Cols == 1</code>), rows is twice of <code>src</code>.</li>
+<li>ND layout whose valid column count is 2, rows is the same as <code>src</code>.</li>
+</ul>
+</li>
+</ul>
+<h4 id="case-2-elemperrpt-srcvalidcol-elemperrpt2-stage-1-reduction">Case 2: <code>elemPerRpt &lt; srcValidCol &lt;= elemPerRpt²</code> (Stage 1 reduction)<a class="headerlink" href="#case-2-elemperrpt-srcvalidcol-elemperrpt2-stage-1-reduction" title="Permanent link">&para;</a></h4>
+<ul>
+<li><code>tmp</code> <strong>is used</strong> for a single-stage reduction.</li>
+<li>Rows of <code>tmp</code> tile is equal to <code>src</code>.</li>
+<li><code>tmp</code> tile's stride per row can be calculated using:</li>
+</ul>
+<pre class="highlight"><code class="language-text">R1 = ceil(validCol / elemPerRpt)
+stride = (ceil(R1 * 2 / elemPerBlock) + ceil(R1 / elemPerBlock)) * elemPerBlock</code></pre>
+<h4 id="case-3-srcvalidcol-elemperrpt2-stage-2-reduction">Case 3: <code>srcValidCol &gt; elemPerRpt²</code> (Stage 2 reduction)<a class="headerlink" href="#case-3-srcvalidcol-elemperrpt2-stage-2-reduction" title="Permanent link">&para;</a></h4>
+<ul>
+<li><code>tmp</code> <strong>is used</strong> for a two-stage reduction, requiring more space than Stage 1.</li>
+<li>Rows of <code>tmp</code> tile is equal to <code>src</code>.</li>
+<li><code>tmp</code> tile's stride per row can be calculated using:</li>
+</ul>
+<pre class="highlight"><code class="language-text">R1 = ceil(validCol / elemPerRpt)
+R2 = ceil(R1 / elemPerRpt)
+stage1_size = ceil(R1 * 2 / elemPerBlock) * elemPerBlock
+stage2_end  = ceil(R1 / elemPerBlock) * elemPerBlock + ceil(R2 * 2 / elemPerBlock) * elemPerBlock
+stride = max(stage1_size, stage2_end) + 2</code></pre>
+<ul>
+<li>The <code>+ 2</code> accounts for the final value + index result stored at the end of each row's tmp region.</li>
+</ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -1099,11 +1093,14 @@ using namespace pto;
 void example_auto() {
   using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   using DstT = Tile&lt;TileType::Vec, uint32_t, 16, 1, BLayout::ColMajor&gt;;
+  using DstValT = Tile&lt;TileType::Vec, float, 16, 1, BLayout::ColMajor&gt;;
   using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   SrcT src;
   DstT dst;
+  DstValT dst;
   TmpT tmp;
   TROWARGMIN(dst, src, tmp);
+  TROWARGMIN(dstVal, dst, src, tmp);
 }</code></pre>
 <h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -1113,20 +1110,24 @@ using namespace pto;
 void example_manual() {
   using SrcT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   using DstT = Tile&lt;TileType::Vec, uint32_t, 16, 1, BLayout::ColMajor&gt;;
+  using DstValT = Tile&lt;TileType::Vec, float, 16, 1, BLayout::ColMajor&gt;;
   using TmpT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
   SrcT src;
   DstT dst;
   TmpT tmp;
   TASSIGN(src, 0x1000);
   TASSIGN(dst, 0x2000);
-  TASSIGN(tmp, 0x3000);
+  TASSIGN(dstVal, 0x3000);
+  TASSIGN(tmp, 0x4000);
   TROWARGMIN(dst, src, tmp);
+  TROWARGMIN(dstVal, dst, src, tmp);
 }</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
 %dst = pto.trowargmin %src, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
 # Optional for tile operands:
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
@@ -1135,12 +1136,6 @@ void example_manual() {
 <pre class="highlight"><code class="language-text">%dst = trowargmin %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
 # IR Level 2 (DPS)
 pto.trowargmin ins(%src, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Instruction set overview: <a href="../../../reduce-and-expand/">Reduce And Expand</a></li>
-<li>Previous op in instruction set: <a href="../trowargmax/">pto.trowargmax</a></li>
-<li>Next op in instruction set: <a href="../trowexpand/">pto.trowexpand</a></li>
-</ul>
               
             </div>
           </div><footer>

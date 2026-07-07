@@ -936,110 +936,204 @@
               
                 <!-- Generated from `docs/isa/tile/ops/irregular-and-complex/tsort32_zh.md` -->
 
-<h1 id="tsort32">TSORT32<a class="headerlink" href="#tsort32" title="Permanent link">&para;</a></h1>
+<h1 id="tsort32">TSort32<a class="headerlink" href="#tsort32" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p><img alt="TSORT32 tile operation" src="../../../../../figures/isa/TSORT32.svg" /></p>
+<p><img alt="TSort32 tile operation" src="../../../../figures/isa/TSort32.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>对 <code>src</code> 的每个 32 元素块，与 <code>idx</code> 中对应的索引一起进行排序，并将排序后的值-索引对写入 <code>dst</code>。</p>
-<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>对每一行，<code>TSORT32</code> 会按独立的 32 元素块处理 <code>src</code>。设第 <code>b</code> 个块覆盖列 <code>32b ... 32b+31</code>，该块的有效元素数为 <code>n_b = min(32, C - 32b)</code>。</p>
-<p>对于块中的每个有效元素，先构造一个二元组：</p>
-<div class="arithmatex">\[
-(v_k, i_k) = (\mathrm{src}_{r,32b+k}, \mathrm{idx}_{r,32b+k}), \quad 0 \le k &lt; n_b
-\]</div>
-<p>然后按值对这些二元组排序，并将排序后的值-索引对写入 <code>dst</code>。<code>dst</code> 中的具体打包布局由目标实现定义，但从语义上看，每个块的输出可表示为：</p>
-<div class="arithmatex">\[
-[(v_{\pi(0)}, i_{\pi(0)}), (v_{\pi(1)}, i_{\pi(1)}), \ldots, (v_{\pi(n_b-1)}, i_{\pi(n_b-1)})]
-\]</div>
-<p>其中 <code>π</code> 是该 32 元素块对应的排序置换。</p>
-<p>说明：</p>
+<p>对 <code>src</code> 的每个 32 元素块，与 <code>idx</code> 中对应的索引一起进行排序，并将排序后的值-索引对写入 <code>dst</code>。底层 SFU 指令为 <strong>VBS32</strong>（<code>vbitsort</code>），单次调用可排序一个或多个独立的 32 元素列表。</p>
+<h2 id="vbs32vbitsort">硬件：VBS32（<code>vbitsort</code>）<a class="headerlink" href="#vbs32vbitsort" title="Permanent link">&para;</a></h2>
+<p>VBS32 运行在 <strong>SFU</strong>（非向量流水线）上。一次调用排序 <code>repeat</code> 个连续的 32 元素块，每个块由 32 个值 + 32 个索引组成，打包为值-索引对：</p>
+<pre class="highlight"><code class="language-cpp">void vbitsort(__ubuf__ T *dst,        // 排序后的值-索引对输出
+              __ubuf__ T *src0,        // 每块 32 个值 × repeat
+              __ubuf__ uint32_t *src1, // 每块 32 个索引 × repeat
+              uint8_t repeat);         // 32 元素块的数量（1..255）</code></pre>
 <ul>
-<li><code>idx</code> 是输入 Tile，不是输出 Tile。</li>
-<li><code>dst</code> 保存的是排序后的值-索引对，而不只是排序后的值。</li>
-<li>在 CPU 仿真实现中，按值降序排序；当值相同时，索引较小者优先。</li>
+<li><code>repeat</code>（上限 <code>REPEAT_MAX = 255</code>）打包到 <code>config[63:56]</code>。</li>
+<li>块在内存中<strong>连续分布，步长为 32 个元素</strong>：块 <code>b</code> 读取 <code>src0[b*32 : b*32+32]</code> 和 <code>src1[b*32 : b*32+32]</code>，写入 <code>dst[b*32*coef : ...]</code>，其中 <code>coef</code> = 2（float）或 4（half）——值-索引对的扩展因子。</li>
+<li>排序顺序：按值<strong>降序</strong>；相同值时索引小者优先。</li>
 </ul>
-<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>PTO-AS 形式：参见 <a href="../../../../syntax-and-operands/assembly-model_zh/">汇编写法与操作数</a>。</p>
-<p>同步形式：</p>
-<pre class="highlight"><code class="language-text">%dst = tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>对每一行 <code>r</code>，<code>src</code> 按独立的 32 元素块处理。设块 <code>b</code> 覆盖列 <code>32b … 32b+31</code>，<code>n_b = min(32, C - 32b)</code> 为其有效元素数。</p>
+<div class="arithmatex">\[
+(v_k, i_k) = (\mathrm{src}_{r,32b+k},\; \mathrm{idx}_{r,32b+k}), \quad 0 \le k &lt; n_b
+\]</div>
+<p>按值降序排序，输出重排后的序列：</p>
+<div class="arithmatex">\[
+[(v_{\pi(0)}, i_{\pi(0)}),\; (v_{\pi(1)}, i_{\pi(1)}),\; \ldots]
+\]</div>
+<p>其中 <code>π</code> 为该块的排序置换。</p>
+<p>注：
+- <code>idx</code> 是输入 Tile（索引随值一起被重排），不是输出。
+- <code>dst</code> 存储排序后的值-索引对，而非仅排序后的值。</p>
 <h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
-<pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData&gt;
-PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx);
+<pre class="highlight"><code class="language-cpp">// 3 参数：src 必须 32 对齐（validCol % 32 == 0）
+template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData&gt;
+PTO_INST RecordEvent TSort32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx);
 
+// 4 参数：支持非 32 对齐尾部（validCol % 32 != 0），通过 tmp 填充
 template &lt;typename DstTileData, typename SrcTileData, typename IdxTileData, typename TmpTileData&gt;
-PTO_INST RecordEvent TSORT32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx, TmpTileData &amp;tmp);</code></pre>
-<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">约束</p>
+PTO_INST RecordEvent TSort32(DstTileData &amp;dst, SrcTileData &amp;src, IdxTileData &amp;idx, TmpTileData &amp;tmp);</code></pre>
+<h2 id="tile">Tile 尺寸与数据类型<a class="headerlink" href="#tile" title="Permanent link">&para;</a></h2>
+<p>对于 <code>src</code> 形状为 <span class="arithmatex">\(R \times C\)</span>（有效区域）、块大小 32：</p>
+<table>
+<thead>
+<tr>
+<th>Tile</th>
+<th>dtype</th>
+<th>尺寸（元素数）</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src</code></td>
+<td><code>half</code> 或 <code>float</code>（<span class="arithmatex">\(T\)</span>）</td>
+<td><span class="arithmatex">\(R \times C\)</span></td>
+<td>待排序的值</td>
+</tr>
+<tr>
+<td><code>idx</code></td>
+<td><code>uint32_t</code></td>
+<td><span class="arithmatex">\(R \times C\)</span>（或 <span class="arithmatex">\(1 \times C\)</span> 广播）</td>
+<td>随值重排的索引</td>
+</tr>
+<tr>
+<td><code>dst</code></td>
+<td><span class="arithmatex">\(T\)</span></td>
+<td><span class="arithmatex">\(R \times (2C)\)</span> float，<span class="arithmatex">\(R \times (4C)\)</span> half</td>
+<td>排序后的值-索引对（见下方扩展因子）</td>
+</tr>
+<tr>
+<td><code>tmp</code>（仅 4 参数）</td>
+<td><span class="arithmatex">\(T\)</span></td>
+<td>见下方 tmp 尺寸公式</td>
+<td>尾部填充 scratch</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>dst</code> 扩展因子</strong>（<code>typeCoef</code>）：每个输入元素生成一个 8 字节的 tuple <code>[value (4 B), index (4 B)]</code>——<code>float</code> 的 value 占满 4 B；<code>half</code> 的 2 B value 零扩展至 4 B。因此 <code>dst</code> 恒为 <span class="arithmatex">\(C \times 8\)</span> 字节。</p>
+<table>
+<thead>
+<tr>
+<th>dtype</th>
+<th>每个 <code>src</code> 列对应的 <code>dst</code> 列数（dtype 单位）</th>
+<th>tuple 布局</th>
+<th>字节/tuple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td>×2（2 个 float 槽位）</td>
+<td><code>[value_f32, index_u32]</code></td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>half</code></td>
+<td>×4（4 个 half 槽位）</td>
+<td><code>[value_f16, 0x0000, index_u32]</code></td>
+<td>8</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">约束<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>约束</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dst</code>/<code>src</code> dtype = <code>half</code> 或 <code>float</code>（须一致）；<code>idx</code> = <code>uint32_t</code></td>
+<td>VBS32 类型分派</td>
+</tr>
+<tr>
+<td>所有 Tile 为 <code>TileType::Vec</code>、<code>BLayout::RowMajor</code></td>
+<td>SFU 寻址</td>
+</tr>
+<tr>
+<td><code>validCol % 32 == 0</code>（3 参数）</td>
+<td>每块恰为 32 个元素</td>
+</tr>
+<tr>
+<td><code>validCol</code> 任意（4 参数）</td>
+<td>尾块通过 <code>tmp</code> 填充至 32，填充值为 <span class="arithmatex">\(-\infty\)</span></td>
+</tr>
+<tr>
+<td><code>repeat = validCol/32</code>（3 参数）或 <code>ceil(validCol/32)</code>（4 参数）</td>
+<td>VBS32 repeat 计数，每次调用 ≤ 255；更大的 <code>validCol</code> 拆分为多次 <code>vbitsort</code> 调用</td>
+</tr>
+<tr>
+<td><code>tmp</code>（4 参数）≥ <code>tmpSize</code> 元素（见下方公式）</td>
+<td>保存填充后的行/尾块副本</td>
+</tr>
+<tr>
+<td>无 <code>WaitEvents&amp;...</code> / 无内部 <code>TSYNC</code></td>
+<td>如需同步须显式调用</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tmp-4"><code>tmp</code> 尺寸公式（4 参数）<a class="headerlink" href="#tmp-4" title="Permanent link">&para;</a></h3>
+<p>设 <span class="arithmatex">\(C\)</span> = <code>validCol</code>，<span class="arithmatex">\(b\)</span> = <code>sizeof(T)</code> 字节数，<span class="arithmatex">\(G\)</span> = 32（块大小）。实现根据整行（字节数）是否满足 <code>MAX_UB_TMP = 8160</code> 进行分支：</p>
+<div class="arithmatex">\[
+\mathrm{tmpSize} =
+\begin{cases}
+\mathrm{ceil}_{G}(C) &amp; \text{若 } C \cdot b \le 8160 \quad \text{（整行复制到 tmp + 填充最后一块）} \\
+G = 32 &amp; \text{若 } C \cdot b &gt; 8160 \quad \text{（仅复制尾块 + 填充）}
+\end{cases}
+\]</div>
 <ul>
-<li><code>TSORT32</code> 不接受 <code>WaitEvents&amp;...</code> 参数，也不在内部调用 <code>TSYNC(...)</code>；如有需要请显式同步。</li>
-<li><code>idx</code> 在两个重载中都是必需的输入操作数；它提供与 <code>src</code> 一起参与重排的索引。</li>
-<li><strong>实现检查 (A2A3/A5)</strong>:<ul>
-<li><code>DstTileData::DType</code> 必须是 <code>half</code> 或 <code>float</code>。</li>
-<li><code>SrcTileData::DType</code> 必须与 <code>DstTileData::DType</code> 匹配。</li>
-<li><code>IdxTileData::DType</code> 必须是 <code>uint32_t</code>。</li>
-<li><code>dst</code>/<code>src</code>/<code>idx</code> Tile 位置必须是 <code>TileType::Vec</code>，且都必须是行主序（<code>isRowMajor</code>）。</li>
+<li><code>ceil_G(C)</code> = <span class="arithmatex">\(C\)</span> 向上取整到 32 的倍数。</li>
+<li><code>8160</code> 阈值单位为<strong>字节</strong>（与 <code>validCol * sizeof(T)</code> 比较）：float → <span class="arithmatex">\(C \le 2040\)</span>，half → <span class="arithmatex">\(C \le 4080\)</span>。该阈值为 <code>pto_copy_ubuf_to_ubuf</code>（MOV_UB_TO_UB）的 repeat 上限 = 255 块 × 32 B。</li>
+<li>尾块 = <span class="arithmatex">\(t = C \bmod G\)</span> 个元素（末尾不完整块），扩展至 <span class="arithmatex">\(G\)</span> 并以 <span class="arithmatex">\(-\infty\)</span> 填充。</li>
+<li>Path A（<span class="arithmatex">\(C \cdot b \le 8160\)</span>，小行）：从行首<strong>整行</strong>复制到 tmp，然后原地填充最后 32 个元素。</li>
+<li>Path B（<span class="arithmatex">\(C \cdot b &gt; 8160\)</span>，大行）：仅复制<strong>尾块</strong>到 tmp；完整块直接从 <code>src</code> 排序。</li>
+<li>VBS32 硬件上限：每次调用 <code>repeat ≤ REPEAT_MAX = 255</code> 块（≤ 8160 元素）；超过 255 块的行拆分为多次 <code>vbitsort</code> 调用。</li>
+<li><strong>UB 布局：</strong> <code>tmp</code> 应放置在 <code>dst</code> 之后（32 B 对齐），大小为 <code>ceil(ALIGN_C·b, 32)</code> 字节——不应使用固定的 8 KB 偏移，因为 Path A 在接近阈值时对 float 需要最多 ~32 KB。</li>
 </ul>
-</li>
-<li><strong>有效区域</strong>:<ul>
-<li>实现使用 <code>dst.GetValidRow()</code> 作为行数。</li>
-<li>实现使用 <code>src.GetValidCol()</code> 确定每行参与排序的元素数量。</li>
-<li>排序按独立的 32 元素块进行；4 参数重载额外通过 <code>tmp</code> 支持非 32 对齐尾块。</li>
+<h3 id="4">4 参数尾部处理<a class="headerlink" href="#4" title="Permanent link">&para;</a></h3>
+<p>当 <code>validCol % 32 != 0</code> 时，末尾不完整块（<span class="arithmatex">\(t = C \bmod 32\)</span> 个元素）须填充为完整的 32 元素块后才能送入 <code>vbitsort</code>。两条路径：</p>
+<ul>
+<li><strong><span class="arithmatex">\(C \cdot b \le 8160\)</span></strong>（小行）：<strong>整行</strong>复制到 <code>tmp</code>，然后通过 <code>vdup</code> 原地覆盖最后 32 个元素为 <span class="arithmatex">\(-\infty\)</span> 填充；从 <code>tmp</code> 排序整行。</li>
+<li><strong><span class="arithmatex">\(C \cdot b &gt; 8160\)</span></strong>（大行）：仅复制<strong>尾块</strong>到 <code>tmp</code> 并填充；完整块直接从 <code>src</code> 排序，仅尾块从 <code>tmp</code> 排序。</li>
 </ul>
-</li>
-</ul>
-</div>
+<p>填充值（<span class="arithmatex">\(-\infty\)</span> = <code>-(0.0/0.0)</code>）落在降序排序的底部。若 <code>validCol &gt; 32 × 255</code>，行按 <code>REPEAT_MAX</code> 大小的组拆分，每组通过独立的 <code>vbitsort</code> 调用排序。</p>
+<h2 id="_5">汇编语法<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = pto.tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
 using namespace pto;
 
-void example_auto() {
-  using SrcT = Tile&lt;TileType::Vec, float, 1, 32&gt;;
-  using IdxT = Tile&lt;TileType::Vec, uint32_t, 1, 32&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 1, 64&gt;;
-  SrcT src;
-  IdxT idx;
-  DstT dst;
-  TSORT32(dst, src, idx);
-}</code></pre>
-<h3 id="manual">手动（Manual）<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
+// 32 对齐：每行单个块
+using SrcT = Tile&lt;TileType::Vec, float, 1, 32&gt;;
+using IdxT = Tile&lt;TileType::Vec, uint32_t, 1, 32&gt;;
+using DstT = Tile&lt;TileType::Vec, float, 1, 64&gt;;   // 2× src 列数（float）
+SrcT src; IdxT idx; DstT dst;
+TSort32(dst, src, idx);
 
-using namespace pto;
-
-void example_manual() {
-  using SrcT = Tile&lt;TileType::Vec, float, 1, 32&gt;;
-  using IdxT = Tile&lt;TileType::Vec, uint32_t, 1, 32&gt;;
-  using DstT = Tile&lt;TileType::Vec, float, 1, 64&gt;;
-  SrcT src;
-  IdxT idx;
-  DstT dst;
-  TASSIGN(src, 0x1000);
-  TASSIGN(idx, 0x2000);
-  TASSIGN(dst, 0x3000);
-  TSORT32(dst, src, idx);
-}</code></pre>
-<h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
-%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
-# 可选（当该指令包含 tile 操作数时）：
-# pto.tassign %arg0, @tile(0x1000)
+// 非 32 对齐尾部：4 参数 + tmp
+using SrcT2 = Tile&lt;TileType::Vec, half, 1, 100&gt;;
+using IdxT2 = Tile&lt;TileType::Vec, uint32_t, 1, 100&gt;;
+using DstT2 = Tile&lt;TileType::Vec, half, 1, 400&gt;;  // 4× src 列数（half）
+using TmpT  = Tile&lt;TileType::Vec, half, 1, 128&gt;;  // ≥ ceil32(100)=128
+TSort32(dst2, src2, idx2, tmp);</code></pre>
+<h2 id="asm">ASM 形式示例<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="auto">Auto 模式<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = pto.tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="manual">Manual 模式<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
 # pto.tassign %arg2, @tile(0x3000)
-%dst = pto.tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
+%dst = pto.tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = tsort32 %src, %idx : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
-# AS Level 2 (DPS)
+<pre class="highlight"><code class="language-text">%dst = tsort32 %src, %idx : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;
+# AS Level 2（DPS）
 pto.tsort32 ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
               
             </div>

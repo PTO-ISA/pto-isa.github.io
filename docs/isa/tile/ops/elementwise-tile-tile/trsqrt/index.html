@@ -213,11 +213,13 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.trsqrt</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
@@ -227,21 +229,13 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a>
+    <li class="toctree-l3"><a class="reference internal" href="#temporary-space">Temporary Space</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#a2a3-throughput">A2/A3 Throughput</a>
+    <li class="toctree-l4"><a class="reference internal" href="#without-tmp-2-argument-overload-trsqrtdst-src">Without tmp (2-argument overload: TRSQRT(dst, src))</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#with-tmp-3-argument-overload-trsqrtdst-src-tmp">With tmp (3-argument overload: TRSQRT(dst, src, tmp))</a>
     </li>
         </ul>
     </li>
@@ -251,6 +245,10 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual">Manual</a>
     </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
+        <ul>
     <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#manual-mode">Manual Mode</a>
@@ -258,8 +256,6 @@
     <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
     </ul>
                 </li>
@@ -988,16 +984,15 @@
               
                 <!-- Generated from `docs/isa/tile/ops/elementwise-tile-tile/trsqrt.md` -->
 
-<h1 id="ptotrsqrt">pto.trsqrt<a class="headerlink" href="#ptotrsqrt" title="Permanent link">&para;</a></h1>
-<p><code>pto.trsqrt</code> is part of the <a href="../../../elementwise-tile-tile/">Elementwise Tile Tile</a> instruction set.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<h1 id="trsqrt">TRSQRT<a class="headerlink" href="#trsqrt" title="Permanent link">&para;</a></h1>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TRSQRT tile operation" src="../../../../../figures/isa/TRSQRT.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>Elementwise reciprocal square root.</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Elementwise reciprocal square root.</p>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
 <p>For each element <code>(i, j)</code> in the valid region:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \frac{1}{\sqrt{\mathrm{src}_{i,j}}} \]</div>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>Synchronous form:</p>
 <pre class="highlight"><code class="language-text">%dst = trsqrt %src : !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
@@ -1011,84 +1006,9 @@ PTO_INST RecordEvent TRSQRT(TileDataDst &amp;dst, TileDataSrc &amp;src, WaitEven
 
 template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TRSQRT(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Operand</th>
-<th>Role</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>%src</code></td>
-<td>Source tile</td>
-<td>Source tile; read at <code>(i, j)</code> for each <code>(i, j)</code> in <code>dst</code> valid region</td>
-</tr>
-<tr>
-<td><code>%dst</code></td>
-<td>Destination tile</td>
-<td>Destination tile receiving the result</td>
-</tr>
-<tr>
-<td><code>WaitEvents...</code></td>
-<td>Optional synchronisation</td>
-<td><code>RecordEvent</code> tokens to wait on before issuing the operation</td>
-</tr>
-</tbody>
-</table>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Result</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>%dst</code></td>
-<td><code>!pto.tile&lt;...&gt;</code></td>
-<td>Destination tile; all <code>(i, j)</code> in its valid region contain <code>1/sqrt(src[i,j])</code> after the operation</td>
-</tr>
-</tbody>
-</table>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
-<ul>
-<li>
-<p><strong>Valid region</strong>:</p>
-<ul>
-<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
-</ul>
-</li>
-<li>
-<p><strong>Domain / NaN</strong>:</p>
-<ul>
-<li>Behavior is target-defined (e.g., for <code>src == 0</code> or negative inputs).</li>
-</ul>
-</li>
-</ul>
-</div>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">Exceptions</p>
-<ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
-</ul>
-</div>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>Target-Profile Restrictions</summary>
 <ul>
 <li><strong>Implementation checks (NPU)</strong>:<ul>
-<li>The <code>tmp</code> buffer must be at least 32 bytes. When tmp is provided, the high-precision version is executed.</li>
 <li><code>TileData::DType</code> must be one of: <code>float</code> or <code>half</code>;</li>
 <li>Tile location must be vector (<code>TileData::Loc == TileType::Vec</code>);</li>
 <li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>;</li>
@@ -1096,38 +1016,20 @@ PTO_INST RecordEvent TRSQRT(TileDataDst &amp;dst, TileDataSrc &amp;src, TileData
 <li>Tile layout must be row-major (<code>TileData::isRowMajor</code>).</li>
 </ul>
 </li>
+<li><strong>Valid region</strong>:<ul>
+<li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
 </ul>
-</details>
-<h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<h3 id="a2a3-throughput">A2/A3 Throughput<a class="headerlink" href="#a2a3-throughput" title="Permanent link">&para;</a></h3>
-<p><code>TRSQRT</code> compiles to CCE vector instructions via the <code>TUnaryOp.hpp</code> performance model:</p>
-<table>
-<thead>
-<tr>
-<th>Metric</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Startup latency</td>
-<td>13</td>
-</tr>
-<tr>
-<td>Completion latency</td>
-<td>26 (FP transcendental)</td>
-</tr>
-<tr>
-<td>Per-repeat throughput</td>
-<td>1</td>
-</tr>
-<tr>
-<td>Pipeline interval</td>
-<td>18</td>
-</tr>
-</tbody>
-</table>
-<hr />
+</li>
+<li><strong>Domain / NaN</strong>:<ul>
+<li>Behavior is target-defined (e.g., for <code>src == 0</code> or negative inputs).</li>
+</ul>
+</li>
+</ul>
+<h2 id="temporary-space">Temporary Space<a class="headerlink" href="#temporary-space" title="Permanent link">&para;</a></h2>
+<h3 id="without-tmp-2-argument-overload-trsqrtdst-src">Without <code>tmp</code> (2-argument overload: <code>TRSQRT(dst, src)</code>)<a class="headerlink" href="#without-tmp-2-argument-overload-trsqrtdst-src" title="Permanent link">&para;</a></h3>
+<p>No <code>tmp</code> is required. The default-precision implementation uses <code>vsqrt</code> + <code>vdiv</code> directly.</p>
+<h3 id="with-tmp-3-argument-overload-trsqrtdst-src-tmp">With <code>tmp</code> (3-argument overload: <code>TRSQRT(dst, src, tmp)</code>)<a class="headerlink" href="#with-tmp-3-argument-overload-trsqrtdst-src-tmp" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> is accepted by the interface but <strong>not used</strong> by the current A5 implementation. The 3-argument overload simply delegates to the 2-argument implementation (<code>TRSQRT_IMPL&lt;PrecisionType&gt;(dst, src)</code>). <code>tmp</code> is retained in the C++ intrinsic signature for API compatibility and potential future high-precision paths.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
@@ -1151,11 +1053,12 @@ void example_manual() {
   TASSIGN(dst, 0x2000);
   TRSQRT(dst, src);
 }</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
 %dst = pto.trsqrt %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
 # Optional for tile operands:
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
@@ -1164,12 +1067,6 @@ void example_manual() {
 <pre class="highlight"><code class="language-text">%dst = trsqrt %src : !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
 pto.trsqrt ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Instruction set overview: <a href="../../../elementwise-tile-tile/">Elementwise Tile Tile</a></li>
-<li>Previous op in instruction set: <a href="../tsel/">pto.tsel</a></li>
-<li>Next op in instruction set: <a href="../tsqrt/">pto.tsqrt</a></li>
-</ul>
               
             </div>
           </div><footer>

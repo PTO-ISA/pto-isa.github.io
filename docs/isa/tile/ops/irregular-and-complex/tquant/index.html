@@ -1003,7 +1003,7 @@
 <h1 id="ptotquant">pto.tquant<a class="headerlink" href="#ptotquant" title="Permanent link">&para;</a></h1>
 <p><code>pto.tquant</code> is part of the <a href="../../../irregular-and-complex/">Irregular and Complex</a> tile instruction family.</p>
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
-<p><img alt="TQUANT tile operation" src="../../../figures/isa/TQUANT.svg" /></p>
+<p><img alt="TQUANT tile operation" src="../../../../../figures/isa/TQUANT.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>Quantize a higher-precision tile (<code>FP32</code> / <code>BF16</code> / <code>FP16</code>) into a lower-precision format, producing the quantized data tile plus auxiliary per-group exponent / max / scaling tiles. The destination format, scale algorithm, and group axis are compile-time template parameters.</p>
 <table>
@@ -1073,7 +1073,7 @@
 <h3 id="mx-grouped-grp_axis-mxquantalg-recommended">MX — grouped (<code>grp_axis</code> + <code>MxQuantAlg</code>) — recommended<a class="headerlink" href="#mx-grouped-grp_axis-mxquantalg-recommended" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">template &lt;int grp_axis, auto mx_alg, typename TileDataOut, typename TileDataSrc,
           typename TileDataExp, typename TileDataMax, typename TileDataScaling, typename... WaitEvents&gt;
-PTO_INST RecordEvent TQuant(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
+PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
                             TileDataScaling *scaling, WaitEvents &amp;...events);</code></pre>
 <table>
 <thead>
@@ -1321,12 +1321,12 @@ PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileData
 </tbody>
 </table>
 <h2 id="output-layout-layout-conversion">Output Layout &amp; Layout Conversion<a class="headerlink" href="#output-layout-layout-conversion" title="Permanent link">&para;</a></h2>
-<p>TQuant writes <strong>ND</strong> (row-major) output by default. The Cube Unit consumes two fractal layouts, produced by separate <code>TMOV</code> instructions:</p>
+<p>TQUANT writes <strong>ND</strong> (row-major) output by default. The Cube Unit consumes two fractal layouts, produced by separate <code>TMOV</code> instructions:</p>
 <table>
 <thead>
 <tr>
 <th>Output</th>
-<th>Native (TQuant)</th>
+<th>Native (TQUANT)</th>
 <th>Cube layout</th>
 <th>Conversion</th>
 </tr>
@@ -1403,19 +1403,19 @@ PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileData
 pto.tquant ins(%src, %qp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">// MXFP8, DN grouping (axis-0 groups), OCP scale
-TQuant&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
+TQUANT&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
 
 // MXFP8, ND grouping (legacy)
 TQUANT&lt;QuantType::MXFP8&gt;(fp8Tile, srcTile, &amp;e8NdTile, &amp;maxTile, &amp;scalingTile);
 
 // MXFP4 E2M1, DN, NV scale
-TQuant&lt;0, MxQuantAlg::NvMxFp4E2M1&gt;(fp4Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
+TQUANT&lt;0, MxQuantAlg::NvMxFp4E2M1&gt;(fp4Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
 
 // INT8 symmetric
 TQUANT&lt;QuantType::INT8_SYM&gt;(int8Tile, srcTile, scale);
 
 // Full MXFP8 DN pipeline: quantize + layout convert for cube
-TQuant&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
+TQUANT&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
 TMOV(fp8NZTile, fp8Tile);                  // data  ND→NZ
 TMOV&lt;0&gt;(e8ZzTile, e8DnTile, tmpTile);      // exp   DN→ZZ</code></pre>
 <p>See <a href="../../../../TQUANT_DN/"><code>TQUANT_DN.md</code></a> for the DN→ZZ transform details and <code>tests/npu/a5/src/st/testcase/tquant_dn/</code> for a complete ST example.</p>

@@ -271,11 +271,13 @@
                 </li>
                 <li class="toctree-l2 current"><a class="reference internal current" href="#">pto.txors</a>
     <ul class="current">
-    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    <li class="toctree-l3"><a class="reference internal" href="#tile-operation-diagram">Tile Operation Diagram</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mechanism">Mechanism</a>
+    <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#syntax">Syntax</a>
+    <li class="toctree-l3"><a class="reference internal" href="#math-interpretation">Math Interpretation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assembly-syntax">Assembly Syntax</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
@@ -285,19 +287,19 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#c-intrinsic">C++ Intrinsic</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#expected-outputs">Expected Outputs</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#side-effects">Side Effects</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a>
+    <li class="toctree-l3"><a class="reference internal" href="#temporary-space">Temporary Space</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#a2a3">A2A3</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#target-profile-restrictions">Target-Profile Restrictions</a>
+    <li class="toctree-l4"><a class="reference internal" href="#a5">A5</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#asm-form-examples">ASM Form Examples</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#auto-mode">Auto Mode</a>
     </li>
@@ -306,8 +308,6 @@
     <li class="toctree-l4"><a class="reference internal" href="#pto-assembly-form">PTO Assembly Form</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#related-ops-instruction-set-links">Related Ops / Instruction Set Links</a>
     </li>
     </ul>
                 </li>
@@ -978,16 +978,15 @@
               
                 <!-- Generated from `docs/isa/tile/ops/tile-scalar-and-immediate/txors.md` -->
 
-<h1 id="ptotxors">pto.txors<a class="headerlink" href="#ptotxors" title="Permanent link">&para;</a></h1>
-<p><code>pto.txors</code> is part of the <a href="../../../tile-scalar-and-immediate/">Tile Scalar And Immediate</a> instruction set.</p>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<h1 id="txors">TXORS<a class="headerlink" href="#txors" title="Permanent link">&para;</a></h1>
+<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
+<p><img alt="TXORS tile operation" src="../../../../../figures/isa/TXORS.svg" /></p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>Elementwise bitwise XOR of a tile and a scalar.</p>
-<h2 id="mechanism">Mechanism<a class="headerlink" href="#mechanism" title="Permanent link">&para;</a></h2>
-<p>Elementwise bitwise XOR of a tile and a scalar. It operates on tile payloads rather than scalar control state, and its legality is constrained by tile shape, layout, valid-region, and target-profile support.</p>
+<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
 <p>For each element <code>(i, j)</code> in the valid region:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{src}_{i,j} \oplus \mathrm{scalar} \]</div>
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<p>Textual spelling is defined by the PTO ISA syntax-and-operands pages.</p>
+<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
 <p>Synchronous form:</p>
 <pre class="highlight"><code class="language-text">%dst = txors %src, %scalar : !pto.tile&lt;...&gt;, i32</code></pre>
 <h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
@@ -998,57 +997,30 @@
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc, typename TileDataTmp, typename... WaitEvents&gt;
 PTO_INST RecordEvent TXORS(TileDataDst &amp;dst, TileDataSrc &amp;src0, typename TileDataSrc::DType scalar, TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
-<h2 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src</code> is the source tile.</li>
-<li><code>scalar</code> is the scalar value broadcast to all lanes.</li>
-<li><code>dst</code> names the destination tile.</li>
-<li>The operation iterates over <code>dst</code>'s valid region.</li>
-</ul>
-<h2 id="expected-outputs">Expected Outputs<a class="headerlink" href="#expected-outputs" title="Permanent link">&para;</a></h2>
-<p><code>dst</code> carries the result tile or updated tile payload produced by the operation.</p>
-<h2 id="side-effects">Side Effects<a class="headerlink" href="#side-effects" title="Permanent link">&para;</a></h2>
-<p>No architectural side effects beyond producing the destination tile. Does not implicitly fence unrelated traffic.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Constraints</p>
 <ul>
+<li><strong>Implementation checks (A2A3)</strong>:<ul>
+<li>Supported element types are <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>.</li>
+<li><code>dst</code>, <code>src</code>, and <code>tmp</code> must use the same element type.</li>
+<li>In manual mode, source, destination, and temporary storage must not overlap in memory.</li>
+</ul>
+</li>
+<li><strong>Implementation checks (A5)</strong>:<ul>
+<li>Supported element types are <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>.</li>
+<li><code>dst</code> and <code>src</code> element types must match.</li>
+<li><code>src.GetValidRow()/GetValidCol()</code> must match <code>dst</code>.</li>
+</ul>
+</li>
 <li><strong>Valid region</strong>:<ul>
 <li>The op uses <code>dst.GetValidRow()</code> / <code>dst.GetValidCol()</code> as the iteration domain.</li>
 </ul>
 </li>
 </ul>
-</div>
-<h2 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">Exceptions</p>
-<ul>
-<li>Illegal operand tuples, unsupported types, invalid layout combinations, or unsupported target-profile modes are rejected by the verifier or by the selected backend instruction set.</li>
-<li>Programs must not rely on behavior outside the documented legal domain of this operation, even if one backend currently accepts it.</li>
-</ul>
-</div>
-<h2 id="target-profile-restrictions">Target-Profile Restrictions<a class="headerlink" href="#target-profile-restrictions" title="Permanent link">&para;</a></h2>
-<details class="info">
-<summary>Target-Profile Restrictions</summary>
-<ul>
-<li>
-<p><strong>Implementation checks (A2A3)</strong>:</p>
-<ul>
-<li>Supported element types are <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, and <code>int16_t</code>.</li>
-<li><code>dst</code>, <code>src</code>, and <code>tmp</code> must use the same element type.</li>
-<li>In manual mode, source, destination, and temporary storage must not overlap in memory.</li>
-</ul>
-</li>
-<li>
-<p><strong>Implementation checks (A5)</strong>:</p>
-<ul>
-<li>Supported element types are <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, and <code>int32_t</code>.</li>
-<li><code>dst</code> and <code>src</code> element types must match.</li>
-<li><code>src.GetValidRow()/GetValidCol()</code> must match <code>dst</code>.</li>
-</ul>
-</li>
-</ul>
-</details>
+<h2 id="temporary-space">Temporary Space<a class="headerlink" href="#temporary-space" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> <strong>is used</strong> as intermediate scratch storage for the scalar XOR decomposition. <code>tmp</code> must have the same element type and valid shape as <code>dst</code>.</p>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> is accepted by the interface but <strong>not used</strong> by the A5 implementation. The A5 backend uses the <code>vxor</code> vector instruction with a broadcast scalar register and does not require scratch tile storage. <code>tmp</code> is retained in the C++ intrinsic signature solely for API compatibility with A2A3.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1063,11 +1035,12 @@ void example() {
   TileTmp tmp;
   TXORS(dst, src, 0x1u, tmp);
 }</code></pre>
+<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
 %dst = pto.txors %src, %scalar : (!pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Manual mode: bind resources explicitly before issuing the instruction.
+<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
 # Optional for tile operands:
 # pto.tassign %arg0, @tile(0x1000)
 # pto.tassign %arg1, @tile(0x2000)
@@ -1076,12 +1049,6 @@ void example() {
 <pre class="highlight"><code class="language-text">%dst = txors %src, %scalar : !pto.tile&lt;...&gt;, i32
 # AS Level 2 (DPS)
 pto.txors ins(%src, %scalar : !pto.tile_buf&lt;...&gt;, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="related-ops-instruction-set-links">Related Ops / Instruction Set Links<a class="headerlink" href="#related-ops-instruction-set-links" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Instruction set overview: <a href="../../../tile-scalar-and-immediate/">Tile Scalar And Immediate</a></li>
-<li>Previous op in instruction set: <a href="../tshrs/">pto.tshrs</a></li>
-<li>Next op in instruction set: <a href="../tlrelu/">pto.tlrelu</a></li>
-</ul>
               
             </div>
           </div><footer>

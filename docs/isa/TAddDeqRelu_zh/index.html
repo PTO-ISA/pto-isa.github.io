@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TPOWS/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TAddDeqRelu_zh/" />
       <link rel="shortcut icon" href="../../../img/favicon.ico" />
-    <title>TPOWS - PTO ISA Manual</title>
+    <title>TAddDeqRelu zh - PTO ISA Manual</title>
     <link rel="stylesheet" href="../../../css/theme.css" />
     <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "TPOWS";
-        var mkdocs_page_input_path = "docs/isa/TPOWS.md";
-        var mkdocs_page_url = "/docs/isa/TPOWS/";
+        var mkdocs_page_name = "TAddDeqRelu zh";
+        var mkdocs_page_input_path = "docs/isa/TAddDeqRelu_zh.md";
+        var mkdocs_page_url = "/docs/isa/TAddDeqRelu_zh/";
       </script>
     
     <!--[if lt IE 9]>
@@ -925,7 +925,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">TPOWS</li>
+      <li class="breadcrumb-item active">TAddDeqRelu zh</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -934,115 +934,95 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/isa/TPOWS.md` -->
+                <!-- Generated from `docs/isa/TAddDeqRelu_zh.md` -->
 
-<h1 id="tpows">TPOWS<a class="headerlink" href="#tpows" title="Permanent link">&para;</a></h1>
-<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
-<p><img alt="TPOWS tile operation" src="../../figures/isa/TPOWS.svg" /></p>
-<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Elementwise power operation with scalar exponent: computes <code>base</code> raised to a scalar power <code>exp</code> for each element.</p>
-<h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
-<p>For each element <code>(i, j)</code> in the valid region:</p>
-<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{base}_{i,j}^{\mathrm{exp}} \]</div>
-<p>For floating-point types, the computation follows: <code>dst = exp(ln(|base|) * exp)</code> with special case handling for negative base values and integer exponents.</p>
-<h2 id="assembly-syntax">Assembly Syntax<a class="headerlink" href="#assembly-syntax" title="Permanent link">&para;</a></h2>
-<p>PTO-AS form: see <a href="../assembly/PTO-AS.md">PTO-AS Specification</a>.</p>
-<p>Synchronous form:</p>
-<pre class="highlight"><code class="language-text">%dst = tpows %base, %exp, %tmp : !pto.tile&lt;...&gt;, dtype</code></pre>
-<h3 id="as-level-1-ssa">AS Level 1 (SSA)<a class="headerlink" href="#as-level-1-ssa" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = pto.tpows %base, %exp, %tmp : (!pto.tile&lt;...&gt;, dtype, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">pto.tpows ins(%base, %exp, %tmp : !pto.tile_buf&lt;...&gt;, dtype, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
-<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;auto PrecisionType = PowAlgorithm::DEFAULT, typename DstTile, typename BaseTile, typename TmpTile,
+<h1 id="tadddeqrelu">TAddDeqRelu<a class="headerlink" href="#tadddeqrelu" title="Permanent link">&para;</a></h1>
+<h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><img alt="TAddDeqRelu tile operation" src="../../figures/isa/TAddDeqRelu.svg" /></p>
+<h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>融合逐元素加法、反量化缩放和 ReLU 限幅。逐元素计算: <code>dst = max(0, (src0 + src1) * deqScale)</code>，并转换为 <code>half</code>。</p>
+<p>在 ISA 语义层面, 该操作是单条融合指令 (TADDDEQRELU): 对两个 <code>int32_t</code> 源 Tile 做加法, 应用浮点反量化缩放系数, 将负值限幅为零, 并在一个语义步骤内将结果窄化为 <code>half</code>。后端实现可因架构而异, 但对用户可见语义一致。</p>
+<h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>对每个元素 <code>(i, j)</code> 在有效区域内:</p>
+<div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{half}\!\left(\max\!\left(0,\;\left(\mathrm{src0}_{i,j} + \mathrm{src1}_{i,j}\right) \cdot \mathrm{deqScale}\right)\right) \]</div>
+<p>实现中使用精度补偿缩放序列:</p>
+<div class="arithmatex">\[ \left(x \cdot 2^{-17}\right) \cdot \mathrm{deqScale} \cdot 2^{17} \]</div>
+<p>其中加法结果 <code>x = src0 + src1</code>。该序列在数学上等价于 <code>x * deqScale</code>, 同时避免较大 <code>int32_t</code> 中间值带来的精度损失。最终转换为 <code>half</code> 时采用饱和行为; 舍入遵循就近偶数 (round-to-nearest-even)。</p>
+<h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>PTO-AS 形式: 详见 <a href="../assembly/PTO-AS_zh.md">PTO-AS 规范</a>.</p>
+<p>同步形式:</p>
+<pre class="highlight"><code class="language-text">%dst = tadddeqrelu %src0, %src1, %deqScale, %tmp : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, f32, !pto.tile&lt;...&gt;</code></pre>
+<h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = pto.tadddeqrelu %src0, %src1, %deqScale, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, f32, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tadddeqrelu ins(%src0, %src1, %deqScale, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, f32, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+<h2 id="c">C++ 内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
+<p>声明于 <code>include/pto/common/pto_instr.hpp</code>:</p>
+<pre class="highlight"><code class="language-cpp">template &lt;typename TileDataDst, typename TileDataSrc0, typename TileDataSrc1, typename TileDataTmp,
           typename... WaitEvents&gt;
-PTO_INTERNAL RecordEvent TPOWS(DstTile &amp;dst, BaseTile &amp;base, typename DstTile::DType exp, TmpTile &amp;tmp,
-                               WaitEvents &amp;... events);</code></pre>
-<p><code>PrecisionType</code> has the following values available:</p>
+PTO_INST RecordEvent TADDDEQRELU(TileDataDst &amp;dst, TileDataSrc0 &amp;src0, TileDataSrc1 &amp;src1, float deqScale,
+                                 TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>PowAlgorithm::DEFAULT</code>: Normal algorithm, faster but with lower precision.</li>
-<li><code>PowAlgorithm::HIGH_PRECISION</code>: High precision algorithm, but slower.</li>
+<li><strong>源类型</strong>: <code>src0</code> 和 <code>src1</code> 必须为 <code>int32_t</code>。</li>
+<li><strong>目标类型</strong>: <code>dst</code> 必须为 <code>half</code>。</li>
+<li><strong>临时 Tile 类型</strong>: <code>tmp</code> 必须为 <code>int32_t</code>。</li>
+<li><strong>布局</strong>: 所有 Tile 必须为行优先布局 (<code>TileData::isRowMajor</code>)。</li>
+<li><strong>位置</strong>: 所有 Tile 必须位于 <code>TileType::Vec</code>。</li>
+<li><strong>有效区域</strong>: <code>validRow &gt; 0</code> 且 <code>validCol &gt; 0</code>; <code>src0</code> 和 <code>src1</code> 的有效形状必须与 <code>dst</code> 的有效形状匹配。</li>
+<li><strong>临时 Tile 形状</strong>: <code>tmp</code> 必须至少覆盖 <code>dst</code> 的有效区域。</li>
+<li><strong>缩放系数</strong>: <code>deqScale</code> 是标量 <code>float</code>, 均匀应用到每个有效元素。</li>
+<li><strong>实现说明 (A2A3)</strong>: 先将加法结果写入 <code>int32_t</code> 临时 Tile, 再将临时结果转换为 <code>float</code>, 依次应用 <code>2^-17</code>、<code>deqScale</code> 和 <code>2^17</code>, 与零做 ReLU, 最后从 <code>float</code> 转换为 <code>half</code>。</li>
+<li><strong>实现说明 (A5)</strong>: 中间值保存在 VF 寄存器中, 内部不需要单独的 UB 临时缓冲区。公共内建接口仍接受 <code>tmp</code>, 用于保持与 A2/A3 的接口一致性。</li>
 </ul>
-<h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<h3 id="general-constraints">General Constraints<a class="headerlink" href="#general-constraints" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>dst</code> and <code>base</code> must both be <code>TileType::Vec</code>.</li>
-<li>Both tiles must use row-major layout (<code>TileData::isRowMajor</code>).</li>
-<li><code>dst</code> and <code>base</code> must have the same element type.</li>
-<li>Static valid bounds: <code>TileData::ValidRow &lt;= TileData::Rows</code> and <code>TileData::ValidCol &lt;= TileData::Cols</code>.</li>
-<li>Runtime valid region checks:<ul>
-<li><code>dst.GetValidRow() == base.GetValidRow()</code></li>
-<li><code>dst.GetValidCol() == base.GetValidCol()</code></li>
-</ul>
-</li>
-<li>The intrinsic signature requires an explicit <code>tmp</code> operand.</li>
-</ul>
-<h3 id="a2a3-implementation-checks">A2A3 Implementation Checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Supported element types: <code>int32_t</code>, <code>int16_t</code>, <code>int8_t</code>, <code>uint32_t</code>, <code>uint16_t</code>, <code>uint8_t</code>, <code>float</code>.</li>
-<li><code>HIGH_PRECISION</code> algorithm is not supported on A2A3; <code>PrecisionType</code> option is ignored.</li>
-<li>Additional runtime valid region checks for <code>tmp</code>:<ul>
-<li><code>dst.GetValidRow() == tmp.GetValidRow()</code></li>
-<li><code>dst.GetValidCol() == tmp.GetValidCol()</code></li>
-</ul>
-</li>
-</ul>
-<h3 id="a5-implementation-checks">A5 Implementation Checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
-<ul>
-<li>For <code>DEFAULT</code> algorithm: supported element types are <code>uint8_t</code>, <code>int8_t</code>, <code>uint16_t</code>, <code>int16_t</code>, <code>uint32_t</code>, <code>int32_t</code>, <code>half</code>, <code>float</code>, <code>bfloat16_t</code>.</li>
-<li>For <code>HIGH_PRECISION</code> algorithm: supported element types are <code>half</code>, <code>float</code>, <code>bfloat16_t</code> (floating-point only).</li>
-<li>Integer types use a separate integer power computation path.</li>
-</ul>
-<h2 id="temporary-space">Temporary Space<a class="headerlink" href="#temporary-space" title="Permanent link">&para;</a></h2>
-<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
-<ul>
-<li>For <strong>floating-point</strong> types (<code>float</code>): <code>tmp</code> <strong>is used</strong> as intermediate scratch storage. The implementation computes <code>pow(base, scalar) = exp(ln(|base|) * scalar)</code> and uses <code>tmp</code> to store the intermediate result with absolute value for special-case handling (negative base with odd integer exponent).</li>
-<li><code>tmp</code> must have the same element type as <code>dst</code>/<code>base</code>.</li>
-<li><code>tmp.GetValidRow() &gt;= dst.GetValidRow()</code> and <code>tmp.GetValidCol() &gt;= dst.GetValidCol()</code>.</li>
-<li>For <strong>integer</strong> types: <code>tmp</code> is <strong>not used</strong>. The integer power path uses scalar computation without scratch tile storage.</li>
-</ul>
-<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
-<p><code>tmp</code> is accepted by the interface but <strong>not used</strong> by the A5 implementation. The A5 backend uses vector register-based computation and does not require scratch tile storage. <code>tmp</code> is retained in the C++ intrinsic signature solely for API compatibility with A2A3.</p>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
+<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-void example_auto() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT base, dst, tmp;
-  TPOWS(dst, base, 2.0f, tmp);
-  TPOWS&lt;PowAlgorithm::HIGH_PRECISION&gt;(dst, base, 2.0f, tmp);
+void example_auto(float deqScale) {
+  using SrcTileT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
+  using DstTileT = Tile&lt;TileType::Vec, half, 16, 16&gt;;
+  using TmpTileT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
+  SrcTileT src0, src1;
+  DstTileT dst;
+  TmpTileT tmp;
+  TADDDEQRELU(dst, src0, src1, deqScale, tmp);
 }</code></pre>
-<h3 id="manual">Manual<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-void example_manual() {
-  using TileT = Tile&lt;TileType::Vec, float, 16, 16&gt;;
-  TileT base, dst, tmp;
-  TASSIGN(base, 0x1000);
-  TASSIGN(dst, 0x2000);
-  TASSIGN(tmp, 0x3000);
-  TPOWS(dst, base, 2.0f, tmp);
+void example_manual(float deqScale) {
+  using SrcTileT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
+  using DstTileT = Tile&lt;TileType::Vec, half, 16, 16&gt;;
+  using TmpTileT = Tile&lt;TileType::Vec, int32_t, 16, 16&gt;;
+  SrcTileT src0, src1;
+  DstTileT dst;
+  TmpTileT tmp;
+  TASSIGN(src0, 0x0000);
+  TASSIGN(src1, 0x0800);
+  TASSIGN(tmp,  0x1000);
+  TASSIGN(dst,  0x1800);
+  TADDDEQRELU(dst, src0, src1, deqScale, tmp);
 }</code></pre>
-<h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>
-<h3 id="auto-mode">Auto Mode<a class="headerlink" href="#auto-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Auto mode: compiler/runtime-managed placement and scheduling.
-%dst = pto.tpows %base, %exp, %tmp : (!pto.tile&lt;...&gt;, dtype, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="manual-mode">Manual Mode<a class="headerlink" href="#manual-mode" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text"># Manual mode: resources must be bound explicitly before issuing the instruction.
-# Optional for tile operands:
-# pto.tassign %arg0, @tile(0x1000)
-# pto.tassign %arg1, @tile(0x2000)
-%dst = pto.tpows %base, %exp, %tmp : (!pto.tile&lt;...&gt;, dtype, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="pto-assembly-form">PTO Assembly Form<a class="headerlink" href="#pto-assembly-form" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-text">%dst = tpows %base, %exp, %tmp : !pto.tile&lt;...&gt;, dtype
+<h2 id="asm">汇编示例 (ASM)<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
+<h3 id="_9">自动模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># 自动模式: 由编译器/运行时负责资源放置与调度.
+%dst = pto.tadddeqrelu %src0, %src1, %deqScale, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, f32, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="_10">手动模式<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text"># 手动模式: 先显式绑定资源, 再发射指令.
+# 可选 (当该指令包含 tile 操作数时):
+# pto.tassign %arg0, @tile(0x0000)
+# pto.tassign %arg1, @tile(0x0800)
+# pto.tassign %tmp,  @tile(0x1000)
+%dst = pto.tadddeqrelu %src0, %src1, %deqScale, %tmp : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, f32, !pto.tile&lt;...&gt;) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="pto">PTO 汇编形式<a class="headerlink" href="#pto" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = tadddeqrelu %src0, %src1, %deqScale, %tmp : !pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, f32, !pto.tile&lt;...&gt;
 # AS Level 2 (DPS)
-pto.tpows ins(%base, %exp, %tmp : !pto.tile_buf&lt;...&gt;, dtype, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+pto.tadddeqrelu ins(%src0, %src1, %deqScale, %tmp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, f32, !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
               
             </div>
           </div><footer>

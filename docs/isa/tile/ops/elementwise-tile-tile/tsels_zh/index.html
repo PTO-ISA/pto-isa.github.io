@@ -992,7 +992,16 @@ PTO_INST RecordEvent TSELS(TileDataDst &amp;dst, TileDataMask &amp;mask, TileDat
 </li>
 </ul>
 </div>
-<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_6">临时空间<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="a2a3">A2A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> <strong>被使用</strong>作为小型缓冲区，用于存储 <code>set_cmpmask</code> 操作所需的标量值并保存比较掩码。在选择循环之前，标量被写入 <code>tmp[0]</code>。</p>
+<ul>
+<li><code>tmp</code> 的元素类型必须与 <code>TileDataSrc::DType</code> 一致。</li>
+<li><code>tmp</code> 大小要求：至少 1 个元素（用于存放标量）。典型声明：<code>Tile&lt;TileType::Vec, float, 1, 16&gt;</code> 或类似。</li>
+</ul>
+<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
+<p><code>tmp</code> 被接口接受但 A5 实现<strong>不使用</strong>。A5 后端使用 <code>vdup</code> 将标量广播到向量寄存器，并使用 <code>vsel</code> 进行选择，不需要暂存 Tile 存储。<code>tmp</code> 仅为了与 A2A3 的 API 兼容性而保留在 C++ 内建接口签名中。</p>
+<h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
@@ -1032,10 +1041,10 @@ void example_manual() {
   TSELS(dst, mask, src, tmp, scalar);
 }</code></pre>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
-<h3 id="_7">自动模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<h3 id="_8">自动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># 自动模式：由编译器/运行时负责资源放置与调度。
 %dst = pto.tsels %mask, %src, %scalar : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, dtype) -&gt; !pto.tile&lt;...&gt;</code></pre>
-<h3 id="_8">手动模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<h3 id="_9">手动模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text"># 手动模式：先显式绑定资源，再发射指令。
 # 可选（当该指令包含 tile 操作数时）：
 # pto.tassign %arg0, @tile(0x1000)
