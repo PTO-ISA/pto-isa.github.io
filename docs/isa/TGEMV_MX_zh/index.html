@@ -514,6 +514,7 @@
 <p><img alt="TGEMV_MX tile operation" src="../../figures/isa/TGEMV_MX.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>带缩放Tile的GEMV变体，支持混合精度/量化矩阵向量计算。</p>
+<p>此指令当前仅在 A5 上实现（见 <code>include/pto/npu/a5/TMatmul.hpp</code>）。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>概念上（基础GEMV路径）：</p>
 <div class="arithmatex">\[
@@ -561,6 +562,7 @@ PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileL
 <li>使用后端特定的mx合法性检查，用于数据类型、tile位置、分形/布局组合以及缩放格式。</li>
 <li>缩放tile兼容性和累加器提升由目标后端的实现定义。</li>
 <li>为了可移植性，请根据目标实现约束验证确切的 <code>(A, B, scaleA, scaleB, C)</code> 类型元组和tile布局。</li>
+<li>在Ascend 950PR/Ascend 950DT上，支持的 <code>(C, A, B)</code> 三元组（<code>C</code> 始终为 <code>float</code>；缩放tile为 <code>float8_e8m0_t</code>）：FP8 <code>(float, float8_e4m3_t, float8_e4m3_t)</code>、<code>(float, float8_e4m3_t, float8_e5m2_t)</code>、<code>(float, float8_e5m2_t, float8_e4m3_t)</code>、<code>(float, float8_e5m2_t, float8_e5m2_t)</code>；FP4 <code>(float, float4_e1m2x2_t, float4_e1m2x2_t)</code>、<code>(float, float4_e1m2x2_t, float4_e2m1x2_t)</code>、<code>(float, float4_e2m1x2_t, float4_e2m1x2_t)</code>、<code>(float, float4_e2m1x2_t, float4_e1m2x2_t)</code>。</li>
 </ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>实际使用模式请参见：</p>

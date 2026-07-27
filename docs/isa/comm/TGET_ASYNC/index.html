@@ -441,6 +441,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#completion-semantics-quiet-semantics">Completion Semantics (Quiet Semantics)</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#sdma-concurrency-and-session-ownership">SDMA Concurrency and Session Ownership</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#example">Example</a>
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#single-transfer">Single Transfer</a>
@@ -621,7 +623,7 @@ PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
 <tr>
 <td><code>channelGroupIdx</code></td>
 <td><code>kAutoChannelGroupIdx</code></td>
-<td>SDMA channel group index. Default uses <code>get_block_idx()</code> internally, mapping to current AI core. Override for multi-block or custom channel mapping scenarios.</td>
+<td>SDMA channel group index. Default uses <code>get_block_idx()</code> internally, mapping to current AI core. Override for multi-block, concurrent, or custom channel mapping scenarios.</td>
 </tr>
 </tbody>
 </table>
@@ -666,6 +668,7 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 <li>Both SDMA and URMA paths require source tensor to be <strong>flat contiguous logical 1D only</strong></li>
 <li>SDMA workspace must be a valid GM pointer allocated by host-side <code>SdmaWorkspaceManager</code></li>
 <li>URMA workspace must be a valid GM pointer allocated by host-side <code>UrmaWorkspaceManager</code></li>
+<li>Keep the session and its workspace alive until all associated events have completed</li>
 <li>URMA is only available on NPU_ARCH 3510 (Ascend950)</li>
 <li>URMA requires CANN Toolkit <strong>&gt;= 9.1.0</strong></li>
 <li>The symmetric data buffer passed to <code>UrmaWorkspaceManager::Init()</code> must be backed by huge-page memory (allocate with <code>ACL_MEM_MALLOC_HUGE_ONLY</code>). The underlying MR registration requires huge-page backing; <code>ACL_MEM_MALLOC_HUGE_FIRST</code> may silently fall back to 4KB pages for small allocations, causing registration to fail</li>
@@ -690,7 +693,7 @@ It is converted to <code>TmpBuffer</code> and used as temporary UB workspace for
 <h2 id="completion-semantics-quiet-semantics">Completion Semantics (Quiet Semantics)<a class="headerlink" href="#completion-semantics-quiet-semantics" title="Permanent link">&para;</a></h2>
 <p>The completion mechanism differs by engine, but user-facing quiet semantics are identical:</p>
 <ul>
-<li><strong>SDMA</strong>: <code>TGET_ASYNC</code> only submits data transfer SQEs. The flag SQE is deferred to <code>Wait</code>, which polls the flag for completion.</li>
+<li><strong>SDMA</strong>: Each <code>TGET_ASYNC</code> submits data-transfer SQEs and flag SQEs that mark completion of that operation. <code>Wait</code> or <code>Test</code> on its returned event polls the corresponding flags to determine whether that <code>TGET_ASYNC</code> has completed; completion also guarantees that all earlier SDMA operations in the same session have completed.</li>
 <li>
 <p><strong>URMA</strong>: <code>TGET_ASYNC</code> submits an RDMA READ WQE and rings the doorbell immediately. <code>Wait</code> polls the Completion Queue (CQ) until all expected CQEs have been consumed.</p>
 </li>
@@ -699,7 +702,15 @@ It is converted to <code>TmpBuffer</code> and used as temporary UB workspace for
 </li>
 </ul>
 <p>This means after multiple <code>TGET_ASYNC</code> calls, a single <code>Wait</code> on the last returned <code>AsyncEvent</code> drains all pending operations (similar to shmem's quiet semantics).</p>
+<p>Up to 64 operations may be outstanding in one session before submission can apply backpressure.</p>
 <p>After wait succeeds, all issued reads into <code>dstGlobalData</code> are complete.</p>
+<h2 id="sdma-concurrency-and-session-ownership">SDMA Concurrency and Session Ownership<a class="headerlink" href="#sdma-concurrency-and-session-ownership" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Do not use one session concurrently from multiple execution flows.</li>
+<li>Operations that share a channel group must also share the same session.</li>
+<li>Concurrent kernels, or multiple independent sessions within one kernel, must use isolated channel groups.</li>
+<li>Complete all outstanding events before rebuilding a session or reusing its channel group.</li>
+</ul>
 <h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <h3 id="single-transfer">Single Transfer<a class="headerlink" href="#single-transfer" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;

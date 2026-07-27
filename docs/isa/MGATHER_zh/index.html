@@ -536,7 +536,7 @@
 <h3 id="_4">越界行为<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">enum class GatherOOB : uint8_t {
     Undefined = 0,  // 不检查边界；调用者保证索引有效
-    Clamp     = 1,  // 将索引钳制到 capacity - 1
+    Clamp     = 1,  // 将索引限制到 capacity - 1
     Wrap      = 2,  // 索引模 capacity
     Zero      = 3   // OOB 返回零；界内索引正常加载
 };</code></pre>
@@ -728,7 +728,7 @@ A5:
 <p>当 <code>GlobalTable::layout == Layout::NZ</code> 且 <code>TileDst</code> 是匹配的 <code>BLayout::ColMajor + SLayout::RowMajor + SFractalSize = 512</code> tile时，<code>MGATHER</code>（Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品）运行专用的NZ路径（<code>MGatherRowNzImpl</code>、<code>MGatherElemNzImpl</code>）。</p>
 <ul>
 <li><strong>常量。</strong> <code>kC0 = C0_SIZE_BYTE / sizeof(T)</code>；<code>kFRow = FRACTAL_NZ_ROW = 16</code>。每个分形块为 <code>kFRow × kC0</code> 元素（= 512Byte）。</li>
-<li><strong>逻辑形状。</strong> 逻辑行 = <code>gShape2 * kFRow</code>。逻辑列 = <code>gShape0 * gShape1 * kC0</code>。Row模式的OOB以逻辑行数进行夹制/取模；Elem模式以总元素数进行。</li>
+<li><strong>逻辑形状。</strong> 逻辑行 = <code>gShape2 * kFRow</code>。逻辑列 = <code>gShape0 * gShape1 * kC0</code>。Row模式的OOB以逻辑行数进行限制/取模；Elem模式以总元素数进行。</li>
 <li><strong>Row模式。</strong> 对每个逻辑行 <code>r</code>，内核将 <code>idx[r]</code> 映射到 <code>(srcBlockRow, srcRowInBlock)</code>，将 <code>r</code> 映射到 <code>(dstBlockRow, dstRowInBlock)</code>，然后对每个外层批次发出 <strong>一次多burst MTE2传输</strong>。当 <code>Oob == GatherOOB::Zero</code> 时，内核在DMA循环前对整个tile预填 <code>T(0)</code> 并跳过OOB行的DMA。</li>
 <li><strong>Elem模式。</strong> 对每个 <code>(r, c)</code>，内核将 <code>idx</code> 映射到 <code>(logicalRow, logicalCol) = (idx / nLogicalCols, idx % nLogicalCols)</code>，然后通过 <code>MGatherNZGmOffset</code> 转换为NZ物理偏移。遍历顺序为<strong>块列 → 行 → 块内列</strong>，确保连续写入目标连续32Byte UB块。</li>
 </ul>

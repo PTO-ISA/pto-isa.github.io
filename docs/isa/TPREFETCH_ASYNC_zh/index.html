@@ -529,11 +529,11 @@ PTO_INST comm::AsyncEvent TPREFETCH_ASYNC(GlobalData &amp;src, PrefetchAsyncCont
                                           WaitEvents &amp;... events);
 
 } // namespace pto</code></pre>
-<p><code>PrefetchAsyncContext</code> 保存由 Host 侧 <code>SdmaWorkspaceManager::Init</code> 初始化后的 SDMA workspace 指针：</p>
-<pre class="highlight"><code class="language-cpp">pto::PrefetchAsyncContext ctx(workspace);
-auto evt = pto::TPREFETCH_ASYNC(srcGlobal, ctx);
-evt.Wait(ctx.session);</code></pre>
-<p>指令内部使用默认参数构造 SDMA session（<code>channelGroupIdx = get_block_idx()</code>、<code>syncId = 0</code>、<code>queue_num = 1</code>），并保存在 <code>PrefetchAsyncContext</code> 中。后续消费者依赖预取结果时，使用返回的 <code>comm::AsyncEvent</code> 和 <code>ctx.session</code> 等待完成。</p>
+<p><code>PrefetchAsyncContext</code>保存由Host侧<code>SdmaWorkspaceManager::Init</code>初始化后的SDMA workspace指针。
+未指定外部Session时，Context持有自身Session。后续消费者依赖预取结果时，使用返回的
+<code>comm::AsyncEvent</code>和<code>ctx.GetSession()</code>等待完成。</p>
+<p>当<code>TPREFETCH_ASYNC</code>与<code>TGET_ASYNC</code>或<code>TPUT_ASYNC</code>共用Channel Group时，必须复用其Session。
+等待返回的预取Event，也会完成该共享Session中此前所有SDMA操作。</p>
 <h3 id="_3">参数<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -552,7 +552,7 @@ evt.Wait(ctx.session);</code></pre>
 <tr>
 <td><code>ctx</code></td>
 <td><code>PrefetchAsyncContext&amp;</code></td>
-<td>计算侧预取上下文，包含 SDMA workspace 基址以及内部构造的 <code>comm::AsyncSession</code></td>
+<td>计算侧预取上下文，包含workspace以及内部Session或共享外部Session</td>
 </tr>
 <tr>
 <td><code>events...</code></td>
@@ -562,13 +562,17 @@ evt.Wait(ctx.session);</code></pre>
 </tbody>
 </table>
 <h3 id="_4">返回值<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<p>返回 <code>comm::AsyncEvent</code>，用于跟踪异步预取完成状态。后续 <code>TLOAD</code> 依赖预取结果时，调用 <code>evt.Wait(ctx.session)</code> 等待完成。</p>
+<p>返回<code>comm::AsyncEvent</code>，用于跟踪异步预取完成状态。后续<code>TLOAD</code>依赖预取结果时，调用
+<code>evt.Wait(ctx.GetSession())</code>等待完成。</p>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li>源数据必须位于 Global Memory (GM/HBM)。</li>
 <li>GlobalTensor 必须是平坦连续的一维布局。</li>
 <li>SDMA workspace 需要在 kernel 启动前由 Host 侧初始化，并传入 kernel。</li>
 <li><code>PrefetchAsyncContext</code> 内部持有 256-Byte UB scratch tile 和 <code>AsyncSession</code>，用于构造 SDMA 元数据并等待事件完成。</li>
+<li>与<code>TGET_ASYNC</code>或<code>TPUT_ASYNC</code>共用Channel Group时，必须复用其Session。</li>
+<li>外部Session的生命周期必须覆盖Context及相关异步Event的使用阶段。</li>
+<li>并发使用的独立Context必须采用不同的workspace，或保证串行执行。</li>
 <li>SDMA CMO 按 cache line 粒度工作，非对齐范围由硬件处理。</li>
 <li>CPU simulation 后端中该指令为空操作，返回空 <code>AsyncEvent</code>。</li>
 </ul>
@@ -624,13 +628,20 @@ __global__ AICORE void my_kernel(__gm__ half *src, __gm__ half *dst,
 
     PrefetchAsyncContext ctx(workspace);
     auto evt = TPREFETCH_ASYNC(srcGlobal, ctx);
-    evt.Wait(ctx.session);
+    evt.Wait(ctx.GetSession());
 
     using TileData = Tile&lt;TileType::Vec, half, 128, 128, BLayout::RowMajor&gt;;
     TileData tile;
     TASSIGN(tile, 0x100);
     TLOAD(tile, srcGlobal);
 }</code></pre>
+<h3 id="session">复用外部Session<a class="headerlink" href="#session" title="Permanent link">&para;</a></h3>
+<p>以下示例假设<code>sharedSession</code>已针对所选Channel Group在外部完成构造：</p>
+<pre class="highlight"><code class="language-cpp">PrefetchAsyncContext ctx(workspace, &amp;sharedSession);
+auto getEvt = TGET_ASYNC(dstGlobal, srcGlobal, sharedSession);
+auto prefetchEvt = TPREFETCH_ASYNC(prefetchGlobal, ctx);
+auto putEvt = TPUT_ASYNC(remoteGlobal, localGlobal, sharedSession);
+(void)putEvt.Wait(ctx.GetSession());</code></pre>
               
             </div>
           </div><footer>

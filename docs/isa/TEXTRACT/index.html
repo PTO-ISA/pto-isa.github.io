@@ -373,6 +373,8 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#a5-implementation-checks">A5 implementation checks</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#vec-vec-extraction-path">Vec → Vec extraction path</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
@@ -622,6 +624,13 @@ PTO_INST RecordEvent TEXTRACT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpT
 <li>Destination supports <code>TileType::Mat -&gt; TileType::Left/Right/Scale</code>, <code>TileType::Acc -&gt; TileType::Mat</code> (including relu, scalar-quant, and vector-quantized forms), <code>TileType::Acc -&gt; TileType::Vec</code>, and specific <code>TileType::Vec -&gt; TileType::Mat</code> extraction paths.</li>
 <li>The vector-quantized form additionally requires an <code>FpTileData</code> scaling operand, matching the <code>TEXTRACT_FP(...)</code> interface.</li>
 <li>For <code>TileType::Acc -&gt; TileType::Vec</code> with a 32-bit destination type (<code>float</code>/<code>int32_t</code>), when using <code>DualModeSplitN</code> the <code>ValidCol</code> (before the split) must be a multiple of <code>32</code>.</li>
+</ul>
+<h3 id="vec-vec-extraction-path">Vec → Vec extraction path<a class="headerlink" href="#vec-vec-extraction-path" title="Permanent link">&para;</a></h3>
+<p>In addition to the <code>Mat/Acc -&gt; ...</code> paths above, <code>TEXTRACT</code> supports a <code>TileType::Vec -&gt; TileType::Vec</code> extraction path (ND and NZ layouts), enforced via <code>CheckTExtractVecToVecCommon</code>:</p>
+<ul>
+<li><code>DstTileData::DType</code> must equal <code>SrcTileData::DType</code>.</li>
+<li>Supported element types (both A2A3 and A5): <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code> (any 1-/2-/4-byte standard type). This set differs from the primary tile path: it adds <code>uint8_t</code>/<code>int16_t</code>/<code>uint16_t</code>/<code>int32_t</code>/<code>uint32_t</code>, and on A5 it does <strong>not</strong> include the fp8/fp4 types.</li>
+<li>ND path: source/destination row strides must be 32-byte aligned; <code>Dst</code> rows/cols must not exceed <code>Src</code>.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

@@ -556,7 +556,7 @@
 <pre class="highlight"><code class="language-cpp">enum class ScatterOOB : uint8_t {
     Undefined = 0,  // 不检查边界；调用者保证索引有效
     Skip      = 1,  // 丢弃写入（保留原始表值）
-    Clamp     = 2,  // 将索引钳制到 capacity - 1
+    Clamp     = 2,  // 将索引限制到 capacity - 1
     Wrap      = 3   // 索引模 capacity
 };</code></pre>
 <ul>
@@ -852,7 +852,7 @@ A5:
 </tbody>
 </table>
 <h3 id="ascend-950prascend-950dtsimtvs">Ascend 950PR/Ascend 950DT—SIMT启动与V↔S握手<a class="headerlink" href="#ascend-950prascend-950dtsimtvs" title="Permanent link">&para;</a></h3>
-<p>Ascend 950PR/Ascend 950DT实现将几乎整个pipe模型隐藏在 <code>cce::async_invoke</code> 之后。唯一显式的手握手在标量回退路径（<code>MScatterScalarImpl</code>，用于Elem <code>(1, 1)</code>）。</p>
+<p>Ascend 950PR/Ascend 950DT实现将几乎整个pipe模型隐藏在 <code>cce::async_invoke</code> 之后。唯一显式的握手在标量回退路径（<code>MScatterScalarImpl</code>，用于Elem <code>(1, 1)</code>）。</p>
 <h2 id="ub">UB内存预算<a class="headerlink" href="#ub" title="Permanent link">&para;</a></h2>
 <h3 id="atlas-a2a3-atlas-a2a3_1">Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品<a class="headerlink" href="#atlas-a2a3-atlas-a2a3_1" title="Permanent link">&para;</a></h3>
 <p>AIV向量核心192KB UB。<code>MSCATTER</code> 不从内核内部分配任何UB scratch—仅消耗调用者分配的源tile和索引tile。</p>

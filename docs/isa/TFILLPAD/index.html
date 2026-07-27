@@ -582,7 +582,7 @@ PTO_INST RecordEvent TFILLPAD(DstTileData &amp;dst, SrcTileData &amp;src, WaitEv
 <li><code>sizeof(TileDataDst::DType) == sizeof(TileDataSrc::DType)</code> and element size must be <code>1</code>, <code>2</code>, or <code>4</code> bytes.</li>
 <li><code>TFILLPAD</code>: <code>TileDataDst::Rows/Cols</code> must match <code>TileDataSrc::Rows/Cols</code>.</li>
 <li><code>TFILLPAD_EXPAND</code>: <code>TileDataDst::Rows &gt;= TileDataSrc::Rows</code> and <code>TileDataDst::Cols &gt;= TileDataSrc::Cols</code>.</li>
-<li><code>TFILLPAD(TileData &amp;dst, TileData &amp;src)</code>: <code>if TileData::TileType is Mat, layout only support (!TileData::isRowMajor &amp;&amp; TileData::Slayout::RowMajor), and PadVal only support PadValue::Zero or PadValue::Null</code> (Mat-type overload; the first constraint's Vec restriction and this Mat allowance belong to separate SFINAE overloads and are not contradictory)</li>
+<li><code>TFILLPAD(TileData &amp;dst, TileData &amp;src)</code> (Mat-type overload): when <code>TileData::TileType</code> is <code>Mat</code>, the layout must satisfy <code>!TileData::isRowMajor &amp;&amp; TileData::SLayout::RowMajor</code>, and <code>PadVal</code> must be <code>PadValue::Zero</code> or <code>PadValue::Null</code>. This Mat overload and the first Vec overload (<code>PadVal != PadValue::Null</code>) are separate SFINAE overloads, so the two are not contradictory.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;

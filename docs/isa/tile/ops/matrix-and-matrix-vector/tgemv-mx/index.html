@@ -515,6 +515,7 @@
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>GEMV with scaling tiles for mixed-precision / quantized matrix-vector compute on supported targets.</p>
 <p>This instruction family extends <code>TGEMV</code> with additional scale operands (mx path). Accumulator and scale handling are target-dependent.</p>
+<p>This instruction is currently implemented on A5 (see <code>include/pto/npu/a5/TMatmul.hpp</code>).</p>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
 <p>Conceptually (base GEMV path):</p>
 <div class="arithmatex">\[
@@ -559,6 +560,7 @@ PTO_INST RecordEvent TGEMV_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, TileL
 <li>Uses backend-specific mx legality checks for data types, tile locations, fractal/layout combinations, and scaling formats.</li>
 <li>Scale tile compatibility and accumulator promotion are implementation-defined by target backend.</li>
 <li>For portability, validate the exact <code>(A, B, scaleA, scaleB, C)</code> type tuple and tile layout against target implementation constraints.</li>
+<li>On A5, supported <code>(C, A, B)</code> triples (<code>C</code> is always <code>float</code>; scale tiles are <code>float8_e8m0_t</code>): FP8 <code>(float, float8_e4m3_t, float8_e4m3_t)</code>, <code>(float, float8_e4m3_t, float8_e5m2_t)</code>, <code>(float, float8_e5m2_t, float8_e4m3_t)</code>, <code>(float, float8_e5m2_t, float8_e5m2_t)</code>; FP4 <code>(float, float4_e1m2x2_t, float4_e1m2x2_t)</code>, <code>(float, float4_e1m2x2_t, float4_e2m1x2_t)</code>, <code>(float, float4_e2m1x2_t, float4_e2m1x2_t)</code>, <code>(float, float4_e2m1x2_t, float4_e1m2x2_t)</code>.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <p>For practical usage patterns, see:</p>

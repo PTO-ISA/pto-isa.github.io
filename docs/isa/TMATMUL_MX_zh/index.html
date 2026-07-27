@@ -577,6 +577,11 @@ PTO_INST RecordEvent TMATMUL_MX(TileRes &amp;cMatrix, TileLeft &amp;aMatrix, Til
 <li><strong>实现检查 (Ascend 950PR/Ascend 950DT)</strong>:<ul>
 <li><code>m/k/n</code> 取自 <code>aMatrix.GetValidRow()</code>、<code>aMatrix.GetValidCol()</code>、<code>bMatrix.GetValidCol()</code>。</li>
 <li>静态合法性检查通过 <code>CheckMadMxValid&lt;...&gt;()</code>（类型、形状、分形和缩放tile合法性）。</li>
+<li>支持的 <code>(C, A, B)</code> 三元组（<code>C</code> 始终为 <code>float</code>；缩放tile为 <code>float8_e8m0_t</code>）：<ul>
+<li>FP8：<code>(float, float8_e4m3_t, float8_e4m3_t)</code>、<code>(float, float8_e4m3_t, float8_e5m2_t)</code>、<code>(float, float8_e5m2_t, float8_e4m3_t)</code>、<code>(float, float8_e5m2_t, float8_e5m2_t)</code>。</li>
+<li>FP4：<code>(float, float4_e1m2x2_t, float4_e1m2x2_t)</code>、<code>(float, float4_e1m2x2_t, float4_e2m1x2_t)</code>、<code>(float, float4_e2m1x2_t, float4_e2m1x2_t)</code>、<code>(float, float4_e2m1x2_t, float4_e1m2x2_t)</code>。</li>
+</ul>
+</li>
 </ul>
 </li>
 <li><strong>偏置形式</strong>:<ul>

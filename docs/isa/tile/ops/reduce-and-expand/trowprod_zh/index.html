@@ -551,6 +551,10 @@ PTO_INST RecordEvent TROWPROD(TileDataOut &amp;dst, TileDataIn &amp;src, TileDat
 </li>
 <li>内建接口签名要求显式传入 <code>tmp</code> 操作数。</li>
 </ul>
+<h3 id="atlas-a2a3-atlas-a2a3">Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品实现检查<a class="headerlink" href="#atlas-a2a3-atlas-a2a3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>支持的元素类型：<code>half</code>、<code>float</code>、<code>int32_t</code>、<code>int16_t</code>。</li>
+</ul>
 <h3 id="ascend-950prascend-950dt">Ascend 950PR/Ascend 950DT实现检查<a class="headerlink" href="#ascend-950prascend-950dt" title="Permanent link">&para;</a></h3>
 <ul>
 <li>支持的元素类型：<code>half</code>、<code>float</code>、<code>int32_t</code>、<code>int16_t</code>。</li>
@@ -558,7 +562,7 @@ PTO_INST RecordEvent TROWPROD(TileDataOut &amp;dst, TileDataIn &amp;src, TileDat
 <li>当前实现路径中，没有额外要求 <code>tmp</code> 必须满足特定shape/layout约束。</li>
 </ul>
 <h2 id="_7">临时空间<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<h3 id="atlas-a2a3-atlas-a2a3">Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品<a class="headerlink" href="#atlas-a2a3-atlas-a2a3" title="Permanent link">&para;</a></h3>
+<h3 id="atlas-a2a3-atlas-a2a3_1">Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品<a class="headerlink" href="#atlas-a2a3-atlas-a2a3_1" title="Permanent link">&para;</a></h3>
 <p><code>tmp</code> <strong>被使用</strong>作为逐行累加器缓冲区。对于每一行，实现将 <code>tmp</code> 初始化为 <code>1.0</code>，然后使用 <code>vmul</code> 将 <code>src</code> 数据的各个块乘入 <code>tmp</code>。所有块累加完成后，标量模式流水线读取 <code>tmp</code> 元素并计算最终乘积。</p>
 <ul>
 <li><code>tmp</code> 必须与 <code>src</code>/<code>dst</code> 具有相同的元素类型。</li>

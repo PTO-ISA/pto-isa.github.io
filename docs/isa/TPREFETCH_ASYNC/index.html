@@ -526,11 +526,12 @@ PTO_INST comm::AsyncEvent TPREFETCH_ASYNC(GlobalData &amp;src, PrefetchAsyncCont
                                           WaitEvents &amp;... events);
 
 } // namespace pto</code></pre>
-<p><code>PrefetchAsyncContext</code> contains the SDMA workspace pointer prepared host-side via <code>SdmaWorkspaceManager::Init</code>:</p>
-<pre class="highlight"><code class="language-cpp">pto::PrefetchAsyncContext ctx(workspace);
-auto evt = pto::TPREFETCH_ASYNC(srcGlobal, ctx);
-evt.Wait(ctx.session);</code></pre>
-<p>The instruction builds and stores an SDMA session inside <code>PrefetchAsyncContext</code> with default parameters (<code>channelGroupIdx = get_block_idx()</code>, <code>syncId = 0</code>, <code>queue_num = 1</code>). Use the returned <code>comm::AsyncEvent</code> with <code>ctx.session</code> to wait for completion when a dependent consumer must observe the prefetch.</p>
+<p><code>PrefetchAsyncContext</code> contains the SDMA workspace pointer prepared host-side via <code>SdmaWorkspaceManager::Init</code>.
+It owns an internal session unless constructed to reuse an external session.
+Use the returned <code>comm::AsyncEvent</code> with <code>ctx.GetSession()</code> to wait for completion when a dependent consumer must
+observe the prefetch.</p>
+<p>When <code>TPREFETCH_ASYNC</code> shares a channel group with <code>TGET_ASYNC</code> or <code>TPUT_ASYNC</code>, reuse their session.
+Waiting for the returned prefetch event also completes every earlier SDMA operation in that shared session.</p>
 <h3 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -549,7 +550,7 @@ evt.Wait(ctx.session);</code></pre>
 <tr>
 <td><code>ctx</code></td>
 <td><code>PrefetchAsyncContext&amp;</code></td>
-<td>Compute-side prefetch context containing the SDMA workspace base and internally built <code>comm::AsyncSession</code></td>
+<td>Compute-side context containing the workspace and either an internal or shared external session</td>
 </tr>
 <tr>
 <td><code>events...</code></td>
@@ -559,13 +560,16 @@ evt.Wait(ctx.session);</code></pre>
 </tbody>
 </table>
 <h3 id="return-value">Return Value<a class="headerlink" href="#return-value" title="Permanent link">&para;</a></h3>
-<p><code>comm::AsyncEvent</code> - handle for asynchronous completion tracking. Call <code>evt.Wait(ctx.session)</code> before a dependent <code>TLOAD</code> when the consumer must observe prefetched data.</p>
+<p><code>comm::AsyncEvent</code> - handle for asynchronous completion tracking. Call <code>evt.Wait(ctx.GetSession())</code> before a dependent <code>TLOAD</code> when the consumer must observe prefetched data.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Source data must be in Global Memory (GM/HBM address space).</li>
 <li>For the GlobalTensor overload, the tensor must be flat contiguous (packed 1D layout).</li>
 <li>The SDMA workspace must be initialized by host code before the kernel launch and passed into the kernel.</li>
 <li><code>PrefetchAsyncContext</code> owns a 256-byte UB scratch tile and an <code>AsyncSession</code> used while constructing and waiting on SDMA metadata.</li>
+<li>When sharing a channel group with <code>TGET_ASYNC</code> or <code>TPUT_ASYNC</code>, reuse their session.</li>
+<li>An external session must remain alive while the context and related events are in use.</li>
+<li>Concurrent independent contexts must use separate workspaces or be serialized.</li>
 <li>SDMA CMO operates at cache-line granularity; non-aligned prefetch ranges are rounded by hardware.</li>
 <li>On CPU simulation backend, this instruction is a no-op (returns an empty <code>AsyncEvent</code>).</li>
 </ul>
@@ -621,13 +625,20 @@ __global__ AICORE void my_kernel(__gm__ half *src, __gm__ half *dst,
 
     PrefetchAsyncContext ctx(workspace);
     auto evt = TPREFETCH_ASYNC(srcGlobal, ctx);
-    evt.Wait(ctx.session);
+    evt.Wait(ctx.GetSession());
 
     using TileData = Tile&lt;TileType::Vec, half, 128, 128, BLayout::RowMajor&gt;;
     TileData tile;
     TASSIGN(tile, 0x100);
     TLOAD(tile, srcGlobal);
 }</code></pre>
+<h3 id="shared-external-session">Shared External Session<a class="headerlink" href="#shared-external-session" title="Permanent link">&para;</a></h3>
+<p>Given an externally built <code>sharedSession</code> for the selected channel group:</p>
+<pre class="highlight"><code class="language-cpp">PrefetchAsyncContext ctx(workspace, &amp;sharedSession);
+auto getEvt = TGET_ASYNC(dstGlobal, srcGlobal, sharedSession);
+auto prefetchEvt = TPREFETCH_ASYNC(prefetchGlobal, ctx);
+auto putEvt = TPUT_ASYNC(remoteGlobal, localGlobal, sharedSession);
+(void)putEvt.Wait(ctx.GetSession());</code></pre>
               
             </div>
           </div><footer>

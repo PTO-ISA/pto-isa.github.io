@@ -579,6 +579,13 @@ PTO_INST RecordEvent TEXTRACT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpT
 <li>向量量化形式额外要求提供 <code>FpTileData</code> 缩放操作数，对应 <code>TEXTRACT_FP(...)</code> 接口。</li>
 <li>对于 <code>TileType::Acc -&gt; TileType::Vec</code>，当目标为32位类型（<code>float</code>/<code>int32_t</code>）且使用 <code>DualModeSplitN</code> 时，切分前的 <code>ValidCol</code> 必须是 <code>32</code> 的整数倍。</li>
 </ul>
+<h3 id="vec-vec">Vec → Vec 抽取路径<a class="headerlink" href="#vec-vec" title="Permanent link">&para;</a></h3>
+<p>除上述 <code>Mat/Acc -&gt; ...</code> 路径外，<code>TEXTRACT</code> 还支持 <code>TileType::Vec -&gt; TileType::Vec</code> 抽取路径（ND 与 NZ 布局），由 <code>CheckTExtractVecToVecCommon</code> 强制：</p>
+<ul>
+<li><code>DstTileData::DType</code> 必须等于 <code>SrcTileData::DType</code>。</li>
+<li>支持的元素类型（A2A3 与 A5 均同）：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>（任意 1/2/4 字节标准类型）。该集合与主 tile 路径不同：新增 <code>uint8_t</code>/<code>int16_t</code>/<code>uint16_t</code>/<code>int32_t</code>/<code>uint32_t</code>，且在 A5 上<strong>不含</strong> fp8/fp4 类型。</li>
+<li>ND 路径：源/目标行步进须 32 字节对齐；<code>Dst</code> 行/列不得超过 <code>Src</code>。</li>
+</ul>
 <h2 id="_7">示例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
