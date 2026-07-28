@@ -672,63 +672,89 @@ enum class ScatterConflict : uint8_t {  // 仅 A5
 </table>
 <h2 id="_10">约束<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="tilecpu">Tile约束（CPU）<a class="headerlink" href="#tilecpu" title="Permanent link">&para;</a></h3>
-<p><strong>支持的数据类型：</strong>
-- <code>src</code> / <code>dst</code> 元素类型必须是以下之一：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。
-- 在AICore目标上（CPU模拟器以 <code>__CCE_AICORE__</code> 编译时），还支持 <code>float8_e4m3_t</code> 和 <code>float8_e5m2_t</code>。
-- <code>indexes</code> 元素类型必须是 <code>int32_t</code> 或 <code>uint32_t</code>。</p>
-<p><strong>Tile与内存类型：</strong>
-- <code>src</code> 必须是向量Tile（<code>TileType::Vec</code>）。
-- <code>indexes</code> 必须是向量Tile（<code>TileType::Vec</code>）。
-- <code>src</code> 和 <code>indexes</code> 必须使用行主序布局（<code>BLayout::RowMajor + SLayout::NoneBox</code>）。
-- <code>dst</code> 必须是位于GM内存中的 <code>GlobalTensor</code>。
-- <code>dst</code> 必须使用 <code>Layout::ND</code>。</p>
-<p><strong>形状约束：</strong>
-- <code>src.Rows == indexes.Rows</code>。
-- <code>indexes</code> 形状为 <code>[N, 1]</code>（按行）或 <code>[N, M]</code>（按元素）。
-- <code>src</code> 行宽必须32字节对齐。
-- <code>dst</code> 静态shape满足 <code>Shape&lt;1, 1, 1, TableRows, RowWidth&gt;</code>。</p>
+<p><strong>支持的数据类型：</strong></p>
+<ul>
+<li><code>src</code> / <code>dst</code> 元素类型必须是以下之一：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。</li>
+<li>在AICore目标上（CPU模拟器以 <code>__CCE_AICORE__</code> 编译时），还支持 <code>float8_e4m3_t</code> 和 <code>float8_e5m2_t</code>。</li>
+<li><code>indexes</code> 元素类型必须是 <code>int32_t</code> 或 <code>uint32_t</code>。</li>
+</ul>
+<p><strong>Tile与内存类型：</strong></p>
+<ul>
+<li><code>src</code> 必须是向量Tile（<code>TileType::Vec</code>）。</li>
+<li><code>indexes</code> 必须是向量Tile（<code>TileType::Vec</code>）。</li>
+<li><code>src</code> 和 <code>indexes</code> 必须使用行主序布局（<code>BLayout::RowMajor + SLayout::NoneBox</code>）。</li>
+<li><code>dst</code> 必须是位于GM内存中的 <code>GlobalTensor</code>。</li>
+<li><code>dst</code> 必须使用 <code>Layout::ND</code>。</li>
+</ul>
+<p><strong>形状约束：</strong></p>
+<ul>
+<li><code>src.Rows == indexes.Rows</code>。</li>
+<li><code>indexes</code> 形状为 <code>[N, 1]</code>（按行）或 <code>[N, M]</code>（按元素）。</li>
+<li><code>src</code> 行宽必须32字节对齐。</li>
+<li><code>dst</code> 静态shape满足 <code>Shape&lt;1, 1, 1, TableRows, RowWidth&gt;</code>。</li>
+</ul>
 <h3 id="tileatlas-a2a3-atlas-a2a3">Tile约束（Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品）<a class="headerlink" href="#tileatlas-a2a3-atlas-a2a3" title="Permanent link">&para;</a></h3>
-<p><strong>支持的数据类型：</strong>
-- <code>src</code> / <code>dst</code> 元素类型：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。不支持 <code>float8_e4m3_t</code>、<code>float8_e5m2_t</code>、<code>hifloat8_t</code>。
-- <code>indexes</code> 元素类型必须是 <code>int32_t</code> 或 <code>uint32_t</code>。</p>
-<p><strong>Tile与内存类型：</strong>
-- <code>src</code> 必须是向量Tile（<code>TileSrc::Loc == TileType::Vec</code>）。
-- <code>indexes</code> 必须是向量Tile（<code>TileIdx::Loc == TileType::Vec</code>）。
-- 索引tile <strong>始终</strong> 是 <code>BLayout::RowMajor + SLayout::NoneBox</code>（ND）。
-- <code>dst</code> 必须是GM中的 <code>GlobalTensor</code>；<code>GlobalTable::DType == __gm__ T</code>。
-- 源tile的布局必须与表布局精确配对：
-    - <code>GlobalTable::layout == Layout::ND</code> ⇒ <code>TileSrc</code> 为 <code>BLayout::RowMajor + SLayout::NoneBox</code>。
-    - <code>GlobalTable::layout == Layout::NZ</code> ⇒ <code>TileSrc</code> 为 <code>BLayout::ColMajor + SLayout::RowMajor + SFractalSize == 512</code>。</p>
-<p><strong>原子操作约束：</strong>
-- <code>ScatterAtomicOp::None</code> 支持所有上述dtype。
-- <code>ScatterAtomicOp::Add</code> 要求 <code>int8_t</code>、<code>int16_t</code>、<code>int32_t</code>、<code>half</code>、<code>bfloat16_t</code> 或 <code>float</code>。Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品不支持无符号整数原子加法。
-- <code>ScatterAtomicOp::Max</code> 和 <code>Min</code> <strong>在Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品上不支持</strong>。</p>
-<p><strong>形状约束：</strong>
-- 填充后的 <code>TileSrc::Cols * sizeof(T)</code> 必须32字节对齐。
-- <code>Coalesce::Row</code>：<code>TileIdx::ValidRow == 1</code> 且 <code>TileIdx::ValidCol == TileSrc::ValidRow</code>。
-- <code>Coalesce::Elem</code>：<code>TileIdx::ValidRow == TileSrc::ValidRow</code> 且 <code>TileIdx::ValidCol == TileSrc::ValidCol</code>。
-- NZ表额外要求：<code>staticShape[3] == 16</code>、<code>staticShape[4] == 32/sizeof(T)</code>、<code>Cols % kC0 == 0</code>、<code>Rows % 16 == 0</code>。</p>
+<p><strong>支持的数据类型：</strong></p>
+<ul>
+<li><code>src</code> / <code>dst</code> 元素类型：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。不支持 <code>float8_e4m3_t</code>、<code>float8_e5m2_t</code>、<code>hifloat8_t</code>。</li>
+<li><code>indexes</code> 元素类型必须是 <code>int32_t</code> 或 <code>uint32_t</code>。</li>
+</ul>
+<p><strong>Tile与内存类型：</strong></p>
+<ul>
+<li><code>src</code> 必须是向量Tile（<code>TileSrc::Loc == TileType::Vec</code>）。</li>
+<li><code>indexes</code> 必须是向量Tile（<code>TileIdx::Loc == TileType::Vec</code>）。</li>
+<li>索引tile <strong>始终</strong> 是 <code>BLayout::RowMajor + SLayout::NoneBox</code>（ND）。</li>
+<li><code>dst</code> 必须是GM中的 <code>GlobalTensor</code>；<code>GlobalTable::DType == __gm__ T</code>。</li>
+<li>源tile的布局必须与表布局精确配对：<ul>
+<li><code>GlobalTable::layout == Layout::ND</code> ⇒ <code>TileSrc</code> 为 <code>BLayout::RowMajor + SLayout::NoneBox</code>。</li>
+<li><code>GlobalTable::layout == Layout::NZ</code> ⇒ <code>TileSrc</code> 为 <code>BLayout::ColMajor + SLayout::RowMajor + SFractalSize == 512</code>。</li>
+</ul>
+</li>
+</ul>
+<p><strong>原子操作约束：</strong></p>
+<ul>
+<li><code>ScatterAtomicOp::None</code> 支持所有上述dtype。</li>
+<li><code>ScatterAtomicOp::Add</code> 要求 <code>int8_t</code>、<code>int16_t</code>、<code>int32_t</code>、<code>half</code>、<code>bfloat16_t</code> 或 <code>float</code>。Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品不支持无符号整数原子加法。</li>
+<li><code>ScatterAtomicOp::Max</code> 和 <code>Min</code> <strong>在Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品上不支持</strong>。</li>
+</ul>
+<p><strong>形状约束：</strong></p>
+<ul>
+<li>填充后的 <code>TileSrc::Cols * sizeof(T)</code> 必须32字节对齐。</li>
+<li><code>Coalesce::Row</code>：<code>TileIdx::ValidRow == 1</code> 且 <code>TileIdx::ValidCol == TileSrc::ValidRow</code>。</li>
+<li><code>Coalesce::Elem</code>：<code>TileIdx::ValidRow == TileSrc::ValidRow</code> 且 <code>TileIdx::ValidCol == TileSrc::ValidCol</code>。</li>
+<li>NZ表额外要求：<code>staticShape[3] == 16</code>、<code>staticShape[4] == 32/sizeof(T)</code>、<code>Cols % kC0 == 0</code>、<code>Rows % 16 == 0</code>。</li>
+</ul>
 <h3 id="tileascend-950prascend-950dt">Tile约束（Ascend 950PR/Ascend 950DT）<a class="headerlink" href="#tileascend-950prascend-950dt" title="Permanent link">&para;</a></h3>
-<p><strong>支持的数据类型：</strong>
-- <code>src</code> / <code>dst</code> 元素类型：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。<code>__CCE_AICORE__</code> 构建中还包含 <code>hifloat8_t</code>、<code>float8_e4m3_t</code>、<code>float8_e5m2_t</code>。
-- <code>indexes</code> 元素类型必须是 <code>int32_t</code> 或 <code>uint32_t</code>。</p>
-<p><strong>Tile与内存类型：</strong>
-- <code>src</code> 必须是向量Tile（<code>TileSrc::Loc == TileType::Vec</code>）。
-- <code>indexes</code> 必须是向量Tile（<code>TileIdx::Loc == TileType::Vec</code>）。
-- SIMT内核对UB tile的布局无感知：每次读写均通过 <code>tile_offset_2d&lt;TileX&gt;(r, c)</code>。
-- <strong>GM表布局：仅 <code>Layout::ND</code>。</strong> Ascend 950PR/Ascend 950DT SIMT内核将GM寻址为扁平行主序缓冲区，行步长硬编码为 <code>validCols</code>；<code>MScatterCheck</code> 强制 <code>GlobalTable::staticShape[4] == TileSrc::ValidCol</code>。</p>
-<p><strong>原子操作约束：</strong>
-- <code>ScatterAtomicOp::None</code> 支持所有dtype。
-- <code>ScatterAtomicOp::Add</code> 要求 <code>int32_t</code>、<code>uint32_t</code>、<code>float</code>、<code>half</code> 或 <code>bfloat16_t</code>。
-- <code>ScatterAtomicOp::Max</code> / <code>Min</code> 要求 <code>int32_t</code>、<code>uint32_t</code> 或 <code>float</code>。</p>
-<p><strong>形状约束：</strong>
-- 填充后的 <code>TileSrc::Cols * sizeof(T)</code>（RowMajor）或 <code>TileSrc::Rows * sizeof(T)</code>（ColMajor）必须32字节对齐。
-- <code>Coalesce::Row</code>：索引tile有效形状为 <code>[1, R]</code>（<code>RowMajor</code>）<strong>或</strong> <code>[R, 1]</code>（<code>ColMajor</code>）。
-- <code>Coalesce::Elem</code>：<code>TileIdx::ValidRow == TileSrc::ValidRow</code> 且 <code>TileIdx::ValidCol == TileSrc::ValidCol</code>。</p>
+<p><strong>支持的数据类型：</strong></p>
+<ul>
+<li><code>src</code> / <code>dst</code> 元素类型：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>。<code>__CCE_AICORE__</code> 构建中还包含 <code>hifloat8_t</code>、<code>float8_e4m3_t</code>、<code>float8_e5m2_t</code>。</li>
+<li><code>indexes</code> 元素类型必须是 <code>int32_t</code> 或 <code>uint32_t</code>。</li>
+</ul>
+<p><strong>Tile与内存类型：</strong></p>
+<ul>
+<li><code>src</code> 必须是向量Tile（<code>TileSrc::Loc == TileType::Vec</code>）。</li>
+<li><code>indexes</code> 必须是向量Tile（<code>TileIdx::Loc == TileType::Vec</code>）。</li>
+<li>SIMT内核对UB tile的布局无感知：每次读写均通过 <code>tile_offset_2d&lt;TileX&gt;(r, c)</code>。</li>
+<li><strong>GM表布局：仅 <code>Layout::ND</code>。</strong> Ascend 950PR/Ascend 950DT SIMT内核将GM寻址为扁平行主序缓冲区，行步长硬编码为 <code>validCols</code>；<code>MScatterCheck</code> 强制 <code>GlobalTable::staticShape[4] == TileSrc::ValidCol</code>。</li>
+</ul>
+<p><strong>原子操作约束：</strong></p>
+<ul>
+<li><code>ScatterAtomicOp::None</code> 支持所有dtype。</li>
+<li><code>ScatterAtomicOp::Add</code> 要求 <code>int32_t</code>、<code>uint32_t</code>、<code>float</code>、<code>half</code> 或 <code>bfloat16_t</code>。</li>
+<li><code>ScatterAtomicOp::Max</code> / <code>Min</code> 要求 <code>int32_t</code>、<code>uint32_t</code> 或 <code>float</code>。</li>
+</ul>
+<p><strong>形状约束：</strong></p>
+<ul>
+<li>填充后的 <code>TileSrc::Cols * sizeof(T)</code>（RowMajor）或 <code>TileSrc::Rows * sizeof(T)</code>（ColMajor）必须32字节对齐。</li>
+<li><code>Coalesce::Row</code>：索引tile有效形状为 <code>[1, R]</code>（<code>RowMajor</code>）<strong>或</strong> <code>[R, 1]</code>（<code>ColMajor</code>）。</li>
+<li><code>Coalesce::Elem</code>：<code>TileIdx::ValidRow == TileSrc::ValidRow</code> 且 <code>TileIdx::ValidCol == TileSrc::ValidCol</code>。</li>
+</ul>
 <h3 id="atlas-a2a3-atlas-a2a3-ascend-950prascend-950dt">动态运行时形状（Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品和Ascend 950PR/Ascend 950DT）<a class="headerlink" href="#atlas-a2a3-atlas-a2a3-ascend-950prascend-950dt" title="Permanent link">&para;</a></h3>
-<p><code>MSCATTER</code> 同时接受编译时和运行时动态形状：
-- <code>Tile&lt;…, RowMask, ColMask&gt;</code> 中 <code>RowMask == -1</code> 及/或 <code>ColMask == -1</code> 将运行时有效范围存储在tile中。
-- <code>Shape&lt;S0, S1, S2, S3, S4&gt;</code> / <code>Stride&lt;…&gt;</code> 中的 <code>-1</code> 条目使用运行时尺寸构造。</p>
+<p><code>MSCATTER</code> 同时接受编译时和运行时动态形状：</p>
+<ul>
+<li><code>Tile&lt;…, RowMask, ColMask&gt;</code> 中 <code>RowMask == -1</code> 及/或 <code>ColMask == -1</code> 将运行时有效范围存储在tile中。</li>
+<li><code>Shape&lt;S0, S1, S2, S3, S4&gt;</code> / <code>Stride&lt;…&gt;</code> 中的 <code>-1</code> 条目使用运行时尺寸构造。</li>
+</ul>
 <p><code>MScatterCheck</code> 中的静态断言以 <code>if constexpr (DIM &gt; 0)</code> 为门控。</p>
 <p>示例：</p>
 <pre class="highlight"><code class="language-cpp">constexpr auto kPadCols = 16;
@@ -1005,9 +1031,9 @@ pto.mscatter ins(%src, %idx : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;
 </ol>
 <h2 id="_17">相关指令<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../TSTORE/"><code>TSTORE</code></a>：连续块传输Tile → GM。</li>
-<li><a href="../MGATHER/"><code>MGATHER</code></a>：索引收集GM → Tile（逆操作）。</li>
-<li><a href="../TSCATTER/"><code>TSCATTER</code></a>：基于索引的Tile内部散射。</li>
+<li><a href="../TSTORE_zh/"><code>TSTORE</code></a>：连续块传输Tile → GM。</li>
+<li><a href="../MGATHER_zh/"><code>MGATHER</code></a>：索引收集GM → Tile（逆操作）。</li>
+<li><a href="../TSCATTER_zh/"><code>TSCATTER</code></a>：基于索引的Tile内部散射。</li>
 </ul>
               
             </div>

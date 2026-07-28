@@ -520,7 +520,7 @@
 <li><code>TPOP(Pipe&amp;, TileData&amp;, Split)</code> 等待生产者的数据就绪同步，将当前FIFO槽位加载到消费者tile中。消费者tile索引在槽位地址计算完成后递增。</li>
 <li><code>TFREE(Pipe&amp;, Split)</code> 释放FIFO中的槽位空间。Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品平台上此接口为空操作（<code>TPOP</code> 已在内部执行空闲空间通知），Ascend 950PR/Ascend 950DT平台上会释放 <code>TPOP</code> 使用的FIFO槽位空间。</li>
 </ol>
-<p>对于GlobalData流程:</p>
+<p>对于GlobalData流程：</p>
 <ol>
 <li><code>TALLOC(Pipe&amp;, GlobalData&amp;)</code> 从 <code>TPipe</code> 中分配一个生产者FIFO槽位，并将其暴露为 <code>GlobalTensor</code> 视图。生产者可通过 <code>TSTORE</code> 等指令向该槽位写入数据。</li>
 <li><code>TPUSH(Pipe&amp;, GlobalData&amp;)</code> 为已经由 <code>TALLOC</code> 分配的槽位记录数据就绪同步，将FIFO槽位提交给消费者。它本身不会存储tile数据。</li>

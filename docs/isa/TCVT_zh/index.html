@@ -564,7 +564,7 @@ PTO_INST RecordEvent TCVT(TileDataD &amp;dst, TileDataS &amp;src, TmpTileData &a
 <li><code>REPEAT_MAX = 255</code>，<code>REPEAT_BYTE = 256</code>，<code>BLOCK_BYTE_SIZE = 32</code>。</li>
 </ul>
 </li>
-<li><strong><code>float -&gt; int16</code>，非饱和 (<code>SaturationMode::OFF</code>)</strong>:<ul>
+<li><strong><code>float -&gt; int16</code>，非饱和 （<code>SaturationMode::OFF</code>）</strong>:<ul>
 <li>临时结果是第一步 <code>float -&gt; int32</code> 转换产生的 <code>int32_t</code> Tile。</li>
 <li>由于 <code>float</code> 源行受Tile约束保证32字节对齐，<code>SS / 8</code> 是以32字节块为单位的源repeat stride。</li>
 <li>对齐的主区域中，一次调用处理一行，最多处理 <code>REPEAT_MAX</code> 个repeat，每个repeat为 <code>64</code> 个元素：
@@ -580,7 +580,7 @@ $$ \text{tmpFloatToInt16Bytes} = \max(\text{tmpHeadBytes}, \text{tmpTailBytes}) 
 <li>对主区域而言，一个紧凑的完整repeat上界是 <code>REPEAT_MAX * REPEAT_BYTE = 65280</code> 字节；但当 <code>SS</code> 较大时，尾部会按源行stride写入，所需空间可能更大。</li>
 </ul>
 </li>
-<li><strong><code>half -&gt; int16</code>，非饱和 (<code>SaturationMode::OFF</code>)</strong>:<ul>
+<li><strong><code>half -&gt; int16</code>，非饱和 （<code>SaturationMode::OFF</code>）</strong>:<ul>
 <li>实现按行处理，每行拆分为不超过 <code>64</code> 个元素的子块，并在每个子块之间复用同一段临时缓冲区。对于 <code>C &gt; 0</code>，令：
 $$ H = \min(C, 64) $$</li>
 <li>该路径所需的最小tmp大小为：
@@ -588,7 +588,7 @@ $$ \text{tmpHalfToInt16Bytes} = 32 \times \left\lceil\frac{H}{8}\right\rceil $$<
 <li>对任意非空Tile，该路径的形状无关上界为 <code>256</code> 字节。</li>
 </ul>
 </li>
-<li><strong><code>half -&gt; int8</code>，非饱和 (<code>SaturationMode::OFF</code>)</strong>:<ul>
+<li><strong><code>half -&gt; int8</code>，非饱和 （<code>SaturationMode::OFF</code>）</strong>:<ul>
 <li>实现同样按不超过 <code>64</code> 个元素的子块处理，并复用同一段256字节临时区域。第一步最多将 <code>64</code> 个 <code>int32_t</code> 写入字节 <code>[0, 255]</code>；完成 <code>int32 -&gt; int16</code> 窄化后，字节 <code>[0, 127]</code> 保存 <code>int16_t</code> 值，字节 <code>[128, 255]</code> 被复用为scratch。</li>
 <li><code>tempMaskBuf = tempAndBuf + 64</code> 会前进 <code>64 * sizeof(int16_t) = 128</code> 字节，因此它指向同一256字节临时区域的上半部分，不需要额外再分配256字节。</li>
 <li>该路径所需的最小tmp大小为：
@@ -708,9 +708,11 @@ $$ \text{tmpSizeAllBytes} = \max(\text{tmpFloatToInt16Bytes},\ 256) $$</li>
 </tr>
 </tbody>
 </table>
-<p>说明：
-- 关键差异：Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品支持I32 -&gt; FP16（half，deq路径），Ascend 950PR/Ascend 950DT不支持I32 -&gt; FP16。
-- Ascend 950PR/Ascend 950DT上不支持FP16 -&gt; FP8_E4M3和FP16 -&gt; FP8_E5M2。</p>
+<p>说明：</p>
+<ul>
+<li>关键差异：Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品支持I32 -&gt; FP16（half，deq路径），Ascend 950PR/Ascend 950DT不支持I32 -&gt; FP16。</li>
+<li>Ascend 950PR/Ascend 950DT上不支持FP16 -&gt; FP8_E4M3和FP16 -&gt; FP8_E5M2。</li>
+</ul>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <h3 id="auto">自动（Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;

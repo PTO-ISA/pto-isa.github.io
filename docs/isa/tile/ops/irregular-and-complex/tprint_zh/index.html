@@ -517,11 +517,13 @@
 <p>从设备代码直接打印Tile或GlobalTensor的内容以用于调试目的。</p>
 <p><code>TPRINT</code> 指令输出存储在Tile或GlobalTensor中的数据的逻辑视图。它支持常见的数据类型（例如 <code>float</code>、<code>half</code>、<code>int8</code>、<code>uint32</code>）和多种内存布局（GlobalTensor的 <code>ND</code>、<code>DN</code>、<code>NZ</code>；片上缓冲区的向量tiles）。</p>
 <blockquote>
-<p><strong>重要</strong>:
-- 此指令<strong>仅用于开发和调试</strong>。
-- 它会产生<strong>显著的运行时开销</strong>，<strong>不得在生产kernel中使用</strong>。
-- 如果输出超过内部打印缓冲区，可能会被<strong>截断</strong>。可以通过在编译选项中添加 <code>-DCCEBlockMaxSize=16384</code> 来修改打印缓冲区，默认为16KB。
-- <strong>需要CCE编译选项 <code>-D_DEBUG --cce-enable-print</code></strong>（参见 <a href="#behavior">行为</a>）。</p>
+<p><strong>重要</strong>:</p>
+<ul>
+<li>此指令<strong>仅用于开发和调试</strong>。</li>
+<li>它会产生<strong>显著的运行时开销</strong>，<strong>不得在生产kernel中使用</strong>。</li>
+<li>如果输出超过内部打印缓冲区，可能会被<strong>截断</strong>。可以通过在编译选项中添加 <code>-DCCEBlockMaxSize=16384</code> 来修改打印缓冲区，默认为16KB。</li>
+<li><strong>需要CCE编译选项 <code>-D_DEBUG --cce-enable-print</code></strong>（参见 <a href="#行为">行为</a>）。</li>
+</ul>
 </blockquote>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>除非另有说明，语义在有效区域上定义，目标相关的行为标记为实现定义。</p>
@@ -534,23 +536,23 @@
 <h2 id="c">C++内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
 <p>声明于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <blockquote>
-<p>公共包含头为 <code>&lt;pto/pto-inst.hpp&gt;</code>，内部声明位于 <code>pto/common/pto_instr.hpp</code>。
+<p>公共包含头为 <code>&lt;pto/pto-inst.hpp&gt;</code>，内部声明位于 <code>pto/common/pto_instr.hpp</code>。</p>
+</blockquote>
 <pre class="highlight"><code class="language-cpp">// 适用于打印GlobalTensor或Vec类型Tile
 template &lt;PrintFormat Format = PrintFormat::Width8_Precision4, typename TileData&gt;
 PTO_INST void TPRINT(TileData &amp;src);
 
 // 适用于打印Acc类型Tile和Mat类型Tile(Mat打印仅适用于A3，A5暂不支持)
 template &lt;PrintFormat Format = PrintFormat::Width8_Precision4, typename TileData, typename GlobalData&gt;
-PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);</code></pre></p>
-</blockquote>
+PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);</code></pre>
 <h3 id="printformat">PrintFormat枚举<a class="headerlink" href="#printformat" title="Permanent link">&para;</a></h3>
-<p>声明于 <code>include/pto/common/type.hpp</code>：
+<p>声明于 <code>include/pto/common/type.hpp</code>：</p>
 <pre class="highlight"><code class="language-cpp">enum class PrintFormat : uint8_t
 {
     Width8_Precision4 = 0,  // 打印宽度8，精度4
     Width8_Precision2 = 1,  // 打印宽度8，精度2
     Width10_Precision6 = 2, // 打印宽度10，精度6
-};</code></pre></p>
+};</code></pre>
 <h3 id="t">支持的T类型<a class="headerlink" href="#t" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Tile</strong>：TileType必须是<code>Vec</code>、<code>Acc</code>、<code>Mat(仅A3支持)</code>，并具有支持的元素类型。</li>
@@ -587,12 +589,12 @@ PTO_INTERNAL void TPRINT(TileData &amp;src, GlobalData &amp;tmp);</code></pre></
 <p><strong>格式化</strong>:</p>
 <ul>
 <li>浮点数值：根据 <code>PrintFormat</code> 模板参数确定打印格式：</li>
-<li><code>PrintFormat::Width8_Precision4</code>: <code>%8.4f</code>（默认）</li>
-<li><code>PrintFormat::Width8_Precision2</code>: <code>%8.2f</code></li>
-<li><code>PrintFormat::Width10_Precision6</code>: <code>%10.6f</code></li>
+<li><code>PrintFormat::Width8_Precision4</code>： <code>%8.4f</code>（默认）</li>
+<li><code>PrintFormat::Width8_Precision2</code>： <code>%8.2f</code></li>
+<li><code>PrintFormat::Width10_Precision6</code>： <code>%10.6f</code></li>
 <li>整数值：根据 <code>PrintFormat</code> 模板参数确定打印格式：</li>
-<li><code>PrintFormat::Width8_Precision4</code> 或 <code>PrintFormat::Width8_Precision2</code>: <code>%8d</code></li>
-<li><code>PrintFormat::Width10_Precision6</code>: <code>%10d</code></li>
+<li><code>PrintFormat::Width8_Precision4</code> 或 <code>PrintFormat::Width8_Precision2</code>： <code>%8d</code></li>
+<li><code>PrintFormat::Width10_Precision6</code>： <code>%10d</code></li>
 <li>对于 <code>GlobalTensor</code>，由于数据大小和缓冲区限制，仅打印其逻辑形状（由 <code>Shape</code> 定义）内的元素。</li>
 <li>对于 <code>Tile</code>，无效区域（超出 <code>validRows</code>/<code>validCols</code>）仍会被打印，但在指定部分有效性时用 <code>|</code> 分隔符标记。</li>
 </ul>

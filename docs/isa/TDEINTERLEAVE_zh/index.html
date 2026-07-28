@@ -536,7 +536,6 @@ $$ \mathrm{dst1}_{i, k} = \mathrm{src}_{i, 2k+1}, \quad 0 \le k &lt; \mathrm{hal
 <p><strong>注意</strong>：单源形式要求源Tile的行宽至少为 <code>2 × ElementsPerRepeat</code> 个元素（其中 <code>ElementsPerRepeat = 256 / sizeof(T)</code>，即 <code>2 × sregLower</code>），以确保每次重复中加载的两个相邻寄存器大小的数据块不会跨越行边界。</p>
 </blockquote>
 <h2 id="_6">汇编语法<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>PTO-AS形式：参见 <a href="../assembly/PTO-AS_zh.md">PTO-AS规范</a>。</p>
 <p>同步形式（双源）：</p>
 <pre class="highlight"><code class="language-text">%dst0, %dst1 = tdeinterleave %src0, %src1 : !pto.tile&lt;...&gt;</code></pre>
 <p>同步形式（单源）：</p>
@@ -574,7 +573,7 @@ PTO_INST RecordEvent TDeInterleave(TileDataDst &amp;dst1, TileDataDst &amp;dst0,
 <li><code>TileData::DType</code> 必须是以下之一：<code>int32_t</code>、<code>uint32_t</code>、<code>float</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>uint8_t</code>、<code>int8_t</code>。</li>
 <li>Tile布局必须是行主序（<code>TileData::isRowMajor</code>）。</li>
 <li>所有Tile必须具有相同的 <code>DType</code>。</li>
-<li>双源形式：<code>src0</code>、<code>src1</code>、<code>dst0</code>、<code>dst1</code> 必须具有相同的有效形状, 且他们的validCols必须为偶数。</li>
+<li>双源形式：<code>src0</code>、<code>src1</code>、<code>dst0</code>、<code>dst1</code> 必须具有相同的有效形状， 且他们的validCols必须为偶数。</li>
 <li>单源形式：<code>src</code>、<code>dst0</code>、<code>dst1</code> 必须具有相同的有效行数；<code>dst0</code>、<code>dst1</code> 的 <code>validCols</code> 必须为 <code>src</code> 的 <code>validCols</code> 的一半。</li>
 </ul>
 </li>

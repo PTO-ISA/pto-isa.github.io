@@ -512,329 +512,89 @@
 <h1 id="syncall">SYNCALL<a class="headerlink" href="#syncall" title="Permanent link">&para;</a></h1>
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <blockquote>
-<p>仓库当前未提供 <code>SYNCALL.svg</code>（与多数向量算子不同）。<code>SYNCALL</code> 为<strong>跨核控制面</strong>原语，不描述单Tile上的逐元素数据变换；语义上可理解为「所有选定参与者在同一点汇合后再前进」。</p>
+<p>仓库未提供 <code>SYNCALL.svg</code>。<code>SYNCALL</code> 是<strong>跨核控制面</strong>原语，不描述单Tile上的数据变换，语义为「全体参与者在同一点汇合后再前进」。</p>
 </blockquote>
-<p>以下示意区分硬件（FFTS）与软件（GM轮询）两条路径（概念图，非规范绑定）：</p>
 <pre class="highlight"><code class="language-mermaid">flowchart TB
   subgraph hard [硬件模式 Hard / FFTS]
-    H1[各参与者到达调用点] --&gt; H2[ffts_cross_core_sync 等]
-    H2 --&gt; H3[wait_flag_dev 等]
+    H1[各参与者到达调用点] --&gt; H2[ffts_cross_core_sync]
+    H2 --&gt; H3[wait_flag_dev]
     H3 --&gt; H4[屏障完成]
   end
-  subgraph soft [软件模式 Soft / GM]
-    S1[写本地 GM slot 计数] --&gt; S2[轮询全部 slot 达阈值]
-    S2 --&gt; S3[屏障完成]
+  subgraph soft [软件模式 Soft / GM 原子计数器]
+    S1[ld_dev 读共享计数器] --&gt; S2[st_atomic +1]
+    S2 --&gt; S3[轮询直至计数达到本轮 epoch 目标]
+    S3 --&gt; S4[屏障完成]
   end</code></pre>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><code>SYNCALL</code> 是跨核同步屏障，支持Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品和Ascend 950PR/Ascend 950DT NPU后端。通过模板参数 <code>SyncCoreType</code> 选择核类型模式：</p>
+<p><code>SYNCALL</code> 是跨核同步屏障。两个模板参数各自独立：</p>
 <ul>
-<li><strong>AIV-only</strong>（默认）：<code>SYNCALL()</code> 同步所有AIV核。</li>
-<li><strong>AIC-only</strong>：<code>SYNCALL&lt;SyncCoreType::AICOnly&gt;()</code> 同步所有AIC核（Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品支持硬件和软件模式；Ascend 950PR/Ascend 950DT仅支持硬件模式）。</li>
-<li><strong>MIX（AIC+AIV）</strong>：<code>SYNCALL&lt;SyncCoreType::Mix&gt;()</code> 同步AIC和AIV混合核。</li>
+<li><code>SyncCoreType</code> 选参与者集合：<strong>AIVOnly</strong>（默认）、<strong>AICOnly</strong>、<strong>Mix</strong>（AIC+AIV）。</li>
+<li><code>SyncAllMode</code> 选实现路径：<strong>Hard</strong>（FFTS硬件旗标，无workspace重载）、<strong>Soft</strong>（GM共享原子计数器，带workspace重载）。</li>
 </ul>
-<p>通过 <code>SyncAllMode</code>（在带workspace的重载中显式给出）选择 <strong>硬件模式（FFTS）</strong> 或 <strong>软件模式（GM轮询）</strong>。无workspace的重载对应硬件路径。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>不适用逐元素算术语义。<code>SYNCALL</code> 表达的是 <strong>barrier（屏障）到达</strong> 关系：</p>
-<ul>
-<li>在某一动态程序点上，凡属于当前 <code>SyncCoreType</code> 所划定参与者集合的core，均须执行到该 <code>SYNCALL</code> 调用之后，任一参与者方可越过该点继续执行后续代码。</li>
-<li>硬件模式：由FFTS旗标与设备侧 <code>wait_flag_dev</code> 等原语保证跨核可见顺序。</li>
-<li>软件模式：由GM中各参与者独占slot的单调计数与 <code>dcci</code>/<code>dsb</code> 等一致性原语，在轮询中判定「全员已到达当前代数」。</li>
-</ul>
-<p>该语义<strong>不</strong>对barrier之后的GM或其它buffer内容作额外保证；跨核数据可见性需调用方自行维护，详见「跨核GM通信注意事项」。</p>
+<p>不适用逐元素算术语义，表达的是 <strong>barrier 到达</strong> 关系：属于当前参与者集合的每个core都执行过该 <code>SYNCALL</code> 之后，任一core方可继续。Hard与Soft的语义完全相同，仅实现路径不同。</p>
 <h2 id="c">C++内建接口<a class="headerlink" href="#c" title="Permanent link">&para;</a></h2>
-<p>声明于 <code>include/pto/common/pto_instr.hpp</code>。软件模式接口使用类型安全的 <code>GlobalTensor</code> 和 <code>Tile</code> 参数（通过SFINAE约束）：</p>
-<blockquote>
-<p>公共包含头为 <code>&lt;pto/pto-inst.hpp&gt;</code>，内部声明位于 <code>pto/common/pto_instr.hpp</code>。</p>
-</blockquote>
+<p>公共头 <code>&lt;pto/pto-inst.hpp&gt;</code>，声明位于 <code>include/pto/common/pto_instr.hpp</code>：</p>
 <pre class="highlight"><code class="language-cpp">// 硬件模式（所有 CoreType 通用）
 template &lt;SyncCoreType CoreType = SyncCoreType::AIVOnly&gt;
 PTO_INST void SYNCALL();
 
-// 软件模式 — AIV-only（GlobalTensor + Vec Tile）
-template &lt;SyncAllMode Mode, SyncCoreType CoreType = SyncCoreType::AIVOnly,
-          typename GlobalData, typename TileData,
-          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt; &amp;&amp;
-                           is_tile_data_v&lt;TileData&gt; &amp;&amp; TileData::Loc == TileType::Vec, int&gt; = 0&gt;
-PTO_INST void SYNCALL(GlobalData &amp;gmWorkspace, TileData &amp;ubWorkspace, int32_t usedCores = 0);
-
-// 软件模式 — AIC-only（GlobalTensor + Mat Tile）
-template &lt;SyncAllMode Mode, SyncCoreType CoreType = SyncCoreType::AICOnly,
-          typename GlobalData, typename TileData,
-          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt; &amp;&amp;
-                           is_tile_data_v&lt;TileData&gt; &amp;&amp; TileData::Loc == TileType::Mat, int&gt; = 0&gt;
-PTO_INST void SYNCALL(GlobalData &amp;gmWorkspace, TileData &amp;l1Workspace, int32_t usedCores = 0);
-
-// 软件模式 — MIX（GlobalTensor + Vec Tile + Mat Tile）
-template &lt;SyncAllMode Mode, SyncCoreType CoreType = SyncCoreType::Mix,
-          typename GlobalData, typename UbTileData, typename L1TileData,
-          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt; &amp;&amp;
-                           is_tile_data_v&lt;UbTileData&gt; &amp;&amp; UbTileData::Loc == TileType::Vec &amp;&amp;
-                           is_tile_data_v&lt;L1TileData&gt; &amp;&amp; L1TileData::Loc == TileType::Mat, int&gt; = 0&gt;
-PTO_INST void SYNCALL(GlobalData &amp;gmWorkspace, UbTileData &amp;ubWorkspace, L1TileData &amp;l1Workspace,
-                       int32_t usedCores = 0);</code></pre>
+// 软件模式 — GM 共享原子计数器
+template &lt;SyncAllMode Mode, SyncCoreType CoreType = SyncCoreType::AIVOnly, typename GlobalData,
+          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0&gt;
+PTO_INST void SYNCALL(GlobalData &amp;gmWorkspace, int32_t usedCores = 0);</code></pre>
 <h2 id="_4">参数<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>gmWorkspace</code>: <code>GlobalTensor&lt;int32_t, pto::Shape&lt;&gt;, pto::Stride&lt;&gt;&gt;</code>（在Ascend C与 <code>using namespace pto</code> 并存时，建议写全 <code>pto::</code>，避免与编译器内置头中的 <code>Stride</code> 枚举同名冲突）。软件模式使用的GM workspace，调用前需要初始化为0。每个参与core占用8个 <code>int32_t</code>（按cache line隔离同步计数）。</li>
-<li><code>ubWorkspace</code>: <code>Tile&lt;TileType::Vec, int32_t, 1, SYNCALL_SOFT_SLOT_INT32&gt;</code>（模板参数固定为 <code>SYNCALL_SOFT_SLOT_INT32 = 8</code>，即每核一个cache line槽位）。AIV-only和MIX软件模式使用的UB scratch，运行时后备内存容量须至少为 <code>usedCores * 8 * sizeof(int32_t)</code>（实现通过裸指针访问，不校验模板容量；示例中以编译期最大参与核数 × <code>SYNCALL_SOFT_SLOT_INT32</code> 声明以保证后备内存充足）。</li>
-<li><code>l1Workspace</code>: <code>Tile&lt;TileType::Mat, int32_t, 1, SYNCALL_SOFT_SLOT_INT32&gt;</code>。AIC-only和MIX软件模式使用的L1（cbuf）scratch，用于 <code>create_cbuf_matrix</code> 填充同步值后经DMA搬移到GM。</li>
-<li><code>usedCores</code>: 参与软件barrier的core数。为0时自动推算——AIV-only / AIC-only使用 <code>get_block_num()</code>，MIX使用 <code>SYNCALL_GET_MIX_PARTICIPANT_COUNT()</code>（即 <code>AIC blocks × (1 + AIV ratio)</code>）。</li>
+<li><code>gmWorkspace</code>：Soft模式使用的一块GM缓冲，类型为 <code>GlobalTensor&lt;int32_t, pto::Shape&lt;&gt;, pto::Stride&lt;&gt;&gt;</code>。指令只用它的<strong>首个int32</strong>作为全体参与者共享的到达计数器，因此分配一条cache line即可，且<strong>首次使用前必须清零</strong>。</li>
+<li><code>usedCores</code>：参与同步的核数。</li>
+<li>为0时由指令自动推算：AIV-only 与 AIC-only 取本次launch的核数；MIX 取全部AIC核与其配对AIV核之和。</li>
+<li>显式指定时<strong>可小于launch核数</strong>，即只让部分核参与同步；此时未参与的核<strong>不得</strong>调用 <code>SYNCALL</code>。</li>
 </ul>
-<h2 id="kernel-meta">Kernel Meta宏<a class="headerlink" href="#kernel-meta" title="Permanent link">&para;</a></h2>
-<p>下列场景需在ELF中<strong>手写</strong> <code>.ascend.meta</code>，供runtime正确调度：<strong>Hard AIV-only</strong>、<strong>Soft AIC-only</strong>、以及 <strong>register-ELF的MIX</strong>（如1:1 hard）。<code>dav-c220</code> 自动拆分场景由Bisheng生成meta，见本节末尾。宏定义于 <code>include/pto/common/kernel_meta.hpp</code>：</p>
-<blockquote>
-<p><code>kernelName</code> 须与 <code>__global__</code> 入口符号<strong>完全一致</strong>（写入section <code>.ascend.meta.&lt;kernelName&gt;</code>）。</p>
-</blockquote>
-<pre class="highlight"><code class="language-cpp">// AIV 侧 kernel（标记为 MIX_AIV_MAIN，ratio 固定 0:1）
-PTO_SYNCALL_AIV_KERNEL_META(kernelName);
-
-// AIC 侧 kernel（标记为 MIX_AIC_MAIN，指定 AIC:AIV 比例）
-PTO_SYNCALL_MIX_AIC_KERNEL_META(kernelName, aicRatio, aivRatio);</code></pre>
-<p><strong>使用示例</strong></p>
-<p>Hard AIV-only（单kernel，chevron启动）：</p>
-<pre class="highlight"><code class="language-cpp">PTO_SYNCALL_MIX_AIC_KERNEL_META(MyKernel_mix_aic, 1, 2);  // AIC kernel ELF
-PTO_SYNCALL_AIV_KERNEL_META(MyKernel_mix_aiv);             // AIV kernel ELF</code></pre>
-<p>Soft AIC-only（单kernel，chevron启动）：</p>
-<pre class="highlight"><code class="language-cpp">PTO_SYNCALL_AIC_KERNEL_META(MyKernel);
-extern "C" __global__ AICORE void MyKernel(...) { SYNCALL&lt;SyncAllMode::Soft, SyncCoreType::AICOnly&gt;(...); }</code></pre>
-<p>register-ELF通用配对（AIC侧指定比例 + AIV侧）。注意：当前 <code>syncall</code> ST的MIX 1:2已改用 <code>dav-c220</code> 自动拆分、无需手写meta；下例仅演示register-ELF路径的宏配对写法：</p>
-<pre class="highlight"><code class="language-cpp">PTO_SYNCALL_MIX_AIC_KERNEL_META(MyKernel_mix_aic, 1, 2);
-PTO_SYNCALL_AIV_KERNEL_META(MyKernel_mix_aiv);</code></pre>
-<p>register-ELF MIX 1:1 hard（<strong>AIC与AIV两侧均用</strong> <code>PTO_SYNCALL_MIX_AIC_KERNEL_META(..., 1, 1)</code>，AIV侧<strong>不要</strong>用 <code>PTO_SYNCALL_AIV_KERNEL_META</code>）：</p>
-<pre class="highlight"><code class="language-cpp">PTO_SYNCALL_MIX_AIC_KERNEL_META(MyKernel_mix_aic, 1, 1);
-PTO_SYNCALL_MIX_AIC_KERNEL_META(MyKernel_mix_aiv, 1, 1);</code></pre>
-<p><strong>无需手写meta的常见场景</strong>（完整对照见下文「编译与调度指南」场景速查表）：</p>
+<p><code>Mode</code> 为 <code>Hard</code> 时忽略 <code>gmWorkspace</code> 与 <code>usedCores</code>，行为等同无参 <code>SYNCALL()</code>。</p>
+<h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li>AIV-only Soft（<code>dav-c220-vec</code>）</li>
-<li>MIX 1:2 Hard / Soft、Hard AIC-only（Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品，<code>dav-c220</code> 自动拆分）</li>
-<li>MIX 1:1 Soft（双流chevron）</li>
+<li><code>SYNCALL</code> 只保证barrier<strong>到达</strong>这一件事，业务数据的顺序与可见性都要调用方自己负责：它不参与PTO的Event自动依赖编排（不接受 <code>WaitEvents</code>，也不返回 <code>RecordEvent</code>），不会等待本核前序数据指令（如 <code>TSTORE</code>）落地；hard与soft也都<strong>不刷业务数据的cache</strong>，barrier前后跨核读写GM需自行 <code>dcci</code> / <code>dsb</code>。</li>
+<li>Soft模式要求所有参与的核以<strong>相同顺序、相同次数</strong>进入同一组barrier。指令按到达次数推算当前是第几轮，某个核多进或少进一次，就会与其他核错轮，进而卡死。</li>
+<li>参与者集合由kernel的编译与启动方式决定，不由 <code>SYNCALL</code> 决定。模板参数只是声明「本次要同步哪一类核」，实际拉起多少核、AIC与AIV如何配对，取决于kernel编译成哪种arch、以什么方式启动。两者对不上就会有核一直等待。</li>
+<li>A2/A3 的 Hard AIC-only 不能编译成纯cube kernel：纯 <code>dav-c220-cube</code> 建立不起AIC-only硬同步所需的FFTS上下文，实测会hang。须按MIX编译（<code>dav-c220</code>），AIC侧调用 <code>SYNCALL&lt;AICOnly&gt;()</code>，AIV侧留空。A5 用 <code>dav-c310-cube</code> 即可。</li>
+<li>手工编译kernel（不走chevron自动拆分）时须自行声明kernel meta，否则runtime会按错误的核型调度，硬同步拿不到FFTS上下文而hang。meta用 <code>include/pto/common/kernel_meta.hpp</code> 中的宏声明（<code>PTO_SYNCALL_AIV_KERNEL_META</code> / <code>PTO_SYNCALL_AIC_KERNEL_META</code> / <code>PTO_SYNCALL_MIX_AIC_KERNEL_META</code>），宏参须与 <code>__global__</code> 入口符号完全一致。当前仅A2/A3的 Hard AIV-only 与 Soft AIC-only 需手写，其余场景由编译器生成。</li>
+<li>auto构建路径（<code>__PTO_AUTO__</code>）下 <code>SYNCALL</code> 为no-op，真实同步只在manual kernel中发生。</li>
 </ul>
-<blockquote>
-<p><strong>dav-c220自动拆分</strong>：使用 <code>--cce-aicore-arch=dav-c220</code> 编译时，Bisheng会自动生成AIC/AIV子kernel及对应 <code>.ascend.meta</code>，物理比例为 <strong>1:2</strong>（每个AIC block配2个AIV subblock）。此时<strong>无需</strong>手写 <code>PTO_SYNCALL_MIX_AIC_KERNEL_META</code>，也<strong>不能</strong>通过meta把比例改成1:1（见下文「MIX 1:1」）。</p>
-</blockquote>
-<h2 id="atlas-a2a3-atlas-a2a3">编译与调度指南（Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品）<a class="headerlink" href="#atlas-a2a3-atlas-a2a3" title="Permanent link">&para;</a></h2>
-<p>本节以ST用例 <a href="../../tests/npu/a2a3/src/st/testcase/syncall/"><code>tests/npu/a2a3/src/st/testcase/syncall/</code></a> 为准，说明不同 <code>SyncCoreType</code> / 模式 / AIC:AIV比例下应采用的<strong>编译arch</strong>、<strong>Meta</strong> 与 <strong>Host启动</strong>方式。Host侧通过 <a href="../../tests/npu/a2a3/src/st/testcase/syncall/syncall_core_config.hpp"><code>syncall_core_config.hpp</code></a> 在运行时决定launch grid（910B1：24 AIC + 48 AIV；910B4：20 AIC + 40 AIV），同一套kernel二进制可跨芯片复用。</p>
-<h3 id="_5">场景速查表<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>场景</th>
-<th>同步模式</th>
-<th>参与者数</th>
-<th>编译 <code>--cce-aicore-arch</code></th>
-<th>Kernel Meta</th>
-<th>Host启动</th>
-<th>参考源文件</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>AIV-only</td>
-<td>Hard</td>
-<td><code>aiv</code></td>
-<td><code>dav-c220-vec</code></td>
-<td><code>PTO_SYNCALL_AIV_KERNEL_META</code></td>
-<td>chevron <code>&lt;&lt;&lt;aiv&gt;&gt;&gt;</code></td>
-<td><code>syncall_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>AIV-only</td>
-<td>Soft</td>
-<td><code>aiv</code></td>
-<td><code>dav-c220-vec</code></td>
-<td>无</td>
-<td>chevron <code>&lt;&lt;&lt;aiv&gt;&gt;&gt;</code></td>
-<td><code>syncall_soft_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>AIC-only</td>
-<td>Hard</td>
-<td><code>aic</code></td>
-<td><strong><code>dav-c220</code></strong>（MIX自动拆分，AIV空stub）</td>
-<td>由Bisheng自动生成</td>
-<td>chevron <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code></td>
-<td><code>syncall_aic_hard_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>AIC-only</td>
-<td>Soft</td>
-<td><code>aic</code></td>
-<td><code>dav-c220-cube</code></td>
-<td><code>PTO_SYNCALL_AIC_KERNEL_META</code></td>
-<td>chevron <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code></td>
-<td><code>syncall_aic_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>MIX 1:2</td>
-<td>Hard / Soft</td>
-<td><code>aic×3</code></td>
-<td><strong><code>dav-c220</code></strong></td>
-<td>由Bisheng自动生成</td>
-<td>chevron <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code>（hard/soft同一 <code>.so</code>）</td>
-<td><code>syncall_mix_1_2_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>MIX 1:1</td>
-<td>Soft</td>
-<td><code>aic×2</code></td>
-<td>cube + vec各编一份 <code>.o</code></td>
-<td>无</td>
-<td><strong>双流</strong> chevron：AIC <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code> + AIV <code>&lt;&lt;&lt;aiv&gt;&gt;&gt;</code></td>
-<td><code>syncall_mix_1_1_soft_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>MIX 1:1</td>
-<td>Hard</td>
-<td><code>aic×2</code></td>
-<td>cube + vec各编一份 <code>.o</code></td>
-<td><strong><code>PTO_SYNCALL_MIX_AIC_KERNEL_META(..., 1, 1)</code></strong></td>
-<td><strong>register ELF</strong> + <code>rtKernelLaunchWithHandleV2</code></td>
-<td><code>syncall_mix_1_1_kernel.cpp</code></td>
-</tr>
-</tbody>
-</table>
-<p>Hard与Soft kernel <strong>不可共用同一 <code>.so</code></strong>（AIV-only / AIC-only等场景下soft会污染hard的FFTS配置导致hang）；MIX 1:2的hard与soft因均走dav-c220自动拆分，可放在同一源文件的同一 <code>.so</code> 中。</p>
-<h3 id="_6">各路径说明<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
-<h4 id="1-chevronarchaiv-only-aic-only-soft">1. Chevron单arch编译（AIV-only / AIC-only soft）<a class="headerlink" href="#1-chevronarchaiv-only-aic-only-soft" title="Permanent link">&para;</a></h4>
-<ul>
-<li>编译：单个源文件 + 对应arch（<code>dav-c220-vec</code> 或 <code>dav-c220-cube</code>），产出独立 <code>.so</code>。</li>
-<li>启动：<code>kernel&lt;&lt;&lt;blockDim, nullptr, stream&gt;&gt;&gt;(..., totalBlocks)</code>，<code>blockDim</code> 与 <code>totalBlocks</code> 由Host在运行时传入（ST中来自 <code>syncall_cfg::GetCoreConfig()</code>）。</li>
-<li>Hard AIV-only须在kernel上声明 <code>PTO_SYNCALL_AIV_KERNEL_META</code>。</li>
-</ul>
-<h4 id="2-chevron-mixmix-12hard-aic-only">2. Chevron MIX自动拆分（MIX 1:2、Hard AIC-only）<a class="headerlink" href="#2-chevron-mixmix-12hard-aic-only" title="Permanent link">&para;</a></h4>
-<ul>
-<li>编译：<code>--cce-aicore-arch=dav-c220</code>；CMake使用 <code>pto_syncall_chevron_kernel(&lt;target&gt; &lt;source&gt;)</code>。</li>
-<li>启动：单次chevron <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code>；runtime按物理1:2拉起全部MIX参与者。</li>
-<li>Kernel参数：<code>aicBlocks</code> 与 <code>totalParticipants</code> 作为标量从Host传入（AIC/AIV两侧读同一参数），以支持910B1/910B4等不同cube数。</li>
-<li><strong>Hard AIC-only特例</strong>：纯 <code>dav-c220-cube</code> 无法建立AIC-only硬同步所需的FFTS上下文。须用 <code>dav-c220</code> MIX编译：AIC执行 <code>SYNCALL&lt;AICOnly&gt;()</code>，AIV为空stub；<code>totalBlocks</code> 由Host传入。</li>
-</ul>
-<h4 id="3-archstreammix-11-soft">3. 双arch双stream（MIX 1:1 Soft）<a class="headerlink" href="#3-archstreammix-11-soft" title="Permanent link">&para;</a></h4>
-<ul>
-<li>原因：ccec/bisheng路径下 <code>GetTaskRatio()</code> 恒为 <strong>2</strong>，<code>dav-c220</code> 自动拆分物理固定 <strong>1:2</strong>，无法得到真1:1。</li>
-<li>编译：同一源文件分别以 <code>dav-c220-cube</code>（<code>-DSYNCALL_MIX_BUILD_AIC</code>）和 <code>dav-c220-vec</code>（<code>-DSYNCALL_MIX_BUILD_AIV</code>）各编一份 <code>.o</code>，链接为一个 <code>.so</code>；CMake使用 <code>pto_syncall_mix11_soft_kernel</code>。</li>
-<li>启动：AIC与AIV分别在两个 <code>aclrtStream</code> 上chevron <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code> 与 <code>&lt;&lt;&lt;aiv&gt;&gt;&gt;</code>；<code>aicBlocks</code> / <code>totalParticipants</code> 由Host运行时传入。</li>
-</ul>
-<h4 id="4-register-elfmix-11-hard">4. Register ELF（MIX 1:1 Hard）<a class="headerlink" href="#4-register-elfmix-11-hard" title="Permanent link">&para;</a></h4>
-<ul>
-<li>原因：Hard MIX同步需要单一MIX FFTS上下文；chevron自动拆分在ccec下做不到真1:1。</li>
-<li>编译：cube / vec各编带 <code>PTO_SYNCALL_MIX_AIC_KERNEL_META(name, 1, 1)</code> 的 <code>.o</code>，再以 <code>-DSYNCALL_MIX_REGISTER_BUILD</code> 生成register专用 <code>.o</code>，经 <code>make_mix_register_elf.py</code> 合成registration ELF；CMake使用 <code>pto_syncall_mix_kernel</code>。</li>
-<li>启动：<code>rtRegisterAllKernel</code> + <code>rtKernelLaunchWithHandleV2(handle, tilingKey, aicBlocks, ...)</code>；device侧用 <code>get_block_num()</code> 推导参与者数（register路径仅传 <code>ffts/out/flags</code> 三个参数）。</li>
-</ul>
-<h2 id="_7">模式支持矩阵<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
-<h3 id="atlas-a2a3-atlas-a2a3_1">Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品<a class="headerlink" href="#atlas-a2a3-atlas-a2a3_1" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>核类型</th>
-<th>硬件模式</th>
-<th>软件模式</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>AIV-only</td>
-<td>支持</td>
-<td>支持</td>
-</tr>
-<tr>
-<td>AIC-only</td>
-<td>支持</td>
-<td>支持</td>
-</tr>
-<tr>
-<td>MIX</td>
-<td>支持</td>
-<td>支持</td>
-</tr>
-</tbody>
-</table>
-<h3 id="ascend-950prascend-950dt">Ascend 950PR/Ascend 950DT<a class="headerlink" href="#ascend-950prascend-950dt" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>核类型</th>
-<th>硬件模式</th>
-<th>软件模式</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>AIV-only</td>
-<td>支持</td>
-<td>支持</td>
-</tr>
-<tr>
-<td>AIC-only</td>
-<td>支持</td>
-<td>不支持</td>
-</tr>
-<tr>
-<td>MIX</td>
-<td>不支持</td>
-<td>支持</td>
-</tr>
-</tbody>
-</table>
-<h2 id="_8">约束<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
-<ul>
-<li>软件模式各平台GM写入路径：</li>
-<li>Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品（AIC-only与MIX的AIC侧）：AIC通过 <code>copy_cbuf_to_gm</code>（L1→GM DMA）写GM slot；MIX的AIV侧通过UB workspace写入。</li>
-<li>Ascend 950PR/Ascend 950DT MIX：Ascend 950PR/Ascend 950DT AIC（<code>dav-c310-cube</code>）不支持 <code>copy_cbuf_to_gm</code>，改为通过 <code>intra_block</code> 信号委托同block的AIV subblock 0代写UB→GM。</li>
-<li>Ascend 950PR/Ascend 950DT平台限制原因（对应「模式支持矩阵」）：</li>
-<li>AIC-only软件不可用：Ascend 950PR/Ascend 950DT AIC缺少 <code>copy_cbuf_to_gm</code> 等独立写GM的DMA路径，无法实现GM轮询。</li>
-<li>硬件MIX不可用：<code>rtGetC2cCtrlAddr</code> 在Ascend 950PR/Ascend 950DT（<code>CHIP_DAVID</code>）返回 <code>RT_ERROR_FEATURE_NOT_SUPPORT</code>（207000），取不到FFTS基地址。</li>
-<li>AIC-only硬件：通过 <code>ffts_cross_core_sync</code> + <code>wait_flag_dev</code> 实现，不需要 <code>set_ffts_base_addr</code>。</li>
-<li>软件模式要求所有参与core以相同顺序进入同一组barrier（基于单调代数计数，进入次数/顺序不一致会导致错配或死锁）。</li>
-<li><code>SYNCALL</code> 不参与PTO的Event自动依赖编排：既不接受 <code>WaitEvents</code>，也不返回可被后续指令等待的 <code>RecordEvent</code>。因此它不会自动等待前序数据指令（如 <code>TSTORE</code>）完成，<code>SYNCALL</code> 前后与数据指令之间的顺序与可见性需调用方自行保证（见「跨核GM通信注意事项」）。</li>
-<li>在auto构建路径（<code>__PTO_AUTO__</code>）下，<code>SYNCALL</code> 为no-op，不发射跨核硬件同步（与 <code>TSYNC</code> 等一致）；真实同步只在manual kernel中发生。</li>
-</ul>
-<h2 id="gm">跨核GM通信注意事项<a class="headerlink" href="#gm" title="Permanent link">&para;</a></h2>
-<p><code>SYNCALL</code> 只提供barrier <strong>到达</strong>语义（hard / soft皆然），<strong>不</strong>保证barrier前后业务数据的跨核cache可见性。当算子在barrier前各核写GM、barrier后各核读他核GM（如跨核histogram / 前缀和）时，调用方需自行满足以下两点，否则会读到脏数据或发生丢写。</p>
-<h3 id="1-cache-dcci-dsb">1. cache一致性：必须显式 <code>dcci</code> / <code>dsb</code><a class="headerlink" href="#1-cache-dcci-dsb" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>写方</strong>：<code>copy_ubuf_to_gm</code> / <code>copy_cbuf_to_gm</code> 之后接 <code>dcci(addr, SINGLE_CACHE_LINE)</code> + <code>dsb(DSB_DDR)</code>，把数据刷出到DDR。</li>
-<li><strong>读方</strong>：读前 <code>dcci(addr, SINGLE_CACHE_LINE)</code>（invalidate）+ <code>dsb</code>，确保读到DDR最新值而非本核旧cache。</li>
-<li>仅有 <code>set_flag</code> / <code>wait_flag</code>（核内流水同步）<strong>不足以</strong>保证跨核可见性。</li>
-<li>该要求与barrier模式无关：<strong>硬件FFTS barrier同样不刷cache</strong>，只保证「全员到达」的控制面顺序。</li>
-<li><code>SYNCALL</code> 内部对自己的同步槽位已做完整 <code>dcci</code> + <code>dsb(DDR)</code> 处理，但<strong>不会</strong>替调用方刷业务数据。</li>
-</ul>
-<h3 id="2-slotcache-linefalse-sharing">2. 每核slot按cache line独占：避免false sharing丢写<a class="headerlink" href="#2-slotcache-linefalse-sharing" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>dcci</code> / DMA以 <strong>32Byte cache line</strong> 为粒度操作；若相邻核slot共享同一条cache line，跨核刷新会互相覆盖 / 丢写。</li>
-<li>每核slot应按32Byte对齐并<strong>独占一条cache line</strong>（<code>int32</code> 场景即stride = 8，而非4）。</li>
-<li><code>SYNCALL</code> 自身的同步槽位即按此设计：<code>SYNCALL_SOFT_SLOT_INT32 = 8</code>（见 <code>include/pto/common/type.hpp</code>），调用方的业务workspace也应遵循同样的隔离原则。</li>
-</ul>
-<h2 id="_9">示例<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<h3 id="manual">手动（Manual）—硬件模式<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h3>
+<h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="_7">硬件模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-// AIV-only：全 AIV 核 FFTS 屏障（需正确 kernel meta / ELF）
-void example_hard_aiv() {
-  SYNCALL();
-}
-
-// AIC-only：仅编译到 AIC（__DAV_CUBE__）单元时可用；A5 上已验证硬模式路径
-void example_hard_aic() {
-  SYNCALL&lt;SyncCoreType::AICOnly&gt;();
-}
-
-// MIX：AIC 与 AIV 配对 ELF，见上文「Kernel Meta 宏」一节
-void example_hard_mix() {
-  SYNCALL&lt;SyncCoreType::Mix&gt;();
-}</code></pre>
-<h3 id="manual_1">手动（Manual）—软件模式<a class="headerlink" href="#manual_1" title="Permanent link">&para;</a></h3>
-<p>软件模式需传入 <strong>已清零</strong> 的GM workspace与合法容量的UB/L1 Tile。<code>Mode</code> 须为 <code>SyncAllMode::Soft</code>（<code>Hard</code> 时忽略workspace，行为同无参 <code>SYNCALL_IMPL</code>）。</p>
+void example_hard_aiv() { SYNCALL(); }                        // 全AIV核
+void example_hard_aic() { SYNCALL&lt;SyncCoreType::AICOnly&gt;(); } // 全AIC核
+void example_hard_mix() { SYNCALL&lt;SyncCoreType::Mix&gt;(); }     // AIC+AIV</code></pre>
+<p>编译与启动方面的要求见「约束」。</p>
+<h3 id="_8">软件模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
+// AIV-only：usedCores=0 自动取 get_block_num()
 void example_soft_aiv(__gm__ int32_t *gmPtr) {
   GlobalTensor&lt;int32_t, pto::Shape&lt;&gt;, pto::Stride&lt;&gt;&gt; gmWs(gmPtr);
-  Tile&lt;TileType::Vec, int32_t, 1, SYNCALL_SOFT_SLOT_INT32&gt; ub;
-  SYNCALL&lt;SyncAllMode::Soft, SyncCoreType::AIVOnly&gt;(gmWs, ub, 0);
+  SYNCALL&lt;SyncAllMode::Soft, SyncCoreType::AIVOnly&gt;(gmWs, 0);
+}
+
+// MIX：AIC与AIV参与者到达同一计数器
+void example_soft_mix(__gm__ int32_t *gmPtr) {
+  GlobalTensor&lt;int32_t, pto::Shape&lt;&gt;, pto::Stride&lt;&gt;&gt; gmWs(gmPtr);
+  SYNCALL&lt;SyncAllMode::Soft, SyncCoreType::Mix&gt;(gmWs, 0);
+}
+
+// 部分核参与：launch 全部核，仅前 syncBlocks 个核同步，其余核不得调用 SYNCALL
+void example_soft_partial(__gm__ int32_t *gmPtr, int32_t syncBlocks) {
+  if (static_cast&lt;int32_t&gt;(get_block_idx()) &gt;= syncBlocks) {
+    return;
+  }
+  GlobalTensor&lt;int32_t, pto::Shape&lt;&gt;, pto::Stride&lt;&gt;&gt; gmWs(gmPtr);
+  SYNCALL&lt;SyncAllMode::Soft, SyncCoreType::AIVOnly&gt;(gmWs, syncBlocks);
 }</code></pre>
-<p>MIX软件模式需同时提供UB与L1（Mat）Tile；Ascend 950PR/Ascend 950DT AIC侧通过代理路径写GM，详见「约束」一节。</p>
               
             </div>
           </div><footer>

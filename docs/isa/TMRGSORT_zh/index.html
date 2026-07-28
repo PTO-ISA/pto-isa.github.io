@@ -560,7 +560,7 @@
 <h2 id="_4">两种变体<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <h3 id="a-tmrgsortdst-src-blocklen">变体A：单列表排序— <code>TMRGSORT(dst, src, blockLen)</code><a class="headerlink" href="#a-tmrgsortdst-src-blocklen" title="Permanent link">&para;</a></h3>
 <p>将 <code>src</code> 视为 <strong>4个连续等长的已排序块</strong>，在单个Tile内完成4路归并。</p>
-<pre class="highlight"><code>src Tile（1 行）：
+<pre class="highlight"><code class="language-text">src Tile（1 行）：
 ┌── blockLen ──┬── blockLen ──┬── blockLen ──┬── blockLen ──┐
 │    块 0      │    块 1      │    块 2      │    块 3      │
 │ （已预排序）  │ （已预排序）  │ （已预排序）  │ （已预排序）  │
@@ -606,7 +606,7 @@ dst Tile（1 行）：
 </table>
 <h3 id="b-tmrgsort-exhausteddst-executednumlist-tmp-src0-src1-src2-src3">变体B：多列表归并— <code>TMRGSORT&lt;..., exhausted&gt;(dst, executedNumList, tmp, src0, src1, [src2], [src3])</code><a class="headerlink" href="#b-tmrgsort-exhausteddst-executednumlist-tmp-src0-src1-src2-src3" title="Permanent link">&para;</a></h3>
 <p>将2~4个<strong>独立的已预排序列表</strong>归并为一个有序输出。</p>
-<pre class="highlight"><code>src0 Tile ──┐
+<pre class="highlight"><code class="language-text">src0 Tile ──┐
 src1 Tile ──┤
 src2 Tile ──┼──→ vmrgsort4 ──→ tmp ──→ dst
 src3 Tile ──┘</code></pre>
@@ -781,7 +781,7 @@ GETMRGSORTTMPSIZE&lt;Src0Tile, Src1Tile, Src2Tile, Src3Tile&gt;() = Src0Tile::Co
 <p><strong>不需要</strong> <code>tmp</code>。单列表变体直接写入 <code>dst</code>。</p>
 <h2 id="topk">典型用法：TopK<a class="headerlink" href="#topk" title="Permanent link">&para;</a></h2>
 <p>TMRGSORT常用于通过迭代归并排序实现TopK选择：</p>
-<pre class="highlight"><code>阶段 1：单列表排序（逐步增大 blockLen）
+<pre class="highlight"><code class="language-text">阶段 1：单列表排序（逐步增大 blockLen）
   blockLen=64:  每 256 个元素 → 4 路归并 → 256 个有序元素
   blockLen=256: 每 1024 个元素 → 4 路归并 → 1024 个有序元素
   ... 直到 blockLen * 4 &gt; totalCols

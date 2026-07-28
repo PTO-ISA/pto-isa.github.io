@@ -520,8 +520,8 @@
 <p>确切的形状/布局及转置域取决于目标硬件（参见约束）。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>同步形式：</p>
-<p><pre class="highlight"><code class="language-text">%dst = ttrans %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
-编译器降级（Lowering）阶段可能引入内部临时Tile；C++内建接口需要显式传入 <code>tmp</code> 操作数。</p>
+<pre class="highlight"><code class="language-text">%dst = ttrans %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
+<p>编译器降级（Lowering）阶段可能引入内部临时Tile；C++内建接口需要显式传入 <code>tmp</code> 操作数。</p>
 <h3 id="as-level-1ssa">AS Level 1（SSA）<a class="headerlink" href="#as-level-1ssa" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">%dst = pto.ttrans %src : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2dps">AS Level 2（DPS）<a class="headerlink" href="#as-level-2dps" title="Permanent link">&para;</a></h3>
@@ -535,7 +535,7 @@
 PTO_INST RecordEvent TTRANS(TileDataDst &amp;dst, TileDataSrc &amp;src, TileDataTmp &amp;tmp, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>实现检查 (Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品)</strong>:<ul>
+<li><strong>实现检查 （Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品）</strong>:<ul>
 <li><code>sizeof(TileDataSrc::DType) == sizeof(TileDataDst::DType)</code>。</li>
 <li>源布局必须是行主序（<code>TileDataSrc::isRowMajor</code>）。</li>
 <li>元素大小必须是 <code>1</code>、<code>2</code> 或 <code>4</code>字节。</li>
@@ -600,8 +600,8 @@ $$ \text{tmpSize} = C0 \times \lceil\frac{H \times W}{\text{RowStride}}\rceil \t
 </li>
 <li><strong>ConvTile</strong>:<ul>
 <li>支持在<code>TileType::Vec</code>上的ConvTile的格式转换。其元素大小必须是 <code>1</code>、<code>2</code> 或 <code>4</code>字节。元素类型限制为<code>uint32_t</code>、<code>int32_t</code>、<code>float</code>、<code>uint16_t</code>、<code>int16_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>uint8_t</code>、<code>int8_t</code>。</li>
-<li>支持ConvTile从<code>NCHW</code>到<code>NC1HWC0</code>的变换，其中<code>C1 == (C + C0 - 1)/C0</code>，HW满足对齐要求，即<code>H*W*sizeof(T)%32==0</code>. C0对应<code>c0_size</code>, 即<code>C0 * sizeof(T) == 32</code>。C0也可以为4。</li>
-<li>支持ConvTile从<code>NC1HWC0</code>到<code>FRACTAL_Z</code>的变换, 其中<code>N1 == (N + N0 - 1)/N0</code>。N0为16。</li>
+<li>支持ConvTile从<code>NCHW</code>到<code>NC1HWC0</code>的变换，其中<code>C1 == (C + C0 - 1)/C0</code>，HW满足对齐要求，即<code>H*W*sizeof(T)%32==0</code>。 C0对应<code>c0_size</code>， 即<code>C0 * sizeof(T) == 32</code>。C0也可以为4。</li>
+<li>支持ConvTile从<code>NC1HWC0</code>到<code>FRACTAL_Z</code>的变换， 其中<code>N1 == (N + N0 - 1)/N0</code>。N0为16。</li>
 <li>支持ConvTile从<code>NCDHW</code>到<code>FRACTAL_Z_3D</code>的变换，目标形状为<code>[D * C1 * H * W, N1, N0, C0]</code>，其中<code>C1 == (C + C0 - 1)/C0</code>，<code>N1 == (N + N0 - 1)/N0</code>。<code>N0</code>为16。<code>C0</code>取决于元素宽度：4-bit数据为64，8-bit数据为32，16-bit数据为16，32-bit数据为8。临时Tile大小计算公式见上方<strong>临时Tile</strong>章节。</li>
 </ul>
 </li>

@@ -529,16 +529,20 @@
 <p>沿列方向散播，扩展列维度：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i, P \cdot j + \mathrm{pos}_P} = \mathrm{src}_{i,j} \]</div>
 <div class="arithmatex">\[ \mathrm{dst}_{i, P \cdot j + \mathrm{zeros}_P} = 0 \]</div>
-<p>其中：
-- <code>DstTileData::ValidCol</code> = <code>SrcTileData::ValidCol</code> × 扩展倍数
-- <code>DstTileData::ValidRow</code> = <code>SrcTileData::ValidRow</code></p>
+<p>其中：</p>
+<ul>
+<li><code>DstTileData::ValidCol</code> = <code>SrcTileData::ValidCol</code> × 扩展倍数</li>
+<li><code>DstTileData::ValidRow</code> = <code>SrcTileData::ValidRow</code></li>
+</ul>
 <h4 id="scatter_col">SCATTER_COL<a class="headerlink" href="#scatter_col" title="Permanent link">&para;</a></h4>
 <p>沿行方向散播，扩展行维度：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{P \cdot i + \mathrm{pos}_P, j} = \mathrm{src}_{i,j} \]</div>
 <div class="arithmatex">\[ \mathrm{dst}_{P \cdot i + \mathrm{zeros}_P, j} = 0 \]</div>
-<p>其中：
-- <code>DstTileData::ValidRow</code> = <code>SrcTileData::ValidRow</code> × 扩展倍数
-- <code>DstTileData::ValidCol</code> = <code>SrcTileData::ValidCol</code></p>
+<p>其中：</p>
+<ul>
+<li><code>DstTileData::ValidRow</code> = <code>SrcTileData::ValidRow</code> × 扩展倍数</li>
+<li><code>DstTileData::ValidCol</code> = <code>SrcTileData::ValidCol</code></li>
+</ul>
 <h4 id="_6">扩展倍数<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h4>
 <ul>
 <li><code>P1010</code> 或 <code>P0101</code>：扩展倍数 = 2</li>
@@ -643,7 +647,7 @@ PTO_INST RecordEvent TSCATTER(DstTileData&amp; dst, SrcTileData&amp; src, WaitEv
 <h2 id="_10">约束<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="_11">索引散播<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品)</strong>:<ul>
+<li><strong>实现检查 （Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品）</strong>:<ul>
 <li><code>TileDataD::Loc</code>、<code>TileDataS::Loc</code>、<code>TileDataI::Loc</code> 必须是 <code>TileType::Vec</code>。</li>
 <li><code>TileDataD::DType</code>、<code>TileDataS::DType</code> 必须是以下之一：<code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>half</code>、<code>float16_t</code>、<code>float32_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>uint8_t</code>、<code>bfloat16_t</code>。</li>
 <li><code>TileDataI::DType</code> 必须是以下之一：<code>int16_t</code>、<code>int32_t</code>、<code>uint16_t</code> 或 <code>uint32_t</code>。</li>
@@ -670,7 +674,7 @@ PTO_INST RecordEvent TSCATTER(DstTileData&amp; dst, SrcTileData&amp; src, WaitEv
 </ul>
 <h3 id="_12">掩码散播<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>实现检查 (Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品)</strong>:<ul>
+<li><strong>实现检查 （Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品）</strong>:<ul>
 <li><code>DstTileData::Loc</code>、<code>SrcTileData::Loc</code> 必须是 <code>TileType::Vec</code>。</li>
 <li><code>DstTileData::DType</code>、<code>SrcTileData::DType</code> 必须是以下之一：<code>int32_t</code>、<code>int16_t</code>、<code>int8_t</code>、<code>half</code>、<code>float16_t</code>、<code>float32_t</code>、<code>uint32_t</code>、<code>uint16_t</code>、<code>uint8_t</code>、<code>bfloat16_t</code>。</li>
 <li><code>DstTileData::DType</code> 与 <code>SrcTileData::DType</code> 必须相同。</li>
@@ -700,10 +704,12 @@ PTO_INST RecordEvent TSCATTER(DstTileData&amp; dst, SrcTileData&amp; src, WaitEv
 </ul>
 <h2 id="_13">重要提示<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <blockquote>
-<p><strong>警告</strong>：在执行散播操作前，目标Tile缓冲区会<strong>完全初始化为0</strong>（整个Tile大小 <code>Rows × Cols</code>），<strong>不受 <code>ValidRow</code> 和 <code>ValidCol</code> 限制</strong>。这意味着：
-- 分配给 <code>dstTile</code> 的整个UB缓冲区都会被写入零值。
-- <code>ValidRow</code>/<code>ValidCol</code> 范围之外的元素在操作后也将为零。
-- 请确保目标Tile的UB缓冲区不会与其他活跃数据重叠。</p>
+<p><strong>警告</strong>：在执行散播操作前，目标Tile缓冲区会<strong>完全初始化为0</strong>（整个Tile大小 <code>Rows × Cols</code>），<strong>不受 <code>ValidRow</code> 和 <code>ValidCol</code> 限制</strong>。这意味着：</p>
+<ul>
+<li>分配给 <code>dstTile</code> 的整个UB缓冲区都会被写入零值。</li>
+<li><code>ValidRow</code>/<code>ValidCol</code> 范围之外的元素在操作后也将为零。</li>
+<li>请确保目标Tile的UB缓冲区不会与其他活跃数据重叠。</li>
+</ul>
 </blockquote>
 <h2 id="_14">示例<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
 <h3 id="auto">索引散播（自动Auto）<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>

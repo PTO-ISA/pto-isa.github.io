@@ -512,335 +512,90 @@
 <h1 id="syncall">SYNCALL<a class="headerlink" href="#syncall" title="Permanent link">&para;</a></h1>
 <h2 id="instruction-diagram">Instruction Diagram<a class="headerlink" href="#instruction-diagram" title="Permanent link">&para;</a></h2>
 <blockquote>
-<p>No <code>SYNCALL.svg</code> is provided (unlike most vector ops). <code>SYNCALL</code> is a <strong>cross-core control-plane</strong> primitive rather than a per-element Tile transform; semantically it means "all selected participants rendezvous at this point before any may proceed."</p>
+<p>No <code>SYNCALL.svg</code> is provided. <code>SYNCALL</code> is a <strong>cross-core control-plane</strong> primitive; it does not describe a data transform on a single Tile. Its meaning is "all participants rendezvous at this point before any may proceed".</p>
 </blockquote>
-<p>The following conceptual diagram distinguishes the hardware (FFTS) and software (GM polling) paths:</p>
 <pre class="highlight"><code class="language-mermaid">flowchart TB
   subgraph hard [Hard Mode / FFTS]
-    H1[Each participant reaches call site] --&gt; H2[ffts_cross_core_sync etc.]
-    H2 --&gt; H3[wait_flag_dev etc.]
+    H1[Each participant reaches the call site] --&gt; H2[ffts_cross_core_sync]
+    H2 --&gt; H3[wait_flag_dev]
     H3 --&gt; H4[Barrier complete]
   end
-  subgraph soft [Soft Mode / GM Polling]
-    S1[Write local GM slot counter] --&gt; S2[Poll all slots until threshold]
-    S2 --&gt; S3[Barrier complete]
+  subgraph soft [Soft Mode / GM Atomic Counter]
+    S1[ld_dev reads the shared counter] --&gt; S2[st_atomic +1]
+    S2 --&gt; S3[Poll until the count reaches this round's epoch target]
+    S3 --&gt; S4[Barrier complete]
   end</code></pre>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p><code>SYNCALL</code> is a cross-core synchronization barrier supporting A2/A3 and A5 NPU backends. The template parameter <code>SyncCoreType</code> selects the core-type mode:</p>
+<p><code>SYNCALL</code> is a cross-core synchronization barrier. Its two template parameters are independent:</p>
 <ul>
-<li><strong>AIV-only</strong> (default): <code>SYNCALL()</code> synchronizes all AIV cores.</li>
-<li><strong>AIC-only</strong>: <code>SYNCALL&lt;SyncCoreType::AICOnly&gt;()</code> synchronizes all AIC cores (A2/A3 supports both hardware and software modes; A5 supports hardware mode only).</li>
-<li><strong>MIX (AIC+AIV)</strong>: <code>SYNCALL&lt;SyncCoreType::Mix&gt;()</code> synchronizes mixed AIC and AIV cores.</li>
+<li><code>SyncCoreType</code> selects the participant set: <strong>AIVOnly</strong> (default), <strong>AICOnly</strong>, <strong>Mix</strong> (AIC+AIV).</li>
+<li><code>SyncAllMode</code> selects the implementation path: <strong>Hard</strong> (FFTS hardware flags, workspace-free overload), <strong>Soft</strong> (shared GM atomic counter, workspace-bearing overload).</li>
 </ul>
-<p><code>SyncAllMode</code> (specified explicitly in workspace-bearing overloads) selects <strong>hardware mode (FFTS)</strong> or <strong>software mode (GM polling)</strong>. The workspace-free overload corresponds to the hardware path.</p>
 <h2 id="mathematical-semantics">Mathematical Semantics<a class="headerlink" href="#mathematical-semantics" title="Permanent link">&para;</a></h2>
-<p>Not applicable as an elementwise arithmetic operation. <code>SYNCALL</code> expresses a <strong>barrier arrival</strong> relation:</p>
-<ul>
-<li>At a given dynamic program point, every core in the participant set defined by the current <code>SyncCoreType</code> must execute past the <code>SYNCALL</code> call before any participant may proceed beyond that point.</li>
-<li>Hardware mode: cross-core visibility is guaranteed by FFTS flags and device-side <code>wait_flag_dev</code> primitives.</li>
-<li>Software mode: each participant owns a monotonically-increasing counter slot in GM; <code>dcci</code>/<code>dsb</code> coherency primitives and polling determine "all participants have reached the current generation."</li>
-</ul>
-<p>This semantic does <strong>not</strong> provide additional guarantees on GM or other buffer contents after the barrier; cross-core data visibility must be maintained by the caller — see "Cross-Core GM Communication Notes".</p>
+<p>Not applicable as an elementwise arithmetic operation. <code>SYNCALL</code> expresses a <strong>barrier arrival</strong> relation: once every core in the current participant set has executed this <code>SYNCALL</code>, any core may proceed. Hard and Soft have identical semantics and differ only in implementation path.</p>
 <h2 id="c-built-in-interface">C++ Built-in Interface<a class="headerlink" href="#c-built-in-interface" title="Permanent link">&para;</a></h2>
-<p>Declared in <code>include/pto/common/pto_instr.hpp</code>. Software-mode interfaces use type-safe <code>GlobalTensor</code> and <code>Tile</code> parameters (constrained via SFINAE):</p>
+<p>Public header <code>&lt;pto/pto-inst.hpp&gt;</code>; declarations live in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">// Hardware mode (all CoreType variants)
 template &lt;SyncCoreType CoreType = SyncCoreType::AIVOnly&gt;
 PTO_INST void SYNCALL();
 
-// Software mode — AIV-only (GlobalTensor + Vec Tile)
-template &lt;SyncAllMode Mode, SyncCoreType CoreType = SyncCoreType::AIVOnly,
-          typename GlobalData, typename TileData,
-          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt; &amp;&amp;
-                           is_tile_data_v&lt;TileData&gt; &amp;&amp; TileData::Loc == TileType::Vec, int&gt; = 0&gt;
-PTO_INST void SYNCALL(GlobalData &amp;gmWorkspace, TileData &amp;ubWorkspace, int32_t usedCores = 0);
-
-// Software mode — AIC-only (GlobalTensor + Mat Tile)
-template &lt;SyncAllMode Mode, SyncCoreType CoreType = SyncCoreType::AICOnly,
-          typename GlobalData, typename TileData,
-          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt; &amp;&amp;
-                           is_tile_data_v&lt;TileData&gt; &amp;&amp; TileData::Loc == TileType::Mat, int&gt; = 0&gt;
-PTO_INST void SYNCALL(GlobalData &amp;gmWorkspace, TileData &amp;l1Workspace, int32_t usedCores = 0);
-
-// Software mode — MIX (GlobalTensor + Vec Tile + Mat Tile)
-template &lt;SyncAllMode Mode, SyncCoreType CoreType = SyncCoreType::Mix,
-          typename GlobalData, typename UbTileData, typename L1TileData,
-          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt; &amp;&amp;
-                           is_tile_data_v&lt;UbTileData&gt; &amp;&amp; UbTileData::Loc == TileType::Vec &amp;&amp;
-                           is_tile_data_v&lt;L1TileData&gt; &amp;&amp; L1TileData::Loc == TileType::Mat, int&gt; = 0&gt;
-PTO_INST void SYNCALL(GlobalData &amp;gmWorkspace, UbTileData &amp;ubWorkspace, L1TileData &amp;l1Workspace,
-                       int32_t usedCores = 0);</code></pre>
+// Software mode — shared GM atomic counter
+template &lt;SyncAllMode Mode, SyncCoreType CoreType = SyncCoreType::AIVOnly, typename GlobalData,
+          std::enable_if_t&lt;is_global_data_v&lt;GlobalData&gt;, int&gt; = 0&gt;
+PTO_INST void SYNCALL(GlobalData &amp;gmWorkspace, int32_t usedCores = 0);</code></pre>
 <h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>gmWorkspace</code>: <code>GlobalTensor&lt;int32_t, pto::Shape&lt;&gt;, pto::Stride&lt;&gt;&gt;</code> (when <code>using namespace pto</code> coexists with Ascend C headers, qualify with <code>pto::</code> to avoid name collision with the compiler-intrinsic <code>Stride</code> enum). GM workspace for software mode; must be zero-initialized before the call. Each participating core occupies 8 <code>int32_t</code> values (cache-line-isolated sync counter).</li>
-<li><code>ubWorkspace</code>: <code>Tile&lt;TileType::Vec, int32_t, 1, SYNCALL_SOFT_SLOT_INT32&gt;</code> (template parameter is fixed at <code>SYNCALL_SOFT_SLOT_INT32 = 8</code>, one cache-line slot per core). UB scratch for AIV-only and MIX software mode; the runtime backing memory capacity must be at least <code>usedCores * 8 * sizeof(int32_t)</code> (the implementation accesses via raw pointer and does not validate the template capacity; examples declare it as compile-time max participant count × <code>SYNCALL_SOFT_SLOT_INT32</code> to guarantee sufficient backing memory).</li>
-<li><code>l1Workspace</code>: <code>Tile&lt;TileType::Mat, int32_t, 1, SYNCALL_SOFT_SLOT_INT32&gt;</code>. L1 (cbuf) scratch for AIC-only and MIX software mode; used by <code>create_cbuf_matrix</code> to fill a sync value then DMA-transfer to GM.</li>
-<li><code>usedCores</code>: Number of cores participating in the software barrier. When 0, automatically inferred — AIV-only / AIC-only use <code>get_block_num()</code>, MIX uses <code>SYNCALL_GET_MIX_PARTICIPANT_COUNT()</code> (i.e. <code>AIC blocks × (1 + AIV ratio)</code>).</li>
+<li><code>gmWorkspace</code>: a GM buffer used by Soft mode, of type <code>GlobalTensor&lt;int32_t, pto::Shape&lt;&gt;, pto::Stride&lt;&gt;&gt;</code>. The instruction uses only its <strong>first int32</strong> as the arrival counter shared by all participants, so one cache line is enough to allocate, and it <strong>must be zeroed before first use</strong>.</li>
+<li><code>usedCores</code>: the number of cores participating in the barrier.</li>
+<li>When 0, the instruction infers it: AIV-only and AIC-only take the core count of this launch; MIX takes all AIC cores plus their paired AIV cores.</li>
+<li>When specified explicitly it <strong>may be smaller than the launched core count</strong>, letting only some cores synchronize; cores that do not participate <strong>must not</strong> call <code>SYNCALL</code>.</li>
 </ul>
-<h2 id="kernel-meta-macros">Kernel Meta Macros<a class="headerlink" href="#kernel-meta-macros" title="Permanent link">&para;</a></h2>
-<p>The following scenarios require <strong>hand-written</strong> <code>.ascend.meta</code> in the ELF for correct runtime scheduling: <strong>hard AIV-only</strong>, <strong>soft AIC-only</strong>, and <strong>register-ELF MIX</strong> (e.g. 1:1 hard). For <code>dav-c220</code> auto-split builds, Bisheng generates meta automatically — see the note at the end of this section. Macros are defined in <code>include/pto/common/kernel_meta.hpp</code>:</p>
-<blockquote>
-<p><code>kernelName</code> must <strong>exactly match</strong> the <code>__global__</code> entry symbol (stored in section <code>.ascend.meta.&lt;kernelName&gt;</code>).</p>
-</blockquote>
-<pre class="highlight"><code class="language-cpp">// AIV-side kernel (marked as MIX_AIV_MAIN, ratio fixed 0:1)
-PTO_SYNCALL_AIV_KERNEL_META(kernelName);
-
-// AIC-side kernel (marked as MIX_AIC_MAIN, specify AIC:AIV ratio)
-PTO_SYNCALL_MIX_AIC_KERNEL_META(kernelName, aicRatio, aivRatio);</code></pre>
-<p>Usage example (1:2 mixed mode):</p>
-<pre class="highlight"><code class="language-cpp">PTO_SYNCALL_MIX_AIC_KERNEL_META(MyKernel_mix_aic, 1, 2);  // AIC kernel ELF
-PTO_SYNCALL_AIV_KERNEL_META(MyKernel_mix_aiv);             // AIV kernel ELF</code></pre>
-<p>Soft AIC-only (single kernel, chevron launch):</p>
-<pre class="highlight"><code class="language-cpp">PTO_SYNCALL_AIC_KERNEL_META(MyKernel);
-extern "C" __global__ AICORE void MyKernel(...) { SYNCALL&lt;SyncAllMode::Soft, SyncCoreType::AICOnly&gt;(...); }</code></pre>
-<p>register-ELF generic pairing (AIC side sets the ratio + AIV side). Note: the MIX 1:2 case in the current <code>syncall</code> ST now uses <code>dav-c220</code> auto-split and needs no hand-written meta; the example below only demonstrates the register-ELF macro pairing:</p>
-<pre class="highlight"><code class="language-cpp">PTO_SYNCALL_MIX_AIC_KERNEL_META(MyKernel_mix_aic, 1, 2);
-PTO_SYNCALL_AIV_KERNEL_META(MyKernel_mix_aiv);</code></pre>
-<p>register-ELF MIX 1:1 hard (<strong>both</strong> AIC and AIV sides use <code>PTO_SYNCALL_MIX_AIC_KERNEL_META(..., 1, 1)</code> — do <strong>not</strong> use <code>PTO_SYNCALL_AIV_KERNEL_META</code> on the AIV side):</p>
-<pre class="highlight"><code class="language-cpp">PTO_SYNCALL_MIX_AIC_KERNEL_META(MyKernel_mix_aic, 1, 1);
-PTO_SYNCALL_MIX_AIC_KERNEL_META(MyKernel_mix_aiv, 1, 1);</code></pre>
-<p><strong>Common scenarios that do not require hand-written meta</strong> (full mapping in the "Compilation and Launch Guide" quick-reference table below):</p>
-<ul>
-<li>AIV-only soft (<code>dav-c220-vec</code>)</li>
-<li>MIX 1:2 hard/soft, hard AIC-only on A2/A3 (<code>dav-c220</code> auto-split)</li>
-<li>MIX 1:1 soft (dual-stream chevron)</li>
-</ul>
-<blockquote>
-<p><strong>dav-c220 auto-split</strong>: When compiled with <code>--cce-aicore-arch=dav-c220</code>, Bisheng automatically generates AIC/AIV sub-kernels and corresponding <code>.ascend.meta</code> at a fixed physical ratio of <strong>1:2</strong> (two AIV subblocks per AIC block). In this case you do <strong>not</strong> need to hand-write <code>PTO_SYNCALL_MIX_AIC_KERNEL_META</code>, and you <strong>cannot</strong> override the ratio to 1:1 via meta alone (see "MIX 1:1" below).</p>
-</blockquote>
-<h2 id="compilation-and-launch-guide-a2a3">Compilation and Launch Guide (A2/A3)<a class="headerlink" href="#compilation-and-launch-guide-a2a3" title="Permanent link">&para;</a></h2>
-<p>This section uses the ST suite <a href="../../tests/npu/a2a3/src/st/testcase/syncall/"><code>tests/npu/a2a3/src/st/testcase/syncall/</code></a> as the reference for which <strong>compile arch</strong>, <strong>kernel meta</strong>, and <strong>host launch</strong> pattern to use for each <code>SyncCoreType</code> / mode / AIC:AIV ratio. The host decides the launch grid at runtime via <a href="../../tests/npu/a2a3/src/st/testcase/syncall/syncall_core_config.hpp"><code>syncall_core_config.hpp</code></a> (910B1: 24 AIC + 48 AIV; 910B4: 20 AIC + 40 AIV), so the same kernel binaries work across chips.</p>
-<h3 id="scenario-quick-reference">Scenario Quick Reference<a class="headerlink" href="#scenario-quick-reference" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Scenario</th>
-<th>Sync Mode</th>
-<th>Participants</th>
-<th>Compile <code>--cce-aicore-arch</code></th>
-<th>Kernel Meta</th>
-<th>Host Launch</th>
-<th>Reference Source</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>AIV-only</td>
-<td>Hard</td>
-<td><code>aiv</code></td>
-<td><code>dav-c220-vec</code></td>
-<td><code>PTO_SYNCALL_AIV_KERNEL_META</code></td>
-<td>chevron <code>&lt;&lt;&lt;aiv&gt;&gt;&gt;</code></td>
-<td><code>syncall_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>AIV-only</td>
-<td>Soft</td>
-<td><code>aiv</code></td>
-<td><code>dav-c220-vec</code></td>
-<td>none</td>
-<td>chevron <code>&lt;&lt;&lt;aiv&gt;&gt;&gt;</code></td>
-<td><code>syncall_soft_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>AIC-only</td>
-<td>Hard</td>
-<td><code>aic</code></td>
-<td><strong><code>dav-c220</code></strong> (MIX auto-split, empty AIV stub)</td>
-<td>auto-generated by Bisheng</td>
-<td>chevron <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code></td>
-<td><code>syncall_aic_hard_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>AIC-only</td>
-<td>Soft</td>
-<td><code>aic</code></td>
-<td><code>dav-c220-cube</code></td>
-<td><code>PTO_SYNCALL_AIC_KERNEL_META</code></td>
-<td>chevron <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code></td>
-<td><code>syncall_aic_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>MIX 1:2</td>
-<td>Hard / Soft</td>
-<td><code>aic×3</code></td>
-<td><strong><code>dav-c220</code></strong></td>
-<td>auto-generated by Bisheng</td>
-<td>chevron <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code> (hard + soft share one <code>.so</code>)</td>
-<td><code>syncall_mix_1_2_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>MIX 1:1</td>
-<td>Soft</td>
-<td><code>aic×2</code></td>
-<td>cube + vec <code>.o</code> each</td>
-<td>none</td>
-<td><strong>dual-stream</strong> chevron: AIC <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code> + AIV <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code></td>
-<td><code>syncall_mix_1_1_soft_kernel.cpp</code></td>
-</tr>
-<tr>
-<td>MIX 1:1</td>
-<td>Hard</td>
-<td><code>aic×2</code></td>
-<td>cube + vec <code>.o</code> each</td>
-<td><strong><code>PTO_SYNCALL_MIX_AIC_KERNEL_META(..., 1, 1)</code></strong></td>
-<td><strong>register ELF</strong> + <code>rtKernelLaunchWithHandleV2</code></td>
-<td><code>syncall_mix_1_1_kernel.cpp</code></td>
-</tr>
-</tbody>
-</table>
-<p>Hard and soft kernels <strong>must not share the same <code>.so</code></strong> in AIV-only / AIC-only cases (soft corrupts hard FFTS config and hangs). MIX 1:2 hard and soft may live in the same dav-c220 auto-split source and <code>.so</code>.</p>
-<h3 id="path-details">Path Details<a class="headerlink" href="#path-details" title="Permanent link">&para;</a></h3>
-<h4 id="1-chevron-single-arch-aiv-only-aic-only-soft">1. Chevron single-arch (AIV-only / AIC-only soft)<a class="headerlink" href="#1-chevron-single-arch-aiv-only-aic-only-soft" title="Permanent link">&para;</a></h4>
-<ul>
-<li><strong>Compile</strong>: one source file + matching arch (<code>dav-c220-vec</code> or <code>dav-c220-cube</code>) → separate <code>.so</code>.</li>
-<li><strong>Launch</strong>: <code>kernel&lt;&lt;&lt;blockDim, nullptr, stream&gt;&gt;&gt;(..., totalBlocks)</code>; <code>blockDim</code> and <code>totalBlocks</code> come from the host at runtime (ST: <code>syncall_cfg::GetCoreConfig()</code>).</li>
-<li><strong>Hard AIV-only</strong>: declare <code>PTO_SYNCALL_AIV_KERNEL_META</code>.</li>
-</ul>
-<h4 id="2-chevron-mix-auto-split-mix-12-hard-aic-only">2. Chevron MIX auto-split (MIX 1:2, hard AIC-only)<a class="headerlink" href="#2-chevron-mix-auto-split-mix-12-hard-aic-only" title="Permanent link">&para;</a></h4>
-<ul>
-<li><strong>Compile</strong>: <code>--cce-aicore-arch=dav-c220</code>; CMake helper <code>pto_syncall_chevron_kernel(&lt;target&gt; &lt;source&gt;)</code>.</li>
-<li><strong>Launch</strong>: single chevron <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code>; runtime brings up all MIX participants at physical 1:2.</li>
-<li><strong>Kernel args</strong>: <code>aicBlocks</code> and <code>totalParticipants</code> passed as scalars from the host (read on both AIC and AIV sides) for 910B1/910B4 portability.</li>
-<li><strong>Hard AIC-only exception</strong>: pure <code>dav-c220-cube</code> cannot establish the FFTS context for AIC-only hard sync. Use <code>dav-c220</code> MIX compile: AIC runs <code>SYNCALL&lt;AICOnly&gt;()</code>, AIV is an empty stub; <code>totalBlocks</code> passed from the host.</li>
-</ul>
-<h4 id="3-dual-arch-dual-stream-mix-11-soft">3. Dual-arch dual-stream (MIX 1:1 soft)<a class="headerlink" href="#3-dual-arch-dual-stream-mix-11-soft" title="Permanent link">&para;</a></h4>
-<ul>
-<li><strong>Why</strong>: on the ccec/bisheng path <code>GetTaskRation()</code> is always <strong>2</strong>; <code>dav-c220</code> auto-split is physically fixed at <strong>1:2</strong> and cannot produce true 1:1.</li>
-<li><strong>Compile</strong>: same source compiled once as <code>dav-c220-cube</code> (<code>-DSYNCALL_MIX_BUILD_AIC</code>) and once as <code>dav-c220-vec</code> (<code>-DSYNCALL_MIX_BUILD_AIV</code>), linked into one <code>.so</code>; CMake helper <code>pto_syncall_mix11_soft_kernel</code>.</li>
-<li><strong>Launch</strong>: AIC and AIV chevron <code>&lt;&lt;&lt;aic&gt;&gt;&gt;</code> on separate <code>aclrtStream</code>s; <code>aicBlocks</code> / <code>totalParticipants</code> from the host at runtime.</li>
-</ul>
-<h4 id="4-register-elf-mix-11-hard">4. Register ELF (MIX 1:1 hard)<a class="headerlink" href="#4-register-elf-mix-11-hard" title="Permanent link">&para;</a></h4>
-<ul>
-<li><strong>Why</strong>: hard MIX sync needs a single MIX FFTS context; chevron auto-split cannot produce true 1:1 on ccec.</li>
-<li><strong>Compile</strong>: cube / vec objects with <code>PTO_SYNCALL_MIX_AIC_KERNEL_META(name, 1, 1)</code>, register-only objects with <code>-DSYNCALL_MIX_REGISTER_BUILD</code>, merged by <code>make_mix_register_elf.py</code>; CMake helper <code>pto_syncall_mix_kernel</code>.</li>
-<li><strong>Launch</strong>: <code>rtRegisterAllKernel</code> + <code>rtKernelLaunchWithHandleV2(handle, tilingKey, aicBlocks, ...)</code>; device derives participant count via <code>get_block_num()</code> (register path passes only <code>ffts/out/flags</code>).</li>
-</ul>
-<h2 id="mode-support-matrix">Mode Support Matrix<a class="headerlink" href="#mode-support-matrix" title="Permanent link">&para;</a></h2>
-<h3 id="a2a3">A2/A3<a class="headerlink" href="#a2a3" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Core Type</th>
-<th>Hardware Mode</th>
-<th>Software Mode</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>AIV-only</td>
-<td>Supported</td>
-<td>Supported</td>
-</tr>
-<tr>
-<td>AIC-only</td>
-<td>Supported</td>
-<td>Supported</td>
-</tr>
-<tr>
-<td>MIX</td>
-<td>Supported</td>
-<td>Supported</td>
-</tr>
-</tbody>
-</table>
-<h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Core Type</th>
-<th>Hardware Mode</th>
-<th>Software Mode</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>AIV-only</td>
-<td>Supported</td>
-<td>Supported</td>
-</tr>
-<tr>
-<td>AIC-only</td>
-<td>Supported</td>
-<td>Not supported</td>
-</tr>
-<tr>
-<td>MIX</td>
-<td>Not supported</td>
-<td>Supported</td>
-</tr>
-</tbody>
-</table>
+<p>When <code>Mode</code> is <code>Hard</code>, <code>gmWorkspace</code> and <code>usedCores</code> are ignored and the behavior is identical to the argument-free <code>SYNCALL()</code>.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Software-mode GM write paths per platform:</li>
-<li>A2/A3 (AIC-only and the AIC side of MIX): AIC writes GM slots via <code>copy_cbuf_to_gm</code> (L1→GM DMA); the AIV side of MIX writes via UB workspace.</li>
-<li>A5 MIX: A5 AIC (<code>dav-c310-cube</code>) lacks <code>copy_cbuf_to_gm</code>; instead it delegates UB→GM writes to AIV subblock 0 of the same block via <code>intra_block</code> signaling.</li>
-<li>A5 platform limitations (cf. "Mode Support Matrix"):</li>
-<li>AIC-only software unavailable: A5 AIC lacks an independent GM DMA write path (no <code>copy_cbuf_to_gm</code>), so GM-polling sync is infeasible.</li>
-<li>Hardware MIX unavailable: <code>rtGetC2cCtrlAddr</code> returns <code>RT_ERROR_FEATURE_NOT_SUPPORT</code> (207000) on A5 (<code>CHIP_DAVID</code>), preventing FFTS base address retrieval.</li>
-<li>AIC-only hardware: implemented via <code>ffts_cross_core_sync</code> + <code>wait_flag_dev</code>, without needing <code>set_ffts_base_addr</code>.</li>
-<li>Software mode requires all participating cores to enter the same barrier group in the same order (based on monotonic generation counting; mismatched entry count/order causes misalignment or deadlock).</li>
-<li><code>SYNCALL</code> does not participate in PTO's automatic Event dependency scheduling: it neither accepts <code>WaitEvents</code> nor returns a <code>RecordEvent</code> that later instructions can wait on. Consequently it does not automatically wait for preceding data instructions (e.g. <code>TSTORE</code>) to complete; the ordering and visibility between <code>SYNCALL</code> and surrounding data instructions must be ensured by the caller (see "Cross-Core GM Communication Notes").</li>
-<li>In the auto build path (<code>__PTO_AUTO__</code>), <code>SYNCALL</code> is a no-op and emits no cross-core hardware synchronization (consistent with <code>TSYNC</code> etc.); actual synchronization happens only in manual kernels.</li>
-</ul>
-<h2 id="cross-core-gm-communication-notes">Cross-Core GM Communication Notes<a class="headerlink" href="#cross-core-gm-communication-notes" title="Permanent link">&para;</a></h2>
-<p><code>SYNCALL</code> only provides barrier <strong>arrival</strong> semantics (for both hard and soft), and does <strong>not</strong> guarantee cross-core cache visibility of business data around the barrier. When an operator writes GM per core before the barrier and reads other cores' GM after the barrier (e.g. cross-core histogram / prefix-sum), the caller must satisfy the two points below, otherwise stale reads or lost writes will occur.</p>
-<h3 id="1-cache-coherency-explicit-dcci-dsb-is-required">1. Cache coherency: explicit <code>dcci</code> / <code>dsb</code> is required<a class="headerlink" href="#1-cache-coherency-explicit-dcci-dsb-is-required" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Writer</strong>: after <code>copy_ubuf_to_gm</code> / <code>copy_cbuf_to_gm</code>, issue <code>dcci(addr, SINGLE_CACHE_LINE)</code> + <code>dsb(DSB_DDR)</code> to flush data out to DDR.</li>
-<li><strong>Reader</strong>: before reading, issue <code>dcci(addr, SINGLE_CACHE_LINE)</code> (invalidate) + <code>dsb</code> to ensure the latest DDR value is read instead of a stale local cache.</li>
-<li><code>set_flag</code> / <code>wait_flag</code> alone (intra-core pipeline sync) is <strong>not</strong> sufficient for cross-core visibility.</li>
-<li>This is independent of the barrier mode: the <strong>hardware FFTS barrier also does not flush cache</strong>; it only guarantees the "all arrived" control-plane ordering.</li>
-<li><code>SYNCALL</code> internally applies full <code>dcci</code> + <code>dsb(DDR)</code> to its own sync slots, but does <strong>not</strong> flush the caller's business data.</li>
-</ul>
-<h3 id="2-per-core-slot-must-own-a-full-cache-line-avoid-false-sharing-lost-writes">2. Per-core slot must own a full cache line: avoid false-sharing lost writes<a class="headerlink" href="#2-per-core-slot-must-own-a-full-cache-line-avoid-false-sharing-lost-writes" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>dcci</code> / DMA operate at <strong>32Byte cache-line</strong> granularity; if adjacent cores' slots share one cache line, cross-core flushes overwrite / lose each other's writes.</li>
-<li>Each core's slot should be 32Byte-aligned and <strong>own one full cache line</strong> (for <code>int32</code>, that means stride = 8, not 4).</li>
-<li><code>SYNCALL</code>'s own sync slots follow this design: <code>SYNCALL_SOFT_SLOT_INT32 = 8</code> (see <code>include/pto/common/type.hpp</code>); the caller's business workspace should follow the same isolation principle.</li>
+<li><code>SYNCALL</code> guarantees barrier <strong>arrival</strong> and nothing else; ordering and visibility of business data are the caller's responsibility. It does not participate in PTO's automatic Event dependency scheduling (it accepts no <code>WaitEvents</code> and returns no <code>RecordEvent</code>), so it does not wait for preceding data instructions on the same core (e.g. <code>TSTORE</code>) to land. Neither hard nor soft mode <strong>flushes the cache for business data</strong>, so cross-core GM accesses around the barrier need explicit <code>dcci</code> / <code>dsb</code>.</li>
+<li>Soft mode requires every participating core to enter the same barrier group <strong>in the same order and the same number of times</strong>. The instruction derives the current round from the arrival count, so a core that enters one time too many or too few falls out of step with the others and the barrier deadlocks.</li>
+<li>The participant set is determined by how the kernel is compiled and launched, not by <code>SYNCALL</code>. The template parameters only declare <em>which kind of cores</em> to synchronize; how many cores actually come up and how AIC and AIV are paired depends on the compile arch and the launch method. If the two disagree, some core waits forever.</li>
+<li>Hard AIC-only on A2/A3 cannot be compiled as a pure cube kernel: plain <code>dav-c220-cube</code> fails to establish the FFTS context that AIC-only hard sync needs, and hangs in practice. Compile it as MIX (<code>dav-c220</code>) instead, with the AIC side calling <code>SYNCALL&lt;AICOnly&gt;()</code> and the AIV side left empty. On A5, <code>dav-c310-cube</code> works.</li>
+<li>When compiling a kernel by hand (not through chevron auto-split), the kernel meta must be declared explicitly, otherwise the runtime schedules the wrong core type and hard sync hangs for lack of an FFTS context. Declare it with the macros in <code>include/pto/common/kernel_meta.hpp</code> (<code>PTO_SYNCALL_AIV_KERNEL_META</code> / <code>PTO_SYNCALL_AIC_KERNEL_META</code> / <code>PTO_SYNCALL_MIX_AIC_KERNEL_META</code>); the macro argument must exactly match the <code>__global__</code> entry symbol. Currently only Hard AIV-only and Soft AIC-only on A2/A3 need a hand-written meta; the compiler generates it for all other cases.</li>
+<li>In the auto build path (<code>__PTO_AUTO__</code>), <code>SYNCALL</code> is a no-op; real synchronization happens only in manual kernels.</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
-<p>In the <strong>auto</strong> build path, <code>SYNCALL</code> is consistent with existing sync strategies and <strong>does not directly emit</strong> cross-core hardware synchronization; it serves as a placeholder or for host/compiler-coordinated graph-level semantics. Typical operator development uses explicit <code>SYNCALL</code> in <strong>manual</strong> kernels.</p>
+<h3 id="hardware-mode">Hardware Mode<a class="headerlink" href="#hardware-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-// In auto mode SYNCALL is a no-op (same as TSYNC etc. under auto)
-void example_auto_noop() {
-  SYNCALL();  // Does not trigger FFTS
-}</code></pre>
-<h3 id="manual-hardware-mode">Manual — Hardware Mode<a class="headerlink" href="#manual-hardware-mode" title="Permanent link">&para;</a></h3>
+void example_hard_aiv() { SYNCALL(); }                        // all AIV cores
+void example_hard_aic() { SYNCALL&lt;SyncCoreType::AICOnly&gt;(); } // all AIC cores
+void example_hard_mix() { SYNCALL&lt;SyncCoreType::Mix&gt;(); }     // AIC + AIV</code></pre>
+<p>For compilation and launch requirements, see "Constraints".</p>
+<h3 id="software-mode">Software Mode<a class="headerlink" href="#software-mode" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
 
 using namespace pto;
 
-// AIV-only: FFTS barrier across all AIV cores (requires correct kernel meta / ELF)
-void example_hard_aiv() {
-  SYNCALL();
-}
-
-// AIC-only: only available when compiled for AIC (__DAV_CUBE__); verified on A5 hard mode
-void example_hard_aic() {
-  SYNCALL&lt;SyncCoreType::AICOnly&gt;();
-}
-
-// MIX: paired AIC and AIV ELFs, see "Kernel Meta Macros" section above
-void example_hard_mix() {
-  SYNCALL&lt;SyncCoreType::Mix&gt;();
-}</code></pre>
-<h3 id="manual-software-mode">Manual — Software Mode<a class="headerlink" href="#manual-software-mode" title="Permanent link">&para;</a></h3>
-<p>Software mode requires a <strong>zero-initialized</strong> GM workspace and a correctly-sized UB/L1 Tile. <code>Mode</code> must be <code>SyncAllMode::Soft</code> (<code>Hard</code> ignores the workspace and behaves like the workspace-free <code>SYNCALL_IMPL</code>).</p>
-<pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
-
-using namespace pto;
-
+// AIV-only: usedCores=0 falls back to get_block_num()
 void example_soft_aiv(__gm__ int32_t *gmPtr) {
   GlobalTensor&lt;int32_t, pto::Shape&lt;&gt;, pto::Stride&lt;&gt;&gt; gmWs(gmPtr);
-  Tile&lt;TileType::Vec, int32_t, 1, SYNCALL_SOFT_SLOT_INT32&gt; ub;
-  SYNCALL&lt;SyncAllMode::Soft, SyncCoreType::AIVOnly&gt;(gmWs, ub, 0);
+  SYNCALL&lt;SyncAllMode::Soft, SyncCoreType::AIVOnly&gt;(gmWs, 0);
+}
+
+// MIX: AIC and AIV participants arrive on the same counter
+void example_soft_mix(__gm__ int32_t *gmPtr) {
+  GlobalTensor&lt;int32_t, pto::Shape&lt;&gt;, pto::Stride&lt;&gt;&gt; gmWs(gmPtr);
+  SYNCALL&lt;SyncAllMode::Soft, SyncCoreType::Mix&gt;(gmWs, 0);
+}
+
+// Partial participation: all cores are launched but only the first syncBlocks
+// synchronize; the rest must not call SYNCALL.
+void example_soft_partial(__gm__ int32_t *gmPtr, int32_t syncBlocks) {
+  if (static_cast&lt;int32_t&gt;(get_block_idx()) &gt;= syncBlocks) {
+    return;
+  }
+  GlobalTensor&lt;int32_t, pto::Shape&lt;&gt;, pto::Stride&lt;&gt;&gt; gmWs(gmPtr);
+  SYNCALL&lt;SyncAllMode::Soft, SyncCoreType::AIVOnly&gt;(gmWs, syncBlocks);
 }</code></pre>
-<p>MIX software mode requires both UB and L1 (Mat) Tiles; on A5 the AIC side delegates GM writes via a proxy path — see the "Constraints" section.</p>
               
             </div>
           </div><footer>

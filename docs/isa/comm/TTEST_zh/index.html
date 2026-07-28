@@ -519,7 +519,7 @@
 <div class="arithmatex">\[\mathrm{result} = (\mathrm{signal} \;\mathtt{cmp}\; \mathrm{cmpValue})\]</div>
 <p>信号tensor（所有元素均须满足）：</p>
 <div class="arithmatex">\[\mathrm{result} = \bigwedge_{d_0, d_1, d_2, d_3, d_4} (\mathrm{signal}_{d_0, d_1, d_2, d_3, d_4} \;\mathtt{cmp}\; \mathrm{cmpValue})\]</div>
-<p>其中 <code>cmp</code> ∈ {<code>EQ</code>, <code>NE</code>, <code>GT</code>, <code>GE</code>, <code>LT</code>, <code>LE</code>}</p>
+<p>其中 <code>cmp</code> ∈ {<code>EQ</code>， <code>NE</code>， <code>GT</code>， <code>GE</code>， <code>LT</code>， <code>LE</code>}</p>
 <h2 id="_3">汇编语法<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <pre class="highlight"><code class="language-text">%result = ttest %signal, %cmp_value {cmp = #pto.cmp&lt;EQ&gt;} : (!pto.memref&lt;i32&gt;, i32) -&gt; i1
 %result = ttest %signal_matrix, %cmp_value {cmp = #pto.cmp&lt;GE&gt;} : (!pto.memref&lt;i32, MxN&gt;, i32) -&gt; i1</code></pre>
@@ -547,16 +547,42 @@ PTO_INST bool TTEST(GlobalSignalData &amp;signalData, int32_t cmpValue, WaitCmp 
 <li>信号tensor：形状决定要检测的多维区域（最高5维）。</li>
 </ul>
 </li>
-<li><strong>比较运算符</strong>（WaitCmp）：
-  | 值 | 条件 |
-  |-------|--------|
-  | <code>EQ</code> | <code>signal == cmpValue</code> |
-  | <code>NE</code> | <code>signal != cmpValue</code> |
-  | <code>GT</code> | <code>signal &gt; cmpValue</code> |
-  | <code>GE</code> | <code>signal &gt;= cmpValue</code> |
-  | <code>LT</code> | <code>signal &lt; cmpValue</code> |
-  | <code>LE</code> | <code>signal &lt;= cmpValue</code> |</li>
+<li><strong>比较运算符</strong>（WaitCmp）：</li>
 </ul>
+<table>
+<thead>
+<tr>
+<th>值</th>
+<th>条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EQ</code></td>
+<td><code>signal == cmpValue</code></td>
+</tr>
+<tr>
+<td><code>NE</code></td>
+<td><code>signal != cmpValue</code></td>
+</tr>
+<tr>
+<td><code>GT</code></td>
+<td><code>signal &gt; cmpValue</code></td>
+</tr>
+<tr>
+<td><code>GE</code></td>
+<td><code>signal &gt;= cmpValue</code></td>
+</tr>
+<tr>
+<td><code>LT</code></td>
+<td><code>signal &lt; cmpValue</code></td>
+</tr>
+<tr>
+<td><code>LE</code></td>
+<td><code>signal &lt;= cmpValue</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="_5">示例<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <h3 id="_6">基础检测<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/comm/pto_comm_inst.hpp&gt;
