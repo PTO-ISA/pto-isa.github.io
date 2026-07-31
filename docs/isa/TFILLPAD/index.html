@@ -574,8 +574,19 @@ otherwise <code>std::numeric_limits&lt;T&gt;::max()/min()</code>).</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileData, PadValue PadVal = PadValue::Zero, typename... WaitEvents&gt;
 PTO_INST RecordEvent TFILLPAD(TileData &amp;dst, TileData &amp;src, WaitEvents &amp;... events);
 
-template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
+template &lt;
+    TFillPadMode mode = TFillPadMode::Normal,
+    typename DstTileData,
+    typename SrcTileData,
+    typename... WaitEvents&gt;
 PTO_INST RecordEvent TFILLPAD(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents &amp;... events);</code></pre>
+<p>For vector tiles, <code>mode</code> selects the operation variant:</p>
+<ul>
+<li><code>TFillPadMode::Normal</code>: destination and source static shapes must match.</li>
+<li><code>TFillPadMode::InPlace</code>: destination and source must alias the same storage.</li>
+<li><code>TFillPadMode::Expand</code>: destination may have a larger static shape than source.</li>
+</ul>
+<p><code>TFILLPAD_INPLACE</code> and <code>TFILLPAD_EXPAND</code> remain available as compatibility aliases.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>TileDataDst::PadVal != PadValue::Null</code> (Vec-type overload).</li>

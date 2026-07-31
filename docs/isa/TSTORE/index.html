@@ -590,6 +590,7 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileDat
 <li>Layouts must match ND/DN/NZ (or a special case where <code>TileData::Rows == 1</code> or <code>TileData::Cols == 1</code>).</li>
 <li>For <code>int64_t/uint64_t</code>, only ND-&gt;ND or DN-&gt;DN are supported.</li>
 <li>For <code>TileType::Acc</code>:</li>
+<li>Supported layout conversions: NZ2ND, NZ2NZ, NZ2NC1HWC0, NZ2NDC1HWC0. NZ2DN is <strong>not</strong> supported.</li>
 <li>Destination layout must be ND, NZ, NC1HWC0, or NDC1HWC0.</li>
 <li>Source dtype must be <code>int32_t</code> or <code>float</code>.</li>
 <li>When not using quantization, destination dtype must be <code>int32_t/float/half/bfloat16_t</code>.</li>
@@ -637,7 +638,8 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileDat
     - Layouts must match ND/DN/NZ (or a special case where <code>TileData::Rows == 1</code> or <code>TileData::Cols == 1</code>).
     - Additional alignment constraints are enforced (e.g., for ND the row-major width in bytes must be a multiple of 32; for DN the column-major height in bytes must be a multiple of 32, with special-case exceptions).
     - For <code>TileType::Acc</code> / ACC source tiles:
-    - Destination layout must be ND, NZ, NHWC, NCHW, or NCDHW; source dtype must be <code>int32_t</code> or <code>float</code>.
+      - Supported layout conversions: NZ2ND, NZ2NZ, NZ2NHWC, NZ2NCHW, NZ2NCDHW. NZ2DN is <strong>not</strong> supported.
+      - Destination layout must be ND, NZ, NHWC, NCHW, or NCDHW; source dtype must be <code>int32_t</code> or <code>float</code>.
     - When not using quantization, destination dtype must be <code>int32_t/float/half/bfloat16_t</code>.
     - ACC-to-GM dtype support:</p>
 </li>
