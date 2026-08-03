@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TQUANT_DN/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://pto-isa.github.io/docs/isa/TQUANT_HIF4_zh/" />
       <link rel="shortcut icon" href="../../../img/favicon.ico" />
-    <title>TQUANT DN - PTO ISA Manual</title>
+    <title>TQUANT HIF4 zh - PTO ISA Manual</title>
     <link rel="stylesheet" href="../../../css/theme.css" />
     <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "TQUANT DN";
-        var mkdocs_page_input_path = "docs/isa/TQUANT_DN.md";
-        var mkdocs_page_url = "/docs/isa/TQUANT_DN/";
+        var mkdocs_page_name = "TQUANT HIF4 zh";
+        var mkdocs_page_input_path = "docs/isa/TQUANT_HIF4_zh.md";
+        var mkdocs_page_url = "/docs/isa/TQUANT_HIF4_zh/";
       </script>
     
     <!--[if lt IE 9]>
@@ -498,7 +498,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">TQUANT DN</li>
+      <li class="breadcrumb-item active">TQUANT HIF4 zh</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -507,242 +507,212 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <!-- Generated from `docs/isa/TQUANT_DN.md` -->
+                <!-- Generated from `docs/isa/TQUANT_HIF4_zh.md` -->
 
-<h1 id="tquant-dn-axis-0-grouped-quantization-and-dnzz">TQUANT DN — Axis-0 Grouped Quantization and DN→ZZ<a class="headerlink" href="#tquant-dn-axis-0-grouped-quantization-and-dnzz" title="Permanent link">&para;</a></h1>
-<h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
-<p><img alt="TQUANT tile operation" src="../../figures/isa/TQUANT.svg" /></p>
-<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p><strong>ND</strong> ("normal direction") is the default MX grouping: groups of 32 along <strong>axis 1</strong>
-(columns). <strong>DN</strong> denotes the transposed-style grouping along <strong>axis 0</strong> (rows) — groups
-of 32 consecutive rows. Both modes produce RowMajor tiles; "DN"/"ND" refers only to the
-<em>grouping axis</em>, not the storage layout. DN is used in FlashAttention where the softmax
-output (P matrix) has its natural grouping along the M (row) dimension.</p>
-<p>After DN quantization, the FP8 data is converted to NZ via the stock <code>TMOV(ND→NZ)</code> and
-the E8M0 exponents are converted to ZZ via the new <code>TMOV&lt;grp_axis=0&gt;(DN→ZZ)</code>.</p>
-<h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
-<p>The existing <code>&lt;grp_axis, mx_alg&gt;</code> interface is retained unchanged and keeps the
-non-interleaved behavior. A bool-template overload enables interleaving:</p>
-<pre class="highlight"><code class="language-cpp">template &lt;int grp_axis, auto mx_alg, typename TileDataOut = void, typename TileDataSrc = void,
-          typename TileDataExp = void, typename TileDataMax = void, typename TileDataScaling = void,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
-                           TileDataScaling *scaling, WaitEvents &amp;...events);
-
-template &lt;int grp_axis, auto mx_alg, bool interleave, typename TileDataOut = void, typename TileDataSrc = void,
-          typename TileDataExp = void, typename TileDataMax = void, typename TileDataScaling = void,
-          typename... WaitEvents&gt;
-PTO_INST RecordEvent TQUANT(TileDataOut &amp;dst, TileDataSrc &amp;src, TileDataExp *exp, TileDataMax *max,
-                            TileDataScaling *scaling, WaitEvents &amp;... events);</code></pre>
-<h3 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h3>
+<h1 id="tquant-hifloat4bf16-hif4-cce">TQUANT HiFloat4（BF16 → HiF4）— 算法与 CCE 映射<a class="headerlink" href="#tquant-hifloat4bf16-hif4-cce" title="Permanent link">&para;</a></h1>
+<h2 id="1-hifloat4-arxiv260211287">1. HiFloat4 标准（arXiv:2602.11287）<a class="headerlink" href="#1-hifloat4-arxiv260211287" title="Permanent link">&para;</a></h2>
+<p>HiFloat4（HiF4）将 64 个 4 位浮点值与 <strong>32 位</strong>三级共享缩放元数据一起编码。
+信息密度为 4.5 位/值，足以直接从压缩 FP4 码驱动 Cube 矩阵乘。</p>
+<h3 id="11">1.1 三级层次结构<a class="headerlink" href="#11" title="Permanent link">&para;</a></h3>
+<p>对于 64 个连续元素的一组，HiF4 计算：</p>
 <table>
 <thead>
 <tr>
-<th>Parameter</th>
-<th>Description</th>
+<th>层级</th>
+<th>组大小</th>
+<th>元数据</th>
+<th>每元素位数</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>grp_axis</code></td>
-<td><strong>0</strong> = DN (groups on axis 0 / rows); <strong>1</strong> = ND (groups on axis 1 / columns, default)</td>
+<td>Ea</td>
+<td>64</td>
+<td>8位指数（e6m2）</td>
+<td>8/64 = 0.125</td>
 </tr>
 <tr>
-<td><code>mx_alg</code></td>
-<td>Combined destination-format + scale-algorithm tag (<code>MxQuantAlg</code> enum)</td>
+<td>Eb</td>
+<td>8</td>
+<td>1位指数</td>
+<td>1/8  = 0.125</td>
 </tr>
 <tr>
-<td><code>interleave</code></td>
-<td>DN only: write E8M0 as adjacent row-group pairs in flattened <code>[ceil(M/64), 2*N]</code> form</td>
-</tr>
-<tr>
-<td><code>dst</code></td>
-<td>Output FP8/FP4 tile (RowMajor, same shape as <code>src</code>)</td>
-</tr>
-<tr>
-<td><code>src</code></td>
-<td>Input fp32/bf16/fp16 tile (RowMajor <code>M×N</code>)</td>
-</tr>
-<tr>
-<td><code>exp</code></td>
-<td>Output E8M0 exponent tile: shape <code>M̂×N</code> for DN, <code>M×Γ</code> for ND</td>
-</tr>
-<tr>
-<td><code>max</code></td>
-<td>Scratch per-group abs-max tile</td>
-</tr>
-<tr>
-<td><code>scaling</code></td>
-<td>Scratch per-group scaling tile</td>
+<td>Ec</td>
+<td>4</td>
+<td>1位指数</td>
+<td>1/4  = 0.25</td>
 </tr>
 </tbody>
 </table>
-<h3 id="mxquantalg-values"><code>MxQuantAlg</code> values<a class="headerlink" href="#mxquantalg-values" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">enum class MxQuantAlg {
-    OcpMxFp8E4M3 = 0, // MXFP8 E4M3 + OCP scale
-    NvMxFp8E4M3  = 1, // MXFP8 E4M3 + NV scale
-    OcpMxFp4E2M1 = 2, // MXFP4 E2M1 + OCP scale
-    NvMxFp4E2M1 = 3,  // MXFP4 E2M1 + NV scale
-};</code></pre>
-<p>For DN (<code>grp_axis=0</code>), MXFP8 supports <code>fp16</code>, <code>bf16</code>, and <code>fp32</code> input, while
-MXFP4 supports <code>fp16</code> and <code>bf16</code>. Both the ordinary E8M0 layout and the optional
-interleaved layout are supported:</p>
+<p>总元数据：8 + 8×1 + 16×1 = <strong>每64元素32位</strong> = 4.5位/值。</p>
+<h3 id="12-fp4-e1m2">1.2 数据元素：FP4 e1m2<a class="headerlink" href="#12-fp4-e1m2" title="Permanent link">&para;</a></h3>
+<p>每个 4 位数据元素使用 <strong>e1m2</strong> 格式（1符号位，1指数位，2尾数位）：</p>
 <table>
 <thead>
 <tr>
-<th>Quantized format</th>
-<th>Scale algorithm</th>
-<th>Input types</th>
-<th><code>interleave</code></th>
+<th>编码</th>
+<th>符号</th>
+<th>指数</th>
+<th>尾数</th>
+<th>值</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>MXFP8 E4M3</td>
-<td>OCP</td>
-<td>fp16 / bf16 / fp32</td>
-<td><code>false</code> (default) / <code>true</code></td>
+<td>0000</td>
+<td>0</td>
+<td>0</td>
+<td>00</td>
+<td>+0.0</td>
 </tr>
 <tr>
-<td>MXFP8 E4M3</td>
-<td>NV</td>
-<td>fp16 / bf16 / fp32</td>
-<td><code>false</code> (default) / <code>true</code></td>
+<td>0001</td>
+<td>0</td>
+<td>0</td>
+<td>01</td>
+<td>+0.25</td>
 </tr>
 <tr>
-<td>MXFP4 E2M1</td>
-<td>OCP</td>
-<td>fp16 / bf16</td>
-<td><code>false</code> (default) / <code>true</code></td>
+<td>0010</td>
+<td>0</td>
+<td>0</td>
+<td>10</td>
+<td>+0.5</td>
 </tr>
 <tr>
-<td>MXFP4 E2M1</td>
-<td>NV</td>
-<td>fp16 / bf16</td>
-<td><code>false</code> (default) / <code>true</code></td>
+<td>0011</td>
+<td>0</td>
+<td>0</td>
+<td>11</td>
+<td>+0.75</td>
+</tr>
+<tr>
+<td>0100</td>
+<td>0</td>
+<td>1</td>
+<td>00</td>
+<td>+1.0</td>
+</tr>
+<tr>
+<td>0101</td>
+<td>0</td>
+<td>1</td>
+<td>01</td>
+<td>+1.25</td>
+</tr>
+<tr>
+<td>0110</td>
+<td>0</td>
+<td>1</td>
+<td>10</td>
+<td>+1.5</td>
+</tr>
+<tr>
+<td>0111</td>
+<td>0</td>
+<td>1</td>
+<td>11</td>
+<td>+1.75</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>1</td>
+<td>0</td>
+<td>00</td>
+<td>−0.0</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>（负值镜像）</td>
 </tr>
 </tbody>
 </table>
-<p>Omitting the bool template argument is equivalent to <code>interleave=false</code>, so
-existing callers retain the original exponent layout.</p>
-<blockquote>
-<p><strong>Backward compatibility:</strong> the old <code>TQUANT&lt;QuantType::MXFP8, ...&gt;</code> interface is
-retained unchanged. The <code>&lt;grp_axis, mx_alg&gt;</code> form is the preferred interface going
-forward; nothing is removed.</p>
-</blockquote>
-<h2 id="dn-output-shapes">DN Output Shapes<a class="headerlink" href="#dn-output-shapes" title="Permanent link">&para;</a></h2>
-<p>For a source tile <code>M×N</code> with <code>M̂ = M/32</code>, <code>Γ = N/32</code>:</p>
-<table>
-<thead>
-<tr>
-<th>Output</th>
-<th>ND (<code>grp_axis=1</code>)</th>
-<th>DN (<code>grp_axis=0</code>)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>FP8/FP4 data</td>
-<td><code>M×N</code> RowMajor</td>
-<td><code>M×N</code> RowMajor (identical)</td>
-</tr>
-<tr>
-<td>E8M0 exponent</td>
-<td><code>M×Γ</code></td>
-<td><code>M̂×N</code></td>
-</tr>
-<tr>
-<td>Max / Scaling</td>
-<td><code>M×Γ</code></td>
-<td><code>M̂×N</code></td>
-</tr>
-</tbody>
-</table>
-<p>The <strong>data tile is identical</strong> between ND and DN (same <code>(r,c)</code> addresses); only the
-exponent/max/scaling tile shapes differ. Therefore <code>TMOV(ND→NZ)</code> on the data is
-reused unchanged. Only the exponent needs a new transform: <strong>DN→ZZ</strong>.</p>
-<p>When <code>interleave=true</code>, the E8M0 bytes are written in the non-tail-axis
-<code>aclnnDynamicMxQuant</code> order. PTO flattens its last two logical axes:</p>
-<pre class="highlight"><code class="language-text">E_OUT[p, c, 0] = E_DN[2p, c]
-E_OUT[p, c, 1] = E_DN[2p + 1, c]  // zero when the final group is absent
+<p>偏置 = 0，exp=0 时隐式前导 0（非规格化风格），exp=1 时隐式前导 1。可表示范围为 [0, ±1.75]。</p>
+<h3 id="13-algorithm-1">1.3 量化算法（论文 Algorithm 1）<a class="headerlink" href="#13-algorithm-1" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code>Ma = max(|x|)  per 64-element group
+Mb = max(|x|)  per 8-element subgroup
+Mc = max(|x|)  per 4-element subgroup
 
-E_FLAT[p, 2c]     = E_OUT[p, c, 0]
-E_FLAT[p, 2c + 1] = E_OUT[p, c, 1]</code></pre>
-<p>The physical byte sequence is therefore <code>row0_col0, row1_col0, row0_col1,
-row1_col1, ...</code>. The default is <code>false</code>, preserving the original RowMajor
-<code>M_hat x N</code> exponent output. The interleaved Tile shape and valid shape are:</p>
-<pre class="highlight"><code class="language-text">TileShape  = [ceil(TileM / 64), 2 * TileN]
-ValidShape = [ceil(ValidM / 64), 2 * ValidN]</code></pre>
-<p>PyPTO can restore the public <code>[..., ceil(M/64), N, 2]</code> shape with a zero-copy
-reshape. This flag changes only the exponent output; quantized
-data, max, and reciprocal scaling retain their existing layouts.</p>
-<p>Tile rows and valid rows must be 64-aligned. DN tiling must also start each tile
-at a 64-row-aligned source offset so group pairs are not split between tiles.
-Tile and valid columns have no additional DN-interleave alignment constraint.
-These requirements apply only when <code>interleave=true</code>.</p>
-<p><code>TMOV&lt;0&gt;(DN-&gt;ZZ)</code> continues to consume the original non-interleaved <code>M_hat x N</code>
-layout. Callers requesting <code>interleave=true</code> must not pass that exponent tile to
-the existing DN-&gt;ZZ transform without first deinterleaving it.</p>
-<h2 id="cube-consumption-contract">Cube Consumption Contract<a class="headerlink" href="#cube-consumption-contract" title="Permanent link">&para;</a></h2>
-<p>Verified from A5 sim logs (<code>LOAD_2Dv2</code> + <code>LOAD_MX_2Dv2</code> + <code>MMAD_MX</code>):</p>
-<pre class="highlight"><code>FP8 data   → L0A/L0B  as NZ fractal   (LOAD_2Dv2  Dtype:B8)
-E8M0 scale → L0AMX/L0BMX as ZZ fractal (LOAD_MX_2Dv2 Dtype:B16)
-MMAD_MX pairs them by fractal byte position.</code></pre>
-<p>The cube always wants data in NZ and scale in ZZ, regardless of the quantization group
-axis. The only difference for DN-quantized operands is the exponent tile shape
-(<code>M̂×N</code> vs <code>M×Γ</code>) and the transform applied (<code>DN→ZZ</code> vs <code>ND→ZZ</code>).</p>
-<h2 id="dnzz-transformation">DN→ZZ Transformation<a class="headerlink" href="#dnzz-transformation" title="Permanent link">&para;</a></h2>
-<h3 id="mathematical-proof">Mathematical Proof<a class="headerlink" href="#mathematical-proof" title="Permanent link">&para;</a></h3>
-<p>For DN exponent tile <code>E_DN[hat_r][c]</code> of shape <code>M̂×N</code> (RowMajor, flat <code>hat_r·N + c</code>):</p>
-<p><strong>Theorem (DN→ZZ = transpose ⊕ ND→ZZ):</strong></p>
-<div class="arithmatex">\[E_{ZZ}[c_b, p, q, \delta] = E_{DN}^T[16c_b + q][2p + \delta] = E_{DN}[2p + \delta][16c_b + q]\]</div>
-<p>with <code>c_b ∈ [0, N/16)</code>, <code>p ∈ [0, M̂/2)</code>, <code>q ∈ [0,16)</code>, <code>δ ∈ {0,1}</code>.</p>
-<p><strong>Corollary (direct source index):</strong></p>
-<div class="arithmatex">\[\text{src\_idx}(c_b, p, q, \delta) = (2p + \delta) \cdot N + 16c_b + q\]</div>
-<p><strong>Corollary (no gather needed):</strong> For fixed <code>(c_b, p)</code>, the 32 bytes of the ZZ box are
-sourced from two contiguous 16-byte runs: <code>E_DN[2p][16c_b:16c_b+16]</code> and
-<code>E_DN[2p+1][16c_b:16c_b+16]</code>. Zipping them via <code>vintlv</code> yields the <code>qδ</code>-interleaved
-order the ZZ fractal requires. Hence DN→ZZ is cheaper than ND→ZZ (contiguous loads, no
-<code>vgather2</code>/<code>BLK</code>/<code>E2B</code>).</p>
-<h3 id="alignment-constraints">Alignment Constraints<a class="headerlink" href="#alignment-constraints" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>N mod 16 = 0</code> (always satisfied since <code>N mod 32 = 0</code>).</li>
-<li><code>M̂ mod 2 = 0</code>, i.e. <strong><code>M mod 64 = 0</code></strong> (for δ-pairing). Stricter than ND→ZZ's <code>M mod 16 = 0</code>.</li>
-<li><code>M = 32</code> (<code>M̂ = 1</code>): degenerate identity (no pairs).</li>
-</ul>
-<h3 id="relationship-to-vshlsvor">Relationship to vshls+vor<a class="headerlink" href="#relationship-to-vshlsvor" title="Permanent link">&para;</a></h3>
-<p>The FA fused softmax macro's <code>vshls+vor</code> byte-pack is, <em>at <code>M̂=4, N=64</code> only</em>,
-mathematically identical to the transpose step of this recipe. It cannot generalize
-(requires <code>M̂≤4</code> to fit a B32 word, and <code>N≤64</code> for single-VL). <code>TMovDnTo2Zz</code> is the
-general replacement.</p>
-<h3 id="implementation-notes">Implementation notes<a class="headerlink" href="#implementation-notes" title="Permanent link">&para;</a></h3>
-<p><code>TMovDnTo2Zz</code> uses <code>vlds + vintlv + vsstb</code> (block-strided scatter, <code>blockStride = numPairs</code>)
-with <code>CreatePredicate</code> auto-decrement for the tail — no scalar computation, no branching, no
-static predicates. The <code>vsstb</code> <strong>5-arg POST_UPDATE</strong> form is required; the 4-arg form
-interprets <code>offset</code> as a source-register offset, not the stride config. See
-<code>include/pto/npu/a5/TMov.hpp</code> (<code>GenerateB8IndicesDN2ZZToUB</code>).</p>
-<h2 id="tmov-interface">TMOV Interface<a class="headerlink" href="#tmov-interface" title="Permanent link">&para;</a></h2>
-<h3 id="dnzz-new">DN→ZZ (new)<a class="headerlink" href="#dnzz-new" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">template &lt;int grp_axis, typename DstTileData, typename SrcTileData, typename TmpTileData, typename... WaitEvents&gt;
-PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileData &amp;tmp, WaitEvents &amp;... events);</code></pre>
-<p><code>TMOV&lt;0&gt;(zzTile, e8DnTile, tmpTile)</code> selects <code>TMovDnTo2Zz</code>. The stock
-<code>TMOV(zzTile, e8Tile, tmpTile)</code> (without <code>&lt;grp_axis&gt;</code>) remains ND→ZZ (<code>grp_axis</code> defaults to 1).</p>
-<h3 id="ndnz-data-unchanged">ND→NZ (data, unchanged)<a class="headerlink" href="#ndnz-data-unchanged" title="Permanent link">&para;</a></h3>
-<pre class="highlight"><code class="language-cpp">TMOV(fp8NZTile, fp8Tile);   // stock 2-arg ND→NZ; correct for DN data (RowMajor, identical addresses)</code></pre>
-<h2 id="pipeline-full-dn-flow">Pipeline (full DN flow)<a class="headerlink" href="#pipeline-full-dn-flow" title="Permanent link">&para;</a></h2>
-<pre class="highlight"><code>src[M×N] (fp32)
-  ──TQUANT&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;──▶ fp8[M×N] + e8[M̂×N] (DN exponent)
-  ──TMOV(ND→NZ)──────────────────────────▶ fp8NZ
-  ──TMOV&lt;0&gt;(DN→ZZ)───────────────────────▶ e8ZZ
-  ──feed to cube MMAD_MX──────────────────▶ C[M×N]</code></pre>
-<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<pre class="highlight"><code class="language-cpp">// DN quantize (groups on axis 0)
-TQUANT&lt;0, MxQuantAlg::OcpMxFp8E4M3&gt;(fp8Tile, srcTile, &amp;e8DnTile, &amp;maxTile, &amp;scalingTile);
-// Data ND→NZ (stock)
-TMOV(fp8NZTile, fp8Tile);
-// Exponent DN→ZZ (new)
-TMOV&lt;0&gt;(e8ZzTile, e8DnTile, tmpTile);</code></pre>
-<p>See <code>tests/npu/a5/src/st/testcase/tquant_dn/</code> for a complete ST example (Stages 1–3).</p>
+Ea = vcvt_bf162e6m2(Ma, ROUND_R)          // 8位 e6m2 指数
+Ea_rec = 1 / Ea                             // 作为 BF16
+
+Eb = (Mb * Ea_rec &gt;= 4) ? 1 : 0            // 每组8元素，1位
+Ec = (Mc * Ea_rec * 2^(-Eb) &gt;= 2) ? 1 : 0  // 每组4元素，1位
+
+scale = Ea_rec * 2^(-Eb) * 2^(-Ec)          // 每4元素缩放因子
+q = vcvt_bf16_to_e1m2(x * scale)            // 4位量化码</code></pre>
+<h2 id="2-cce-a6tquanthpp">2. CCE 实现映射（<code>a6/TQuant.hpp</code>）<a class="headerlink" href="#2-cce-a6tquanthpp" title="Permanent link">&para;</a></h2>
+<h3 id="21-stage-1-absreducemaxgp4-gp8-gp64">2.1 Stage 1: AbsReduceMax（gp4 / gp8 / gp64）<a class="headerlink" href="#21-stage-1-absreducemaxgp4-gp8-gp64" title="Permanent link">&para;</a></h3>
+<p>三级树形归约，对 64 个 BF16 输入计算每 4/8/64 元素的绝对值最大值。</p>
+<h3 id="22-stage-2-calcexpscale_cont">2.2 Stage 2: CalcExpScale_Cont<a class="headerlink" href="#22-stage-2-calcexpscale_cont" title="Permanent link">&para;</a></h3>
+<p>读取 Ma/Mb/Mc，产生 Ea/Eb/Ec 指数 + 每 4 元素缩放因子。</p>
+<pre class="highlight"><code>每循环（128元素 = 8个16元素块）：
+  Ma: 8个值（每64元素块1个）   — 加载 E2B_B16（广播到16通道）
+  Mb: 64个值（每8元素组1个）   — 加载 US_B16（上采样，2×重复）
+  Mc: 128个值（每4元素组1个）  — 加载 NORM
+
+  // Ea: BF16 → e6m2 转换（四舍五入），然后倒数回 BF16
+  Ea_e6m2 = vcvt_bf162e6m2(Ma, ROUND_R, PART_EVEN)
+  Ea_rec  = vcvt_rcpe6m22bf16(Ea_e6m2, PART_EVEN)    // ≈ 2^(-Ea) 作为 BF16
+
+  // Eb: 阈值检查 — 每8元素最大值是否超过共享指数的4倍？
+  Eb_tmp  = Mb * Ea_rec
+  Eb_bit  = (Eb_tmp &gt;= 4) ? 1 : 0
+  // 通过 pstu（谓词→对齐寄存器）+ vstas（对齐→UB）存储 Eb。
+  // 以输出频率打包谓词（每64组1字节，保留全部8个Eb位），
+  // 避免了旧的 DS_B8 降采样丢失 b4–b7 位的问题。
+  pstu(ureg_Eb, p_Eb, ebPtr); vstas(ureg_Eb, ebPtr, 0, POST_UPDATE)
+
+  // Ec: 阈值检查 — 结合 Eb 校正进一步细化
+  Eb_rec  = Eb_bit ? 0.5 : 1.0                        // 2^(-Eb)
+  Ec_tmp  = Mc * Ea_rec * Eb_rec
+  Ec_bit  = (Ec_tmp &gt;= 2) ? 1 : 0
+
+  // 最终每4元素缩放因子（完整共享指数的倒数）
+  Ec_rec  = Ec_bit ? 0.5 : 1.0                        // 2^(-Ec)
+  e_scale = Ea_rec * Eb_rec * Ec_rec                  // ≈ 2^(-(Ea+Eb+Ec))</code></pre>
+<p><strong>阈值语义：</strong>
+- <code>Mb * Ea_rec &gt;= 4</code> 表示 <code>Mb / 2^Ea &gt;= 4</code>，即 8 元素子块最大值需要多 2 个指数位
+  → <code>Eb = 1</code> 贡献 <code>2^1 = 2</code> 的额外范围。
+- <code>Mc * Ea_rec * Eb_rec &gt;= 2</code> 表示 <code>Mc / 2^(Ea+Eb) &gt;= 2</code>，即 4 元素子块最大值需要
+  多 1 个指数位 → <code>Ec = 1</code>。</p>
+<h3 id="23-stage-2b-explayoutforcube-ccegolden">2.3 Stage 2b: ExpLayoutForCube（仅 CCE，golden 不包含）<a class="headerlink" href="#23-stage-2b-explayoutforcube-ccegolden" title="Permanent link">&para;</a></h3>
+<p>将 Ea/Eb/Ec 从各自的层级扁平布局重排为 Cube 矩阵乘单元消费的交错压缩布局。
+Ea 以 <code>DS_B8</code> 加载（存储时零扩展）；Eb 以 <code>NORM</code> 加载（Stage 2 中的 <code>pstu</code>+<code>vstas</code>
+存储已将其置于输出频率，无需降采样）。
+这是硬件特定的数据搬运步骤 — <strong>Python golden 不复制此步骤。</strong></p>
+<h3 id="24-stage-3-calcfp4values_cont">2.4 Stage 3: CalcFp4Values_Cont<a class="headerlink" href="#24-stage-3-calcfp4values_cont" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code>每循环（256元素）：
+  input    = vlds(srcPtr, 128*loop, NORM)             // 128个 BF16 元素
+  e_scale  = vlds(scalingPtr, 64*loop, US_B16)        // 每4元素缩放，2×重复
+  scaled   = input * e_scale
+  fp4_code = vcvt(scaled, ROUND_A, PART_P0)           // BF16 → f4e1m2x2
+  vsts(fp4_code, dstPtr, 64*loop, PK4_B32)            // 每字节打包4个半字节</code></pre>
+<h3 id="25-e6m2">2.5 e6m2 指数格式<a class="headerlink" href="#25-e6m2" title="Permanent link">&para;</a></h3>
+<p>Ea 存储为 8 位 <strong>e6m2</strong> 值（6位指数，2位尾数）。这是一个表示每 64 元素最大值 log2 的
+迷你浮点数。<code>vcvt_bf162e6m2</code> 四舍五入到最近的 e6m2 可表示值，
+<code>vcvt_rcpe6m22bf16</code> 计算其作为 BF16 的倒数。</p>
+<p>用论文的术语：<code>Ea = round(log2(Ma))</code> 量化到 e6m2 精度。</p>
+<h2 id="3-python-golden">3. Python Golden 生成<a class="headerlink" href="#3-python-golden" title="Permanent link">&para;</a></h2>
+<p>Python golden 使用 NumPy 复制 Stage 1–3（仅连续情况）：</p>
+<ol>
+<li>通过 reshape 计算每 4/8/64 元素绝对值最大值。</li>
+<li>通过阈值检查推导 Ea（log2(Ma) 的 e6m2 量化）、Eb、Ec。</li>
+<li>计算每 4 元素缩放因子。</li>
+<li>将每个 BF16 元素量化为其 e1m2 4 位码。</li>
+</ol>
+<p><strong>不产生 Cube 交错指数布局</strong> — 那是 CCE 特定的数据搬运。Golden 输出：
+- <code>golden_fp4.bin</code> — 压缩 FP4 e1m2 码（每字节2个）
+- <code>golden_ea.bin</code> — Ea 指数（每64元素1字节）
+- <code>golden_eb.bin</code> — Eb 位（每8元素1位，压缩）
+- <code>golden_ec.bin</code> — Ec 位（每4元素1位，压缩）
+- <code>golden_scale.bin</code> — 每4元素缩放因子（BF16）</p>
+<h3 id="31">3.1 重建误差<a class="headerlink" href="#31" title="Permanent link">&para;</a></h3>
+<p>侧函数从 FP4 码 + 指数重建原始 BF16 值，报告最大/平均相对误差。</p>
               
             </div>
           </div><footer>
