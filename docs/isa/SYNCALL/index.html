@@ -520,9 +520,9 @@
     H2 --&gt; H3[wait_flag_dev]
     H3 --&gt; H4[Barrier complete]
   end
-  subgraph soft [Soft Mode / GM Atomic Counter]
-    S1[ld_dev reads the shared counter] --&gt; S2[st_atomic +1]
-    S2 --&gt; S3[Poll until the count reaches this round's epoch target]
+  subgraph soft [Soft Mode / Shared GM Counter]
+    S1[Each core arrives: increment the shared counter] --&gt; S2[Derive this round's release condition]
+    S2 --&gt; S3[Wait until the counter meets that condition]
     S3 --&gt; S4[Barrier complete]
   end</code></pre>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
