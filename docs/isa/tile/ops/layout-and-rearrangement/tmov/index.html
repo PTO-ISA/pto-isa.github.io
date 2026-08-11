@@ -557,6 +557,38 @@ NZ layout. No <code>tmp</code> is required.</p>
 </table>
 <p>A <code>CompactMode::RowPlusOne</code> destination (<code>Rows = Vec_S0 + 1</code>) is the canonical idiom to
 avoid UB bank conflicts on the <code>vsstb</code> scatter.</p>
+<h3 id="nd-zn-within-fractal-transpose-for-the-transposed-cube-operand">ND → ZN (within-fractal transpose for the transposed Cube operand)<a class="headerlink" href="#nd-zn-within-fractal-transpose-for-the-transposed-cube-operand" title="Permanent link">&para;</a></h3>
+<p>The <strong>Right (B, NT)</strong> operand is the <em>transpose</em> of NZ: <code>BLayout = RowMajor</code> (the "Z" —
+row-major outer blocks) and <code>SLayout = ColMajor</code> (the "N" — column-major within each
+fractal). <code>TMOV(dstZN, src)</code> repacks a RowMajor <code>Vec</code> tile (<code>NoneBox</code>) of shape <code>[K, N]</code>
+into ZN layout <code>[K/K0, N/16, 16, K0]</code>, where <span class="arithmatex">\(K_0 = 32\text{B}/\mathrm{sizeof}(T)\)</span>
+(so <span class="arithmatex">\(K_0 = 32\)</span> for B8, <span class="arithmatex">\(16\)</span> for B16, <span class="arithmatex">\(8\)</span> for B32). Requires <span class="arithmatex">\(K \bmod K_0 = 0\)</span> and
+<span class="arithmatex">\(N \bmod 16 = 0\)</span>. Supported element types: <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, <code>int32_t</code>,
+<code>int8_t</code>, <code>uint8_t</code>, <code>float8_e4m3_t</code>, <code>float8_e5m2_t</code>, <code>hifloat8_t</code>,
+<code>float4_e2m1x2_t</code>, <code>float4_e1m2x2_t</code> (all 1/2/4-byte storage types).</p>
+<p>Unlike ND→NZ (which only rearranges 32 B blocks on the block grid via <code>vsstb</code> and leaves
+within-block data untouched), ND→ZN must also transpose the elements <strong>inside</strong> each
+<span class="arithmatex">\(K_0 \times 16\)</span> fractal, so <code>vsstb</code> alone is insufficient. Each output fractal is the
+transpose of a <span class="arithmatex">\(K_0 \times 16\)</span> source slice:</p>
+<div class="arithmatex">\[D_{ZN}[k_1, n_1, j, i] = S_{ND}[k_1 K_0 + i][n_1 \cdot 16 + j], \quad i \in [0,K_0),\ j \in [0,16)\]</div>
+<p>The implementation uses a <code>vgather2</code> whose index decomposes the destination position <span class="arithmatex">\(d\)</span>
+into the source coordinates <span class="arithmatex">\((i, j)\)</span>. With the destination fractal laid out <span class="arithmatex">\([16, K_0]\)</span>
+row-major (<span class="arithmatex">\(j\)</span> outer, <span class="arithmatex">\(i\)</span> inner):</p>
+<div class="arithmatex">\[i = d \,\&amp;\, (K_0-1) \quad (\text{pow2 mask, since } K_0 \text{ is always a power of two})$$
+$$j = d \gg \log_2 K_0 \quad (\text{pow2 shift})$$
+$$\mathrm{src\_idx} = i \cdot N + j \quad (\text{row-major source, stride } N)\]</div>
+<p>The <span class="arithmatex">\((i, j)\)</span> extraction uses pow2 shifts/masks (no div/mod); the <span class="arithmatex">\(i \cdot N\)</span> term uses
+<code>vmuls</code> because <span class="arithmatex">\(N\)</span> is generally not a power of two. No <code>vdiv</code> appears anywhere. No <code>tmp</code>
+is required (the 2-arg <code>TMOV(dst, src)</code> form dispatches here when the destination is
+<code>RowMajor</code> + <code>ColMajor</code>).</p>
+<p><strong>Element-width handling.</strong> A fractal is <span class="arithmatex">\(K_0 \cdot 16\)</span> elements = 512 B for every dtype.
+For B16/B32 the gather indexes in units of T (one VL holds 128/64 T-elements), so a
+fractal takes 2 gathers stored with <code>DIST_NORM</code>. For B8 the gather reads VL/2 = 128 byte
+indexes, each result zero-extended into a B16 lane (<code>vector_u16</code> dst, <code>uint8_t*</code> src);
+a fractal takes 4 gathers stored with <code>PK_B16</code> to pack the 128 B16 lanes back to 128
+bytes. This is the same primitive <code>TTransB8</code> uses for its element-wise B8 transpose
+(its golden is a plain <code>.transpose(1,0)</code>), so the B8 path is an element-wise transpose,
+not a pair transpose.</p>
 <h3 id="x-zz-microscaling-exponent-repack">X → ZZ (microscaling exponent repack)<a class="headerlink" href="#x-zz-microscaling-exponent-repack" title="Permanent link">&para;</a></h3>
 <p>For MXFP8/MXFP4 matmuls the per-group E8M0 exponents must reach the Cube's scale operand
 in <strong>ZZ</strong> format: a <code>[16,2]</code> box (32 B = 16 columns × 2 row-groups), linearised so that
@@ -694,7 +726,6 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileDat
 <li>plain/relu forms use cast pre-quant mode derived by <code>GetCastPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
 <li>scalar-quant forms use <code>GetScalarPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
 <li>vector-quant forms require an <code>FpTileData</code> operand with <code>FpTileData::Loc == TileType::Scaling</code>, and use <code>GetVectorPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
-<li>channel split is not supported</li>
 </ul>
 </li>
 </ul>
