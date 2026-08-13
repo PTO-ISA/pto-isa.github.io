@@ -566,7 +566,7 @@
 <ul>
 <li>Acc → Mat insertion (with optional relu, scalar-quant, or vector-quant)</li>
 <li>Acc → Vec insertion (with optional <code>AccToVecMode</code>, relu, scalar-quant, or vector-quant) <em>(A5)</em></li>
-<li>Vec → Mat insertion (ND and NZ layouts) <em>(A5)</em></li>
+<li>Vec → Mat insertion (ND, NZ, and ZN layouts) <em>(A5)</em></li>
 <li>Vec → Vec insertion (ND and NZ layouts) <em>(A5)</em></li>
 <li>NZ split insertion (<code>SPLIT2</code>, <code>SPLIT4</code>) <em>(A5)</em></li>
 </ul>
@@ -737,6 +737,7 @@ PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
 <li>Supported element types: <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, <code>int32_t</code>, <code>int8_t</code>, <code>hifloat8_t</code>, <code>float8_e4m3_t</code>, <code>float8_e5m2_t</code>, <code>float8_e8m0_t</code>, <code>float4_e2m1x2_t</code>, <code>float4_e1m2x2_t</code>.</li>
 <li>ND path: source must be <code>isRowMajor</code>; uses <code>copy_ubuf_to_cbuf</code>. Data bytes per row must be aligned to <code>BLOCK_BYTE_SIZE</code> (32 bytes) for row-wise burst.</li>
 <li>NZ path: source must be <code>(!isRowMajor, SFractal: RowMajor)</code>; uses <code>ComputeNZBlockParams</code> for fractal-block <code>copy_ubuf_to_cbuf</code>. For fp4 types (<code>float4_e2m1x2_t</code>, <code>float4_e1m2x2_t</code>), validCol and indexCol are halved for byte addressing.</li>
+<li>ZN path: source and destination must both be <code>(isRowMajor, SFractal: ColMajor)</code>; uses <code>ComputeZNBlockParams</code> for fractal-block <code>copy_ubuf_to_cbuf</code>. ZN is the transpose-dual of NZ: rows are the fractal dimension and columns are the free dimension. <code>indexRow</code> and <code>validRow</code> must be aligned to the fractal row size (<code>BLOCK_BYTE_SIZE / sizeof(T)</code>); <code>indexCol</code> and <code>validCol</code> are unconstrained (free dimension), matching the NZ row dimension. For fp4 types (<code>float4_e2m1x2_t</code>, <code>float4_e1m2x2_t</code>), validRow and indexRow are halved for byte addressing.</li>
 </ul>
 </li>
 <li>
