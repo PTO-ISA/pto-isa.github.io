@@ -576,7 +576,7 @@ PTO_INST RecordEvent TGATHER(TileDataD &amp;dst, TileDataS &amp;src0, TileDataS1
 </ul>
 </li>
 <li><strong>基于索引的gather：实现检查 (Ascend 950PR/Ascend 950DT)</strong>:<ul>
-<li><code>DstTileData::DType</code> 必须为 1、2 或 4 字节类型：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code> 之一。</li>
+<li><code>DstTileData::DType</code> 必须为 1、2、4 或 8 字节类型：<code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>int64_t</code>、<code>uint64_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code> 之一。</li>
 <li><code>sizeof(Src1TileData::DType)</code> 对应类型必须是 <code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code> 之一。</li>
 <li><code>DstTileData::DType</code> 必须与 <code>Src0TileData::DType</code> 类型相同。</li>
 <li><code>src1.GetValidCol() == Src1TileData::Cols</code> 且 <code>dst.GetValidCol() == DstTileData::Cols</code>。</li>
@@ -590,9 +590,9 @@ PTO_INST RecordEvent TGATHER(TileDataD &amp;dst, TileDataS &amp;src0, TileDataS1
 </ul>
 </li>
 <li><strong>基于掩码模式的gather：实现检查 (Ascend 950PR/Ascend 950DT)</strong>:<ul>
-<li>源元素大小必须是<code>1</code>、<code>2</code>或<code>4</code>字节。</li>
+<li>源元素大小必须是<code>1</code>、<code>2</code>、<code>4</code>或<code>8</code>字节。</li>
 <li><code>dst</code> 和 <code>src</code> 必须都是 <code>TileType::Vec</code> 且行主序。</li>
-<li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> 必须是 <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>、<code>float8_e4m3_t</code>、<code>float8_e5m2_t</code> 或 <code>hifloat8_t</code> 之一。</li>
+<li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> 必须是 <code>int8_t</code>、<code>uint8_t</code>、<code>int16_t</code>、<code>uint16_t</code>、<code>int32_t</code>、<code>uint32_t</code>、<code>int64_t</code>、<code>uint64_t</code>、<code>half</code>、<code>bfloat16_t</code>、<code>float</code>、<code>float8_e4m3_t</code>、<code>float8_e5m2_t</code> 或 <code>hifloat8_t</code> 之一。</li>
 <li>支持的数据类型限制为目标定义的集合（通过实现中的 <code>static_assert</code> 强制执行），且 <code>sizeof(dst element) == sizeof(src element)</code>，<code>dst.GetValidCol() == DstTileData::Cols</code>（连续的目标存储）。</li>
 </ul>
 </li>

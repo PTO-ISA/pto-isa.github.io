@@ -621,7 +621,7 @@ PTO_INST RecordEvent TGATHER(TileDataD &amp;dst, TileDataS &amp;src0, TileDataS1
 </ul>
 </li>
 <li><strong>Index-based gather: implementation checks (A5)</strong>:<ul>
-<li><code>sizeof(DstTileData::DType)</code> must be 1, 2, or 4 bytes: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
+<li><code>sizeof(DstTileData::DType)</code> must be 1, 2, 4, or 8 bytes: <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>int64_t</code>, <code>uint64_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>.</li>
 <li><code>sizeof(Src1TileData::DType)</code> must be <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>.</li>
 <li><code>DstTileData::DType</code> must be the same type as <code>Src0TileData::DType</code>.</li>
 <li><code>src1.GetValidCol() == Src1TileData::Cols</code> and <code>dst.GetValidCol() == DstTileData::Cols</code>.</li>
@@ -636,10 +636,10 @@ or <code>half</code> or <code>bfloat16_t</code> or <code>float</code>.</li>
 </ul>
 </li>
 <li><strong>Mask-pattern gather: implementation checks (A5)</strong>:<ul>
-<li>Source element size must be <code>1</code> or <code>2</code> or <code>4</code> bytes.</li>
+<li>Source element size must be <code>1</code>, <code>2</code>, <code>4</code>, or <code>8</code> bytes.</li>
 <li><code>dst</code> and <code>src</code> must both be <code>TileType::Vec</code> and row-major.</li>
 <li><code>SrcTileData::DType</code>/<code>DstTileData::DType</code> must be <code>int8_t</code> or <code>uint8_t</code> or <code>int16_t</code> or <code>uint16_t</code> or <code>int32_t</code> or <code>uint32_t</code>
-or <code>half</code> or <code>bfloat16_t</code> or <code>float</code> or <code>float8_e4m3_t</code>or <code>float8_e5m2_t</code> or <code>hifloat8_t</code>.</li>
+or <code>int64_t</code> or <code>uint64_t</code> or <code>half</code> or <code>bfloat16_t</code> or <code>float</code> or <code>float8_e4m3_t</code>or <code>float8_e5m2_t</code> or <code>hifloat8_t</code>.</li>
 <li>Supported dtypes are restricted to a target-defined set (checked via <code>static_assert</code> in the implementation), and <code>sizeof(dst element) == sizeof(src element)</code>, <code>dst.GetValidCol() == DstTileData::Cols</code> (continuous dst storage).</li>
 </ul>
 </li>
