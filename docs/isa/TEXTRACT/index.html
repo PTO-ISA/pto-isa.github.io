@@ -375,6 +375,8 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#vec-vec-extraction-path">Vec → Vec extraction path</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#nd-2nz-extraction-path">ND → 2×NZ extraction path</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a>
@@ -589,7 +591,12 @@ PTO_INST RecordEvent TEXTRACT(DstTileData &amp;dst, SrcTileData &amp;src, uint64
 
 template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
-PTO_INST RecordEvent TEXTRACT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);</code></pre>
+PTO_INST RecordEvent TEXTRACT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
+
+template &lt;typename Dst0TileData, typename Dst1TileData, typename SrcTileData, typename... WaitEvents&gt;
+PTO_INST RecordEvent TEXTRACT(Dst0TileData &amp;dst0, Dst1TileData &amp;dst1, SrcTileData &amp;src,
+                              uint16_t indexRow0 = 0, uint16_t indexCol0 = 0,
+                              uint16_t indexRow1 = 0, uint16_t indexCol1 = 0, WaitEvents &amp;... events);</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
@@ -632,6 +639,92 @@ PTO_INST RecordEvent TEXTRACT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpT
 <li>Supported element types (both A2A3 and A5): <code>int8_t</code>, <code>uint8_t</code>, <code>int16_t</code>, <code>uint16_t</code>, <code>int32_t</code>, <code>uint32_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code> (any 1-/2-/4-byte standard type). This set differs from the primary tile path: it adds <code>uint8_t</code>/<code>int16_t</code>/<code>uint16_t</code>/<code>int32_t</code>/<code>uint32_t</code>, and on A5 it does <strong>not</strong> include the fp8/fp4 types.</li>
 <li>ND path: source/destination row strides must be 32-byte aligned; <code>Dst</code> rows/cols must not exceed <code>Src</code>.</li>
 </ul>
+<h3 id="nd-2nz-extraction-path">ND → 2×NZ extraction path<a class="headerlink" href="#nd-2nz-extraction-path" title="Permanent link">&para;</a></h3>
+<p>The two-destination <code>TEXTRACT</code> overload extracts two independent ND sub-windows from a single ND source and writes each as a separate NZ destination in one call. It is implemented entirely with vector-frontend intrinsics (no MTE copy).</p>
+<ul>
+<li>Source must be a <code>TileType::Vec</code> ND tile (<code>BLayout::RowMajor</code>, <code>SLayout::NoneBox</code>); both destinations must be <code>TileType::Vec</code> NZ tiles (<code>BLayout::ColMajor</code>, <code>SLayout::RowMajor</code>).</li>
+<li><code>DstTileData::DType</code> must equal <code>SrcTileData::DType</code>.</li>
+<li>Each window is placed by its own <code>(indexRow, indexCol)</code>. Runtime bounds checks per window <code>k</code>:<ul>
+<li><code>indexRow_k + dst_k.GetValidRow() &lt;= SrcTileData::Rows</code></li>
+<li><code>indexCol_k + dst_k.GetValidCol() &lt;= SrcTileData::Cols</code></li>
+</ul>
+</li>
+<li>Structural constraints (same as the Vec → Vec paths): destination <code>Cols</code> must be <code>c0</code>-aligned (NZ fractal width), and source row-stride bytes must be 32-byte aligned.</li>
+<li>Supported element types:<ul>
+<li>A5: <code>int8_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, <code>int32_t</code>, <code>hifloat8_t</code>, <code>float8_e4m3_t</code>, <code>float8_e5m2_t</code>, <code>float8_e8m0_t</code>, <code>float4_e2m1x2_t</code>, <code>float4_e1m2x2_t</code>.</li>
+<li>A2A3: <code>int8_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>float</code>, <code>int32_t</code>.</li>
+</ul>
+</li>
+<li>
+<p>Output compact mode:</p>
+<ul>
+<li>A5 supports plain NZ (default) and the NZ+1 bank-conflict optimization (<code>CompactMode::RowPlusOne</code>).</li>
+<li>A2A3 supports plain NZ only.</li>
+</ul>
+</li>
+<li>
+<p>Index alignment (a window's source base is <code>srcStart = src + indexRow*rowStride + indexCol</code>):</p>
+<ul>
+<li>A5 (SIMD) handles a <code>c0</code>-unaligned <code>indexCol</code> (sub-<code>c0</code> column origin)
+via an element-exact unaligned load/store path; <code>c0</code>-aligned windows take
+the faster block path.</li>
+<li>A2A3 (vec-core) vector engines require the operand base to be 32-byte
+aligned, and <code>dav-c220-vec</code> has no unaligned vector load (<code>vlds</code>/<code>vsts</code>
+are unavailable). A window therefore takes the vector path only when its
+source base is 32-byte aligned, i.e. <code>indexCol * sizeof(T)</code> is a multiple
+of 32. Windows whose <code>indexCol</code> does not satisfy this (and <code>1×1</code> windows)
+use an element-wise scalar copy, which has no alignment constraint.</li>
+</ul>
+</li>
+<li>A2A3 vector paths (32-byte-aligned source base): <code>vcopy</code> reinterprets data
+at 16-bit granularity (its smallest element width; there is no 8-bit
+<code>vcopy</code>). 2-/4-byte types and <code>int8</code> with an even <code>validCol</code> map directly
+through <code>vcopy</code>. <code>int8</code> with an <strong>odd</strong> <code>validCol</code> (odd byte count) uses a
+fully vector widen path — <code>vconv_s82f16</code> (int8→half) into a scratch, the
+ND→NZ reshape in <code>half</code>, then <code>vconv_f162s8</code> (half→int8) into the NZ
+destination (all <code>int8</code> values round-trip losslessly through <code>half</code>).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Arch</th>
+<th>Mode</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A5 / A2A3</td>
+<td><code>1×1</code></td>
+<td>scalar copy</td>
+</tr>
+<tr>
+<td>A5 (SIMD)</td>
+<td><code>c0</code>-aligned <code>indexCol</code></td>
+<td><code>vlds</code> + <code>vsstb</code></td>
+</tr>
+<tr>
+<td>A5 (SIMD)</td>
+<td><code>c0</code>-unaligned <code>indexCol</code></td>
+<td><code>vldas</code> + <code>vldus</code> + <code>vsts</code></td>
+</tr>
+<tr>
+<td>A2A3 (vec-core)</td>
+<td>unaligned source base not 32-byte aligned (<code>indexCol*sizeof(T) % 32 != 0</code>)</td>
+<td>scalar copy</td>
+</tr>
+<tr>
+<td>A2A3 (vec-core)</td>
+<td>aligned base, 2-/4-byte or even-<code>validCol</code> <code>int8</code></td>
+<td><code>vcopy</code> with 16-bit reinterpretation</td>
+</tr>
+<tr>
+<td>A2A3 (vec-core)</td>
+<td>aligned base, odd-<code>validCol</code> <code>int8</code></td>
+<td><code>vconv_s82f16</code> + <code>vconv_f162s8</code> widen path</td>
+</tr>
+</tbody>
+</table>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <h3 id="auto">Auto<a class="headerlink" href="#auto" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">#include &lt;pto/pto-inst.hpp&gt;
