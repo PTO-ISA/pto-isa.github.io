@@ -519,6 +519,7 @@
 <li><code>engine</code>：<ul>
 <li><code>DmaEngine::SDMA</code>（默认）</li>
 <li><code>DmaEngine::URMA</code>（Ascend 950PR/Ascend 950DT，仅NPU_ARCH 3510）</li>
+<li><code>DmaEngine::RDMA</code>（Ascend 950PR/Ascend 950DT，仅NPU_ARCH 3510；当前网卡平台仅支持 HNS1825）</li>
 </ul>
 </li>
 </ul>
@@ -620,6 +621,52 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 </tbody>
 </table>
 <p>URMA不需要 <code>scratchTile</code>——轮询通过 <code>ld_dev</code>/<code>st_dev</code> 硬件原语直接操作。</p>
+<h3 id="rdmanpu_arch-3510">RDMA构建（仅NPU_ARCH 3510）<a class="headerlink" href="#rdmanpu_arch-3510" title="Permanent link">&para;</a></h3>
+<p>RDMA面向经典跨机场景组网，当前网卡平台仅支持 HNS1825。</p>
+<pre class="highlight"><code class="language-cpp">#ifdef PTO_RDMA_SUPPORTED
+template &lt;DmaEngine engine, typename ScratchTile&gt;
+PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
+                                    __gm__ uint8_t *workspace,
+                                    uint32_t myPe,
+                                    AsyncSession &amp;session,
+                                    uint32_t syncId = 0);
+#endif</code></pre>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scratchTile</code></td>
+<td>用于 WQE/CQE 控制数据的 UB/Vec tile，至少 64 字节。</td>
+</tr>
+<tr>
+<td><code>workspace</code></td>
+<td>Host侧 RDMA 初始化流程返回的 GM 指针。</td>
+</tr>
+<tr>
+<td><code>myPe</code></td>
+<td>本地 rank id，用于选择已注册的本地内存区域。</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>输出的 <code>AsyncSession</code> 对象。</td>
+</tr>
+<tr>
+<td><code>syncId</code></td>
+<td>MTE/Scalar 同步事件 ID，取值范围为 0-7。</td>
+</tr>
+</tbody>
+</table>
+<p>构建一次不绑定 peer 的Session，再通过显式 <code>peer</code> 参数选择目标rank：</p>
+<pre class="highlight"><code class="language-cpp">comm::AsyncSession session;
+if (comm::BuildAsyncSession&lt;comm::DmaEngine::RDMA&gt;(scratchTile, rdmaWorkspace, myPe, session, syncId)) {
+    auto event = comm::TPUT_ASYNC&lt;comm::DmaEngine::RDMA&gt;(dstG, srcG, session, peer);
+    (void)event.Wait(session);
+}</code></pre>
 <h2 id="_3">约束<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>GlobalSrcData::RawDType == GlobalDstData::RawDType</code></li>
@@ -631,6 +678,9 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 <li>URMA仅在NPU_ARCH 3510（Ascend 950PR/Ascend 950DT）上可用</li>
 <li>URMA要求CANN Toolkit <strong>&gt;= 9.1.0</strong></li>
 <li>传给 <code>UrmaWorkspaceManager::Init()</code> 的对称数据缓冲区必须由大页内存支撑（使用 <code>ACL_MEM_MALLOC_HUGE_ONLY</code> 分配）。底层MR注册要求大页背景；<code>ACL_MEM_MALLOC_HUGE_FIRST</code> 在小尺寸分配时可能静默回退到4KB小页，导致注册失败</li>
+<li>RDMA仅在Ascend 950PR/Ascend 950DT（NPU_ARCH 3510）上可用，当前网卡平台仅支持 HNS1825</li>
+<li>RDMA源、目的tensor必须是扁平连续的逻辑一维，且本地和远端完整传输范围必须位于Host初始化阶段注册的内存区域内</li>
+<li>单次RDMA传输不能超过 <code>0x7fffffff</code> 字节</li>
 </ul>
 <p>若不满足一维连续要求，当前实现返回无效async event（<code>handle == 0</code>）。</p>
 <h2 id="scratchtile">scratchTile的作用<a class="headerlink" href="#scratchtile" title="Permanent link">&para;</a></h2>
@@ -653,14 +703,16 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 <p>不同引擎的底层完成机制不同，但用户侧的quiet语义行为一致：</p>
 <ul>
 <li><strong>SDMA</strong>：每次<code>TPUT_ASYNC</code>都会提交数据传输SQE和用于标记本次操作完成的flag SQE。对其返回的Event调用<code>Wait</code>或<code>Test</code>时，通过轮询对应flag判断该次<code>TPUT_ASYNC</code>是否完成；完成后也能保证同一Session中此前提交的所有SDMA操作均已完成。</li>
+<li><strong>URMA</strong>：<code>TPUT_ASYNC</code> 立即提交RDMA WRITE WQE并敲门铃。<code>Wait</code> 通过轮询Completion Queue（CQ）等待所有预期的CQE被消费。</li>
 <li>
-<p><strong>URMA</strong>：<code>TPUT_ASYNC</code> 立即提交RDMA WRITE WQE并敲门铃。<code>Wait</code> 通过轮询Completion Queue（CQ）等待所有预期的CQE被消费。</p>
+<p><strong>RDMA</strong>：<code>TPUT_ASYNC</code> 向 <code>peer</code> 选择的队列提交RDMA WRITE WQE；不同peer/queue分别跟踪完成状态。</p>
 </li>
 <li>
 <p><code>event.Wait(session)</code> —阻塞，直到<strong>自上次Wait以来所有已发出的异步操作</strong>全部完成</p>
 </li>
 </ul>
 <p>这意味着多次 <code>TPUT_ASYNC</code> 调用后，只需对最后一个返回的 <code>AsyncEvent</code> 调用一次 <code>Wait</code>，即可等待所有pending操作完成（类似shmem的quiet语义）。</p>
+<p>RDMA操作涉及不同peer时，必须分别等待每个peer的最后一个Event。</p>
 <p>同一Session最多可有64个未完成操作，超过后提交可能产生背压。</p>
 <p>wait成功后，所有已发出的 <code>dstGlobalData</code> 写入均已全部完成。</p>
 <h2 id="sdmasession">SDMA并发与Session所有权<a class="headerlink" href="#sdmasession" title="Permanent link">&para;</a></h2>

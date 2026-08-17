@@ -431,6 +431,8 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#urma-construction-npu_arch-3510-only">URMA Construction (NPU_ARCH 3510 only)</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#rdma-construction-npu_arch-3510-only">RDMA Construction (NPU_ARCH 3510 only)</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
@@ -557,6 +559,7 @@
 <li><code>engine</code>:<ul>
 <li><code>DmaEngine::SDMA</code> (default)</li>
 <li><code>DmaEngine::URMA</code> (Ascend950, NPU_ARCH 3510 only)</li>
+<li><code>DmaEngine::RDMA</code> (Ascend950, NPU_ARCH 3510 only; currently supports only the HNS1825 NIC platform)</li>
 </ul>
 </li>
 </ul>
@@ -661,6 +664,52 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 </tbody>
 </table>
 <p>URMA does not require <code>scratchTile</code> — polling uses <code>ld_dev</code>/<code>st_dev</code> hardware intrinsics directly.</p>
+<h3 id="rdma-construction-npu_arch-3510-only">RDMA Construction (NPU_ARCH 3510 only)<a class="headerlink" href="#rdma-construction-npu_arch-3510-only" title="Permanent link">&para;</a></h3>
+<p>RDMA is intended for standard cross-node networking and currently supports only the HNS1825 NIC platform.</p>
+<pre class="highlight"><code class="language-cpp">#ifdef PTO_RDMA_SUPPORTED
+template &lt;DmaEngine engine, typename ScratchTile&gt;
+PTO_INTERNAL bool BuildAsyncSession(ScratchTile &amp;scratchTile,
+                                    __gm__ uint8_t *workspace,
+                                    uint32_t myPe,
+                                    AsyncSession &amp;session,
+                                    uint32_t syncId = 0);
+#endif</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scratchTile</code></td>
+<td>UB/Vec tile used for WQE/CQE control data; at least 64 bytes.</td>
+</tr>
+<tr>
+<td><code>workspace</code></td>
+<td>GM pointer returned by the host-side RDMA initialization flow.</td>
+</tr>
+<tr>
+<td><code>myPe</code></td>
+<td>Local rank id used to select the registered local memory region.</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>Output <code>AsyncSession</code> object.</td>
+</tr>
+<tr>
+<td><code>syncId</code></td>
+<td>MTE/scalar synchronization event id in the range 0-7.</td>
+</tr>
+</tbody>
+</table>
+<p>Build one peer-independent session, then select the source rank with the explicit <code>peer</code> argument:</p>
+<pre class="highlight"><code class="language-cpp">comm::AsyncSession session;
+if (comm::BuildAsyncSession&lt;comm::DmaEngine::RDMA&gt;(scratchTile, rdmaWorkspace, myPe, session, syncId)) {
+    auto event = comm::TGET_ASYNC&lt;comm::DmaEngine::RDMA&gt;(dstG, srcG, session, peer);
+    (void)event.Wait(session);
+}</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>GlobalSrcData::RawDType == GlobalDstData::RawDType</code></li>
@@ -672,6 +721,9 @@ PTO_INTERNAL bool BuildAsyncSession(__gm__ uint8_t *workspace,
 <li>URMA is only available on NPU_ARCH 3510 (Ascend950)</li>
 <li>URMA requires CANN Toolkit <strong>&gt;= 9.1.0</strong></li>
 <li>The symmetric data buffer passed to <code>UrmaWorkspaceManager::Init()</code> must be backed by huge-page memory (allocate with <code>ACL_MEM_MALLOC_HUGE_ONLY</code>). The underlying MR registration requires huge-page backing; <code>ACL_MEM_MALLOC_HUGE_FIRST</code> may silently fall back to 4KB pages for small allocations, causing registration to fail</li>
+<li>RDMA is available only on Ascend950 / NPU_ARCH 3510 and currently supports only the HNS1825 NIC platform</li>
+<li>RDMA source and destination tensors must be flat contiguous logical 1D, and the complete local and remote ranges must lie within memory regions registered during host initialization</li>
+<li>One RDMA transfer must not exceed <code>0x7fffffff</code> bytes</li>
 </ul>
 <p>If the 1D contiguous requirement is not met, current implementation returns an invalid async event (<code>handle == 0</code>).</p>
 <h2 id="scratchtile-role">scratchTile Role<a class="headerlink" href="#scratchtile-role" title="Permanent link">&para;</a></h2>
@@ -694,14 +746,16 @@ It is converted to <code>TmpBuffer</code> and used as temporary UB workspace for
 <p>The completion mechanism differs by engine, but user-facing quiet semantics are identical:</p>
 <ul>
 <li><strong>SDMA</strong>: Each <code>TGET_ASYNC</code> submits data-transfer SQEs and flag SQEs that mark completion of that operation. <code>Wait</code> or <code>Test</code> on its returned event polls the corresponding flags to determine whether that <code>TGET_ASYNC</code> has completed; completion also guarantees that all earlier SDMA operations in the same session have completed.</li>
+<li><strong>URMA</strong>: <code>TGET_ASYNC</code> submits an RDMA READ WQE and rings the doorbell immediately. <code>Wait</code> polls the Completion Queue (CQ) until all expected CQEs have been consumed.</li>
 <li>
-<p><strong>URMA</strong>: <code>TGET_ASYNC</code> submits an RDMA READ WQE and rings the doorbell immediately. <code>Wait</code> polls the Completion Queue (CQ) until all expected CQEs have been consumed.</p>
+<p><strong>RDMA</strong>: <code>TGET_ASYNC</code> submits an RDMA READ WQE to the queue selected by <code>peer</code>. Completion is tracked independently for each peer/queue.</p>
 </li>
 <li>
 <p><code>event.Wait(session)</code> — blocks until <strong>all async operations issued since the last Wait</strong> are complete</p>
 </li>
 </ul>
 <p>This means after multiple <code>TGET_ASYNC</code> calls, a single <code>Wait</code> on the last returned <code>AsyncEvent</code> drains all pending operations (similar to shmem's quiet semantics).</p>
+<p>For RDMA operations targeting different peers, wait for the last event of each peer separately.</p>
 <p>Up to 64 operations may be outstanding in one session before submission can apply backpressure.</p>
 <p>After wait succeeds, all issued reads into <code>dstGlobalData</code> are complete.</p>
 <h2 id="sdma-concurrency-and-session-ownership">SDMA Concurrency and Session Ownership<a class="headerlink" href="#sdma-concurrency-and-session-ownership" title="Permanent link">&para;</a></h2>
