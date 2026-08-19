@@ -547,8 +547,8 @@ PTO_INST RecordEvent TREMS(TileDataDst &amp;dst, TileDataSrc &amp;src, typename 
 <li><code>dst</code> 和 <code>src</code> 必须是行主序。</li>
 <li>运行时：<code>dst.GetValidRow() == src.GetValidRow() &gt; 0</code> 且 <code>dst.GetValidCol() == src.GetValidCol() &gt; 0</code>。</li>
 <li><strong>tmp缓冲区要求</strong>：</li>
-<li><code>tmp.GetValidCol() &gt;= dst.GetValidCol()</code>（至少与dst相同的列数）</li>
-<li><code>tmp.GetValidRow() &gt;= 1</code>（至少1行）</li>
+<li><code>tmp.GetValidCol() &gt;= TileDataDst::Cols + CeilDivision(TileDataDst::Cols, 64) * 2</code></li>
+<li><code>tmp.GetValidRow() &gt;= 1</code> (至少1行)</li>
 <li>数据类型必须与 <code>TileDataDst::DType</code> 匹配。</li>
 </ul>
 </li>
