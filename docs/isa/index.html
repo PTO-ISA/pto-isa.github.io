@@ -127,7 +127,7 @@
               <ul class="current">
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Overview</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#textual-assembly-inside-pto-isa">Textual Assembly Inside PTO ISA</a>
+    <li class="toctree-l2"><a class="reference internal" href="#removed-interfaces-and-migration-notes">Removed interfaces and migration notes</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#synchronization">Synchronization</a>
     </li>
@@ -141,27 +141,19 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#memory-gm-tile">Memory (GM &lt;-&gt; Tile)</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#matrix-multiply">Matrix Multiply</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#data-movement-layout">Data Movement / Layout</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#complex">Complex</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#cross-core-communication">Cross-core Communication</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#communication">Communication</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#cross-core-communication_1">Cross-Core Communication</a>
-    </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="conventions/">ISA Conventions</a>
                   </li>
                   <li class="toctree-l1"><a class="" href="../PTOISA.md">PTO ISA Table</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" >Synchronization</a>
-    <ul>
-                <li class="toctree-l2"><a class="reference internal" href="TSYNC/">TSYNC</a>
-                </li>
-    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Manual / Resource Binding</a>
     <ul>
@@ -189,6 +181,10 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TMUL/">TMUL</a>
                 </li>
+                <li class="toctree-l2"><a class="reference internal" href="TMADD/">TMADD</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="TMULA/">TMULA</a>
+                </li>
                 <li class="toctree-l2"><a class="reference internal" href="TMIN/">TMIN</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TMAX/">TMAX</a>
@@ -208,10 +204,6 @@
                 <li class="toctree-l2"><a class="reference internal" href="TRECIP/">TRECIP</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TPRELU/">TPRELU</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="TADDC/">TADDC</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="TSUBC/">TSUBC</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TCVT/">TCVT</a>
                 </li>
@@ -272,10 +264,6 @@
                 <li class="toctree-l2"><a class="reference internal" href="TXORS/">TXORS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TLRELU/">TLRELU</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="TADDSC/">TADDSC</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="TSUBSC/">TSUBSC</a>
                 </li>
     </ul>
                   </li>
@@ -392,10 +380,6 @@
                 <li class="toctree-l2"><a class="reference internal" href="TTRANS/">TTRANS</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="TIMG2COL/">TIMG2COL</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="TSUBVIEW/">TSUBVIEW</a>
-                </li>
-                <li class="toctree-l2"><a class="reference internal" href="TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a>
                 </li>
     </ul>
                   </li>
@@ -542,10 +526,40 @@
 
 <h1 id="pto-isa-manual-and-reference">PTO ISA Manual And Reference<a class="headerlink" href="#pto-isa-manual-and-reference" title="Permanent link">&para;</a></h1>
 <p>This directory is the canonical PTO ISA tree. It combines the architecture manual, the instruction set guides, the instruction set contracts, and the exact instruction-reference groupings in one place.</p>
-<h2 id="textual-assembly-inside-pto-isa">Textual Assembly Inside PTO ISA<a class="headerlink" href="#textual-assembly-inside-pto-isa" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Source of truth (C++ intrinsics): <code>include/pto/common/pto_instr.hpp</code></li>
+<li>Common conventions (operands, events, modifiers): <code>docs/isa/conventions.md</code></li>
+</ul>
+<h2 id="removed-interfaces-and-migration-notes">Removed interfaces and migration notes<a class="headerlink" href="#removed-interfaces-and-migration-notes" title="Permanent link">&para;</a></h2>
+<p>The current ISA reference no longer exposes the following legacy instruction interfaces:</p>
+<ul>
+<li><code>TADDC</code></li>
+<li><code>TAddDeqRelu</code></li>
+<li><code>TADDReluConv</code></li>
+<li><code>TADDSC</code></li>
+<li><code>TFUSEDMULADDRELU</code></li>
+<li><code>TGET_SCALE_ADDR</code></li>
+<li><code>TPairReduceSum</code></li>
+<li><code>TSUBC</code></li>
+<li><code>TSUBRELU</code></li>
+<li><code>TSUBRELUCONV</code></li>
+<li><code>TSUBSC</code></li>
+<li><code>TSUBVIEW</code></li>
+<li><code>TSYNC</code></li>
+</ul>
+<p>Migration guidance:</p>
+<ul>
+<li>Effective version: this cleanup takes effect in PTO ISA v9.2.0. The compatibility window for these legacy wrappers is closed; no public wrapper is retained.</li>
+<li>Replace <code>TSYNC(events...)</code> with ordinary event-based ordering: pass the event object to the consumer intrinsic, or call <code>WaitAllEvents(events...)</code> before the consumer when an explicit wait is required.</li>
+<li><code>TSUBVIEW</code> is not a public ISA replacement. In-repository implementations may use <code>pto::detail::PtoSubTileView</code> as an internal helper; external code should express the data view through supported tile construction and public data movement APIs.</li>
+<li>Replace ternary/scalar fused arithmetic forms with the corresponding primitive arithmetic sequence, such as <code>TADD</code>, <code>TSUB</code>, <code>TADDS</code>, <code>TSUBS</code>, <code>TMUL</code>, <code>TMADD</code>, and <code>TRELU</code>.</li>
+<li>Rename legacy fused multiply-add APIs: <code>TFUSEDMULADD</code> to <code>TMADD</code>, and <code>TMULADDDST</code> to <code>TMULA</code>.</li>
+<li>Replace fused add/ReLU/convert or add/dequant/ReLU forms with explicit arithmetic, conversion/dequantization, and <code>TRELU</code> steps.</li>
+<li>Replace <code>TPairReduceSum</code> with the supported row/column reduction primitives that match the target layout.</li>
+<li>Do not call <code>TGET_SCALE_ADDR</code>; for AUTO-mode MX tests, bind the scale tile address from the data tile in test code before invoking the MX matmul primitive.</li>
+</ul>
 <h2 id="synchronization">Synchronization<a class="headerlink" href="#synchronization" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="TSYNC/">TSYNC</a> - Synchronize PTO execution (wait on events or insert a per-op pipeline barrier).</li>
 <li><a href="SYNCALL/">SYNCALL</a> - Cross-core synchronization barrier (hardware FFTS or software GM polling).</li>
 </ul>
 <h2 id="manual-resource-binding">Manual / Resource Binding<a class="headerlink" href="#manual-resource-binding" title="Permanent link">&para;</a></h2>
@@ -554,7 +568,7 @@
 <li><a href="SETFMATRIX/">SETFMATRIX</a> - Set FMATRIX register(s) for IMG2COL-like ops.</li>
 <li><a href="SET_IMG2COL_RPT/">SET_IMG2COL_RPT</a> - Set IMG2COL repeat metadata from an IMG2COL configuration tile.</li>
 <li><a href="SET_IMG2COL_PADDING/">SET_IMG2COL_PADDING</a> - Set IMG2COL padding metadata from an IMG2COL configuration tile.</li>
-<li><a href="SET_QUANT_SCALAR/">SET_QUANT_SCALAR</a> - Set the scalar quantization parameter for subsequent TPUSh operations.</li>
+<li><a href="SET_QUANT_SCALAR/">SET_QUANT_SCALAR</a> - Set the scalar quantization parameter for subsequent TPUSH operations.</li>
 <li><a href="SET_QUANT_VECTOR/">SET_QUANT_VECTOR</a> - Set the vector quantization parameter from a Scaling tile for subsequent TPUSH operations.</li>
 </ul>
 <h2 id="elementwise-tile-tile">Elementwise (Tile-Tile)<a class="headerlink" href="#elementwise-tile-tile" title="Permanent link">&para;</a></h2>
@@ -565,6 +579,8 @@
 <li><a href="TOR/">TOR</a> - Elementwise bitwise OR of two tiles.</li>
 <li><a href="TSUB/">TSUB</a> - Elementwise subtract of two tiles.</li>
 <li><a href="TMUL/">TMUL</a> - Elementwise multiply of two tiles.</li>
+<li><a href="TMADD/">TMADD</a> - Elementwise ternary op: <code>src0 * dst + src1</code>.</li>
+<li><a href="TMULA/">TMULA</a> - Elementwise ternary op: <code>src0 * src1 + dst</code>.</li>
 <li><a href="TMIN/">TMIN</a> - Elementwise minimum of two tiles.</li>
 <li><a href="TMAX/">TMAX</a> - Elementwise maximum of two tiles.</li>
 <li><a href="TCMP/">TCMP</a> - Compare two tiles and write a packed predicate mask.</li>
@@ -575,23 +591,17 @@
 <li><a href="TLOG/">TLOG</a> - Elementwise natural logarithm of a tile.</li>
 <li><a href="TRECIP/">TRECIP</a> - Elementwise reciprocal of a tile.</li>
 <li><a href="TPRELU/">TPRELU</a> - Elementwise PReLU (parametric ReLU) with a per-element slope tile.</li>
-<li><a href="TADDC/">TADDC</a> - Elementwise ternary add: <code>src0 + src1 + src2</code>.</li>
-<li><a href="TSUBC/">TSUBC</a> - Elementwise ternary op: <code>src0 - src1 + src2</code>.</li>
 <li><a href="TCVT/">TCVT</a> - Elementwise type conversion with a specified rounding mode.</li>
 <li><a href="TSEL/">TSEL</a> - Select between two tiles using a mask tile (per-element selection).</li>
 <li><a href="TRSQRT/">TRSQRT</a> - Elementwise reciprocal square root.</li>
 <li><a href="TSQRT/">TSQRT</a> - Elementwise square root.</li>
 <li><a href="TEXP/">TEXP</a> - Elementwise exponential.</li>
+<li><a href="TPOW/">TPOW</a> - Elementwise power of two tiles.</li>
 <li><a href="TNOT/">TNOT</a> - Elementwise bitwise NOT of a tile.</li>
 <li><a href="TRELU/">TRELU</a> - Elementwise ReLU of a tile.</li>
 <li><a href="TNEG/">TNEG</a> - Elementwise negation of a tile.</li>
 <li><a href="TREM/">TREM</a> - Elementwise remainder of two tiles.</li>
 <li><a href="TFMOD/">TFMOD</a> - Elementwise fmod of two tiles.</li>
-<li><a href="TPOW/">TPOW</a> - Elementwise power of two tiles.</li>
-<li><a href="TMULADDDST/">TMULADDDST</a> - Elementwise ternary op: <code>src0 * src1 + dst</code>.</li>
-<li><a href="TSUBRELU/">TSUBRELU</a> - Elementwise subtract then ReLU of two tiles.</li>
-<li><a href="TFUSEDMULADD/">TFUSEDMULADD</a> - Elementwise ternary op: <code>src0 * dst + src1</code>.</li>
-<li><a href="TFUSEDMULADDRELU/">TFUSEDMULADDRELU</a> - Elementwise ternary op: <code>ReLU(src0 * dst + src1)</code>.</li>
 </ul>
 <h2 id="tile-scalar-tile-immediate">Tile-Scalar / Tile-Immediate<a class="headerlink" href="#tile-scalar-tile-immediate" title="Permanent link">&para;</a></h2>
 <ul>
@@ -613,8 +623,6 @@
 <li><a href="TSHRS/">TSHRS</a> - Elementwise shift-right a tile by a scalar.</li>
 <li><a href="TXORS/">TXORS</a> - Elementwise bitwise XOR of a tile and a scalar.</li>
 <li><a href="TLRELU/">TLRELU</a> - Leaky ReLU with a scalar slope.</li>
-<li><a href="TADDSC/">TADDSC</a> - Elementwise fused add with scalar and a second tile: <code>src0 + scalar + src1</code>.</li>
-<li><a href="TSUBSC/">TSUBSC</a> - Elementwise fused op: <code>src0 - scalar + src1</code>.</li>
 <li><a href="TPOWS/">TPOWS</a> - Elementwise power of a tile by a scalar.</li>
 </ul>
 <h2 id="axis-reduce-expand">Axis Reduce / Expand<a class="headerlink" href="#axis-reduce-expand" title="Permanent link">&para;</a></h2>
@@ -656,17 +664,19 @@
 <li><a href="TSTORE/">TSTORE</a> - Store data from a Tile into a GlobalTensor (GM), optionally using atomic write or quantization parameters.</li>
 <li><a href="TSTORE_FP/">TSTORE_FP</a> - Store an accumulator tile into global memory using a scaling (<code>fp</code>) tile for vector quantization parameters.</li>
 <li><a href="MGATHER/">MGATHER</a> - Gather-load elements from global memory into a tile using per-element indices.</li>
-<li>
-<p><a href="MSCATTER/">MSCATTER</a> - Scatter-store elements from a tile into global memory using per-element indices.</p>
-</li>
-<li>
-<p><a href="programming-model/tiles-and-valid-regions/">Programming model</a></p>
-</li>
-<li><a href="machine-model/execution-agents/">Machine model</a></li>
-<li><a href="syntax-and-operands/assembly-model/">Syntax and operands</a></li>
-<li><a href="state-and-types/type-system/">Type system</a></li>
-<li><a href="state-and-types/location-intent-and-legality/">Location intent and legality</a></li>
-<li><a href="memory-model/consistency-baseline/">Memory model</a></li>
+<li><a href="MSCATTER/">MSCATTER</a> - Scatter-store elements from a tile into global memory using per-element indices.</li>
+</ul>
+<h2 id="matrix-multiply">Matrix Multiply<a class="headerlink" href="#matrix-multiply" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="TGEMV_MX/">TGEMV_MX</a> - GEMV with additional scaling tiles for mixed-precision / quantized matrix-vector compute.</li>
+<li><a href="TMATMUL_MX/">TMATMUL_MX</a> - Matrix multiply (GEMM) with additional scaling tiles for mixed-precision / quantized matmul on supported targets.</li>
+<li><a href="TMATMUL_MX_HIF4/">TMATMUL_MX_HIF4</a> - HiFloat4 Cube matmul variant for mixed-precision TMATMUL_MX flows.</li>
+<li><a href="TMATMUL/">TMATMUL</a> - Matrix multiply (GEMM) producing an accumulator/output tile.</li>
+<li><a href="TMATMUL_ACC/">TMATMUL_ACC</a> - Matrix multiply with accumulator input (fused accumulate).</li>
+<li><a href="TMATMUL_BIAS/">TMATMUL_BIAS</a> - Matrix multiply with bias add.</li>
+<li><a href="TGEMV/">TGEMV</a> - General Matrix-Vector multiplication producing an accumulator/output tile.</li>
+<li><a href="TGEMV_ACC/">TGEMV_ACC</a> - GEMV with explicit accumulator input/output tiles.</li>
+<li><a href="TGEMV_BIAS/">TGEMV_BIAS</a> - GEMV with bias add.</li>
 </ul>
 <h2 id="data-movement-layout">Data Movement / Layout<a class="headerlink" href="#data-movement-layout" title="Permanent link">&para;</a></h2>
 <ul>
@@ -682,18 +692,15 @@
 <li><a href="TMOV_FP/">TMOV_FP</a> - Move/convert from an accumulator tile into a destination tile, using a scaling (<code>fp</code>) tile for vector quantization parameters.</li>
 <li><a href="TRESHAPE/">TRESHAPE</a> - Reinterpret a tile as another tile type/shape while preserving the underlying bytes.</li>
 <li><a href="TTRANS/">TTRANS</a> - Transpose with an implementation-defined temporary tile.</li>
-<li><a href="TSUBVIEW/">TSUBVIEW</a> - Reinterpret a tile as a subtile of another tile.</li>
-<li><a href="TGET_SCALE_ADDR/">TGET_SCALE_ADDR</a> - Bind the on-chip address of output tile to a scaled factor of that of input tile.</li>
 <li><a href="TCONCAT/">TCONCAT</a> - Concatenate two tiles horizontally along the column dimension.</li>
-<li><a href="TINTERLEAVE/">TInterleave</a> - Interleave two source tiles into an alternating even/odd element stream, split into two destination halves.</li>
-<li><a href="TDEINTERLEAVE/">TDeInterleave</a> - De-interleave source tiles back into even-position and odd-position element streams (inverse of TInterleave).</li>
-<li><a href="TPairReduceSum/">TPAIRREDUCESUM</a> - Pair-reduction sum: add every 2 adjacent elements and write results to the lower half of dst.</li>
+<li><a href="TINTERLEAVE/">TINTERLEAVE</a> - Interleave two source tiles into an alternating even/odd element stream, split into two destination halves.</li>
+<li><a href="TDEINTERLEAVE/">TDEINTERLEAVE</a> - Deinterleave source tile data into even-position and odd-position element streams, the inverse of TINTERLEAVE.</li>
 </ul>
 <h2 id="complex">Complex<a class="headerlink" href="#complex" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="TPRINT/">TPRINT</a> - Debug/print elements from a tile (implementation-defined).</li>
 <li><a href="TMRGSORT/">TMRGSORT</a> - Merge sort for multiple sorted lists (implementation-defined element format and layout).</li>
-<li><a href="TSORT32/">TSORT32</a> - Sort each 32-element block of <code>src</code> together with the corresponding indices from <code>idx</code>, and write the sorted value-index pairs into <code>dst</code>.</li>
+<li><a href="TSORT32/">TSORT32</a> - Sort 32-element blocks of <code>src</code> with accompanying <code>idx</code> entries and output sorted value-index pairs.</li>
 <li><a href="TGATHER/">TGATHER</a> - Gather/select elements using either an index tile or a compile-time mask pattern.</li>
 <li><a href="TCI/">TCI</a> - Generate a contiguous integer sequence into a destination tile.</li>
 <li><a href="TTRI/">TTRI</a> - Generate a triangular (lower/upper) mask tile.</li>
@@ -707,6 +714,8 @@
 <li><a href="TGATHERB/">TGATHERB</a> - Gather elements using byte offsets.</li>
 <li><a href="TSCATTER/">TSCATTER</a> - Scatter rows of a source tile into a destination tile using per-element row indices.</li>
 <li><a href="TQUANT/">TQUANT</a> - Quantize a tile (e.g. FP32 to FP8) producing exponent/scaling/max outputs.</li>
+<li><a href="TQUANT_DN/">TQUANT_DN</a> - Axis-0 grouped quantization and DN-to-ZZ exponent layout conversion.</li>
+<li><a href="TQUANT_HIF4/">TQUANT_HIF4</a> - BF16 to HiFloat4 quantization algorithm and CCE mapping.</li>
 <li><a href="TDEQUANT/">TDEQUANT</a> - Affine dequantization of a quantized tile (S8/S16 -&gt; FP32): dst = (src - offset) * scale.</li>
 <li><a href="THISTOGRAM/">THISTOGRAM</a> - Per-byte histogram (256 bins) over a selected byte of each source element, with optional cascaded upper-byte filtering; the radix-sort bucket-count primitive.</li>
 </ul>
@@ -714,24 +723,8 @@
 <ul>
 <li><a href="TALLOC/">TALLOC</a> - Allocate a TPipe FIFO slot as a GlobalTensor view.</li>
 <li><a href="TPUSH/">TPUSH</a> - Push a producer tile into a TPipe FIFO for Cube-Vector communication.</li>
-<li><a href="TPOP/">TPOP</a> - Pop a consumer tile from a TPipe FIFO for Cube-Vector communication.</li>
-<li><a href="TFREE/">TFREE</a> - Release FIFO space for a TPipe entry; no-op for TileData TPOP flow.</li>
-</ul>
-<h2 id="communication">Communication<a class="headerlink" href="#communication" title="Permanent link">&para;</a></h2>
-<h2 id="cross-core-communication_1">Cross-Core Communication<a class="headerlink" href="#cross-core-communication_1" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="TALLOC/">TALLOC</a> - Allocate a TPipe FIFO slot as a GlobalTensor view.</li>
-<li><a href="TPUSH/">TPUSH</a> - Push a producer tile into a TPipe FIFO for Cube-Vector communication.</li>
-<li><a href="TPOP/">TPOP</a> - Pop a consumer tile from a TPipe FIFO for Cube-Vector communication.</li>
-<li><a href="TFREE/">TFREE</a> - Release FIFO space for a TPipe entry; no-op for TileData TPOP flow.</li>
-</ul>
-<p>The grouped instruction set trees under <code>tile/</code>, <code>vector/</code>, <code>scalar/</code>, <code>comm/</code>, and <code>system/</code> are the canonical PTO ISA paths.</p>
-<ul>
-<li><code>docs/isa/tile/ops/</code></li>
-<li><code>docs/isa/vector/ops/</code></li>
-<li><code>docs/isa/scalar/ops/</code></li>
-<li><code>docs/isa/comm/</code></li>
-<li><code>docs/isa/system/ops/</code></li>
+<li><a href="TPOP/">TPOP</a> - Pop a consumer tile or GlobalTensor from a TPipe FIFO for Cube-Vector communication.</li>
+<li><a href="TFREE/">TFREE</a> - Release FIFO space for a TPipe entry; no-op for TileData TPOP flow on some targets.</li>
 </ul>
               
             </div>
