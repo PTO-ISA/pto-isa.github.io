@@ -1,0 +1,103 @@
+name: Deploy PTO specification release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+  pages: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+env:
+  PTO_SPEC_REPOSITORY: PTO-ISA/pto-spec
+  PTO_SPEC_RUN_ID: "32920879875"
+  PTO_SPEC_ARTIFACT_ID: "9592851434"
+  PTO_SPEC_ARTIFACT_NAME: pto-site-preview-5114fb699fa510abd9a3c42bcfa5c592cd724961
+  PTO_SPEC_ARTIFACT_DIGEST: sha256:1f6481a947d52f5d97e63f29e77695ad00c21e741d52e03028a7528b348a0eed
+  PTO_SPEC_COMMIT: 5114fb699fa510abd9a3c42bcfa5c592cd724961
+  PTO_SPEC_TAG: v0.58.4.1
+  PTO_SPEC_PUBLICATION_VERSION: 0.58.4.1
+  PTO_SPEC_SITE_TREE: a8b0e813c06767cc696028e72a632996038f1ac3cec48b0e3f4cd70f1a2d35ba
+
+jobs:
+  verify:
+    name: Verify release site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out deployment controller
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Verify accepted release run and artifact identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/${PTO_SPEC_REPOSITORY}/actions/runs/${PTO_SPEC_RUN_ID}" --jq .conclusion)" = success
+          test "$(gh api "repos/${PTO_SPEC_REPOSITORY}/actions/runs/${PTO_SPEC_RUN_ID}" --jq .head_sha)" = "$PTO_SPEC_COMMIT"
+          test "$(gh api "repos/${PTO_SPEC_REPOSITORY}/actions/artifacts/${PTO_SPEC_ARTIFACT_ID}" --jq .name)" = "$PTO_SPEC_ARTIFACT_NAME"
+          test "$(gh api "repos/${PTO_SPEC_REPOSITORY}/actions/artifacts/${PTO_SPEC_ARTIFACT_ID}" --jq .digest)" = "$PTO_SPEC_ARTIFACT_DIGEST"
+
+      - name: Download exact release workflow artifact
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
+        with:
+          name: ${{ env.PTO_SPEC_ARTIFACT_NAME }}
+          path: site
+          github-token: ${{ github.token }}
+          repository: ${{ env.PTO_SPEC_REPOSITORY }}
+          run-id: ${{ env.PTO_SPEC_RUN_ID }}
+
+      - name: Restore deployment metadata excluded by artifact transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '\n' > site/.nojekyll
+          mkdir -p site/zh-CN verification
+          printf '\n' > site/zh-CN/.nojekyll
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://github.com/${PTO_SPEC_REPOSITORY}/releases/download/${PTO_SPEC_TAG}/pto-site-publication-${PTO_SPEC_TAG#v}.json" \
+            --output verification/pto-site-publication.json
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://raw.githubusercontent.com/${PTO_SPEC_REPOSITORY}/${PTO_SPEC_COMMIT}/docs/site/redirects.json" \
+            --output verification/redirects.json
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://raw.githubusercontent.com/${PTO_SPEC_REPOSITORY}/${PTO_SPEC_COMMIT}/docs/site/pnpm-lock.yaml" \
+            --output verification/pnpm-lock.yaml
+          cp verification/pto-site-publication.json site/pto-site-publication.json
+
+      - name: Verify content-addressed publication contract
+        run: |
+          python3 scripts/verify_release_site.py \
+            --site site \
+            --manifest verification/pto-site-publication.json \
+            --redirects verification/redirects.json \
+            --lock verification/pnpm-lock.yaml \
+            --commit "$PTO_SPEC_COMMIT" \
+            --tag "$PTO_SPEC_TAG" \
+            --publication-version "$PTO_SPEC_PUBLICATION_VERSION" \
+            --tree "$PTO_SPEC_SITE_TREE"
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: Upload verified Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: site
+
+  deploy:
+    name: Deploy GitHub Pages
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy verified artifact
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

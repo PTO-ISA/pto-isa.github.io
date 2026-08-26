@@ -1,9 +1,12 @@
 # PTO-ISA GitHub Pages
 
-This repository is generated from the MkDocs source in `PTO-ISA/pto-isa`.
+This repository is the deployment controller for <https://pto-isa.github.io/>.
+It does not build or restate PTO semantics.
 
-Source of truth:
-- Repository: https://github.com/PTO-ISA/pto-isa
-- MkDocs config: `docs/mkdocs/mkdocs.yml`
+The deployed site is the content-addressed Docusaurus artifact produced by the
+accepted `PTO-ISA/pto-spec` release workflow. ASL/NDF in that repository remains
+the normative source; this repository verifies release identity and deploys the
+accepted static files through GitHub Actions Pages.
 
-Do not edit this repository manually. Changes will be overwritten by the publish workflow.
+The checked-in legacy HTML remains only as rollback history and is not the
+active publication source after the Actions Pages cutover.
