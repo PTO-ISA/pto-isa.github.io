@@ -159,8 +159,6 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMADD/">TMADD</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../TMULA/">TMULA</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMIN/">TMIN</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMAX/">TMAX</a>
@@ -180,6 +178,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TRECIP/">TRECIP</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TMULADDDST/">TMULADDDST</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TCVT/">TCVT</a>
                 </li>
@@ -607,7 +607,7 @@ PTO_INST RecordEvent TROWPROD(TileDataOut &amp;dst, TileDataIn &amp;src, TileDat
 <p><code>tmp</code> <strong>is used</strong> as a per-row accumulator buffer. For each row, the implementation initializes <code>tmp</code> with <code>1.0</code> and then multiplies blocks of <code>src</code> data into <code>tmp</code> using <code>vmul</code>. After all blocks are accumulated, the scalar-mode pipeline reads <code>tmp</code> elements and computes the final product.</p>
 <ul>
 <li><code>tmp</code> must have the same element type as <code>src</code>/<code>dst</code>.</li>
-<li><code>tmp</code> size: at least 1 row and <code>BLOCK_BYTE_SIZE / sizeof(T)</code> columns (i.e., 1 block: 8 elements for <code>float</code>/<code>int32_t</code>, 16 elements for <code>half</code>/<code>int16_t</code>).</li>
+<li><code>tmp</code> size: at least 1 row and <code>CeilDivision(TileDataIn::Cols / 2, REPEAT_BYTE_SIZE / sizeof(T))</code> columns.</li>
 <li>A safe default: set <code>tmp</code> to the same shape as <code>src</code>.</li>
 </ul>
 <h3 id="a5">A5<a class="headerlink" href="#a5" title="Permanent link">&para;</a></h3>

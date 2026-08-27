@@ -159,8 +159,6 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMADD/">TMADD</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../TMULA/">TMULA</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMIN/">TMIN</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMAX/">TMAX</a>
@@ -180,6 +178,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TRECIP/">TRECIP</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TMULADDDST/">TMULADDDST</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TCVT/">TCVT</a>
                 </li>
@@ -354,6 +354,10 @@
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -570,6 +574,10 @@
 <pre class="highlight"><code class="language-text">%dst = pto.tinsert %src, %idxrow, %idxcol : (!pto.tile&lt;...&gt;, dtype, dtype) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.tinsert ins(%src, %idxrow, %idxcol : !pto.tile_buf&lt;...&gt;, dtype, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = pto.tinsert %src[%r0, %r1] : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tinsert ins(%src[%r0, %r1] : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
@@ -611,6 +619,13 @@ PTO_INST RecordEvent TINSERT_FP(DstTileData &amp;dst, SrcTileData &amp;src,
                                 WaitEvents &amp;... events);
 
 template &lt;typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
+                             FpTileData &amp;fp,
+                             uint16_t indexRow, uint16_t indexCol,
+                             WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, typename FpTileData,
           AccToVecMode mode, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
@@ -625,6 +640,9 @@ PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
                              uint16_t indexRow = 0, uint16_t indexCol = 0,
                              WaitEvents &amp;... events);
 #endif</code></pre>
+<p><code>TINSERT_FP(...)</code> is retained for source compatibility with the legacy fp-quantized form and maps directly
+to the no-<code>mode</code> <code>TINSERT_IMPL(dst, src, fp, indexRow, indexCol)</code> path. The canonical
+<code>TINSERT(..., fp, ...)</code> overload is selected only for <code>FpTileData::Loc == TileType::Scaling</code>.</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <h3 id="general-constraints-checks">General constraints / checks<a class="headerlink" href="#general-constraints-checks" title="Permanent link">&para;</a></h3>
 <ul>
@@ -633,12 +651,16 @@ PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
 <li>relu form: <code>TINSERT&lt;..., reluMode&gt;(dst, src, indexRow, indexCol)</code></li>
 <li>accumulator-to-vector form: <code>TINSERT&lt;..., mode, reluMode&gt;(dst, src, indexRow, indexCol)</code></li>
 <li>scalar-quant form: <code>TINSERT&lt;..., reluMode&gt;(dst, src, preQuantScalar, indexRow, indexCol)</code> and <code>TINSERT&lt;..., mode, reluMode&gt;(dst, src, preQuantScalar, indexRow, indexCol)</code></li>
-<li>vector-quant form: <code>TINSERT_FP&lt;..., reluMode&gt;(dst, src, fp, indexRow, indexCol)</code> and <code>TINSERT&lt;..., FpTileData, mode, reluMode&gt;(dst, src, fp, indexRow, indexCol)</code></li>
+<li>vector-quant form: canonical <code>TINSERT&lt;..., FpTileData, reluMode&gt;(dst, src, fp, indexRow, indexCol)</code>,
+  legacy <code>TINSERT_FP&lt;..., reluMode&gt;(dst, src, fp, indexRow, indexCol)</code>, and target-supported
+  <code>TINSERT&lt;..., FpTileData, mode, reluMode&gt;(dst, src, fp, indexRow, indexCol)</code> Acc-to-Vec routing</li>
 <li>NZ split form <em>(A5 only)</em>: <code>TINSERT&lt;TInsertMode::SPLIT2&gt;(dst, src, indexRow, indexCol)</code> or <code>TINSERT&lt;TInsertMode::SPLIT4&gt;(...)</code></li>
 </ul>
 </li>
 <li><code>reluMode</code> is <code>ReluPreMode::{NoRelu, NormalRelu}</code>.</li>
-<li><code>mode</code> is <code>AccToVecMode::{SingleModeVec0, SingleModeVec1, DualModeSplitM, DualModeSplitN}</code>.</li>
+<li><code>mode</code> is <code>AccToVecMode::{SingleModeVec0, SingleModeVec1, DualModeSplitM, DualModeSplitN}</code>.
+  The vector-quantized <code>fp + mode</code> overload is exposed only on targets with matching backend support
+  (A5, kirin9030, kirinX90, and CPU simulator).</li>
 <li>Runtime bounds: <code>indexRow + src.ValidRow &lt;= dst.Rows</code> and <code>indexCol + src.ValidCol &lt;= dst.Cols</code>.</li>
 </ul>
 <h3 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
@@ -656,12 +678,13 @@ PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
 <li><code>int32_t</code> Acc → <code>int8_t</code>, <code>uint8_t</code>, <code>half</code>, <code>int16_t</code></li>
 </ul>
 </li>
-<li><strong>Vector-quant</strong> (<code>TINSERT_FP</code>) supported dtype pairs:<ul>
+<li><strong>Vector-quant</strong> (<code>TINSERT</code> with <code>FpTileData</code>; legacy <code>TINSERT_FP</code> alias) supported dtype pairs:<ul>
 <li><code>float</code> Acc → <code>int8_t</code></li>
 <li><code>int32_t</code> Acc → <code>int8_t</code>, <code>uint8_t</code>, <code>half</code>, <code>int16_t</code></li>
 </ul>
 </li>
-<li>Vector-quant requires an <code>FpTileData</code> scaling operand (<code>TileType::Scaling</code>).</li>
+<li>The canonical vector-quant overload requires an <code>FpTileData</code> scaling operand (<code>TileType::Scaling</code>);
+  <code>TINSERT_FP(...)</code> keeps legacy source compatibility and is checked by the selected backend implementation.</li>
 </ul>
 <h3 id="a5-implementation-checks">A5 implementation checks<a class="headerlink" href="#a5-implementation-checks" title="Permanent link">&para;</a></h3>
 <ul>
@@ -683,7 +706,7 @@ PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
 <li><code>int32_t</code> Acc → <code>int8_t</code>, <code>uint8_t</code>, <code>half</code>, <code>bfloat16_t</code></li>
 </ul>
 </li>
-<li><strong>Vector-quant</strong> (<code>TINSERT_FP</code>) destination types: same as scalar-quant above.</li>
+<li><strong>Vector-quant</strong> (<code>TINSERT</code> with <code>FpTileData</code>; legacy <code>TINSERT_FP</code> alias) destination types: same as scalar-quant above.</li>
 </ul>
 </li>
 <li>
@@ -700,7 +723,7 @@ PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src,
 <li><code>int32_t</code> Acc → <code>int8_t</code>, <code>uint8_t</code>, <code>half</code>, <code>bfloat16_t</code></li>
 </ul>
 </li>
-<li><strong>Vector-quant</strong> (<code>TINSERT_FP</code> / <code>TINSERT</code> with <code>FpTileData</code>) destination types: same as scalar-quant above.</li>
+<li><strong>Vector-quant</strong> (<code>TINSERT</code> with <code>FpTileData</code>; legacy <code>TINSERT_FP</code> alias) destination types: same as scalar-quant above.</li>
 <li>Destination layout must be one of: NZ-to-NZ (<code>!isRowMajor, SFractal: RowMajor</code>), NZ-to-ND (<code>isRowMajor, SFractal: NoneBox</code>), or NZ-to-DN (<code>!isRowMajor, SFractal: NoneBox</code>).</li>
 <li><code>AccToVecMode</code> selects <code>SingleModeVec0</code>, <code>SingleModeVec1</code>, <code>DualModeSplitM</code>, or <code>DualModeSplitN</code>.</li>
 <li>Dual-destination modes (<code>DualModeSplitM</code>, <code>DualModeSplitN</code>) require <code>QuantMode_t::NoQuant</code> and do not support the NZ-to-DN path.</li>

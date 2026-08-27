@@ -159,8 +159,6 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMADD/">TMADD</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../TMULA/">TMULA</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMIN/">TMIN</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMAX/">TMAX</a>
@@ -180,6 +178,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TRECIP/">TRECIP</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TMULADDDST/">TMULADDDST</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TCVT/">TCVT</a>
                 </li>
@@ -581,6 +581,27 @@ template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, Ac
           ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
 
+template &lt;typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;STPhase Phase, typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;STPhase Phase, typename DstTileData, typename SrcTileData, typename FpTileData,
+          AccToVecMode mode, ReluPreMode reluMode = ReluPreMode::NoRelu,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;STPhase Phase, typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
 template &lt;typename DstTileData, typename SrcTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);
@@ -588,6 +609,9 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t p
 template &lt;typename DstTileData, typename SrcTileData, AccToVecMode mode, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);</code></pre>
+<p><code>TMOV_FP(...)</code> 为历史 fp 量化形式保留源码兼容入口，并直接映射到无 <code>mode</code> 的
+<code>TMOV_IMPL(dst, src, fp)</code> 路径。规范同名 <code>TMOV(..., fp, ...)</code> 重载仅在
+<code>FpTileData::Loc == TileType::Scaling</code> 时参与匹配。</p>
 <h3 id="nd-nz-x-zz">ND → NZ / X → ZZ重载<a class="headerlink" href="#nd-nz-x-zz" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">// ND -&gt; NZ（2 参数，无 tmp）
 template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
@@ -595,12 +619,13 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents
 
 // X -&gt; ZZ（3 参数，带 tmp）。grp_axis=1（默认）= ND-&gt;ZZ；grp_axis=0 = DN-&gt;ZZ。
 template &lt;typename DstTileData, typename SrcTileData, typename TmpTileData, typename... WaitEvents,
-          std::enable_if_t&lt;is_tile_data_v&lt;TmpTileData&gt;, int&gt; = 0&gt;
+          std::enable_if_t&lt;is_tile_data_v&lt;TmpTileData&gt; &amp;&amp; (TmpTileData::Loc != TileType::Scaling), int&gt; = 0&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileData &amp;tmp, WaitEvents &amp;...events);
 
 template &lt;int grp_axis, typename DstTileData, typename SrcTileData, typename TmpTileData, typename... WaitEvents,
-          std::enable_if_t&lt;is_tile_data_v&lt;TmpTileData&gt;, int&gt; = 0&gt;
+          std::enable_if_t&lt;is_tile_data_v&lt;TmpTileData&gt; &amp;&amp; (TmpTileData::Loc != TileType::Scaling), int&gt; = 0&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileData &amp;tmp, WaitEvents &amp;...events);</code></pre>
+<p>三参数 <code>tmp</code> 重载排除 <code>TileType::Scaling</code>；第三操作数为 <code>Scaling</code> 时选择无 <code>mode</code> 的 fp <code>TMOV(..., fp, ...)</code> 重载。</p>
 <table>
 <thead>
 <tr>
@@ -638,12 +663,22 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileDat
 <li>纯移动：<code>TMOV(dst, src)</code></li>
 <li>relu形式：<code>TMOV&lt;..., reluMode&gt;(dst, src)</code></li>
 <li>累加器到向量形式：<code>TMOV&lt;..., mode, reluMode&gt;(dst, src)</code></li>
-<li>向量量化形式：<code>TMOV&lt;..., FpTileData, mode, reluMode&gt;(dst, src, fp)</code></li>
+<li>向量量化形式：
+  <code>TMOV&lt;..., FpTileData, reluMode&gt;(dst, src, fp)</code>、
+  <code>TMOV&lt;Phase, ..., FpTileData, reluMode&gt;(dst, src, fp)</code>、
+  历史 <code>TMOV_FP&lt;..., reluMode&gt;(dst, src, fp)</code>、
+  以及目标支持的 Acc-to-Vec 形式
+  <code>TMOV&lt;..., FpTileData, mode, reluMode&gt;(dst, src, fp)</code> 和
+  <code>TMOV&lt;Phase, ..., FpTileData, mode, reluMode&gt;(dst, src, fp)</code></li>
 <li>标量量化形式：<code>TMOV&lt;..., reluMode&gt;(dst, src, preQuantScalar)</code> 和 <code>TMOV&lt;..., mode, reluMode&gt;(dst, src, preQuantScalar)</code></li>
 </ul>
 </li>
 <li><code>reluMode</code> 取值为 <code>ReluPreMode::{NoRelu, NormalRelu}</code>。</li>
 <li><code>mode</code> 取值为 <code>AccToVecMode::{SingleModeVec0, SingleModeVec1, DualModeSplitM, DualModeSplitN}</code>。</li>
+<li>fp <code>STPhase</code> 重载仅在存在对应后端实现的目标上暴露
+  （A5、kirin9030、kirinX90、kirinDev0000 和 CPU 模拟器）。</li>
+<li>向量量化 <code>fp + AccToVecMode</code> 重载仅在存在对应后端实现的目标上暴露
+  （A5、kirin9030、kirinDev0000 和 CPU 模拟器）。</li>
 </ul>
 <h3 id="atlas-a2a3-atlas-a2a3">Atlas A2/A3 训练系列产品/Atlas A2/A3 推理系列产品实现检查<a class="headerlink" href="#atlas-a2a3-atlas-a2a3" title="Permanent link">&para;</a></h3>
 <ul>
@@ -670,7 +705,8 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileDat
 <li>额外执行 <code>CheckTMovAccToMat&lt;...&gt;</code> 编译期检查</li>
 <li>纯/relu形式使用由 <code>GetCastPreQuantMode&lt;SrcDType, DstDType&gt;()</code> 推导的类型转换前量化模式</li>
 <li>标量量化形式使用 <code>GetScalarPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
-<li>向量量化形式要求 <code>FpTileData</code> 操作数 <code>FpTileData::Loc == TileType::Scaling</code>，使用 <code>GetVectorPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
+<li>规范向量量化重载要求 <code>FpTileData</code> 操作数 <code>FpTileData::Loc == TileType::Scaling</code>，使用 <code>GetVectorPreQuantMode&lt;SrcDType, DstDType&gt;()</code>
+  <code>TMOV_FP(...)</code> 保持历史源码兼容，并由所选后端实现继续检查合法性。</li>
 <li>不支持channel split</li>
 </ul>
 </li>

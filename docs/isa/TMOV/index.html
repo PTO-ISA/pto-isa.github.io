@@ -159,8 +159,6 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMADD/">TMADD</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../TMULA/">TMULA</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMIN/">TMIN</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMAX/">TMAX</a>
@@ -180,6 +178,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TRECIP/">TRECIP</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TMULADDDST/">TMULADDDST</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TCVT/">TCVT</a>
                 </li>
@@ -356,6 +356,10 @@
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -677,6 +681,20 @@ the <code>vgather2</code> index buffer; DN→ZZ accepts it for interface parity 
 <pre class="highlight"><code class="language-text">%dst = pto.tmov.s2d %src  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.tmov ins(%src : !pto.tile_buf&lt;...&gt;) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%left  = pto.tmov.m2l %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+%right = pto.tmov.m2r %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+%bias  = pto.tmov.m2b %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+%scale = pto.tmov.m2s %mat  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+%vec   = pto.tmov.a2v %acc  : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;
+%v1    = pto.tmov.v2v %v0   : !pto.tile&lt;...&gt; -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tmov.m2l ins(%mat : !pto.tile_buf&lt;...&gt;) outs(%left : !pto.tile_buf&lt;...&gt;)
+pto.tmov.m2r ins(%mat : !pto.tile_buf&lt;...&gt;) outs(%right : !pto.tile_buf&lt;...&gt;)
+pto.tmov.m2b ins(%mat : !pto.tile_buf&lt;...&gt;) outs(%bias : !pto.tile_buf&lt;...&gt;)
+pto.tmov.m2s ins(%mat : !pto.tile_buf&lt;...&gt;) outs(%scale : !pto.tile_buf&lt;...&gt;)
+pto.tmov.a2v ins(%acc : !pto.tile_buf&lt;...&gt;) outs(%vec : !pto.tile_buf&lt;...&gt;)
+pto.tmov.v2v ins(%v0 : !pto.tile_buf&lt;...&gt;) outs(%v1 : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
@@ -693,6 +711,27 @@ template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, Ac
           ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
 
+template &lt;typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;STPhase Phase, typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;STPhase Phase, typename DstTileData, typename SrcTileData, typename FpTileData,
+          AccToVecMode mode, ReluPreMode reluMode = ReluPreMode::NoRelu,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;STPhase Phase, typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
 template &lt;typename DstTileData, typename SrcTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);
@@ -700,6 +739,9 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t p
 template &lt;typename DstTileData, typename SrcTileData, AccToVecMode mode, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, uint64_t preQuantScalar, WaitEvents &amp;... events);</code></pre>
+<p><code>TMOV_FP(...)</code> is retained for source compatibility with the legacy fp-quantized form and maps directly
+to the no-<code>mode</code> <code>TMOV_IMPL(dst, src, fp)</code> path. The canonical <code>TMOV(..., fp, ...)</code> overload is
+selected only for <code>FpTileData::Loc == TileType::Scaling</code>.</p>
 <h3 id="nd-nz-x-zz-overloads">ND → NZ / X → ZZ overloads<a class="headerlink" href="#nd-nz-x-zz-overloads" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-cpp">// ND -&gt; NZ (2-arg, no tmp)
 template &lt;typename DstTileData, typename SrcTileData, typename... WaitEvents&gt;
@@ -707,12 +749,13 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, WaitEvents
 
 // X -&gt; ZZ (3-arg, with tmp). grp_axis=1 (default) = ND-&gt;ZZ; grp_axis=0 = DN-&gt;ZZ.
 template &lt;typename DstTileData, typename SrcTileData, typename TmpTileData, typename... WaitEvents,
-          std::enable_if_t&lt;is_tile_data_v&lt;TmpTileData&gt;, int&gt; = 0&gt;
+          std::enable_if_t&lt;is_tile_data_v&lt;TmpTileData&gt; &amp;&amp; (TmpTileData::Loc != TileType::Scaling), int&gt; = 0&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileData &amp;tmp, WaitEvents &amp;...events);
 
 template &lt;int grp_axis, typename DstTileData, typename SrcTileData, typename TmpTileData, typename... WaitEvents,
-          std::enable_if_t&lt;is_tile_data_v&lt;TmpTileData&gt;, int&gt; = 0&gt;
+          std::enable_if_t&lt;is_tile_data_v&lt;TmpTileData&gt; &amp;&amp; (TmpTileData::Loc != TileType::Scaling), int&gt; = 0&gt;
 PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileData &amp;tmp, WaitEvents &amp;...events);</code></pre>
+<p>The 3-argument <code>tmp</code> overloads exclude <code>TileType::Scaling</code>; a <code>Scaling</code> third operand selects the no-<code>mode</code> fp <code>TMOV(..., fp, ...)</code> overload.</p>
 <table>
 <thead>
 <tr>
@@ -750,12 +793,22 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileDat
 <li>plain move: <code>TMOV(dst, src)</code></li>
 <li>relu form: <code>TMOV&lt;..., reluMode&gt;(dst, src)</code></li>
 <li>accumulator-to-vector form: <code>TMOV&lt;..., mode, reluMode&gt;(dst, src)</code></li>
-<li>vector-quant form: <code>TMOV&lt;..., FpTileData, mode, reluMode&gt;(dst, src, fp)</code></li>
+<li>vector-quant forms:
+  canonical <code>TMOV&lt;..., FpTileData, reluMode&gt;(dst, src, fp)</code>,
+  <code>TMOV&lt;Phase, ..., FpTileData, reluMode&gt;(dst, src, fp)</code>,
+  legacy <code>TMOV_FP&lt;..., reluMode&gt;(dst, src, fp)</code>,
+  and target-supported Acc-to-Vec forms
+  <code>TMOV&lt;..., FpTileData, mode, reluMode&gt;(dst, src, fp)</code> and
+  <code>TMOV&lt;Phase, ..., FpTileData, mode, reluMode&gt;(dst, src, fp)</code></li>
 <li>scalar-quant form: <code>TMOV&lt;..., reluMode&gt;(dst, src, preQuantScalar)</code> and <code>TMOV&lt;..., mode, reluMode&gt;(dst, src, preQuantScalar)</code></li>
 </ul>
 </li>
 <li><code>reluMode</code> is <code>ReluPreMode::{NoRelu, NormalRelu}</code>.</li>
 <li><code>mode</code> is <code>AccToVecMode::{SingleModeVec0, SingleModeVec1, DualModeSplitM, DualModeSplitN}</code>.</li>
+<li>The fp <code>STPhase</code> overloads are exposed only on targets with backend support
+  (A5, kirin9030, kirinX90, kirinDev0000, and CPU simulator).</li>
+<li>The vector-quantized <code>fp + AccToVecMode</code> overloads are exposed only on targets with backend support
+  (A5, kirin9030, kirinDev0000, and CPU simulator).</li>
 </ul>
 <h3 id="a2a3-implementation-checks">A2A3 implementation checks<a class="headerlink" href="#a2a3-implementation-checks" title="Permanent link">&para;</a></h3>
 <ul>
@@ -782,7 +835,8 @@ PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, TmpTileDat
 <li>additional <code>CheckTMovAccToMat&lt;...&gt;</code> compile-time checks are enforced</li>
 <li>plain/relu forms use cast pre-quant mode derived by <code>GetCastPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
 <li>scalar-quant forms use <code>GetScalarPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
-<li>vector-quant forms require an <code>FpTileData</code> operand with <code>FpTileData::Loc == TileType::Scaling</code>, and use <code>GetVectorPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
+<li>canonical vector-quant forms require an <code>FpTileData</code> operand with
+  <code>FpTileData::Loc == TileType::Scaling</code>, and use <code>GetVectorPreQuantMode&lt;SrcDType, DstDType&gt;()</code></li>
 </ul>
 </li>
 </ul>

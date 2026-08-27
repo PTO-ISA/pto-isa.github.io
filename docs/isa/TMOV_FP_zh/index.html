@@ -159,8 +159,6 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMADD/">TMADD</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../TMULA/">TMULA</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMIN/">TMIN</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMAX/">TMAX</a>
@@ -180,6 +178,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TRECIP/">TRECIP</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TMULADDDST/">TMULADDDST</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TCVT/">TCVT</a>
                 </li>
@@ -501,7 +501,11 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TMOV_FP tile operation" src="../../figures/isa/TMOV_FP.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>使用缩放 (<code>fp</code>) Tile 作为向量量化参数，将累加器 Tile 移动/转换到目标 Tile。</p>
+<p>使用 <code>fp</code> Tile 作为向量量化参数，将累加器 Tile 移动/转换到目标 Tile。</p>
+<p><code>TMOV_FP(...)</code> 保留为历史无 mode fp 移动形态的源码兼容 C++ 调用入口，并包含
+<code>STPhase</code> 重载。它直接映射到不显式传入 mode 模板参数的 <code>TMOV_IMPL(dst, src, fp)</code>。
+规范同名 <code>TMOV(..., fp, ...)</code> facade 要求 <code>FpTileData::Loc == TileType::Scaling</code>；历史
+<code>TMOV_FP(...)</code> alias 由所选后端实现继续检查合法性。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>概念上使用从 <code>fp</code> 派生的实现定义的量化/反量化配置转换每个元素：</p>
 <div class="arithmatex">\[ \mathrm{dst}_{i,j} = \mathrm{Convert}\!\left(\mathrm{src}_{i,j};\ \mathrm{fp}\right) \]</div>
@@ -519,18 +523,33 @@
 </blockquote>
 <pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;STPhase Phase, typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TMOV_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;STPhase Phase, typename DstTileData, typename SrcTileData, typename FpTileData,
+          ReluPreMode reluMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
 PTO_INST RecordEvent TMOV_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>实现检查 (A2A3)</strong>:<ul>
 <li>fp 路径仅支持累加器转换，并通过 <code>TMOV_IMPL(dst, src, fp)</code> 中的内部编译时检查进行验证。</li>
-<li><code>FpTileData::Loc</code> 必须是 <code>TileType::Scaling</code>（<code>static_assert</code>）。</li>
+<li><code>FpTileData</code> 的合法性由所选后端实现检查。</li>
+<li>A2A3 后端没有 <code>TMOV_IMPL(..., fp)</code> phase 形态，因此不暴露 <code>STPhase</code> fp 别名。</li>
 </ul>
 </li>
 <li><strong>实现检查 (A5)</strong>:<ul>
 <li>通过 <code>CheckTMovAccValid(...)</code> 和 <code>TMOV_IMPL(dst, src, fp)</code> 中的相关编译时检查进行验证。</li>
+<li><code>FpTileData</code> 的合法性由所选后端实现检查。</li>
 <li>目标位置取决于目标（fp 路径支持 <code>Vec</code> 或 <code>Mat</code>）。</li>
-<li>目标位置取决于目标（fp 路径支持 <code>Vec</code> 或 <code>Mat</code>）。</li>
+<li><code>STPhase</code> fp 别名仅在存在对应后端实现的目标上暴露：
+  A5、kirin9030、kirinX90、kirinDev0000 和 CPU 模拟器。</li>
 </ul>
 </li>
 </ul>

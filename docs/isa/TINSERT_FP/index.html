@@ -159,8 +159,6 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMADD/">TMADD</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../TMULA/">TMULA</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMIN/">TMIN</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMAX/">TMAX</a>
@@ -180,6 +178,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TRECIP/">TRECIP</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TMULADDDST/">TMULADDDST</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TCVT/">TCVT</a>
                 </li>
@@ -361,6 +361,10 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a>
@@ -537,7 +541,12 @@
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
 <p><img alt="TINSERT_FP tile operation" src="../../figures/isa/TINSERT_FP.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Vector-quantization variant of <code>TINSERT</code> that also takes an <code>fp</code> (scaling) tile.</p>
+<p>Vector-quantization variant of <code>TINSERT</code> that also takes an <code>fp</code> tile.</p>
+<p><code>TINSERT_FP(...)</code> is retained as a source-compatible C++ interface for the legacy no-mode fp insertion
+form. It maps directly to the <code>TINSERT_IMPL(dst, src, fp, indexRow, indexCol)</code> implementation path
+without an explicit mode template argument. The canonical <code>TINSERT(..., fp, ...)</code> overload requires a
+<code>Scaling</code> tile at the facade layer; the legacy alias preserves the backend-specific <code>FpTileData</code> checks
+used by existing code.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li>TINSERT base instruction: <code>docs/isa/TINSERT.md</code>.</li>
@@ -545,6 +554,10 @@
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
+          typename... WaitEvents&gt;
+PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
 PTO_INST RecordEvent TINSERT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);</code></pre>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
@@ -554,8 +567,15 @@ PTO_INST RecordEvent TINSERT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTi
 <pre class="highlight"><code class="language-text">%dst = pto.tinsert_fp %src, %fp, %idxrow, %idxcol : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, dtype, dtype) -&gt; !pto.tile&lt;...&gt;</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.tinsert_fp ins(%src, %fp, %idxrow, %idxcol : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, dtype, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
+<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">%dst = pto.tinsert_fp %src, %fp, %idxrow, %idxcol : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, dtype, dtype) -&gt; !pto.tile&lt;...&gt;</code></pre>
+<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tinsert_fp ins(%src, %fp, %idxrow, %idxcol : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;, dtype, dtype) outs(%dst : !pto.tile_buf&lt;...&gt;)</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
-<p>Type/layout/location/shape legality is backend-dependent; treat implementation-specific notes as normative for that backend.</p>
+<p>Type/layout/location/shape legality is backend-dependent; treat implementation-specific notes as normative
+for that backend. The canonical same-name <code>TINSERT(..., fp, ...)</code> facade requires
+<code>FpTileData::Loc == TileType::Scaling</code>; the legacy <code>TINSERT_FP(...)</code> alias is checked by the selected
+backend implementation.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <p>See related examples in <code>docs/isa/</code> and <code>docs/coding/tutorials/</code>.</p>
 <h2 id="asm-form-examples">ASM Form Examples<a class="headerlink" href="#asm-form-examples" title="Permanent link">&para;</a></h2>

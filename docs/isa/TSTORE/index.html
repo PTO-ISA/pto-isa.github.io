@@ -159,8 +159,6 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMADD/">TMADD</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../TMULA/">TMULA</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMIN/">TMIN</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMAX/">TMAX</a>
@@ -180,6 +178,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TRECIP/">TRECIP</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TMULADDDST/">TMULADDDST</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TCVT/">TCVT</a>
                 </li>
@@ -314,6 +314,10 @@
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -552,6 +556,10 @@
 <pre class="highlight"><code class="language-text">pto.tstore %src, %mem : (!pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.tstore ins(%src : !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
+<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tstore %t1, %sv_out[%c0, %c0]</code></pre>
+<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tstore ins(%t1, %sv_out[%c0, %c0]) outs()</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename GlobalData, AtomicType atomicType = AtomicType::AtomicNone,
@@ -563,8 +571,17 @@ template &lt;typename TileData, typename GlobalData, AtomicType atomicType = Ato
 PTO_INST RecordEvent TSTORE(GlobalData&amp; dst, TileData&amp; src, uint64_t preQuantScalar, WaitEvents&amp;... events);
 
 template &lt;typename TileData, typename GlobalData, typename FpTileData, AtomicType atomicType = AtomicType::AtomicNone,
-          typename... WaitEvents&gt;
+          ReluPreMode reluPreMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TSTORE(GlobalData&amp; dst, TileData&amp; src, FpTileData&amp; fp, WaitEvents&amp;... events);
+
+template &lt;typename TileData, typename GlobalData, typename FpTileData, AtomicType atomicType = AtomicType::AtomicNone,
+          ReluPreMode reluPreMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
 PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileData&amp; fp, WaitEvents&amp;... events);</code></pre>
+<p><code>TSTORE_FP(...)</code> is retained for source compatibility with the legacy fp-quantized form and maps directly to
+<code>TSTORE_IMPL(dst, src, fp)</code>. The canonical <code>TSTORE(..., fp, ...)</code> overload is selected only for
+<code>FpTileData::Loc == TileType::Scaling</code>; backend implementations may apply additional legality checks.
+The vector-quantized <code>STPhase</code> form is exposed only on targets with matching backend support
+(A5, kirin9030, kirinDev0000, and CPU simulator).</p>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li>
@@ -604,12 +621,12 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileDat
 <td><code>int32_t</code></td>
 </tr>
 <tr>
-<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
+<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE(dst, acc, fp)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
 <td><code>float</code></td>
 <td><code>int8_t</code>, <code>uint8_t</code></td>
 </tr>
 <tr>
-<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
+<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE(dst, acc, fp)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
 <td><code>int32_t</code></td>
 <td><code>int8_t</code>, <code>uint8_t</code>, <code>half</code></td>
 </tr>
@@ -652,12 +669,12 @@ PTO_INST RecordEvent TSTORE_FP(GlobalData&amp; dst, TileData&amp; src, FpTileDat
 <td><code>int32_t</code></td>
 </tr>
 <tr>
-<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
+<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE(dst, acc, fp)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
 <td><code>float</code></td>
 <td><code>int8_t</code>, <code>uint8_t</code>, <code>half</code>, <code>bfloat16_t</code>, <code>hifloat8_t</code>, <code>float8_e4m3_t</code>, <code>float</code></td>
 </tr>
 <tr>
-<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
+<td><code>TSTORE(dst, acc, preQuantScalar)</code> / <code>TSTORE(dst, acc, fp)</code> / <code>TSTORE_FP(dst, acc, fp)</code></td>
 <td><code>int32_t</code></td>
 <td><code>int8_t</code>, <code>uint8_t</code>, <code>half</code>, <code>bfloat16_t</code></td>
 </tr>

@@ -159,8 +159,6 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMADD/">TMADD</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../TMULA/">TMULA</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMIN/">TMIN</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMAX/">TMAX</a>
@@ -180,6 +178,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TRECIP/">TRECIP</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TMULADDDST/">TMULADDDST</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TCVT/">TCVT</a>
                 </li>
@@ -316,6 +316,10 @@
     <li class="toctree-l4"><a class="reference internal" href="#as-level-1-ssa">AS Level 1 (SSA)</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#as-level-2-dps">AS Level 2 (DPS)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-1-ssa">IR Level 1 (SSA)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ir-level-2-dps">IR Level 2 (DPS)</a>
     </li>
         </ul>
     </li>
@@ -541,8 +545,12 @@
 <h2 id="tile-operation-diagram">Tile Operation Diagram<a class="headerlink" href="#tile-operation-diagram" title="Permanent link">&para;</a></h2>
 <p><img alt="TSTORE_FP tile operation" src="../../figures/isa/TSTORE_FP.svg" /></p>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Store an accumulator tile into global memory using a scaling (<code>fp</code>) tile for vector quantization parameters.</p>
-<p><code>TSTORE_FP</code> is the fp-quantization overload of <code>TSTORE</code> (see <code>docs/isa/TSTORE.md</code>).</p>
+<p>Store an accumulator tile into global memory using an <code>fp</code> tile for vector quantization parameters.</p>
+<p><code>TSTORE_FP(...)</code> is retained as a source-compatible C++ interface for the legacy fp-quantized store form.
+It maps directly to the <code>TSTORE_IMPL(dst, src, fp)</code> implementation path. The canonical
+<code>TSTORE(..., fp, ...)</code> overload requires a <code>Scaling</code> tile at the facade layer; the legacy alias preserves
+the backend-specific <code>FpTileData</code> checks used by existing code.
+The <code>STPhase</code> alias is exposed only on targets with backend support.</p>
 <h2 id="math-interpretation">Math Interpretation<a class="headerlink" href="#math-interpretation" title="Permanent link">&para;</a></h2>
 <p>Let <code>R = src.GetValidRow()</code> and <code>C = src.GetValidCol()</code>. Conceptually (2D view, with a base offset), for <code>0 &lt;= i &lt; R</code> and <code>0 &lt;= j &lt; C</code>:</p>
 <div class="arithmatex">\[ \mathrm{dst}_{r_0 + i,\; c_0 + j} = \mathrm{Convert}\!\left(\mathrm{src}_{i,j};\ \mathrm{fp}\right) \]</div>
@@ -553,25 +561,40 @@
 <pre class="highlight"><code class="language-text">pto.tstore.fp %src, %fp, %mem : (!pto.tile&lt;...&gt;, !pto.tile&lt;...&gt;, !pto.partition_tensor_view&lt;MxNxdtype&gt;) -&gt; ()</code></pre>
 <h3 id="as-level-2-dps">AS Level 2 (DPS)<a class="headerlink" href="#as-level-2-dps" title="Permanent link">&para;</a></h3>
 <pre class="highlight"><code class="language-text">pto.tstore.fp ins(%src, %fp : !pto.tile_buf&lt;...&gt;, !pto.tile_buf&lt;...&gt;) outs(%mem : !pto.partition_tensor_view&lt;MxNxdtype&gt;)</code></pre>
+<h3 id="ir-level-1-ssa">IR Level 1 (SSA)<a class="headerlink" href="#ir-level-1-ssa" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tstore.fp %src, %fp, %sv_out[%c0, %c0]</code></pre>
+<h3 id="ir-level-2-dps">IR Level 2 (DPS)<a class="headerlink" href="#ir-level-2-dps" title="Permanent link">&para;</a></h3>
+<pre class="highlight"><code class="language-text">pto.tstore.fp ins(%src, %fp, %sv_out[%c0, %c0]) outs()</code></pre>
 <h2 id="c-intrinsic">C++ Intrinsic<a class="headerlink" href="#c-intrinsic" title="Permanent link">&para;</a></h2>
 <p>Declared in <code>include/pto/common/pto_instr.hpp</code> and <code>include/pto/common/constants.hpp</code>:</p>
 <pre class="highlight"><code class="language-cpp">template &lt;typename TileData, typename GlobalData, typename FpTileData, AtomicType atomicType = AtomicType::AtomicNone,
+          ReluPreMode reluPreMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TSTORE(GlobalData &amp;dst, TileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;typename TileData, typename GlobalData, typename FpTileData, AtomicType atomicType = AtomicType::AtomicNone,
+          ReluPreMode reluPreMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
+PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);
+
+template &lt;STPhase Phase, typename TileData, typename GlobalData, typename FpTileData,
+          AtomicType atomicType = AtomicType::AtomicNone,
           ReluPreMode reluPreMode = ReluPreMode::NoRelu, typename... WaitEvents&gt;
 PTO_INST RecordEvent TSTORE_FP(GlobalData &amp;dst, TileData &amp;src, FpTileData &amp;fp, WaitEvents &amp;... events);</code></pre>
 <h2 id="constraints">Constraints<a class="headerlink" href="#constraints" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Implementation checks (A2A3)</strong>:<ul>
 <li>The fp store path is implemented via <code>TSTORE_IMPL(dst, src, fp)</code> and uses the same accumulator-to-GM legality checks as quantized accumulator stores:</li>
+<li><code>FpTileData</code> legality is checked by the selected backend implementation.</li>
 <li>Destination layout must be ND, NZ, NC1HWC0, or NDC1HWC0.</li>
 <li>Source dtype must be <code>int32_t</code> or <code>float</code>.</li>
 <li>Static shape constraints: <code>1 &lt;= TileData::Cols &lt;= 4095</code>; if ND then <code>1 &lt;= TileData::Rows &lt;= 8192</code>; if NZ, NC1HWC0, or NDC1HWC0 then <code>1 &lt;= TileData::Rows &lt;= 65535</code> and <code>TileData::Cols % 16 == 0</code>.</li>
 <li>Runtime: <code>1 &lt;= src.GetValidCol() &lt;= 4095</code>.</li>
-<li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code> (the implementation uses <code>fp</code> to set FPC state).</li>
 </ul>
 </li>
 <li><strong>Implementation checks (A5)</strong>:<ul>
 <li>Implemented via <code>TSTORE_IMPL(dst, src, fp)</code> and validated by <code>CheckStaticAcc&lt;..., true&gt;()</code> for the accumulator path (ND/NZ/NHWC/NCHW/NCDHW only, <code>int32_t/float</code> source dtype, rows/cols ranges).</li>
-<li>No explicit <code>static_assert</code> is enforced on <code>FpTileData</code> (the implementation uses <code>fp</code> to set FPC state).</li>
+<li><code>FpTileData</code> legality is checked by the selected backend implementation.</li>
+<li>The <code>STPhase</code> fp alias is exposed on targets with backend support: A5, kirin9030,
+  kirinDev0000, and CPU simulator.</li>
 </ul>
 </li>
 </ul>

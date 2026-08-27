@@ -159,8 +159,6 @@
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMADD/">TMADD</a>
                 </li>
-                <li class="toctree-l2"><a class="reference internal" href="../TMULA/">TMULA</a>
-                </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMIN/">TMIN</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TMAX/">TMAX</a>
@@ -180,6 +178,8 @@
                 <li class="toctree-l2"><a class="reference internal" href="../TRECIP/">TRECIP</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TPRELU/">TPRELU</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../TMULADDDST/">TMULADDDST</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="../TCVT/">TCVT</a>
                 </li>
@@ -501,7 +501,11 @@
 <h2 id="_1">指令示意图<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p><img alt="TINSERT_FP tile operation" src="../../figures/isa/TINSERT_FP.svg" /></p>
 <h2 id="_2">简介<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>带 fp/缩放 Tile 的插入（向量量化参数）。</p>
+<p>带 <code>fp</code> Tile 的插入（向量量化参数）。</p>
+<p><code>TINSERT_FP(...)</code> 保留为历史无 mode fp 插入形态的源码兼容 C++ 调用入口。它直接映射到
+不显式传入 mode 模板参数的 <code>TINSERT_IMPL(dst, src, fp, indexRow, indexCol)</code>。规范同名
+<code>TINSERT(..., fp, ...)</code> facade 要求 <code>FpTileData::Loc == TileType::Scaling</code>；历史
+<code>TINSERT_FP(...)</code> alias 由所选后端实现继续检查合法性。</p>
 <h2 id="_3">数学语义<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>除非另有说明，语义在有效区域上定义，目标相关的行为标记为实现定义。</p>
 <h2 id="_4">汇编语法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
@@ -516,9 +520,14 @@
 </blockquote>
 <pre class="highlight"><code class="language-cpp">template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
           typename... WaitEvents&gt;
+PTO_INST RecordEvent TINSERT(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);
+
+template &lt;typename DstTileData, typename SrcTileData, typename FpTileData, ReluPreMode reluMode = ReluPreMode::NoRelu,
+          typename... WaitEvents&gt;
 PTO_INST RecordEvent TINSERT_FP(DstTileData &amp;dst, SrcTileData &amp;src, FpTileData &amp;fp, uint16_t indexRow, uint16_t indexCol, WaitEvents &amp;... events);</code></pre>
 <h2 id="_5">约束<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>类型/布局/位置/形状的合法性取决于后端；将实现特定的说明视为该后端的规范。</p>
+<p>类型/布局/位置/形状的合法性取决于后端；将实现特定的说明视为该后端的规范。
+<code>FpTileData</code> 的合法性由所选后端实现检查。</p>
 <h2 id="_6">示例<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>参见 <code>docs/isa/</code> 和 <code>docs/coding/tutorials/</code> 中的相关示例。</p>
 <h2 id="asm">汇编示例（ASM）<a class="headerlink" href="#asm" title="Permanent link">&para;</a></h2>
