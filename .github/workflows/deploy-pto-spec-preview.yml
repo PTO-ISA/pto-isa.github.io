@@ -32,7 +32,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
           submodules: recursive
-          path: source
 
       - name: Require the successful exact-commit Site run
         env:
@@ -40,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C source rev-parse HEAD)" = "$PTO_SPEC_COMMIT"
+          test "$(git rev-parse HEAD)" = "$PTO_SPEC_COMMIT"
           test "$(gh api "repos/${PTO_SPEC_REPOSITORY}/git/ref/heads/main" --jq .object.sha)" = "$PTO_SPEC_COMMIT"
           test "$(gh api "repos/${PTO_SPEC_REPOSITORY}/actions/runs/${PTO_SPEC_SITE_RUN_ID}" --jq .head_sha)" = "$PTO_SPEC_COMMIT"
           test "$(gh api "repos/${PTO_SPEC_REPOSITORY}/actions/runs/${PTO_SPEC_SITE_RUN_ID}" --jq .conclusion)" = success
@@ -56,10 +55,10 @@ jobs:
           corepack prepare pnpm@10.30.0 --activate
 
       - name: Install exact site dependencies
-        run: pnpm --dir source/docs/site install --frozen-lockfile
+        run: pnpm --dir docs/site install --frozen-lockfile
 
       - name: Rebuild and validate the unpublished preview
-        run: make -C source site-check
+        run: make site-check
 
       - name: Require explicit preview identity
         shell: bash
@@ -70,7 +69,7 @@ jobs:
           from pathlib import Path
 
           manifest = json.loads(
-              Path("source/docs/site/build/pto-site-publication.json").read_text(
+              Path("docs/site/build/pto-site-publication.json").read_text(
                   encoding="utf-8"
               )
           )
@@ -97,7 +96,7 @@ jobs:
       - name: Upload validated preview artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
-          path: source/docs/site/build
+          path: docs/site/build
 
   deploy:
     name: Deploy GitHub Pages preview
