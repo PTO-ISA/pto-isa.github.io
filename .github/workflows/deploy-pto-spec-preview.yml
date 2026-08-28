@@ -1,0 +1,112 @@
+name: Deploy PTO specification preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+  pages: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+env:
+  PTO_SPEC_REPOSITORY: PTO-ISA/pto-spec
+  PTO_SPEC_COMMIT: 52befcc1d6be2907708381b930a4eaf0242c204c
+  PTO_SPEC_SITE_RUN_ID: "33139015991"
+
+jobs:
+  build:
+    name: Build exact preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact PTO specification commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: ${{ env.PTO_SPEC_REPOSITORY }}
+          ref: ${{ env.PTO_SPEC_COMMIT }}
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: recursive
+          path: source
+
+      - name: Require the successful exact-commit Site run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "$PTO_SPEC_COMMIT"
+          test "$(gh api "repos/${PTO_SPEC_REPOSITORY}/git/ref/heads/main" --jq .object.sha)" = "$PTO_SPEC_COMMIT"
+          test "$(gh api "repos/${PTO_SPEC_REPOSITORY}/actions/runs/${PTO_SPEC_SITE_RUN_ID}" --jq .head_sha)" = "$PTO_SPEC_COMMIT"
+          test "$(gh api "repos/${PTO_SPEC_REPOSITORY}/actions/runs/${PTO_SPEC_SITE_RUN_ID}" --jq .conclusion)" = success
+
+      - name: Set up Node.js
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: "22"
+
+      - name: Enable the locked package manager
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.30.0 --activate
+
+      - name: Install exact site dependencies
+        run: pnpm --dir source/docs/site install --frozen-lockfile
+
+      - name: Rebuild and validate the unpublished preview
+        run: make -C source site-check
+
+      - name: Require explicit preview identity
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads(
+              Path("source/docs/site/build/pto-site-publication.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          expected = {
+              "schema": "pto.site-publication.v1",
+              "source_commit": os.environ["PTO_SPEC_COMMIT"],
+              "publication_state": "preview",
+              "release_eligible": False,
+          }
+          for field, value in expected.items():
+              if manifest.get(field) != value:
+                  raise SystemExit(
+                      f"preview manifest {field} is {manifest.get(field)!r}, expected {value!r}"
+                  )
+          print(
+              "verified unpublished preview "
+              f"{manifest['publication_version']} at {manifest['source_commit']}"
+          )
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: Upload validated preview artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: source/docs/site/build
+
+  deploy:
+    name: Deploy GitHub Pages preview
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy validated preview
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
